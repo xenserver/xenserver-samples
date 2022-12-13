@@ -55,8 +55,8 @@ namespace XenSdkSample
                 Session session = null;
                 try
                 {
-                    string hostname = args[0], username = args[1], password = args[2];
-                    session = new Session(hostname, 443); //using the default port
+                    string hostUrl = args[0], username = args[1], password = args[2];
+                    session = new Session(hostUrl);
                     session.login_with_password(username, password, "", "XenSdkSample");
 
                     int pass = 0, fail = 0;
