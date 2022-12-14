@@ -76,7 +76,7 @@ public class RunTests {
         tests.add(new VdiAndSrOps());
         tests.add(new CreateVM());
         tests.add(new VMlifecycle());
-        tests.add(new GetAllRecordsOfAllTypes());
+        tests.add(new GetVariousRecords());
         tests.add(new SharedStorage(nfsServer, nfsPath));
         tests.add(new StartAllVMs());
 
