@@ -2,16 +2,16 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.citrix.hypervisor</groupId>
+    <groupId>com.xenserver</groupId>
     <artifactId>xen-api-samples</artifactId>
-    <version>${revision}</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>Citrix Hypervisor Java SDK Samples</name>
-    <description>Example integrations of Citrix Hypervisor SDK for Java.</description>
+    <name>XenServer Java SDK Samples</name>
+    <description>Example integrations of XenServer SDK for Java.</description>
     <url>https://www.citrix.com/community/citrix-developer/citrix-hypervisor-developer</url>
     <organization>
-        <name>Citrix Systems, Inc.</name>
-        <url>https://www.citrix.com</url>
+        <name>Cloud Software Group Holdings, Inc.</name>
+        <url>https://www.cloud.com</url>
     </organization>
     <licenses>
         <license>
@@ -21,9 +21,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>https://github.com/xapi-project/xen-api-sdk</connection>
-        <developerConnection>https://github.com/xapi-project/xen-api-sdk</developerConnection>
-        <url>https://github.com/xapi-project/xen-api-sdk</url>
+        <connection>https://github.com/xenserver/xenserver-samples</connection>
+        <developerConnection>https://github.com/xenserver/xenserver-samples</developerConnection>
+        <url>https://github.com/xenserver/xenserver-samples</url>
     </scm>
     <mailingLists>
         <mailingList>
@@ -31,31 +31,25 @@
             <post>xen-api@list.xen.org</post>
             <archive>http://lists.xen.org/archives/html/xen-api/</archive>
         </mailingList>
-        <mailingList>
-            <name>XenServer General Development List</name>
-            <post>xs-devel@lists.xenserver.org</post>
-            <archive>https://lists.xenserver.org/sympa/arc/xs-devel</archive>
-        </mailingList>
     </mailingLists>
     <developers>
         <developer>
-            <name>Citrix Systems, Inc.</name>
+            <name>Cloud Software Group Holdings, Inc.</name>
             <email>xen-api@lists.xenproject.org</email>
         </developer>
     </developers>
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/xapi-project/xen-api-sdk/issues</url>
+        <url>https://github.com/xenserver/xenserver-samples/issues</url>
     </issueManagement>
     <properties>
-        <revision>1.0.0-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.citrix.hypervisor</groupId>
             <artifactId>xen-api</artifactId>
-            <version>${revision}</version>
+            <version>[8.1.0,)</version>
         </dependency>
     </dependencies>
     <distributionManagement>
