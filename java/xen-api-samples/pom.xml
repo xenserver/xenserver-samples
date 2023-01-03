@@ -1,0 +1,109 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.xenserver</groupId>
+    <artifactId>xen-api-samples</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>XenServer Java SDK Samples</name>
+    <description>Example integrations of XenServer SDK for Java.</description>
+    <url>https://www.citrix.com/community/citrix-developer/citrix-hypervisor-developer</url>
+    <organization>
+        <name>Cloud Software Group Holdings, Inc.</name>
+        <url>https://www.cloud.com</url>
+    </organization>
+    <licenses>
+        <license>
+        <name>BSD 2-Clause License</name>
+        <url>http://opensource.org/licenses/BSD-2-Clause</url>
+        <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <scm>
+        <connection>https://github.com/xenserver/xenserver-samples</connection>
+        <developerConnection>https://github.com/xenserver/xenserver-samples</developerConnection>
+        <url>https://github.com/xenserver/xenserver-samples</url>
+    </scm>
+    <mailingLists>
+        <mailingList>
+            <name>Xen-API - User and development list for XCP and XAPI</name>
+            <post>xen-api@list.xen.org</post>
+            <archive>http://lists.xen.org/archives/html/xen-api/</archive>
+        </mailingList>
+    </mailingLists>
+    <developers>
+        <developer>
+            <name>Cloud Software Group Holdings, Inc.</name>
+            <email>xen-api@lists.xenproject.org</email>
+        </developer>
+    </developers>
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/xenserver/xenserver-samples/issues</url>
+    </issueManagement>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.citrix.hypervisor</groupId>
+            <artifactId>xen-api</artifactId>
+            <version>[8.1.0,)</version>
+        </dependency>
+    </dependencies>
+    <distributionManagement>
+        <repository>
+            <id>vcc-releases</id>
+            <name>VCC Release Repository</name>
+            <url>http://oss.sonatype.org/content/repositories/java-net-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>vcc-snapshots</id>
+            <name>VCC Snapshot Repository</name>
+            <url>http://oss.sonatype.org/content/repositories/java-net-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <configuration>
+                        <compilerArgument>-Xlint:unchecked</compilerArgument>
+                        <source>1.8</source>
+                        <target>1.8</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
