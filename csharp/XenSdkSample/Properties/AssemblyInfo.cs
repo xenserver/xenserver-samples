@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("XenSdkSample")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Citrix Systems, Inc.")]
+[assembly: AssemblyCompany("XenServer")]
 [assembly: AssemblyProduct("XenSdkSample")]
-[assembly: AssemblyCopyright("Copyright © Citrix Systems, Inc.")]
+[assembly: AssemblyCopyright("Copyright (c) Cloud Software Group, Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

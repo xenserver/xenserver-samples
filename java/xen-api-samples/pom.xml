@@ -10,7 +10,7 @@
     <description>Example integrations of XenServer SDK for Java.</description>
     <url>https://www.citrix.com/community/citrix-developer/citrix-hypervisor-developer</url>
     <organization>
-        <name>Cloud Software Group Holdings, Inc.</name>
+        <name>Cloud Software Group, Inc.</name>
         <url>https://www.cloud.com</url>
     </organization>
     <licenses>
@@ -34,7 +34,7 @@
     </mailingLists>
     <developers>
         <developer>
-            <name>Cloud Software Group Holdings, Inc.</name>
+            <name>Cloud Software Group, Inc.</name>
             <email>xen-api@lists.xenproject.org</email>
         </developer>
     </developers>
