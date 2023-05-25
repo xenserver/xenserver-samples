@@ -1,7 +1,7 @@
 # XenServerJava usage examples
 
 This folder contains of a number of test programs that can be used as pedagogical
-examples accompanying XenServerJava (com.citrix.hypervisor.xen-api). They are
+examples accompanying XenServerJava (com.xenserver.xen-api). They are
 structured as a Maven project.
 
 ## Dependencies
