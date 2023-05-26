@@ -49,7 +49,7 @@
         <dependency>
             <groupId>com.xenserver</groupId>
             <artifactId>xen-api</artifactId>
-            <version>[22.32.0,)</version>
+            <version>[23.12.0,)</version>
         </dependency>
         <dependency>
             <groupId>org.apache.xmlrpc</groupId>
