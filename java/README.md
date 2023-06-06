@@ -9,6 +9,13 @@ structured as a Maven project.
 This code depends on XenServerJava, which in turns depends upon Apache XML-RPC
 by the Apache Software Foundation, licensed under the Apache Software License 2.0.
 
+
+If you have the jar, you can install it using the Maven CLI:
+
+```bash
+mvn install:install-file -Dfile=".\xen-api-XX.YY.ZZ.jar" -DgroupId="com.xenserver" -DartifactId=xen-api -Dversion="XX.YY.ZZ" -Dpackaging=jar -DgeneratePom=true
+```
+
 ## How to run the tests
 
 Once you compile the project run:
