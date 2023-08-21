@@ -1,13 +1,20 @@
 # XenServerJava usage examples
 
 This folder contains of a number of test programs that can be used as pedagogical
-examples accompanying XenServerJava (com.citrix.hypervisor.xen-api). They are
+examples accompanying XenServerJava (com.xenserver.xen-api). They are
 structured as a Maven project.
 
 ## Dependencies
 
 This code depends on XenServerJava, which in turns depends upon Apache XML-RPC
 by the Apache Software Foundation, licensed under the Apache Software License 2.0.
+
+
+If you have the jar, you can install it using the Maven CLI:
+
+```bash
+mvn install:install-file -Dfile=".\xen-api-XX.YY.ZZ.jar" -DgroupId="com.xenserver" -DartifactId=xen-api -Dversion="XX.YY.ZZ" -Dpackaging=jar -DgeneratePom=true
+```
 
 ## How to run the tests
 
