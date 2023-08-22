@@ -4,6 +4,35 @@ This folder contains of a number of test programs that can be used as pedagogica
 examples accompanying XenServerJava (com.xenserver.xen-api). They are
 structured as a Maven project.
 
+## Overview
+
+Running the main file `RunTests` runs a series of examples included in the 
+same directory:
+
+-  `AddNetwork`: Adds a new internal network not attached to any NICs.
+
+-  `AsyncVMCreate`: Makes asynchronously a new VM from a built-in template, 
+    starts, and stops it.
+
+-  `CreateVM`: Creates a VM on the default SR with a network and DVD drive.
+
+-  `EventMonitor`: Listens for events on a connection and prints each event out 
+    as it is received.
+
+-  `GetVariousRecords`: Retrieves the records for various types of objects.
+
+-  `SessionReuse`: Shows how a Session object can be shared among multiple Connections.
+
+-  `SharedStorage`: Creates a shared NFS SR.
+
+-  `StartAllVMs`: Connects to a host and tries to start each VM on it.
+
+-  `VMlifecycle`: Takes a VM through the various lifecycle states. Requires a 
+    shutdown VM with tools installed.
+
+-  `VdiAndSrOps`: Performs various SR and VDI tests, including creating
+    a dummy SR.
+
 ## Dependencies
 
 This code depends on XenServerJava, which in turns depends upon Apache XML-RPC
