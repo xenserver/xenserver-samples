@@ -258,15 +258,15 @@ if __name__ == "__main__":
 
     new_session = XenAPI.xapi_local()
 
-    connect_to_master_with_timeout = TimeoutFunction(new_session.xenapi.login_with_password, TIMEOUT_SECS)
+    connect_to_coordinator_with_timeout = TimeoutFunction(new_session.xenapi.login_with_password, TIMEOUT_SECS)
 
     try:
-        connect_to_master_with_timeout("root", "")
+        connect_to_coordinator_with_timeout("root", "")
     except TimeoutFunctionException:
-        print "Unable to connect to master within %d seconds. Exiting." % TIMEOUT_SECS
+        print "Unable to connect to coordinator within %d seconds. Exiting." % TIMEOUT_SECS
         sys.exit(1)
     except Exception:
-        print 'Failed to connect to master.'
+        print 'Failed to connect to coordinator.'
         sys.exit(2)
 
     try:

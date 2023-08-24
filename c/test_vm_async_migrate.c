@@ -82,7 +82,7 @@ static void usage()
             "    test_vm_async_migrate <url> <username> <password> <source-host> <target-host>\n"
             "\n"
             "where\n"
-            "    <url>          is the master server's URL, e.g. server.example.com\n"
+            "    <url>          is the coordinator server's URL, e.g. server.example.com\n"
             "    <username>     is the username to use at the server <url>\n"
             "    <password>     is the password to <url>.\n"
             "    <source-host>  is the name of the server to migrate all the VMs from\n"

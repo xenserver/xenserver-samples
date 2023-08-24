@@ -301,7 +301,7 @@ function shutdown_vm([String]$vm_name) {
 
 # Host Functions
 
-function get_master() {
+function get_coordinator() {
     $pool = Get-XenPool
     return Get-XenHost -Ref $pool.master
 }
@@ -318,8 +318,8 @@ function get_default_sr() {
 
 function create_nfs_sr([String]$sr_svr, [String]$sr_path, [String]$sr_name) {
     log_info ("creating sr {0} at {1}:{2}" -f $sr_name, $sr_svr, $sr_path)
-    $master = get_master
-    $sr_opq = New-XenSR -XenHost $master -DeviceConfig @{ "server" = $sr_svr; "serverpath" = $sr_path; "options" = "" } `
+    $coordinator = get_coordinator
+    $sr_opq = New-XenSR -XenHost $coordinator -DeviceConfig @{ "server" = $sr_svr; "serverpath" = $sr_path; "options" = "" } `
         -PhysicalSize 0 -NameLabel $sr_name -NameDescription "" -Type "nfs" -ContentType "" `
         -Shared $true -SmConfig @{ } -Async -PassThru |`
         Wait-XenTask -ShowProgress -PassThru
