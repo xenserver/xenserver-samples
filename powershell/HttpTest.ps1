@@ -36,8 +36,10 @@ Param([Parameter(Mandatory = $true)][String]$svr,
 ### Connect to a server
 
 [Net.ServicePointManager]::SecurityProtocol = 'tls,tls11,tls12'
-Connect-XenServer -Server $svr -UserName $usr -Password $pwd
 
+# Trust all certificates. This is for test purposes only.
+# DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
+Connect-XenServer -Server $svr -UserName $usr -Password $pwd -NoWarnCertificates -NoWarnNewCertificates
 
 ### Create a VM
 
