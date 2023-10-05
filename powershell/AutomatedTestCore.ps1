@@ -40,7 +40,6 @@ Param([Parameter(Mandatory = $true)][String]$out_xml,
 
 [Net.ServicePointManager]::SecurityProtocol = 'tls,tls11,tls12'
 $BestEffort = $false
-$NoWarnCertificates = $true
 $info = $true
 $warn = $true
 $err = $true
@@ -150,7 +149,10 @@ function exec([String]$test_name, [String]$cmd, [String]$expected) {
 
 function connect_server([String]$svr, [String]$usr, [String]$pwd) {
     log_info ("connecting to server '{0}'" -f $svr)
-    $session = Connect-XenServer -Server $svr -UserName $usr -Password $pwd -PassThru
+    
+    # Trust all certificates. This is for test purposes only.
+    # DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
+    $session = Connect-XenServer -Server $svr -UserName $usr -Password $pwd -PassThru -NoWarnCertificates -NoWarnNewCertificates
 
     if ($null -eq $session) {
         return $false
