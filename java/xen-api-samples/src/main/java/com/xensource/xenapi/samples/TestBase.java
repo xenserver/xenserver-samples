@@ -202,13 +202,13 @@ public abstract class TestBase {
     }
 
     /**
-     * Checks whether the master has hvm capabilities.
+     * Checks whether the coordinator has hvm capabilities.
      */
-    protected void checkMasterHvmCapable() throws Exception {
-        log("checking master has hvm capabilities...");
+    protected void checkCoordinatorHvmCapable() throws Exception {
+        log("Checking coordinator has hvm capabilities...");
         Pool pool = (Pool) Pool.getAll(connection).toArray()[0];
-        Host master = pool.getMaster(connection);
-        Set<String> capabilities = master.getCapabilities(connection);
+        Host coordinator = pool.getMaster(connection);
+        Set<String> capabilities = coordinator.getCapabilities(connection);
 
         boolean hvmCapable = false;
         for (String s : capabilities)
@@ -218,6 +218,6 @@ public abstract class TestBase {
             }
 
         if (!hvmCapable)
-            throw new Exception("Master has no hvm capabilities!");
+            throw new Exception("Coordinator has no hvm capabilities!");
     }
 }
