@@ -1,7 +1,11 @@
 # XenServer SDK usage examples
 
 This repository contains sample code for interacting with XenServer using the
-XenServer SDK.
+XenServer SDK. The examples are provided as complete applications or scripts
+which you can run on your server.
+
+Apart from the ready-to-run code, this repository contains also a number of tips
+or walk-throughs that you may find useful when developing products for XenServer.
 
 ## Available languages
 
@@ -17,6 +21,10 @@ the Xenserver SDK:
 The examples are not the same across all the languages, so if you intend to use
 one language, it is advisable to browse the sample code available in the others
 as well.
+
+## Development tips
+
+- An example of how to retrieve and use [XenServer Operational Metrics](misc/using_rrd.md)
 
 ## Contributions
 
