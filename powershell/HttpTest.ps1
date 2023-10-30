@@ -30,7 +30,7 @@
 
 Param([Parameter(Mandatory = $true)][String]$svr,
     [Parameter(Mandatory = $true)][String]$usr,
-    [Parameter(Mandatory = $true)][String]$pwd,
+    [Parameter(Mandatory = $true)][String]$passwd,
     [Parameter(Mandatory = $true)][String]$patchPath)
 
 ### Connect to a server
@@ -39,7 +39,7 @@ Param([Parameter(Mandatory = $true)][String]$svr,
 
 # Trust all certificates. This is for test purposes only.
 # DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
-Connect-XenServer -Server $svr -UserName $usr -Password $pwd -NoWarnCertificates -NoWarnNewCertificates
+Connect-XenServer -Server $svr -UserName $usr -Password $passwd -NoWarnCertificates -NoWarnNewCertificates
 
 ### Create a VM
 
