@@ -32,7 +32,7 @@
 Param([Parameter(Mandatory = $true)][String]$out_xml,
     [Parameter(Mandatory = $true)][String]$svr,
     [Parameter(Mandatory = $true)][String]$usr,
-    [Parameter(Mandatory = $true)][String]$pwd,
+    [Parameter(Mandatory = $true)][String]$passwd,
     [Parameter(Mandatory = $true)][String]$sr_svr,
     [Parameter(Mandatory = $true)][String]$sr_path)
 
@@ -147,12 +147,12 @@ function exec([String]$test_name, [String]$cmd, [String]$expected) {
 
 # Connect Functions
 
-function connect_server([String]$svr, [String]$usr, [String]$pwd) {
+function connect_server([String]$svr, [String]$usr, [String]$passwd) {
     log_info ("connecting to server '{0}'" -f $svr)
-    
+
     # Trust all certificates. This is for test purposes only.
     # DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
-    $session = Connect-XenServer -Server $svr -UserName $usr -Password $pwd -PassThru -NoWarnCertificates -NoWarnNewCertificates
+    $session = Connect-XenServer -Server $svr -UserName $usr -Password $passwd -PassThru -NoWarnCertificates -NoWarnNewCertificates
 
     if ($null -eq $session) {
         return $false
@@ -370,7 +370,7 @@ function append_random_string_to([String]$toAppend, $length = 10) {
 # Test List
 
 $tests = @(
-    @("Connect Server", "connect_server $svr $usr $pwd", $true),
+    @("Connect Server", "connect_server $svr $usr $passwd", $true),
     @("Create SR", "create_nfs_sr $sr_svr $sr_path PowerShellAutoTestSR", $true),
     @("Install VM", "install_vm PowerShellAutoTestVM PowerShellAutoTestSR", $true),
     @("Start VM", "start_vm PowerShellAutoTestVM", "Running"),
