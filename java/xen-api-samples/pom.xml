@@ -8,7 +8,7 @@
     <packaging>jar</packaging>
     <name>XenServer Java SDK Samples</name>
     <description>Example integrations of XenServer SDK for Java.</description>
-    <url>https://www.citrix.com/community/citrix-developer/citrix-hypervisor-developer</url>
+    <url>https://docs.xenserver.com/en-us/xenserver/8/developer</url>
     <organization>
         <name>Cloud Software Group, Inc.</name>
         <url>https://www.cloud.com</url>
