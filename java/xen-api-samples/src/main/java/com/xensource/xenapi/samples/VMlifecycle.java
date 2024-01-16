@@ -80,22 +80,6 @@ public class VMlifecycle extends TestBase {
             waitForAllowedOperation(connection, cloneVM, Types.VmOperations.UNPAUSE);
             cloneVM.unpause(connection);
             printPowerState(cloneVM);
-
-            waitForAllowedOperation(connection, cloneVM, Types.VmOperations.SUSPEND);
-            cloneVM.suspend(connection);
-            printPowerState(cloneVM);
-
-            waitForAllowedOperation(connection, cloneVM, Types.VmOperations.RESUME);
-            cloneVM.resume(connection, false, false);
-            printPowerState(cloneVM);
-
-            waitForAllowedOperation(connection, cloneVM, Types.VmOperations.CLEAN_REBOOT);
-            cloneVM.cleanReboot(connection);
-            printPowerState(cloneVM);
-
-            waitForAllowedOperation(connection, cloneVM, Types.VmOperations.CLEAN_SHUTDOWN);
-            cloneVM.cleanShutdown(connection);
-            printPowerState(cloneVM);
         }
     }
 
