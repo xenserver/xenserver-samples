@@ -47,6 +47,7 @@ public class AddNetwork extends TestBase {
         Date newDate = new Date();
         networkRecord.nameLabel = "TestNetwork-" + newDate;
         networkRecord.nameDescription = "Created by AddNetwork.java at " + newDate;
+        networkRecord.managed = true;
 
         log("Adding new network: " + networkRecord.nameLabel);
         Network.create(connection, networkRecord);
