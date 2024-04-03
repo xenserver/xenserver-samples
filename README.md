@@ -20,6 +20,7 @@ the Xenserver SDK:
 - [Java](java)
 - [PowerShell](powershell)
 - [Python](python)
+- [Go](go)
 
 The examples are not the same across all the languages, so if you intend to use
 one language, it is advisable to browse the sample code available in the others
