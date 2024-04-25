@@ -25,7 +25,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ifeq ($(CYGWIN), 1)
+
+UNAME_S := $(shell uname -s)
+
+ifeq ($(findstring CYGWIN,$(UNAME_S)),CYGWIN)
 	CYGWIN_LIBXML = -L/bin -lxml2-2
 	CYGWIN_CURL = -L/bin -lcurl-4
 	POS_FLAG = -U__STRICT_ANSI__
