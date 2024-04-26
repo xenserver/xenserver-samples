@@ -11,7 +11,7 @@ import (
 func TestNetworkCreateAndDestroy(t *testing.T) {
 	var networkRecord xenapi.NetworkRecord
 	networkRecord.NameLabel = "Test External Network"
-	networkRecord.NameDescription = fmt.Sprintf("Created network_test.go at %s", time.Now().String())
+	networkRecord.NameDescription = fmt.Sprintf("Created by network_test.go at %s", time.Now().String())
 	networkRecord.Managed = true
 
 	t.Log("Adding new network:", networkRecord.NameLabel)
@@ -67,7 +67,7 @@ func TestNetworkCreateAndDestroy(t *testing.T) {
 		return
 	}
 	if vlanRecord.Tag != 100 {
-		t.Log("Vlan tag not match.")
+		t.Log("Could not match VLAN tag.")
 		t.Fail()
 		return
 	}

@@ -8,7 +8,12 @@ import (
 )
 
 func TestPoolJoinAndEject(t *testing.T) {
-	// Get current Pool
+	if *IP1_FLAG == "" || *USERNAME1_FLAG == "" || *PASSWORD1_FLAG == "" {
+		t.Log("Supporter host ip, username or password is not provided, skipping pool test")
+		t.Fail()
+		return
+	}
+	// get current Pool
 	poolRefs, err := xenapi.Pool.GetAll(session)
 	if err != nil {
 		t.Log(err)
@@ -27,7 +32,7 @@ func TestPoolJoinAndEject(t *testing.T) {
 		return
 	}
 
-	// Create another session
+	// create another session
 	session2 := xenapi.NewSession(&xenapi.ClientOpts{
 		URL: "http://" + *IP1_FLAG,
 	})
@@ -87,7 +92,7 @@ func TestPoolJoinAndEject(t *testing.T) {
 		}
 	}
 
-	// Join the host to pool
+	// add the host to the pool
 	_, err = xenapi.Pool.AsyncJoin(session2, *IP_FLAG, *USERNAME_FLAG, *PASSWORD_FLAG)
 	if err != nil {
 		t.Log(err)
@@ -107,15 +112,15 @@ func TestPoolJoinAndEject(t *testing.T) {
 		t.Fail()
 		return
 	}
-	var hostRefSlave xenapi.HostRef
+	var hostRefSupporter xenapi.HostRef
 	for _, hostRef := range hostRefs {
 		if hostRef != poolRecord.Master {
-			hostRefSlave = hostRef
+			hostRefSupporter = hostRef
 		}
 	}
 
-	// Eject host of the pool
-	taskRef, err := xenapi.Pool.AsyncEject(session, hostRefSlave)
+	// eject the host from the pool
+	taskRef, err := xenapi.Pool.AsyncEject(session, hostRefSupporter)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -134,7 +139,7 @@ func TestPoolJoinAndEject(t *testing.T) {
 		return
 	}
 	if len(hostRefs) != 1 {
-		t.Log("Pool eject failed")
+		t.Log("Host eject failed")
 		t.Fail()
 		return
 	}

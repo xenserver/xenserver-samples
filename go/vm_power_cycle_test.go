@@ -76,7 +76,7 @@ func TestVMPowercycle(t *testing.T) {
 	}
 	t.Log("VM Power State: ", powerState)
 
-	// here we need to delay for a bit until the suspend feauture is written
+	// here we need to delay for a bit until the suspend feature is written
 	// in the guest metrics; this check should be enough for most guests;
 	// let's try a certain number of times with sleeps of a few seconds inbetween
 	max := 20

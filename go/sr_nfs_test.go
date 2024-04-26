@@ -11,7 +11,7 @@ import (
 
 func TestNFSSRCreateAndDestroy(t *testing.T) {
 	if *NFS_SERVER_FLAG == "" || *NFS_PATH_FLAG == "" {
-		t.Log("Nfs server and path were not provided, skipping NFS SR test")
+		t.Log("NFS server or path is not provided, skipping NFS SR test")
 		t.Fail()
 		return
 	}

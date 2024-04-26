@@ -2,7 +2,6 @@ package testGoSDK
 
 import (
 	"flag"
-	"log"
 	"os"
 	"testing"
 
@@ -25,7 +24,7 @@ func TestLogin(t *testing.T) {
 	session = xenapi.NewSession(&xenapi.ClientOpts{
 		URL: "http://" + *IP_FLAG,
 		Headers: map[string]string{
-			"User-Agent": "XS Go SDK v24.3.0",
+			"User-Agent": "XS SDK for Go - Examples v1.0",
 		},
 	})
 	_, err := session.LoginWithPassword(*USERNAME_FLAG, *PASSWORD_FLAG, "1.0", "Go sdk samples")
@@ -41,9 +40,10 @@ func TestLogin(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	exitVal := m.Run()
+	var t *testing.T
 	err := session.Logout()
 	if err != nil {
-		log.Fatal(err)
+		t.Log(err)
 	}
 	os.Exit(exitVal)
 }

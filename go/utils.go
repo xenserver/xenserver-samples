@@ -23,7 +23,7 @@ func GetFirstTemplate(templateName string) (xenapi.VMRef, string, error) {
 	return "", "", fmt.Errorf("No Windows VM template found.")
 }
 
-func GetStorge() (xenapi.SRRef, error) {
+func GetStorage() (xenapi.SRRef, error) {
 	pools, err := xenapi.Pool.GetAll(session)
 	if err != nil {
 		return "", err

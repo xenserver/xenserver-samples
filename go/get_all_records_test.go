@@ -270,13 +270,6 @@ func TestGetAllRecords(t *testing.T) {
 		t.Fail()
 		return
 	}
-	// XAPI Message Removed
-	// _, err = xenapi.VBDMetrics.GetAllRecords(session)
-	// if err != nil {
-	// 	t.Log(err)
-	// 	t.Fail()
-	// 	return
-	// }
 	_, err = xenapi.VBD.GetAllRecords(session)
 	if err != nil {
 		t.Log(err)
@@ -301,13 +294,6 @@ func TestGetAllRecords(t *testing.T) {
 		t.Fail()
 		return
 	}
-	// XAPI Message Removed
-	// _, err = xenapi.VIFMetrics.GetAllRecords(session)
-	// if err != nil {
-	// 	t.Log(err)
-	// 	t.Fail()
-	// 	return
-	// }
 	_, err = xenapi.VIF.GetAllRecords(session)
 	if err != nil {
 		t.Log(err)
@@ -344,13 +330,6 @@ func TestGetAllRecords(t *testing.T) {
 		t.Fail()
 		return
 	}
-	// XAPI Message Removed
-	// _, err = xenapi.VMPP.GetAllRecords(session)
-	// if err != nil {
-	// 	t.Log(err)
-	// 	t.Fail()
-	// 	return
-	// }
 	_, err = xenapi.VMSS.GetAllRecords(session)
 	if err != nil {
 		t.Log(err)

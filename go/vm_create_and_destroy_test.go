@@ -36,7 +36,7 @@ func TestVMCreateAndDestory(t *testing.T) {
 	t.Log("New VM clone:", vmRecord.NameLabel)
 
 	// Find a storage repository
-	srRef, err := GetStorge()
+	srRef, err := GetStorage()
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -194,7 +194,7 @@ func TestVMAsyncCreateAndDestory(t *testing.T) {
 	t.Log("New VM clone:", vmRecord.NameLabel)
 
 	// Find a storage repository
-	srRef, err := GetStorge()
+	srRef, err := GetStorage()
 	if err != nil {
 		t.Log(err)
 		t.Fail()

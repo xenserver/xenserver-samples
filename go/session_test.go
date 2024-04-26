@@ -8,7 +8,7 @@ import (
 
 func TestHTTPSConnection(t *testing.T) {
 	if *CA_CERT_PATH_FLAG == "" {
-		t.Log("CA certificate is not provided, skipping https connetcion test")
+		t.Log("CA certificate is not provided, skipping https connection test")
 		t.Fail()
 		return
 	}
@@ -33,7 +33,7 @@ func TestHTTPSConnection(t *testing.T) {
 
 	// Test HTTPS connection with server certificate verification
 	if session.APIVersion >= xenapi.APIVersion2_21 {
-		/* the the CA cert in yangtze server missing fields which will cause x509 error:
+		/* the CA cert in yangtze servers is missing fields, which will cause x509 error:
 		   "cannot validate certificate for x.x.x.x because it doesn't contain any IP SANs"
 		   skip this test case.
 		*/ 
