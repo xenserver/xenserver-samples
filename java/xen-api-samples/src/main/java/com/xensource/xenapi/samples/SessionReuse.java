@@ -78,7 +78,7 @@ public class SessionReuse extends TestBase {
 
                     String token = "";
 
-                    EventBatch eventBatch = Event.from(connection, eventTypes, token, TIMEOUT_SEC);
+                    EventBatch eventBatch = Event.from(connection1, eventTypes, token, TIMEOUT_SEC);
 
                     if (threadExit) {
                         // We took too long to get the event, and the test will already have failed.
