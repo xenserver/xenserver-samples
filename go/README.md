@@ -22,12 +22,12 @@ The following simple examples are included in this repository:
 -  `sr_test`: Performs various base SR tests, including creating
     a dummy SR.
 
--  `vm_create_and_destroy_test`: Create and destroy a VM on the default SR with a network and DVD drive. Repeat using asyncrhonous calls.
+-  `vm_create_and_destroy_test`: Create and destroy a VM on the default SR with a network and DVD drive. Repeat using asynchronous calls.
 
 -  `vm_power_cycle_test`: Takes a VM through the various lifecycle states. Requires a 
     shutdown VM with tools installed.
 
--  `vm_snapshot_test`: Create, revert and destroy VM snapshot. Repeat using asyncrhonous calls.
+-  `vm_snapshot_test`: Create, revert and destroy VM snapshot. Repeat using asynchronous calls.
 
 
 ## Dependencies
