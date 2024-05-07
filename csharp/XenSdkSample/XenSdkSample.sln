@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34723.18
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XenSdkSample", "XenSdkSample.csproj", "{869DC514-BCC0-42D7-BFA7-077005B23107}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XenSdkSample", "XenSdkSample.csproj", "{869DC514-BCC0-42D7-BFA7-077005B23107}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {184EE94F-6C5D-4ABB-A6DA-A47A8540478D}
 	EndGlobalSection
 EndGlobal
