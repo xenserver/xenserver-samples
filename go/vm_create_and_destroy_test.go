@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	xenapi "github.com/xenserver/xenserver-samples/go/goSDK"
+	"xenapi"
 )
 
 var NEW_VM_NAME = "GoSDK-TestVM"

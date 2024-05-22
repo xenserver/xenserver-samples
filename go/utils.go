@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	xenapi "github.com/xenserver/xenserver-samples/go/goSDK"
+	"xenapi"
 )
 
 func GetFirstTemplate(templateName string) (xenapi.VMRef, string, error) {
@@ -14,13 +14,13 @@ func GetFirstTemplate(templateName string) (xenapi.VMRef, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	// Get the first Windows VM template
+	// Get the first VM template
 	for ref, record := range records {
 		if record.IsATemplate && strings.Contains(record.NameLabel, templateName) {
 			return ref, record.NameLabel, nil
 		}
 	}
-	return "", "", fmt.Errorf("No Windows VM template found.")
+	return "", "", fmt.Errorf("No VM template found.")
 }
 
 func GetStorage() (xenapi.SRRef, error) {
@@ -154,6 +154,28 @@ func WaitForTask(taskRef xenapi.TaskRef, delay int) error {
 		}
 
 		time.Sleep(time.Duration(delay) * time.Second)
+	}
+	return nil
+}
+
+func WaitForSRReady(srRef xenapi.SRRef) error {
+	token := ""
+	maxTries := 3
+	eventTypes := []string{"PBD"}
+	for i := 0; i < maxTries; i++ {
+		eventBatch, err := xenapi.Event.From(session, eventTypes, token, 10.0)
+		if err != nil {
+			return err
+		}
+		token = eventBatch.Token
+		for _, event := range eventBatch.Events {
+			if event.Class == "pbd"  {
+				pbdRecord := event.Snapshot.(map[string]interface{})
+			    if pbdRecord["SR"].(string) == string(srRef) && pbdRecord["currently_attached"].(bool) == true {
+					return nil
+				}
+			}
+		}
 	}
 	return nil
 }

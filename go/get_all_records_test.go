@@ -3,7 +3,7 @@ package testGoSDK
 import (
 	"testing"
 
-	xenapi "github.com/xenserver/xenserver-samples/go/goSDK"
+	"xenapi"
 )
 
 func TestGetAllRecords(t *testing.T) {

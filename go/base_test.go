@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	xenapi "github.com/xenserver/xenserver-samples/go/goSDK"
+	"xenapi"
 )
 
 var IP_FLAG = flag.String("ip", "", "the URL of the form https://ip[:port] pointing at the server")

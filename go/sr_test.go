@@ -2,9 +2,9 @@ package testGoSDK
 
 import (
 	"testing"
-
 	"github.com/google/uuid"
-	xenapi "github.com/xenserver/xenserver-samples/go/goSDK"
+
+	"xenapi"
 )
 
 func TestSRBase(t *testing.T) {
@@ -22,7 +22,13 @@ func TestSRBase(t *testing.T) {
 		t.Fail()
 		return
 	}
-	_, err = xenapi.SR.Create(session, hostRefs[0], deviceConfig, testSRSize, testSRName, testSRDesc, testSRType, testSRContent, true, smConfig)
+	srRefNew, err := xenapi.SR.Create(session, hostRefs[0], deviceConfig, testSRSize, testSRName, testSRDesc, testSRType, testSRContent, true, smConfig)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+	err = WaitForSRReady(srRefNew)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -34,7 +40,7 @@ func TestSRBase(t *testing.T) {
 		t.Fail()
 		return
 	}
-	err = WaitForTask(taskRef, 1)
+	err = WaitForTask(taskRef, 5)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -47,20 +53,20 @@ func TestSRBase(t *testing.T) {
 		return
 	}
 	for _, srRef := range srRefs {
-		pbdRefs, err := xenapi.PBD.GetAll(session)
+		pbdRefs, err := xenapi.SR.GetPBDs(session, srRef)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 			return
 		}
 		for _, pbdRef := range pbdRefs {
-			pbdSRRef, err := xenapi.PBD.GetSR(session, pbdRef)
+			pbdRecord, err := xenapi.PBD.GetRecord(session, pbdRef)
 			if err != nil {
 				t.Log(err)
 				t.Fail()
 				return
 			}
-			if srRef == pbdSRRef {
+			if pbdRecord.CurrentlyAttached {
 				err = xenapi.PBD.Unplug(session, pbdRef)
 				if err != nil {
 					t.Log(err)
