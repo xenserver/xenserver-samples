@@ -29,7 +29,7 @@ func TestNFSSRCreateAndDestroy(t *testing.T) {
 		t.Fail()
 		return
 	}
-	t.Log("Get host :", hostName)
+	t.Log("Got host :", hostName)
 
 	// Create config parameter for shared storage on nfs server
 	var deviceConfig = make(map[string]string)
@@ -46,7 +46,7 @@ func TestNFSSRCreateAndDestroy(t *testing.T) {
 		t.Fail()
 		return
 	}
-	err = WaitForSRReady(srRefNew)
+	err = WaitForSRReady(session, srRefNew)
 	if err != nil {
 		t.Log(err)
 		t.Fail()

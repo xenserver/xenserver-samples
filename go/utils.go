@@ -158,10 +158,26 @@ func WaitForTask(taskRef xenapi.TaskRef, delay int) error {
 	return nil
 }
 
-func WaitForSRReady(srRef xenapi.SRRef) error {
+func WaitForSRReady(session *xenapi.Session, srRefNew xenapi.SRRef) error {
+	IsSRCreated := func(event xenapi.EventRecord) bool {
+		if event.Class == "pbd"  {
+			pbdRecord := event.Snapshot.(map[string]interface{})
+			if pbdRecord["SR"].(string) == string(srRefNew) && pbdRecord["currently_attached"].(bool) {
+				return true
+			}
+		}
+		return false
+	}
+	err := WaitUntil(session, []string{"PBD"}, IsSRCreated)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func WaitUntil(session *xenapi.Session, eventTypes []string, fn func(xenapi.EventRecord) bool) error {
 	token := ""
 	maxTries := 3
-	eventTypes := []string{"PBD"}
 	for i := 0; i < maxTries; i++ {
 		eventBatch, err := xenapi.Event.From(session, eventTypes, token, 10.0)
 		if err != nil {
@@ -169,13 +185,11 @@ func WaitForSRReady(srRef xenapi.SRRef) error {
 		}
 		token = eventBatch.Token
 		for _, event := range eventBatch.Events {
-			if event.Class == "pbd"  {
-				pbdRecord := event.Snapshot.(map[string]interface{})
-			    if pbdRecord["SR"].(string) == string(srRef) && pbdRecord["currently_attached"].(bool) == true {
-					return nil
-				}
+			if fn(event) {
+				return nil
 			}
 		}
+		time.Sleep(time.Duration(5) * time.Second)
 	}
-	return nil
+	return fmt.Errorf("Cannot find an expected event.")
 }

@@ -28,7 +28,7 @@ func TestSRBase(t *testing.T) {
 		t.Fail()
 		return
 	}
-	err = WaitForSRReady(srRefNew)
+	err = WaitForSRReady(session, srRefNew)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
