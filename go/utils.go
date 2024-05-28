@@ -168,11 +168,7 @@ func WaitForSRReady(session *xenapi.Session, srRefNew xenapi.SRRef) error {
 		}
 		return false
 	}
-	err := WaitUntil(session, []string{"PBD"}, IsSRCreated)
-	if err != nil {
-		return err
-	}
-	return nil
+	return WaitUntil(session, []string{"PBD"}, IsSRCreated)
 }
 
 func WaitUntil(session *xenapi.Session, eventTypes []string, fn func(xenapi.EventRecord) bool) error {
