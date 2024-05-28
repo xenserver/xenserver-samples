@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	xenapi "github.com/xenserver/xenserver-samples/go/goSDK"
+	"xenapi"
 )
 
 func TestNFSSRCreateAndDestroy(t *testing.T) {
@@ -38,9 +38,15 @@ func TestNFSSRCreateAndDestroy(t *testing.T) {
 
 	t.Log("Creating a shared storage SR ...")
 	var srRefNew xenapi.SRRef
-	srRefNew, err = xenapi.SR.Create(session, hostRefs[0], deviceConfig, 100000, "NFS SR created by sr_test.go",
+	srRefNew, err = xenapi.SR.Create(session, hostRefs[0], deviceConfig, 100000, "NFS SR created by sr_nfs_test.go",
 		fmt.Sprintf("[%s:%s] Created at %s", *NFS_SERVER_FLAG, *NFS_PATH_FLAG, time.Now().String()), "nfs", "unused",
 		true, make(map[string]string))
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+	err = WaitForSRReady(session, srRefNew)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -54,22 +60,27 @@ func TestNFSSRCreateAndDestroy(t *testing.T) {
 		return
 	}
 
-	t.Log("Now unplugging any PBDs")
-	pbdRefs, err := xenapi.PBD.GetAll(session)
+	t.Log("Now unplugging PBDs")
+	pbdRefs, err := xenapi.SR.GetPBDs(session, srRefNew)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 		return
 	}
 	for _, pbdRef := range pbdRefs {
-		srRef, err := xenapi.PBD.GetSR(session, pbdRef)
+		pbdRecord, err := xenapi.PBD.GetRecord(session, pbdRef)
 		if err != nil {
 			t.Log(err)
 			t.Fail()
 			return
 		}
-		if srRef == srRefNew {
+		if pbdRecord.CurrentlyAttached {
 			err = xenapi.PBD.Unplug(session, pbdRef)
+			if err != nil {
+				t.Log(err)
+				t.Fail()
+				return
+			}
 		}
 	}
 

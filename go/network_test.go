@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	xenapi "github.com/xenserver/xenserver-samples/go/goSDK"
+	"xenapi"
 )
 
 func TestNetworkCreateAndDestroy(t *testing.T) {
