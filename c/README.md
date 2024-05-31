@@ -37,10 +37,6 @@ different network layer if you prefer.
 
 Once you have installed libxenserver, run `make` in this folder.
 
-To build on Windows with [cygwin](https://www.cygwin.com) run `make CYGWIN=1`.
-(Remember that cygwin expects a libxenserver.dll, so ensure you have installed
-the library by running `make install CYGWIN=1`).
-
 To run any of the tests, for example the `test_vm_ops`, type:
 
 ```
