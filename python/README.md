@@ -4,6 +4,11 @@
 
 The following Python examples are included in this repository:
 
+- `exportimport.py` — Demonstrate how to
+  - export raw disk images
+  - import raw disk images
+  - connect an export to an import to copy a raw disk image
+
 -  `fixpbds.py` - reconfigures the settings used to access shared storage.
 
 -  `install.py` - installs a Debian VM, connects it to a network, starts it up and 
