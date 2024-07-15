@@ -10,11 +10,13 @@ properties([
     ]
 ])
 
+def SDK_URL = "master/24.18.0/1.xs8/71/"
+
 def builder = null
 def globals = globals()
 
 try {
-    builder = new Build(globals)
+    builder = new Build(globals, SDK_URL)
     runPipeline(builder)
     currentBuild.result = 'SUCCESS'
 }
