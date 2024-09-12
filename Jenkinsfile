@@ -10,7 +10,7 @@ properties([
     ]
 ])
 
-def SDK_URL = "master/24.18.0/1.xs8/71/"
+def SDK_URL = "master/24.28.0/1.xs8/74/"
 
 def builder = null
 def globals = globals()
