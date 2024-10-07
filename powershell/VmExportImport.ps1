@@ -28,14 +28,17 @@
 #
 
 
-Param([Parameter(Mandatory = $true)][String]$svr,
+Param(
+    [Parameter(Mandatory = $true)][String]$svr,
     [Parameter(Mandatory = $true)][String]$usr,
-    [Parameter(Mandatory = $true)][String]$passwd,
-    [Parameter(Mandatory = $true)][String]$patchPath)
+    [Parameter(Mandatory = $true)][String]$passwd
+)
 
-### Connect to a server
+# Main program
 
 Import-Module XenServerPSModule
+
+# Connect to a server
 
 [Net.ServicePointManager]::SecurityProtocol = 'tls,tls11,tls12'
 
@@ -43,26 +46,54 @@ Import-Module XenServerPSModule
 # DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
 Connect-XenServer -Server $svr -UserName $usr -Password $passwd -NoWarnCertificates -NoWarnNewCertificates
 
-try{
-    ### Upload a patch
+try {
+    # Create a VM
 
-    $trackProgress = [XenAPI.HTTP+UpdateProgressDelegate] {
-        param($percent);
-        Write-Progress -Activity "Uploading patch..." -PercentComplete $percent }
+    $template = @(Get-XenVM -Name 'Debian *' | Where-Object { $_.is_a_template })[0]
 
-    Send-XenPoolPatch -XenHost $svr -Path $patchPath -DataCopiedDelegate $trackProgress
+    Invoke-XenVM -VM $template -XenAction Clone -NewName "testVM" -Async -PassThru |`
+        Wait-XenTask -ShowProgress
 
-    ### Get host RRDs
+    $vm = Get-XenVM -Name "testVM"
+
+    $sr = Get-XenSR -Ref (Get-XenPool).default_SR
+    if ($null -eq $sr) {
+        throw "This pool has no default SR."
+    }
+
+    $other_config = $vm.other_config
+    $other_config["disks"] = $other_config["disks"].Replace('sr=""', 'sr="{0}"' -f $sr.uuid)
+
+    New-XenVBD -VM $vm -VDI $null -Userdevice 3 -Bootable $false -Mode RO `
+        -Type CD -Unpluggable $true -Empty $true -OtherConfig @{ } `
+        -QosAlgorithmType "" -QosAlgorithmParams @{ }
+
+    Set-XenVM -VM $vm -OtherConfig $other_config
+    Invoke-XenVM -VM $vm -XenAction Provision -Async -PassThru | Wait-XenTask -ShowProgress
+
+    # Export the VMs using the DataCopiedDelegate parameter to track bytes received
+
+    $path = Join-Path -Path $env:TEMP -ChildPath "testVM.xva"
 
     $trackDataReceived = [XenAPI.HTTP+DataCopiedDelegate] {
         param($bytes);
         Write-Host "Bytes received: $bytes"
     }
 
-    $path = $env:TEMP + "\rrd.xml"
-    Receive-XenHostRrd -XenHost $svr -Path $path -DataCopiedDelegate $trackDataReceived
+    Export-XenVm -XenHost $svr -Uuid $vm.uuid -Path $path -DataCopiedDelegate $trackDataReceived
+
+    Remove-XenVM -VM $vm
+
+    # Import the previously exported VMs using the ProgressDelegate parameter to track send progress
+
+    $trackProgress = [XenAPI.HTTP+UpdateProgressDelegate] {
+        param($percent);
+        Write-Progress -Activity "Importing VM..." -PercentComplete $percent
+    }
+
+    Import-XenVm -XenHost $svr -Path $path -ProgressDelegate $trackProgress
 }
-finally{
-    ### Disconnect before finishing
+finally {
+    # Disconnect before finishing
     Get-XenSession | Disconnect-XenServer
 }
