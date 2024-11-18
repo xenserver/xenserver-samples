@@ -197,12 +197,20 @@ try {
     $theFormat = @"
 Server {0}:
     Updates: {1}
-    Recommended guidance: {2}
+    Mandatory guidance: {2}
+    Recommended guidance: {3}
+    Full guidance: {4}
 "@
 
     foreach ($hostUpdateInfo in $cdnUpdates.hosts) {
         $h = $allHosts | Where-Object { $_.opaque_ref -eq $hostUpdateInfo.ref } | Select-Object -First 1
-        [string]::Format($theFormat, $h.name_label, ($hostUpdateInfo.updates -join ", "), ($hostUpdateInfo.recommended_guidance -join ", "))
+        [string]::Format($theFormat,
+            $h.name_label,
+            ($hostUpdateInfo.updates -join ", "),
+            ($hostUpdateInfo.guidance.mandatory -join ", "),
+            ($hostUpdateInfo.guidance.recommended -join ", "),
+            ($hostUpdateInfo.guidance.full -join ", ")
+        )
     }
 
     $cdnUpdates.updates | ForEach-Object { Write-Host $_.id '***' $_.summary '***' $_.'special-info'}
