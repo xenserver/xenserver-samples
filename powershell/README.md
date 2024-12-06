@@ -10,6 +10,11 @@
     available updates and post-update tasks, and apply these updates on the
     pool's servers.
 
+- [UpdatesOffline.ps1](UpdatesOffline.ps1): Shows how to configure an air-gapped
+    pool running XenServer 8 (or greater) for upload and installation of update
+    bundles, view available updates and post-update tasks, and apply these updates
+    on the pool's servers.
+
 - [VmExportImport.ps1](VmExportImport.ps1): Shows how to log in to a host, create
     a VM, and export it to an .XVA package on the local machine. Then, import
     a VM from a locally stored .XVA package.
