@@ -3,7 +3,6 @@ List of maintainers
 
 * Bengang Yuan <bengang.yuan@cloud.com>
 * Chris Lancaster <chris.lancaster@cloud.com>
-* Danilo Del Busso <danilo.delbusso@cloud.com>
 * Elijah Sadorra <elijah.sadorra@cloud.com>
 * Konstantina Chremmou <konstantina.chremmou@cloud.com>
 * Sola Zhang <sola.zhang@cloud.com>

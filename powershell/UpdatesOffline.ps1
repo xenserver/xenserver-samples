@@ -31,61 +31,47 @@ Param (
     [string]$Server,
     [string]$Username,
     [string]$Passwd,
-    [ValidateSet("EarlyAccess", "Normal")][string]$Channel
+    [string]$BundlePath
 )
 
-# Update channel URL prefixes
-$binRepoPrefix = "https://repo.ops.xenserver.com/xs8"
-$srcRepoPrefix = "https://repo-src.ops.xenserver.com/xs8"
+#Initial setup
+$Eap = $ErrorActionPreference
+$Ep = $ErrorPreference
+$ErrorActionPreference = "Stop"
+$ErrorPreference = "Continue"
+#End of initial setup
 
-enum RepoType { Base; EarlyAccess; Normal }
+enum RepoType { Offline }
 
 function Get-RepoKey([RepoType]$RepoType) {
     switch ($RepoType) {
-        Base { "base_repo" }
-        EarlyAccess { "early_access_repo" }
-        Normal { "normal_repo" }
+        Offline { "offline_repo" }
     }
 }
 
 function Get-RepoDescription([RepoType]$RepoType) {
     switch ($RepoType) {
-        Base { "Base" }
-        EarlyAccess { "Early Access" }
-        Normal { "Normal" }
+        Offline { "Offline" }
     }
-}
-
-function Get-BinUrl([RepoType]$RepoType) {
-    "$binRepoPrefix/$RepoType".ToLower()
-}
-
-function Get-SourceUrl([RepoType]$RepoType) {
-    "$srcRepoPrefix/$RepoType".ToLower()
 }
 
 <#
 .SYNOPSIS
-    Configure the pool to use the specified update channel (Early Access or Normal)
+    Configures the pool for upload and installtion of bundle files (switch to the Offline channel)
 #>
-function Set-UpdateChannel {
+function Set-OfflineChannel {
     param(
-        [XenAPI.Pool]$Pool,
-
-        [ValidateSet("EarlyAccess", "Normal")]
-        [RepoType]$RepoType
+        [XenAPI.Pool]$Pool
     )
 
-    $key = Get-RepoKey $RepoType
-    $descr = Get-RepoDescription $RepoType
-    $binUrl = Get-BinUrl $RepoType
-    $srcUrl = Get-SourceUrl $RepoType
+    $key = Get-RepoKey Offline
+    $descr = Get-RepoDescription Offline
 
     $oldEnabledRepos = $Pool.repositories | Get-XenRepository
-    $updateRepo = $oldEnabledRepos | Where-Object { ($_.name_label -eq $key) -or ($_.binary_url -eq $binUrl) }
+    $offlineRepo = $oldEnabledRepos | Where-Object { $_.name_label -eq $key }
 
-    if ($null -ne $updateRepo) {
-        Write-Host "Update channel" $updateRepo.name_description "is already enabled"
+    if ($null -ne $offlineRepo) {
+        Write-Host "You have already switched to the Offline channel"
         return
     }
 
@@ -94,42 +80,37 @@ function Set-UpdateChannel {
         Remove-XenPoolProperty -Pool $Pool -Repository $rep
     }
 
-    $updateRepo = Get-XenRepository |`
-        Where-Object { ($_.name_label -eq $key) -or ($_.binary_url -eq $binUrl) } |`
+    $offlineRepo = Get-XenRepository |`
+        Where-Object { $_.name_label -eq $key } |`
         Select-Object -First 1
 
-    if ($null -eq $updateRepo) {
-        $baseKey = Get-RepoKey Base
-        $baseDescr = Get-RepoDescription Base
-        $baseBinUrl = Get-BinUrl Base
-        $baseSrcUrl = Get-SourceUrl Base
-
-        $baseRepo = Get-XenRepository |`
-            Where-Object { ($_.name_label -eq $baseKey) -or ($_.binary_url -eq $binUrl) } |`
-            Select-Object -First 1
-
-        if ($null -eq $baseRepo) {
-            Write-Host "Introducing update channel" $baseDescr
-            Invoke-XenRepository -XenAction Introduce -Name "dummy" -BinaryUrl $baseBinUrl -SourceUrl $baseSrcUrl `
-                -NameLabel $baseKey -NameDescription $baseDescr -Update $false -GpgkeyPath ""
-        }
-
-        Write-Host "Introducing update channel" $descr
-        $updateRepo = Invoke-XenRepository -XenAction Introduce -Name "dummy" -BinaryUrl $binUrl -SourceUrl $srcUrl `
-            -NameLabel $key -NameDescription $descr -Update $true -GpgkeyPath "" -PassThru
+    if ($null -eq $offlineRepo) {
+        Write-Host "Introducing offline channel" $descr
+        $offlineRepo = Invoke-XenRepository -XenAction IntroduceBundle -Name "dummy" `
+            -NameLabel $key -NameDescription $descr -PassThru
     }
 
-    Write-Host "Enabling update channel" $updateRepo.name_description
-    Add-XenPool -Pool $Pool -Repository $updateRepo.opaque_ref
+    Write-Host "Enabling channel" $offlineRepo.name_description
+    Add-XenPool -Pool $Pool -Repository $offlineRepo.opaque_ref
 }
 
 <#
 .SYNOPSIS
-    Synchronizes the pool with the configured update channel
+    Uploads an update bundle file (extension .xsbundle) to the pool
 #>
-function Sync-UpdateChannel([XenAPI.Pool]$Pool) {
-    Write-Host "Synchronising with the update channel"
-    Invoke-XenPool -Pool $Pool -XenAction SyncUpdates -Async -PassThru | Wait-XenTask -PassThru
+function Send-Bundle([XenAPI.Host]$Coordinator, [string]$BundleFile) {
+    $fileItem = Get-Item $BundleFile
+    if (".xsbundle" -ne $fileItem.Extension.ToLower()){
+        Write-Error "$BundleFile is not a valid update bundle file"
+    }
+
+    $task = New-XenTask -PassThru -Label "MyBundleUploadTask"
+
+    Write-Host "Uploading $BundleFile to the pool"
+    Send-XenBundle -XenHost $Coordinator.address -Path $BundleFile -TaskRef $task.opaque_ref
+
+    Write-Host "Extracting update bundle and retrieving available updates..."
+    $task | Wait-XenTask -ShowProgress
 }
 
 <#
@@ -142,7 +123,7 @@ function Get-Updates([XenAPI.Host]$Coordinator) {
 
     Write-Host "Downloading update list"
     Receive-XenUpdates -XenHost $Coordinator.address -Path $jsonPath -TaskRef $task.opaque_ref
-    $task | Wait-XenTask
+    $task | Wait-XenTask -ShowProgress
     Get-Content -Raw -Path $jsonPath | ConvertFrom-Json
 }
 
@@ -155,7 +136,7 @@ function Install-Updates([XenAPI.Host]$XenHost, [String]$Hash) {
     Invoke-XenHost -XenHost $XenHost -XenAction Disable
 
     Write-Host "Applying updates on host" $XenHost.name_label
-    Invoke-XenHost -XenHost $XenHost -xenaction ApplyUpdates -Hash $Hash -Async -PassThru | Wait-XenTask
+    Invoke-XenHost -XenHost $XenHost -xenaction ApplyUpdates -Hash $Hash -Async -PassThru | Wait-XenTask -ShowProgress
 
     Write-Host "Enabling host" $XenHost.name_label
     Invoke-XenHost -XenHost $XenHost -XenAction Enable
@@ -174,16 +155,16 @@ try {
 
     $pool = Get-XenPool
 
-    #configure the update channel
-    Set-UpdateChannel -Pool $pool -RepoType ([RepoType]$Channel)
-
-    #synchronise with the configured update channel
-    $syncHash = Sync-UpdateChannel -Pool $pool
+    #configure the Offline channel
+    Set-OfflineChannel -Pool $pool
 
     #collect the hosts to update
     $allHosts = Get-XenHost
     $coordinator = $allHosts | Where-Object { $_.opaque_ref -eq $pool.master.opaque_ref } | Select-Object -First 1
     $supporters = $allHosts | Where-Object { $_.opaque_ref -ne $pool.master.opaque_ref }
+
+    #upload the update bundle file to the pool
+    Send-Bundle -Coordinator $coordinator -BundleFile $BundlePath
 
     #get list of available updates
     $cdnUpdates = Get-Updates -Coordinator $coordinator
@@ -226,5 +207,7 @@ finally {
     Write-Host "Disconnecting all sessions"
     Get-XenSession | Disconnect-XenServer
 
+    $ErrorActionPreference = $Eap
+    $ErrorPreference = $Ep
     Remove-Module XenServerPSModule
 }
