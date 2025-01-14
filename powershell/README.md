@@ -5,6 +5,10 @@
 - [AutomatedTestCore.ps1](AutomatedTestCore.ps1): Shows how to log in to a host,
   create a storage repository and a VM, and perform various powercycle operations.
 
+- [SmartConnect.ps1](SmartConnect.ps1): Shows how to handle the error when
+    attempting to connect to a supporter server, identify the pool coordinator,
+    and connect to it instead.
+
 - [Updates.ps1](Updates.ps1): Shows how to configure a pool running XenServer 8
     (or greater) to synchronize with a Continuous Delivery Channel (CDN), view
     available updates and post-update tasks, and apply these updates on the
