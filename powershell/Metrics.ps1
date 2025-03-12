@@ -30,8 +30,7 @@
 
 Param([Parameter(Mandatory = $true)][String]$svr,
     [Parameter(Mandatory = $true)][String]$usr,
-    [Parameter(Mandatory = $true)][String]$passwd,
-    [Parameter(Mandatory = $true)][String]$patchPath)
+    [Parameter(Mandatory = $true)][String]$passwd)
 
 ### Connect to a server
 
