@@ -26,5 +26,5 @@
 - [Metrics.ps1](Metrics.ps1): Shows how to log in to a host, and retrieve
     operational metrics.
 
-- [UpdatesLegacy.ps1](UpdatesLegacy.ps1): Shows how to upload an update to a server
-    running Citrix Hypervisor 8.2 CU1.
+- [UpdatesLegacy.ps1](UpdatesLegacy.ps1): Shows how to upload and install an 
+    update to a server running Citrix Hypervisor 8.2 CU1.

@@ -31,7 +31,7 @@
 Param([Parameter(Mandatory = $true)][String]$svr,
     [Parameter(Mandatory = $true)][String]$usr,
     [Parameter(Mandatory = $true)][String]$passwd,
-    [Parameter(Mandatory = $true)][String]$patchPath)
+    [Parameter(Mandatory = $true)][String]$updatePath)
 
 ### Connect to a server
 
@@ -44,15 +44,48 @@ Import-Module XenServerPSModule
 Connect-XenServer -Server $svr -UserName $usr -Password $passwd -NoWarnCertificates -NoWarnNewCertificates
 
 try{
-    ### Upload a patch
+    ### Find the default SR to upload the update
+    $sr = Get-XenPool | Select-Object -ExpandProperty default_SR | Get-XenSR
+
+    ### The update will be uploaded as a raw image, so we need to create the target VDI first
+
+    $file = [System.IO.FileInfo]$updatePath
+
+    $vdiRef = New-XenVDI -ReadOnly $false -SR $sr.opaque_ref -VirtualSize $file.Length `
+        -NameLabel $file.BaseName -NameDescription "temporary disk" `
+        -Sharable $false -Type user -SmConfig @{ "vmhint" = "" } `
+        -OtherConfig @{"supp_pack_iso" = "true"} -Async -PassThru |`
+        Wait-XenTask -ShowProgress -PassThru
+
+    ### Upload the update
 
     $trackProgress = [XenAPI.HTTP+UpdateProgressDelegate] {
         param($percent);
         Write-Progress -Activity "Uploading patch..." -PercentComplete $percent }
 
-    Send-XenPoolPatch -XenHost $svr -Path $patchPath -DataCopiedDelegate $trackProgress
+    Import-XenRawVdi -XenHost $svr -Path $updatePath -ProgressDelegate $trackProgress -Vdi $vdiRef
+
+    $update = Invoke-XenPoolUpdate -XenAction Introduce -Name "dummy" -Vdi $vdiRef -PassThru
+
+    ### Install the update on the pool hosts and display any post-update guidance
+
+    Invoke-XenPoolUpdate -XenAction PoolApply -PoolUpdate $update -Async -PassThru |`
+        Wait-XenTask -ShowProgress
+    
+    Write-Host "Post-update tasks:" ($update.after_apply_guidance -join ", ")
 }
 finally{
+
+    ### Delete the temporary disk
+    try {
+        if ($null -ne $vdiRef) {
+            Remove-XenVdi -Ref $vdiRef
+        }
+    }
+    catch{
+        Write-Warning "Failed to clean up the uploaded update"
+    }
+
     ### Disconnect before finishing
     Get-XenSession | Disconnect-XenServer
 
