@@ -158,7 +158,6 @@ function connect_server([String]$svr, [String]$usr, [String]$passwd) {
         return $false
     }
     return $true
-
 }
 
 function disconnect_server([String]$svr) {
@@ -382,6 +381,8 @@ $tests = @(
 # End Test List
 
 # Main Test Execution
+Import-Module XenServerPSModule
+
 $complete = 0;
 $max = $tests.Count;
 
@@ -427,5 +428,7 @@ $ErrorActionPreference = $Eap
 $VerbosePreference = $Vp
 $WarningPreference = $Wp
 $ErrorPreference = $Ep
+
+Remove-Module XenServerPSModule
 
 # End Main Test Execution
