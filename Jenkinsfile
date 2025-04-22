@@ -1,6 +1,6 @@
 #!groovy
 
-@Library(['PacmanSharedLibrary', "xs-sdk-samples-pipeline@v3.0"])
+@Library(['PacmanSharedLibrary', "xs-sdk-samples-pipeline@private/edvint/net80"])
 import com.xenserver.pipeline.sdksamples.*
 
 properties([
