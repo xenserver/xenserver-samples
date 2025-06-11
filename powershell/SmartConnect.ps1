@@ -42,7 +42,9 @@ Import-Module XenServerPSModule
 [Net.ServicePointManager]::SecurityProtocol = 'tls,tls11,tls12'
 
 try {
-    Connect-XenServer -Server $svr -Username $usr -Password $passwd
+    # Trust all certificates. This is for test purposes only.
+    # DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
+    Connect-XenServer -Server $svr -Username $usr -Password $passwd -PassThru -NoWarnCertificates -NoWarnNewCertificates
 }
 catch [XenAPI.Failure] {
     # If the specified server is a pool supporter, an API error with key
