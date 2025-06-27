@@ -150,8 +150,11 @@ function Install-Updates([XenAPI.Host]$XenHost, [String]$Hash) {
 Import-Module XenServerPSModule
 
 try {
+    # Trust all certificates. This is for test purposes only.
+    # DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
+
     Write-Host "Connecting to server"
-    Connect-XenServer -Server $Server -UserName $Username -Password $Passwd
+    Connect-XenServer -Server $Server -UserName $Username -Password $Passwd -NoWarnCertificates -NoWarnNewCertificates
 
     $pool = Get-XenPool
 
