@@ -8,6 +8,10 @@ import (
 )
 
 func TestSRBase(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
+
 	var deviceConfig = make(map[string]string)
 	var smConfig = make(map[string]string)
 	var testSRName = "TestSR: DO NOT USE (created by sr_test.go)"

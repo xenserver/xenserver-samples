@@ -15,7 +15,7 @@ The following simple examples are included in this repository:
 
 -  `pool_test`: Add a server to a pool and then eject it.
 
--  `session_test`: Set up session over https protocol with or without certificate.
+-  `session_test`: Set up session over http and https protocol with or without certificate.
 
 -  `sr_nfs_test`: Creates a shared NFS SR.
 
@@ -32,7 +32,7 @@ The following simple examples are included in this repository:
 
 ## Dependencies
 
-Install Go 1.22 or above on the runnning environment.
+Install Go 1.22 or above on the running environment.
 
 Prepare the local XenServer module for Go. 
 - Download the XenServer SDK zip package and unzip
@@ -51,13 +51,13 @@ go mod tidy
 The test runs with nine parameters:
 
 ```
-<ip>           : the URL of the form https://ip[:port] pointing at the server
+<ip>           : the URL of the host (e.g. https://x.x.x.x[:port], http://x.x.x.x[:port] or raw x.x.x.x[:port])
 <username>     : the username of the host (e.g. root)
 <password>     : the password of the host
 <ca_cert_path> : the CA certificate file path for the host
-<nfs_server>   : the ip address pointing at the nfs server
-<nfs_path>     : the nfs server path
-<ip1>          : the URL of the form https://ip[:port] pointing at the supporter server
+<nfs_server>   : the IP address pointing at the NFS server
+<nfs_path>     : the NFS server path
+<ip1>          : the URL of the supporter host (e.g. https://x.x.x.x[:port], http://x.x.x.x[:port] or raw x.x.x.x[:port])
 <username1>    : the username of the supporter host (e.g. root)
 <password1>    : the password of the supporter host
 ```

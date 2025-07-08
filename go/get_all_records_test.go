@@ -7,6 +7,10 @@ import (
 )
 
 func TestGetAllRecords(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
+
 	// Get all records
 	_, err := xenapi.Blob.GetAllRecords(session)
 	if err != nil {

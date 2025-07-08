@@ -7,9 +7,18 @@ import (
 )
 
 func TestVMSnapshot(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
+
 	vmRefTest, err := FindHaltedLinuxVM()
 	if err != nil {
 		t.Log(err)
+		t.Fail()
+		return
+	}
+	if vmRefTest == "" {
+		t.Log("No halted Linux VM found.")
 		t.Fail()
 		return
 	}
@@ -30,7 +39,7 @@ func TestVMSnapshot(t *testing.T) {
 			t.Fail()
 			return
 		}
-	}	
+	}
 	snapshotRecord, err := xenapi.VM.GetRecord(session, snapshotRef)
 	if err != nil {
 		t.Log(err)
@@ -68,9 +77,18 @@ func TestVMSnapshot(t *testing.T) {
 }
 
 func TestVMAsyncSnapshot(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
+
 	vmRefTest, err := FindHaltedLinuxVM()
 	if err != nil {
 		t.Log(err)
+		t.Fail()
+		return
+	}
+	if vmRefTest == "" {
+		t.Log("No halted Linux VM found.")
 		t.Fail()
 		return
 	}
@@ -178,6 +196,11 @@ func TestVMAsyncSnapshot(t *testing.T) {
 	snapshotRefs, err := xenapi.VM.GetSnapshots(session, vmRefTest)
 	if err != nil {
 		t.Log(err)
+		t.Fail()
+		return
+	}
+	if len(snapshotRefs) == 0 {
+    	t.Log("No snapshots found for this VM")
 		t.Fail()
 		return
 	}

@@ -10,10 +10,11 @@ import (
 )
 
 func TestNFSSRCreateAndDestroy(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
 	if *NFS_SERVER_FLAG == "" || *NFS_PATH_FLAG == "" {
-		t.Log("NFS server or path is not provided, skipping NFS SR test")
-		t.Fail()
-		return
+		t.Skip("NFS server or path is not provided, skipping NFS SR test")
 	}
 
 	// Choose the first host

@@ -9,6 +9,10 @@ import (
 )
 
 func TestVMPowercycle(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
+
 	vmRefTest, err := FindHaltedLinuxVM()
 	if err != nil {
 		t.Log(err)
