@@ -9,6 +9,10 @@ import (
 )
 
 func TestNetworkCreateAndDestroy(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
+
 	var networkRecord xenapi.NetworkRecord
 	networkRecord.NameLabel = "Test External Network"
 	networkRecord.NameDescription = fmt.Sprintf("Created by network_test.go at %s", time.Now().String())
@@ -102,12 +106,19 @@ func TestNetworkCreateAndDestroy(t *testing.T) {
 		return
 	}
 
-	// Destroy the network
-	err = xenapi.VLAN.Destroy(session, pifRecord.VLANMasterOf)
-	if err != nil {
-		t.Log(err)
-		t.Fail()
-		return
+	for _, pifRef := range pifRefs {
+		pifRecord, err := xenapi.PIF.GetRecord(session, pifRef)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+			return
+		}
+		err = xenapi.VLAN.Destroy(session, pifRecord.VLANMasterOf)
+		if err != nil {
+			t.Log(err)
+			t.Fail()
+			return
+		}
 	}
 	err = xenapi.Network.Destroy(session, networkRef)
 	if err != nil {

@@ -9,7 +9,10 @@ import (
 
 var NEW_VM_NAME = "GoSDK-TestVM"
 
-func TestVMCreateAndDestory(t *testing.T) {
+func TestVMCreateAndDestroy(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
 	// Find a template
 	templateRef, templateName, err := GetFirstTemplate("Windows")
 	if err != nil {
@@ -82,13 +85,13 @@ func TestVMCreateAndDestory(t *testing.T) {
 	t.Log("Vif created")
 
 	// Put the SR uuid into the provision XML
-	otherConifg, err := xenapi.VM.GetOtherConfig(session, vmRef)
+	otherConfig, err := xenapi.VM.GetOtherConfig(session, vmRef)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 		return
 	}
-	disks, ok := otherConifg["disks"]
+	disks, ok := otherConfig["disks"]
 	if !ok {
 		t.Log("No disks found.")
 		t.Fail()
@@ -101,8 +104,8 @@ func TestVMCreateAndDestory(t *testing.T) {
 		return
 	}
 	disks = strings.Replace(disks, "sr=\"\"", "sr=\""+srUuid+"\"", -1)
-	otherConifg["disks"] = disks
-	err = xenapi.VM.SetOtherConfig(session, vmRef, otherConifg)
+	otherConfig["disks"] = disks
+	err = xenapi.VM.SetOtherConfig(session, vmRef, otherConfig)
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -160,7 +163,10 @@ func TestVMCreateAndDestory(t *testing.T) {
 	t.Log("VM Destroyed.")
 }
 
-func TestVMAsyncCreateAndDestory(t *testing.T) {
+func TestVMAsyncCreateAndDestroy(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
 	// Find a template
 	templateRef, templateName, err := GetFirstTemplate("Windows")
 	if err != nil {
@@ -246,13 +252,13 @@ func TestVMAsyncCreateAndDestory(t *testing.T) {
 	t.Log("Vif created")
 
 	// Put the SR uuid into the provision XML
-	otherConifg, err := xenapi.VM.GetOtherConfig(session, vmRefs[0])
+	otherConfig, err := xenapi.VM.GetOtherConfig(session, vmRefs[0])
 	if err != nil {
 		t.Log(err)
 		t.Fail()
 		return
 	}
-	disks, ok := otherConifg["disks"]
+	disks, ok := otherConfig["disks"]
 	if !ok {
 		t.Log("No disks found.")
 		t.Fail()
@@ -265,8 +271,8 @@ func TestVMAsyncCreateAndDestory(t *testing.T) {
 		return
 	}
 	disks = strings.Replace(disks, "sr=\"\"", "sr=\""+srUuid+"\"", -1)
-	otherConifg["disks"] = disks
-	err = xenapi.VM.SetOtherConfig(session, vmRefs[0], otherConifg)
+	otherConfig["disks"] = disks
+	err = xenapi.VM.SetOtherConfig(session, vmRefs[0], otherConfig)
 	if err != nil {
 		t.Log(err)
 		t.Fail()

@@ -14,6 +14,10 @@ var timeout = 10.0
 var token = ""
 
 func TestEventFrom(t *testing.T) {
+	if stopTests {
+		t.Skip("Skipping due to login failure")
+	}
+
 	eventTypes = append(eventTypes, "*")
 	for i := 0; i < maxTries; i++ {
 		eventBatch, err := xenapi.Event.From(session, eventTypes, token, timeout)
@@ -24,10 +28,6 @@ func TestEventFrom(t *testing.T) {
 		}
 		token = eventBatch.Token
 		t.Log(fmt.Sprintf("Poll %d out of %d: %d event(s) received", i, maxTries, len(eventBatch.Events)))
-		for _, event := range eventBatch.Events {
-			t.Log(fmt.Sprintf("%s %d %s %s", event.Class, event.ID, event.Operation, event.Ref))
-		}
-
 		t.Log("Waiting 5 seconds before next poll...")
 		time.Sleep(time.Duration(5) * time.Second)
 	}

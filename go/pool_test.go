@@ -1,6 +1,7 @@
 package testGoSDK
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -8,11 +9,13 @@ import (
 )
 
 func TestPoolJoinAndEject(t *testing.T) {
-	if *IP1_FLAG == "" || *USERNAME1_FLAG == "" || *PASSWORD1_FLAG == "" {
-		t.Log("Supporter host ip, username or password is not provided, skipping pool test")
-		t.Fail()
-		return
+	if stopTests {
+		t.Skip("Skipping due to login failure")
 	}
+	if *IP1_FLAG == "" || *USERNAME1_FLAG == "" || *PASSWORD1_FLAG == "" {
+		t.Skip("Supporter host ip, username or password is not provided, skipping pool test")
+	}
+
 	// get current Pool
 	poolRefs, err := xenapi.Pool.GetAll(session)
 	if err != nil {
@@ -34,7 +37,7 @@ func TestPoolJoinAndEject(t *testing.T) {
 
 	// create another session
 	session2 := xenapi.NewSession(&xenapi.ClientOpts{
-		URL: "http://" + *IP1_FLAG,
+		URL: GetURL(*IP1_FLAG, true),
 	})
 	_, err = session2.LoginWithPassword(*USERNAME1_FLAG, *PASSWORD1_FLAG, "1.0", "Go sdk test")
 	if err != nil {
@@ -93,7 +96,8 @@ func TestPoolJoinAndEject(t *testing.T) {
 	}
 
 	// add the host to the pool
-	_, err = xenapi.Pool.AsyncJoin(session2, *IP_FLAG, *USERNAME_FLAG, *PASSWORD_FLAG)
+	ip := strings.TrimPrefix(strings.TrimPrefix(*IP_FLAG, "http://"), "https://")
+	_, err = xenapi.Pool.AsyncJoin(session2, ip, *USERNAME_FLAG, *PASSWORD_FLAG)
 	if err != nil {
 		t.Log(err)
 		t.Fail()

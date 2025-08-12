@@ -160,7 +160,7 @@ func WaitForTask(taskRef xenapi.TaskRef, delay int) error {
 
 func WaitForSRReady(session *xenapi.Session, srRefNew xenapi.SRRef) error {
 	IsSRCreated := func(event xenapi.EventRecord) bool {
-		if event.Class == "pbd"  {
+		if event.Class == "pbd" {
 			pbdRecord := event.Snapshot.(map[string]interface{})
 			if pbdRecord["SR"].(string) == string(srRefNew) && pbdRecord["currently_attached"].(bool) {
 				return true
