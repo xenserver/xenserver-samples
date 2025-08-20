@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0;net4.8</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <AssemblyName>XenSdkSample</AssemblyName>
     <RootNamespace>XenSdkSample</RootNamespace>
     <Description>A sample project demonstrating the usage of XenServer.NET SDK for interacting with XenServer infrastructure, managing virtualized environments, and performing administrative tasks.</Description>
@@ -13,9 +13,9 @@
     <Version>1.0.0.0</Version>
     <FileVersion>1.0.0.0</FileVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-	  <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+    <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="XenServer.NET" Version="25.17.0" />
+    <PackageReference Include="XenServer.NET" Version="[25.17.0,)" />
   </ItemGroup>
 </Project>
