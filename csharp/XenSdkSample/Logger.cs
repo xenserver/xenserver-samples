@@ -35,20 +35,20 @@ namespace XenSdkSample
 {
     class Logger : IDisposable
     {
-        protected readonly StreamWriter _writer;
+        protected readonly StreamWriter Writer;
 
         protected Logger(string file)
         {
-            _writer = new StreamWriter(file);
+            Writer = new StreamWriter(file);
         }
         
         public void Dispose()
         {
-            if (_writer != null)
+            if (Writer != null)
             {
-                _writer.Flush();
-                _writer.Close();
-                _writer.Dispose();
+                Writer.Flush();
+                Writer.Close();
+                Writer.Dispose();
             }
         }
     }
@@ -63,7 +63,7 @@ namespace XenSdkSample
         public void Log(string format, params object[] args)
         {
             Console.WriteLine(format, args);
-            _writer.WriteLine(format, args);
+            Writer.WriteLine(format, args);
         }
 
         public void WriteLine()
@@ -86,17 +86,17 @@ namespace XenSdkSample
 
         public void LogTest(string testName, bool pass, string message)
         {
-            _writer.Write("<test><name>{0}</name><pass>{1}</pass><message>{2}</message></test>", testName, pass, message);
+            Writer.Write("<test><name>{0}</name><pass>{1}</pass><message>{2}</message></test>", testName, pass, message);
         }
 
         public void Initialise()
         {
-            _writer.Write("<?xml version=\"1.0\" encoding=\"utf-8\"?><results><tests>");
+            Writer.Write("<?xml version=\"1.0\" encoding=\"utf-8\"?><results><tests>");
         }
 
         public void Finalise(int total, int pass, int fail)
         {
-            _writer.Write("</tests><total>{0}</total><pass>{1}</pass><fail>{2}</fail></results>", total, pass, fail);
+            Writer.Write("</tests><total>{0}</total><pass>{1}</pass><fail>{2}</fail></results>", total, pass, fail);
         }
     }
 }

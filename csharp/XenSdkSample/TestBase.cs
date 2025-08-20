@@ -33,27 +33,24 @@ namespace XenSdkSample
 {
     abstract class TestBase
     {
-        protected OutputLogger _logger;
-        protected Session _session;
+        protected readonly OutputLogger Logger;
+        protected readonly Session Session;
 
         protected TestBase(OutputLogger logger, Session session)
         {
-            _logger = logger;
-            _session = session;
+            Logger = logger;
+            Session = session;
         }
 
         public abstract string Name { get; }
         protected abstract void TestCore();
 
-        public virtual string Description
-        {
-            get { return ""; }
-        }
+        protected virtual string Description => string.Empty;
 
         public void Run()
         {
-            _logger.Log("*** Test {0} ***", Name);
-            _logger.Log("*** {0} ***", Description);
+            Logger.Log("*** Test {0} ***", Name);
+            Logger.Log("*** {0} ***", Description);
             TestCore();
         }
     }

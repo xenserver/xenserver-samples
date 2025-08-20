@@ -43,13 +43,13 @@ namespace XenSdkSample
             {
                 if (args.Length < 3)
                 {
-                    outputLogger.Log("Required arguments: host-ip username password");
+                    outputLogger.Log("Required arguments: https://host[:port] username password");
                     return;
                 }
 
                 //Trust all certificates. This is a test workaround. DO NOT USE IN PRODUCTION CODE!
                 ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
                 Session session = null;
                 try
@@ -89,8 +89,7 @@ namespace XenSdkSample
                 }
                 finally
                 {
-                    if (session != null)
-                        session.logout();
+                    session?.logout();
                 }
             }
         }
