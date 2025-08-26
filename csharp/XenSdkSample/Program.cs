@@ -63,7 +63,8 @@ namespace XenSdkSample
                     var testList = new List<TestBase>
                     {
                         new GetVariousRecords(outputLogger, session),
-                        new VmPowerStates(outputLogger, session)
+                        new VmPowerStates(outputLogger, session),
+                        new Traceability(outputLogger, session)
                     };
 
                     using (var resultLogger = new ResultLogger())
