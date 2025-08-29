@@ -26,7 +26,6 @@ To run the XenServer.NET examples, follow these steps:
    - Build the solution within Visual Studio to compile the example projects.
 
 4. **Run the Examples**:
-	- There will be two versions: NET Framework 4.8 and NET8.0. Navigate to your preferred version.
 	- Run the compiled application from the command line, providing the required parameters:
      ```
      .\XenSdkSample.exe <host> <username> <password>

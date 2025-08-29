@@ -27,31 +27,41 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+using System.Diagnostics;
+using OpenTelemetry;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using XenAPI;
+
 
 namespace XenSdkSample
 {
-    abstract class TestBase
+    class Traceability : TestBase
     {
-        protected readonly OutputLogger Logger;
-        protected readonly Session Session;
-
-        protected TestBase(OutputLogger logger, Session session)
+        public Traceability(OutputLogger logger, Session session)
+            : base(logger, session)
         {
-            Logger = logger;
-            Session = session;
         }
 
-        public abstract string Name { get; }
-        protected abstract void TestCore();
+        public override string Name => "Traceability";
 
-        protected virtual string Description => string.Empty;
+        protected override string Description => "Trace requests";
 
-        public void Run()
+        protected override void TestCore()
         {
-            Logger.Log("*** Test {0} ***", Name);
-            Logger.Log("*** {0} ***", Description);
-            TestCore();
+            ActivitySource source = new ActivitySource("XenSdkSample.DistributedTracing", "1.0.0");
+
+            using var tracerProvider = Sdk.CreateTracerProviderBuilder()
+                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("MySample"))
+                .AddSource("*")
+                .AddConsoleExporter()
+                .Build();
+
+            using (source.StartActivity("SomeWork"))
+            {
+                var hosts = Host.get_all(Session);
+                System.Console.WriteLine("Got hosts: " + hosts.Count);
+            }
         }
     }
 }

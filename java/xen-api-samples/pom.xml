@@ -49,7 +49,7 @@
         <dependency>
             <groupId>com.xenserver</groupId>
             <artifactId>xen-api</artifactId>
-            <version>[24.12.0,)</version>
+            <version>[25.17.0,)</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

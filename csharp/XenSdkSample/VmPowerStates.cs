@@ -43,118 +43,113 @@ namespace XenSdkSample
         {
         }
 
-        public override string Name
-        {
-            get { return "VmPowerStates"; }
-        }
+        public override string Name => "VmPowerStates";
 
-        public override string Description
-        {
-            get { return "Powercycle a VM"; }
-        }
+        protected override string Description => "Power cycle a VM";
 
         protected override void TestCore()
         {
             // Choose a linux VM at random which is not a template or control domain and which is currently switched off.
 
-            var vmRecords = VM.get_all_records(_session);
+            var vmRecords = VM.get_all_records(Session);
 
             var vmRef = (from KeyValuePair<XenRef<VM>, VM> kvp in vmRecords
                 let theVm = kvp.Value
-                where !theVm.is_a_template && !theVm.is_control_domain
-                      && !theVm.name_label.ToLower().Contains("windows")
-                      && theVm.power_state == vm_power_state.Halted
+                where !theVm.is_a_template &&
+                      !theVm.is_control_domain &&
+                      !theVm.name_label.ToLower().Contains("windows") &&
+                      theVm.power_state == vm_power_state.Halted
                 select kvp.Key).FirstOrDefault();
 
             if (vmRef == null)
             {
                 var msg = "Cannot find a halted linux VM. Please create one.";
-                _logger.Log(msg);
+                Logger.Log(msg);
                 throw new Exception(msg);
             }
 
-            //to avoid playing with existing data, clone the VM and powercycle its clone
+            //to avoid playing with existing data, clone the VM and power cycle its clone
 
-            VM vm = VM.get_record(_session, vmRef);
+            VM vm = VM.get_record(Session, vmRef);
 
-            _logger.Log("Cloning VM '{0}'...", vm.name_label);
-            string cloneVmRef = VM.clone(_session, vmRef, string.Format("Cloned VM (from '{0}')", vm.name_label));
-            _logger.Log("Cloned VM; new VM's ref is {0}", cloneVmRef);
+            Logger.Log("Cloning VM '{0}'...", vm.name_label);
+            string cloneVmRef = VM.clone(Session, vmRef, $"Cloned VM (from '{vm.name_label}')");
+            Logger.Log("Cloned VM; new VM's ref is {0}", cloneVmRef);
 
-            VM.set_name_description(_session, cloneVmRef, "Another cloned VM");
-            VM cloneVm = VM.get_record(_session, cloneVmRef);
-            _logger.Log("Clone VM's Name: {0}, Description: {1}, Power State: {2}", cloneVm.name_label,
+            VM.set_name_description(Session, cloneVmRef, "Another cloned VM");
+            VM cloneVm = VM.get_record(Session, cloneVmRef);
+            Logger.Log("Clone VM's Name: {0}, Description: {1}, Power State: {2}", cloneVm.name_label,
                 cloneVm.name_description, cloneVm.power_state);
 
             try
             {
-                _logger.Log("Starting VM in paused state...");
-                VM.start(_session, cloneVmRef, true, true);
-                _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                Logger.Log("Starting VM in paused state...");
+                VM.start(Session, cloneVmRef, true, true);
+                Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
 
-                _logger.Log("Unpausing VM...");
-                VM.unpause(_session, cloneVmRef);
-                _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                Logger.Log("Unpausing VM...");
+                VM.unpause(Session, cloneVmRef);
+                Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
 
-                // here we need to delay for a bit until the suspend feauture is written
+                // here we need to delay for a bit until the suspend feature is written
                 // in the guest metrics; this check should be enough for most guests;
-                // let's try a certain number of times with sleeps of a few seconds inbetween
+                // let's try a certain number of times with sleeps of a few seconds in between
                 int max = 10;
                 int delay = 10;
                 bool canSuspend = false;
                 for (int i = 0; i < max; i++)
                 {
-                    cloneVm = VM.get_record(_session, cloneVmRef);
-                    var metrics = VM_guest_metrics.get_record(_session, cloneVm.guest_metrics);
+                    cloneVm = VM.get_record(Session, cloneVmRef);
+                    var metrics = VM_guest_metrics.get_record(Session, cloneVm.guest_metrics);
                     if (metrics.other.ContainsKey("feature-suspend") && metrics.other["feature-suspend"] == "1")
                     {
                         canSuspend = true;
                         break;
                     }
 
-                    _logger.Log("Checked for feature-suspend count {0} out of {1}; will re-try in {2}sec.", i + 1, max, delay);
+                    Logger.Log("Checked for feature-suspend count {0} out of {1}; will re-try in {2}sec.", i + 1, max, delay);
                     Thread.Sleep(delay * 1000);
                 }
 
                 if (!canSuspend)
                 {
                     var msg = "The VM does not support the suspend feature. Skipping suspending VM...";
-                    _logger.Log(msg);
-                    _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                    Logger.Log(msg);
+                    Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
                     throw new Exception(msg);
                 }
 
-                _logger.Log("Suspending VM...");
-                VM.suspend(_session, cloneVmRef);
-                _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                Logger.Log("Suspending VM...");
+                VM.suspend(Session, cloneVmRef);
+                Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
 
-                _logger.Log("Resuming VM...");
-                VM.resume(_session, cloneVmRef, false, true);
-                _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                Logger.Log("Resuming VM...");
+                VM.resume(Session, cloneVmRef, false, true);
+                Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
             }
             finally
             {
-                if (VM.get_power_state(_session, cloneVmRef) != vm_power_state.Halted)
+                if (VM.get_power_state(Session, cloneVmRef) != vm_power_state.Halted)
                 {
-                    _logger.Log("Forcing shutdown VM...");
-                    VM.hard_shutdown(_session, cloneVmRef);
-                    _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                    Logger.Log("Forcing shutdown VM...");
+                    VM.hard_shutdown(Session, cloneVmRef);
+                    Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
                 }
 
-                cloneVm = VM.get_record(_session, cloneVmRef);
+                cloneVm = VM.get_record(Session, cloneVmRef);
                 var vdis = (from vbd in cloneVm.VBDs
-                            let vdi = VBD.get_VDI(_session, vbd)
+                            let vdi = VBD.get_VDI(Session, vbd)
                             where vdi.opaque_ref != "OpaqueRef:NULL"
                             select vdi).ToList();
 
-                _logger.Log("Destroying VM...");
-                VM.destroy(_session, cloneVmRef);
+                Logger.Log("Destroying VM...");
+                VM.destroy(Session, cloneVmRef);
 
-                _logger.Log("Destroying VM's disks...");
+                Logger.Log("Destroying VM's disks...");
                 foreach (var vdi in vdis)
-                    VDI.destroy(_session, vdi);
+                    VDI.destroy(Session, vdi);
 
-                _logger.Log("VM destroyed.");
+                Logger.Log("VM destroyed.");
             }
         }
     }

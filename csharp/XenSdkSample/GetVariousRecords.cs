@@ -40,88 +40,82 @@ namespace XenSdkSample
         {
         }
 
-        public override string Name
-        {
-            get { return "GetVariousRecords"; }
-        }
+        public override string Name => "GetVariousRecords";
 
-        public override string Description
-        {
-            get { return "Print records for various API objects"; }
-        }
+        protected override string Description => "Print records for various API objects";
 
         protected override void TestCore()
         {
-            PrintHostRecords(_session);
-            PrintStorageRepositories(_session);
-            PrintVmRecords(_session);
-            PrintPhysicalNetworkInterfaces(_session);
+            PrintHostRecords(Session);
+            PrintStorageRepositories(Session);
+            PrintVmRecords(Session);
+            PrintPhysicalNetworkInterfaces(Session);
         }
 
         private void PrintHostRecords(Session session)
         {
-            _logger.Log("Hosts");
-            _logger.WriteHRule();
+            Logger.Log("Hosts");
+            Logger.WriteHRule();
 
             var hostRecords = Host.get_all_records(session);
             foreach (var hostRec in hostRecords)
             {
                 var host = hostRec.Value;
-                _logger.Log("Name: {0}", host.name_label);
-                _logger.Log("Hostname: {0}", host.hostname);
-                _logger.Log("Description: {0}", host.name_description);
-                _logger.WriteLine();
+                Logger.Log("Name: {0}", host.name_label);
+                Logger.Log("Hostname: {0}", host.hostname);
+                Logger.Log("Description: {0}", host.name_description);
+                Logger.WriteLine();
             }
         }
 
         private void PrintStorageRepositories(Session session)
         {
-           _logger.Log("Storage Repositories");
-           _logger.WriteHRule();
+            Logger.Log("Storage Repositories");
+            Logger.WriteHRule();
 
-           var srRecords = SR.get_all_records(session);
-           foreach (var srRec in srRecords)
+            var srRecords = SR.get_all_records(session);
+            foreach (var srRec in srRecords)
             {
                 var sr = srRec.Value;
-                _logger.Log("Name: {0}", sr.name_label);
-                _logger.Log("Description: {0}", sr.name_description);
-                _logger.Log("Usage: {0:0.0}GB / {1:0.0}GB", sr.physical_utilisation / 1e9, sr.physical_size / 1e9);
-                _logger.WriteLine();
+                Logger.Log("Name: {0}", sr.name_label);
+                Logger.Log("Description: {0}", sr.name_description);
+                Logger.Log("Usage: {0:0.0}GB / {1:0.0}GB", sr.physical_utilisation / 1e9, sr.physical_size / 1e9);
+                Logger.WriteLine();
             }
         }
 
         private void PrintVmRecords(Session session)
         {
-            _logger.Log("Virtual Machines");
-            _logger.WriteHRule();
+            Logger.Log("Virtual Machines");
+            Logger.WriteHRule();
 
             var vmRecords = VM.get_all_records(session);
             foreach (var vmRec in vmRecords)
             {
                 var vm = vmRec.Value;
-                _logger.Log(vm.is_a_template ? "VM name: {0}" : "Template name {0}", vm.name_label);
-                _logger.Log("Power state: {0}", vm.power_state);
+                Logger.Log(vm.is_a_template ? "VM name: {0}" : "Template name {0}", vm.name_label);
+                Logger.Log("Power state: {0}", vm.power_state);
                 string ops = string.Join(",", vm.allowed_operations.Select(op => op.ToString()));
-                _logger.Log("Allowed operations: {0}", ops);
-                _logger.Log("vCPUs: {0}", vm.VCPUs_at_startup);
-                _logger.WriteLine();
+                Logger.Log("Allowed operations: {0}", ops);
+                Logger.Log("vCPUs: {0}", vm.VCPUs_at_startup);
+                Logger.WriteLine();
             }
         }
 
         private void PrintPhysicalNetworkInterfaces(Session session)
         {
-            _logger.Log("Physical network interfaces");
-            _logger.WriteHRule();
+            Logger.Log("Physical network interfaces");
+            Logger.WriteHRule();
 
             var pifRecords = PIF.get_all_records(session);
             foreach (var pifRec in pifRecords)
             {
                 var pif = pifRec.Value;
                 Host host = Host.get_record(session, pif.host);
-                _logger.Log("Host: {0}", host.name_label);
-                _logger.Log("IP: {0}", pif.IP);
-                _logger.Log("MAC address: {0}", pif.MAC);
-                _logger.WriteLine();
+                Logger.Log("Host: {0}", host.name_label);
+                Logger.Log("IP: {0}", pif.IP);
+                Logger.Log("MAC address: {0}", pif.MAC);
+                Logger.WriteLine();
             }
         }
     }
