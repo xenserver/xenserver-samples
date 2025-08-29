@@ -1,18 +1,18 @@
 /*
  * Copyright (c) Cloud Software Group, Inc.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   1) Redistributions of source code must retain the above copyright
  *      notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   2) Redistributions in binary form must reproduce the above
  *      copyright notice, this list of conditions and the following
  *      disclaimer in the documentation and/or other materials
  *      provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -29,6 +29,7 @@
 
 package com.xensource.xenapi.samples;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.Set;
@@ -40,8 +41,8 @@ import com.xensource.xenapi.*;
  */
 public class VdiAndSrOps extends TestBase {
 
-    private static final String FAKE_VDI_NAME = "madeupvdi";
-
+    private static final String TEST_VDI_NAME = "TestVDI: DO NOT USE (created by VdiAndSrOps.java)";
+    private static final long TEST_VDI_SIZE = 10L * 1024 * 1024;
     private static final String TEST_SR_NAME = "TestSR: DO NOT USE (created by VdiAndSrOps.java)";
     private static final String TEST_SR_DESC = "Should be automatically deleted";
     private static final String TEST_SR_TYPE = "dummy";
@@ -73,24 +74,30 @@ public class VdiAndSrOps extends TestBase {
             log("--attempting " + srOp + " with null smConfig... ");
             srOpLong(connection, emptyMap, srOp);
             log("success");
+        }
 
+        for (String srOp : srOps) {
             log("--attempting " + srOp + " with non-null smConfig... ");
             srOpLong(connection, fullMap, srOp);
             log("success");
         }
 
         final String[] vdiOps = {
+                "VDI.create",
                 "VDI.snapshot",
                 "VDI.createClone",
                 "VDI.snapshotAsync",
-                "VDI.createCloneAsync"
+                "VDI.createCloneAsync",
+                "VDI.destroy"
         };
 
         for (String vdiOp : vdiOps) {
             log("--attempting " + vdiOp + " with null driverParams");
             vdiOpLong(connection, emptyMap, vdiOp);
             log("success");
+        }
 
+        for (String vdiOp : vdiOps) {
             log("--attempting " + vdiOp + " with non-null driverParams");
             vdiOpLong(connection, fullMap, vdiOp);
             log("success");
@@ -99,19 +106,34 @@ public class VdiAndSrOps extends TestBase {
 
     private void vdiOpLong(Connection c, HashMap<String, String> driverParams, String op) throws Exception {
         try {
-            VDI dummy = Types.toVDI(FAKE_VDI_NAME);
+            VDI vdi;
             switch (op) {
+                case "VDI.create":
+                    var sr = findSrForVdi(c);
+                    var vdiRec = newVdiRecord(sr);
+                    VDI.create(c, vdiRec);
+                    break;
                 case "VDI.snapshot":
-                    dummy.snapshot(c, driverParams);
+                    vdi = VDI.getByNameLabel(c, TEST_VDI_NAME).iterator().next();
+                    vdi.snapshot(c, driverParams);
                     break;
                 case "VDI.createClone":
-                    dummy.createClone(c, driverParams);
+                    vdi = VDI.getByNameLabel(c, TEST_VDI_NAME).iterator().next();
+                    vdi.createClone(c, driverParams);
                     break;
                 case "VDI.snapshotAsync":
-                    dummy.snapshotAsync(c, driverParams);
+                    vdi = VDI.getByNameLabel(c, TEST_VDI_NAME).iterator().next();
+                    vdi.snapshotAsync(c, driverParams);
                     break;
                 case "VDI.createCloneAsync":
-                    dummy.createCloneAsync(c, driverParams);
+                    vdi = VDI.getByNameLabel(c, TEST_VDI_NAME).iterator().next();
+                    vdi.createCloneAsync(c, driverParams);
+                    break;
+                case "VDI.destroy":
+                    var vdis = VDI.getByNameLabel(c, TEST_VDI_NAME);
+                    for (var v : vdis) {
+                        v.destroy(c);
+                    }
                     break;
                 default:
                     throw new Exception("Unknown API call.");
@@ -120,6 +142,39 @@ public class VdiAndSrOps extends TestBase {
         catch (Types.HandleInvalid ex) {
             log("Expected error: HANDLE_INVALID.");
         }
+    }
+
+    private VDI.Record newVdiRecord(SR sr) {
+        VDI.Record vdiRec = new VDI.Record();
+        vdiRec.readOnly = false;
+        vdiRec.SR = sr;
+        vdiRec.virtualSize = TEST_VDI_SIZE;
+        vdiRec.nameLabel = TEST_VDI_NAME;
+        vdiRec.sharable = false;
+        vdiRec.type = Types.VdiType.USER;
+        vdiRec.smConfig = new HashMap<>() {{ put("vmhint", ""); }};
+        return vdiRec;
+    }
+
+    private SR findSrForVdi(Connection c) throws IOException {
+        var srs = SR.getAllRecords(c);
+        var sms = SM.getAllRecords(c);
+
+        for (var srPair : srs.entrySet()) {
+            var srRec = srPair.getValue();
+
+            if (srRec.contentType.equals("iso") || srRec.type.equals("tmpfs"))
+                continue;
+
+            for (var smRec : sms.values()) {
+                if (smRec.type.equals(srRec.type) && smRec.features.containsKey("VDI_CREATE"))
+                {
+                    log("Found SR " + srRec.nameLabel);
+                    return srPair.getKey();
+                }
+            }
+        }
+        return null;
     }
 
     private void srOpLong(Connection c, HashMap<String, String> smConfig, String op) throws Exception {
