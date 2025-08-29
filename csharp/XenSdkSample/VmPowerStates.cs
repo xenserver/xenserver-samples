@@ -86,55 +86,76 @@ namespace XenSdkSample
             _logger.Log("Clone VM's Name: {0}, Description: {1}, Power State: {2}", cloneVm.name_label,
                 cloneVm.name_description, cloneVm.power_state);
 
-            _logger.Log("Starting VM in paused state...");
-            VM.start(_session, cloneVmRef, true, true);
-            _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
-
-            _logger.Log("Unpausing VM...");
-            VM.unpause(_session, cloneVmRef);
-            _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
-
-            // here we need to delay for a bit until the suspend feauture is written
-            // in the guest metrics; this check should be enough for most guests;
-            // let's try a certain number of times with sleeps of a few seconds inbetween
-            int max = 20;
-            int delay = 10;
-            for (int i = 0; i < max; i++)
+            try
             {
-                cloneVm = VM.get_record(_session, cloneVmRef);
-                var metrics = VM_guest_metrics.get_record(_session, cloneVm.guest_metrics);
-                if (metrics.other.ContainsKey("feature-suspend") && metrics.other["feature-suspend"] == "1")
-                    break;
-                _logger.Log("Checked for feature-suspend count {0} out of {1}; will re-try in {2}sec.", i + 1, max, delay);
-                Thread.Sleep(delay * 1000);
+                _logger.Log("Starting VM in paused state...");
+                VM.start(_session, cloneVmRef, true, true);
+                _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+
+                _logger.Log("Unpausing VM...");
+                VM.unpause(_session, cloneVmRef);
+                _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+
+                // here we need to delay for a bit until the suspend feauture is written
+                // in the guest metrics; this check should be enough for most guests;
+                // let's try a certain number of times with sleeps of a few seconds inbetween
+                int max = 10;
+                int delay = 10;
+                bool canSuspend = false;
+                for (int i = 0; i < max; i++)
+                {
+                    cloneVm = VM.get_record(_session, cloneVmRef);
+                    var metrics = VM_guest_metrics.get_record(_session, cloneVm.guest_metrics);
+                    if (metrics.other.ContainsKey("feature-suspend") && metrics.other["feature-suspend"] == "1")
+                    {
+                        canSuspend = true;
+                        break;
+                    }
+
+                    _logger.Log("Checked for feature-suspend count {0} out of {1}; will re-try in {2}sec.", i + 1, max, delay);
+                    Thread.Sleep(delay * 1000);
+                }
+
+                if (!canSuspend)
+                {
+                    var msg = "The VM does not support the suspend feature. Skipping suspending VM...";
+                    _logger.Log(msg);
+                    _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                    throw new Exception(msg);
+                }
+
+                _logger.Log("Suspending VM...");
+                VM.suspend(_session, cloneVmRef);
+                _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+
+                _logger.Log("Resuming VM...");
+                VM.resume(_session, cloneVmRef, false, true);
+                _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
             }
+            finally
+            {
+                if (VM.get_power_state(_session, cloneVmRef) != vm_power_state.Halted)
+                {
+                    _logger.Log("Forcing shutdown VM...");
+                    VM.hard_shutdown(_session, cloneVmRef);
+                    _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                }
 
-            _logger.Log("Suspending VM...");
-            VM.suspend(_session, cloneVmRef);
-            _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                cloneVm = VM.get_record(_session, cloneVmRef);
+                var vdis = (from vbd in cloneVm.VBDs
+                            let vdi = VBD.get_VDI(_session, vbd)
+                            where vdi.opaque_ref != "OpaqueRef:NULL"
+                            select vdi).ToList();
 
-            _logger.Log("Resuming VM...");
-            VM.resume(_session, cloneVmRef, false, true);
-            _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                _logger.Log("Destroying VM...");
+                VM.destroy(_session, cloneVmRef);
 
-            _logger.Log("Forcing shutdown VM...");
-            VM.hard_shutdown(_session, cloneVmRef);
-            _logger.Log("VM Power State: {0}", VM.get_power_state(_session, cloneVmRef));
+                _logger.Log("Destroying VM's disks...");
+                foreach (var vdi in vdis)
+                    VDI.destroy(_session, vdi);
 
-            cloneVm = VM.get_record(_session, cloneVmRef);
-            var vdis = (from vbd in cloneVm.VBDs
-                let vdi = VBD.get_VDI(_session, vbd)
-                where vdi.opaque_ref != "OpaqueRef:NULL"
-                select vdi).ToList();
-
-            _logger.Log("Destroying VM...");
-            VM.destroy(_session, cloneVmRef);
-
-            _logger.Log("Destroying VM's disks...");
-            foreach (var vdi in vdis)
-                VDI.destroy(_session, vdi);
-
-            _logger.Log("VM destroyed.");
+                _logger.Log("VM destroyed.");
+            }
         }
     }
 }

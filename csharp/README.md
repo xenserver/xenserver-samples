@@ -17,6 +17,7 @@ To run the XenServer.NET examples, follow these steps:
 1. **Install Dependencies**:
    - Ensure that the XenServer.NET NuGet package is installed in your project. You can download the stable release from [xenserver.com/downloads](xenserver.com/downloads).
    - Alternatively, if you prefer using an unstable prerelease version, you can fetch it from the [Xen-API repository's release page](https://github.com/xapi-project/xen-api/releases).
+   - This will update the `<PackageReference>` entry in the `XenSdkSample.csproj` file.
 
 2. **Open Solution in Visual Studio**:
    - Open the `XenSdkSample.sln` solution file in Microsoft Visual Studio 2022.
@@ -25,7 +26,8 @@ To run the XenServer.NET examples, follow these steps:
    - Build the solution within Visual Studio to compile the example projects.
 
 4. **Run the Examples**:
-   - Run the compiled application from the command line, providing the required parameters:
+	- There will be two versions: NET Framework 4.8 and NET8.0. Navigate to your preferred version.
+	- Run the compiled application from the command line, providing the required parameters:
      ```
      .\XenSdkSample.exe <host> <username> <password>
      ```
