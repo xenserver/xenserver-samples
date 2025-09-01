@@ -169,6 +169,9 @@ try {
     #upload the update bundle file to the pool
     Send-Bundle -Coordinator $coordinator -BundleFile $BundlePath
 
+    #make a note of the bundle hash (checksum)
+    $bundleChecksum = Get-XenPool | Select-Object -ExpandProperty repositories | Get-XenRepository | Select-Object -ExpandProperty hash
+
     #get list of available updates
     $cdnUpdates = Get-Updates -Coordinator $coordinator
 
@@ -200,10 +203,10 @@ Server {0}:
     $cdnUpdates.updates | ForEach-Object { Write-Host $_.id '***' $_.summary '***' $_.'special-info'}
 
     #update the hosts starting from the coordinator
-    Install-Updates -XenHost $coordinator -Hash $syncHash
+    Install-Updates -XenHost $coordinator -Hash $bundleChecksum
 
     foreach ($supporter in $supporters) {
-        Install-Updates -XenHost $supporter -Hash $syncHash
+        Install-Updates -XenHost $supporter -Hash $bundleChecksum
     }
 }
 finally {
