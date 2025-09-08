@@ -157,11 +157,16 @@ function Install-Updates([XenAPI.Host]$XenHost, [String]$Hash) {
     Write-Host "Applying updates on host" $XenHost.name_label
     Invoke-XenHost -XenHost $XenHost -xenaction ApplyUpdates -Hash $Hash -Async -PassThru | Wait-XenTask
 
-    Write-Host "Enabling host" $XenHost.name_label
-    Invoke-XenHost -XenHost $XenHost -XenAction Enable
-
     $guidances = Get-XenHost -Ref $XenHost.opaque_ref | Select-Object -ExpandProperty pending_guidances
     Write-Host "Pending tasks:" ($guidances -join ", ")
+
+    if ($guidances) {
+      Write-Host "You must apply the mandatory pending tasks before enabling the server"
+    }
+    else {
+      Write-Host "Enabling host" $XenHost.name_label
+      Invoke-XenHost -XenHost $XenHost -XenAction Enable
+    }
 }
 
 #main program

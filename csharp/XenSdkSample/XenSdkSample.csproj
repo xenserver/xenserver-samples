@@ -7,13 +7,17 @@
     <Description>A sample project demonstrating the usage of XenServer.NET SDK for interacting with XenServer infrastructure, managing virtualized environments, and performing administrative tasks.</Description>
     <Company>XenServer</Company>
     <Product>XenSdkSample</Product>
-    <Copyright>
-      Copyright (c) Cloud Software Group, Inc.
-    </Copyright>
+    <Copyright>Copyright (c) Cloud Software Group, Inc.</Copyright>
     <Version>1.0.0.0</Version>
     <FileVersion>1.0.0.0</FileVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <ForceRid></ForceRid>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(ForceRid)' == '' ">
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(ForceRid)' != '' ">
+    <RuntimeIdentifier>$(ForceRid)</RuntimeIdentifier>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="XenServer.NET" Version="[25.17.0,)" />
