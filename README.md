@@ -2,7 +2,7 @@
 
 This repository contains sample code for interacting with [XenServer](https://www.xenserver.com/)
 using the XenServer SDK. The examples are provided as complete applications
-or scripts which you can run on your server.
+or scripts that you can run on your server.
 
 Apart from the ready-to-run code, this repository contains also a number of tips
 or walk-throughs that you may find useful when developing products for XenServer.
@@ -13,7 +13,7 @@ The content of this repository can be used as a companion to the
 ## Available languages
 
 There are examples for each of the five programming or scripting languages of
-the Xenserver SDK:
+the XenServer SDK:
 
 - [C](c)
 - [C#](csharp)
@@ -32,9 +32,10 @@ as well.
 
 ## Contributions
 
-The preferable way to contribute patches is to fork the repository on Github and
+The preferable way to contribute patches is to fork the repository and
 then submit a pull request. Questions related to these samples can be posted on
 the repo's [issues](https://github.com/xenserver/xenserver-samples/issues) page.
+See also [CONTRIBUTING](CONTRIBUTING.md).
 
 ## License
 
