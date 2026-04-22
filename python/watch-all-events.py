@@ -59,12 +59,12 @@ def main(session):
 
         while True:
             try:
-                print "Polling for events..."
+                print("Polling for events...")
                 output = session.xenapi.event_from(event_types, token, call_timeout)
                 events = output['events']
                 token = output['token']
 
-                print "Number of events retrieved: %s" % len(events)
+                print("Number of events retrieved: %s" % len(events))
 
                 now = time.strftime(iso8601, time.gmtime(time.time()))
                 # Print the events out in a nice format:
@@ -72,39 +72,39 @@ def main(session):
 
                 if len(events) > 0:
                     hdr = fmt % ("time", "id", "ref", "class", "type", "name of object", "snapshot")
-                    print "-" * (len(hdr))
-                    print hdr
-                    print "-" * (len(hdr))
+                    print("-" * (len(hdr)))
+                    print(hdr)
+                    print("-" * (len(hdr)))
 
                 for event in events:
                     name = "n/a"
                     snapshot = ''
-                    if "snapshot" in event.keys():
+                    if "snapshot" in list(event.keys()):
                         snapshot = event['snapshot']
-                        if "name_label" in snapshot.keys():
+                        if "name_label" in list(snapshot.keys()):
                             name = snapshot['name_label']
-                    print fmt % (now, event['id'], event["ref"], event['class'], event['operation'], name, repr(snapshot))
+                    print(fmt % (now, event['id'], event["ref"], event['class'], event['operation'], name, repr(snapshot)))
 
-                print "Waiting for %s seconds before next poll..." % polling_interval
+                print("Waiting for %s seconds before next poll..." % polling_interval)
                 time.sleep(polling_interval)
 
             except KeyboardInterrupt:
                 break
 
     except XenAPI.Failure as e:
-        print e.details
+        print(e.details)
         sys.exit(1)
     finally:
         session.xenapi.session.logout()
 
 
 def print_usage():
-    print """
+    print("""
 Usage:
     %s <url> <username> <password>
 or
     %s [http://]localhost [<username>] [<password>]
-""" % (sys.argv[0], sys.argv[0])
+""" % (sys.argv[0], sys.argv[0]))
 
 
 if __name__ == "__main__":
@@ -124,6 +124,6 @@ if __name__ == "__main__":
     try:
         new_session.xenapi.login_with_password(username, password, '1.0', 'xen-api-scripts-watch-all-events.py')
     except XenAPI.Failure as f:
-        print "Failed to acquire a session: %s" % f.details
+        print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)
     main(new_session)
