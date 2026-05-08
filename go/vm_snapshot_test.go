@@ -2,6 +2,7 @@ package testGoSDK
 
 import (
 	"testing"
+	"time"
 
 	"xenapi"
 )
@@ -100,9 +101,11 @@ func TestVMAsyncSnapshot(t *testing.T) {
 		t.Fail()
 		return
 	}
+	t.Log("VM Power State: ", vmRecordTest.PowerState)
+
 	if vmRecordTest.PowerState == xenapi.VMPowerStateHalted {
 		if vmRecordTest.ResidentOn == "OpaqueRef:NULL" {
-			taskRef, err := xenapi.VM.AsyncStart(session, vmRefTest, true, true)
+			taskRef, err := xenapi.VM.AsyncStart(session, vmRefTest, false, true)
 			if err != nil {
 				t.Log(err)
 				t.Fail()
@@ -127,7 +130,7 @@ func TestVMAsyncSnapshot(t *testing.T) {
 				t.Fail()
 				return
 			}
-			taskRef, err = xenapi.VM.AsyncStartOn(session, vmRefTest, vmRecordTest.ResidentOn, true, true)
+			taskRef, err = xenapi.VM.AsyncStartOn(session, vmRefTest, vmRecordTest.ResidentOn, false, true)
 			if err != nil {
 				t.Log(err)
 				t.Fail()
@@ -142,7 +145,7 @@ func TestVMAsyncSnapshot(t *testing.T) {
 		}
 	} else if vmRecordTest.PowerState == xenapi.VMPowerStateSuspended {
 		if vmRecordTest.ResidentOn == "OpaqueRef:NULL" {
-			taskRef, err := xenapi.VM.AsyncResume(session, vmRefTest, true, true)
+			taskRef, err := xenapi.VM.AsyncResume(session, vmRefTest, false, true)
 			if err != nil {
 				t.Log(err)
 				t.Fail()
@@ -167,7 +170,7 @@ func TestVMAsyncSnapshot(t *testing.T) {
 				t.Fail()
 				return
 			}
-			taskRef, err = xenapi.VM.AsyncResumeOn(session, vmRefTest, vmRecordTest.ResidentOn, true, true)
+			taskRef, err = xenapi.VM.AsyncResumeOn(session, vmRefTest, vmRecordTest.ResidentOn, false, true)
 			if err != nil {
 				t.Log(err)
 				t.Fail()
@@ -181,6 +184,16 @@ func TestVMAsyncSnapshot(t *testing.T) {
 			}
 		}
 	}
+    
+	powerState, err := xenapi.VM.GetPowerState(session, vmRefTest)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+	t.Log("VM Power State: ", powerState)
+	time.Sleep(time.Duration(30) * time.Second)
+
 	taskRef, err := xenapi.VM.AsyncCheckpoint(session, vmRefTest, "Snapshot2")
 	if err != nil {
 		t.Log(err)
@@ -193,6 +206,7 @@ func TestVMAsyncSnapshot(t *testing.T) {
 		t.Fail()
 		return
 	}
+
 	snapshotRefs, err := xenapi.VM.GetSnapshots(session, vmRefTest)
 	if err != nil {
 		t.Log(err)
@@ -233,4 +247,20 @@ func TestVMAsyncSnapshot(t *testing.T) {
 		t.Fail()
 		return
 	}
+
+	// Put the VM back to halted state
+	t.Log("Forcing shutdown VM...")
+	err = xenapi.VM.HardShutdown(session, vmRefTest)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+	powerState, err = xenapi.VM.GetPowerState(session, vmRefTest)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+	t.Log("VM Power State: ", powerState)
 }
