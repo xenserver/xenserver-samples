@@ -32,7 +32,6 @@
 #  - import raw disk images
 #  - connect an export to an import to copy a raw disk image
 
-import os
 import socket
 import ssl
 import sys

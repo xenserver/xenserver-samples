@@ -52,14 +52,14 @@ def main(session):
     for pifRef in pifs.keys():
         if (lowest is None) or (pifs[pifRef]['device'] < pifs[lowest]['device']):
             lowest = pifRef
-    print "Choosing PIF with device: ", pifs[lowest]['device']
+    print("Choosing PIF with device: %s" % pifs[lowest]['device'])
 
     network = session.xenapi.PIF.get_network(lowest)
-    print "Chosen PIF is connected to network: ", session.xenapi.network.get_name_label(network)
+    print("Chosen PIF is connected to network: %s" % session.xenapi.network.get_name_label(network))
 
     # List all the VM objects
     vms = session.xenapi.VM.get_all_records()
-    print "Server has %d VM objects (this includes templates):" % (len(vms))
+    print("Server has %d VM objects (this includes templates):" % len(vms))
 
     templates = []
     for vm in vms:
@@ -70,19 +70,19 @@ def main(session):
             # Look for a debian template
             if record["name_label"].startswith("Debian"):
                 templates.append(vm)
-        print "  Found %8s with name_label = %s" % (ty, record["name_label"])
+        print("  Found %8s with name_label = %s" % (ty, record["name_label"]))
 
-    print "Choosing a Debian template to clone"
+    print("Choosing a Debian template to clone")
     if not templates:
-        print "Could not find any Debian templates. Exiting."
+        print("Could not find any Debian templates. Exiting.")
         sys.exit(1)
 
     template = templates[0]
-    print "  Selected template: ", session.xenapi.VM.get_name_label(template)
-    print "Installing new VM from the template"
+    print("  Selected template: %s" % session.xenapi.VM.get_name_label(template))
+    print("Installing new VM from the template")
     vm = session.xenapi.VM.clone(template, "new")
-    print "  New VM has name: new"
-    print "Creating VIF"
+    print("  New VM has name: new")
+    print("Creating VIF")
     vif = { 'device': '0',
             'network': network,
             'VM': vm,
@@ -92,24 +92,24 @@ def main(session):
             "qos_algorithm_params": {},
             "other_config": {} }
     session.xenapi.VIF.create(vif)
-    print "Adding non-interactive to the kernel commandline"
+    print("Adding non-interactive to the kernel commandline")
     session.xenapi.VM.set_PV_args(vm, "non-interactive")
-    print "Choosing an SR to instantiate the VM's disks"
+    print("Choosing an SR to instantiate the VM's disks")
     pool = session.xenapi.pool.get_all()[0]
     default_sr = session.xenapi.pool.get_default_SR(pool)
     default_sr = session.xenapi.SR.get_record(default_sr)
-    print "Choosing SR: %s (uuid %s)" % (default_sr['name_label'], default_sr['uuid'])
-    print "Rewriting the disk provisioning XML"
+    print("Choosing SR: %s (uuid %s)" % (default_sr['name_label'], default_sr['uuid']))
+    print("Rewriting the disk provisioning XML")
     spec = provision.getProvisionSpec(session, vm)
     spec.setSR(default_sr['uuid'])
     provision.setProvisionSpec(session, vm, spec)
-    print "Asking server to provision storage from the template specification"
+    print("Asking server to provision storage from the template specification")
     session.xenapi.VM.provision(vm)
-    print "Starting VM"
+    print("Starting VM")
     session.xenapi.VM.start(vm, False, True)
-    print "  VM is booting"
+    print("  VM is booting")
 
-    print "Waiting for the installation to complete"
+    print("Waiting for the installation to complete")
     # Here we poll because we don't generate events for metrics objects currently
     
     def read_os_name(a_vm):
@@ -134,16 +134,16 @@ def main(session):
 
     while read_os_name(vm) is None:
         time.sleep(1)
-    print "Reported OS name: ", read_os_name(vm)
+    print("Reported OS name: %s" % read_os_name(vm))
     while read_ip_address(vm) is None:
         time.sleep(1)
-    print "Reported IP: ", read_ip_address(vm)
+    print("Reported IP: %s" % read_ip_address(vm))
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print "Usage:"
-        print sys.argv[0], " <url> <username> <password>"
+        print("Usage:")
+        print("%s <url> <username> <password>" % sys.argv[0])
         sys.exit(1)
     url = sys.argv[1]
     username = sys.argv[2]
@@ -153,12 +153,12 @@ if __name__ == "__main__":
     try:
         new_session.xenapi.login_with_password(username, password, "1.0", "xen-api-scripts-install.py")
     except XenAPI.Failure as f:
-        print "Failed to acquire a session: %s" % f.details
+        print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)
     try:
         main(new_session)
-    except Exception, e:
-        print str(e)
+    except Exception as e:
+        print(str(e))
         raise
     finally:
         new_session.xenapi.session.logout()

@@ -56,15 +56,15 @@ def main(session, sr, mapping):
         newdconf=rec['device_config']
         newdconf.update(mapping)
         session.xenapi.PBD.destroy(pbd)
-        print "host=",rec['host']," sr=",rec['SR'],"newdconf=",newdconf
+        print("host=%s sr=%s newdconf=%s" % (rec['host'], rec['SR'], newdconf))
         pbd=session.xenapi.PBD.create({'host':rec['host'],'SR':rec['SR'],'device_config':newdconf})
         session.xenapi.PBD.plug(pbd)
 
 if __name__ == "__main__":
     if len(sys.argv) < 5:
-        print "Usage:"
-        print sys.argv[0], "<url> <username> <password> <sr-uuid>"
-        print "Note that the device-config parameters that are updated are located in the source file."
+        print("Usage:")
+        print("%s <url> <username> <password> <sr-uuid>" % sys.argv[0])
+        print("Note that the device-config parameters that are updated are located in the source file.")
         sys.exit(1)
     url = sys.argv[1]
     username = sys.argv[2]
@@ -79,13 +79,13 @@ if __name__ == "__main__":
     try:
         new_session.xenapi.login_with_password(username, password, "1.0", "xen-api-scripts-fixpbds.py")
     except XenAPI.Failure as f:
-        print "Failed to acquire a session: %s" % f.details
+        print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)
 
     try:
         main(new_session, the_sr, the_mapping)
     except XenAPI.Failure as e:
-        print e.details
+        print(e.details)
         sys.exit(1)
     finally:
         new_session.xenapi.session.logout()

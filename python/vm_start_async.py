@@ -28,7 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-# Simple example to demonstrate how to use an aasynchronous operation,
+# Simple example to demonstrate how to use an asynchronous operation,
 # namely the asynchronous version of the VM start method.
 # The example assumes the presence of a halted VM named "new", starts
 # the VM, retrieves the task reference and queries the task's status.
@@ -42,41 +42,41 @@ import XenAPI
 
 def main(session):
 
-    print "Looking for a halted VM..."
+    print("Looking for a halted VM...")
     vms = session.xenapi.VM.get_all_records()
     vm = None
     for vm_ref in vms:
         vm_rec = vms[vm_ref]
         if not vm_rec['is_a_template'] and not vm_rec['is_control_domain']\
                 and vm_rec["power_state"] == "Halted":
-            print "Found it:"
+            print("Found it:")
             pprint.pprint(vm_rec)
             vm = vm_ref
             break
         
     if vm is None:
-        print "Unable to find a halted VM"
+        print("Unable to find a halted VM")
         return
 
-    print "Attempting to start the halted VM asynchronously"
+    print("Attempting to start the halted VM asynchronously")
     task = session.xenapi.Async.VM.start(vm, False, True)
     task_record = session.xenapi.task.get_record(task)
 
-    print "The initial contents of the task record:"
+    print("The initial contents of the task record:")
     pprint.pprint(task_record)
 
-    print "Waiting for the task to complete..."
+    print("Waiting for the task to complete...")
     while session.xenapi.task.get_status(task) == "pending":
         time.sleep(1)
 
     task_record = session.xenapi.task.get_record(task)
-    print "The final contents of the task record:"
+    print("The final contents of the task record:")
     pprint.pprint(task_record)
     
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print "Usage:"
-        print sys.argv[0], " <url> <username> <password>"
+        print("Usage:")
+        print("%s <url> <username> <password>" % sys.argv[0])
         sys.exit(1)
     url = sys.argv[1]
     username = sys.argv[2]
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     try:
         new_session.xenapi.login_with_password(username, password, "1.0", "xen-api-scripts-vm-start-async.py")
     except XenAPI.Failure as f:
-        print "Failed to acquire a session: %s" % f.details
+        print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)
     try:
         main(new_session)
