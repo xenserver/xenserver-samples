@@ -77,7 +77,7 @@ if __name__ == "__main__":
     # First acquire a valid session by logging in:
     new_session = XenAPI.Session(url)
     try:
-        new_session.xenapi.login_with_password(username, password, "1.0", "xen-api-scripts-fixpbds.py")
+        new_session.xenapi.login_with_password(username, password, "1.0", "fixpbds.py")
     except XenAPI.Failure as f:
         print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)

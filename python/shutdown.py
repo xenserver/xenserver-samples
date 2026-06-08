@@ -74,7 +74,7 @@ class TimeoutFunction:
 def task_is_pending(session, task):
     try:
         return session.xenapi.task.get_status(task) == "pending"
-    except:
+    except XenAPI.Failure:
         return False
 
 
@@ -83,7 +83,7 @@ def wait_for_tasks(session, tasks, timeout):
     and false if a timeout occurs"""
     finished = False
     start = time.time ()
-    while not(finished) and ((time.time () - start) < timeout):
+    while not finished and ((time.time () - start) < timeout):
         finished = True
         for task in tasks:
             if task_is_pending(session, task):
@@ -98,7 +98,7 @@ def get_running_domains(session, host):
     for vm in session.xenapi.host.get_resident_VMs(host):
         record = session.xenapi.VM.get_record(vm)
         if not record["is_control_domain"] and record["power_state"] == "Running":
-            if record['other_config'].has_key('auto_poweroff') and record['other_config'].get('auto_poweroff') == "false":
+            if 'auto_poweroff' in record['other_config'] and record['other_config'].get('auto_poweroff') == "false":
                 print("\n  Skip running VM %s has self-managed power-off" % record["name_label"])
                 sys.stdout.flush()
                 continue
@@ -138,13 +138,13 @@ def host_evacuate(session, host):
                         print("\n  Cancelling operation on VM: %s" % record["name_label"])
                         sys.stdout.flush()
                         session.xenapi.task.cancel(t)
-                    except:
+                    except XenAPI.Failure:
                         print("Failed to cancel task: %s" % t)
                         sys.stdout.flush()
     finally:
         try:
             session.xenapi.task.destroy(task)
-        except Exception:
+        except XenAPI.Failure:
             # db gc thread in xapi may delete task from tasks table
             print("\n Task %s has been destroyed" % task)
             sys.stdout.flush()
@@ -178,7 +178,7 @@ def parallel_clean_shutdown(session, vms):
                         print("\n  Cancelling clean shutdown of VM: %s" % record["name_label"])
                         sys.stdout.flush()
                         session.xenapi.task.cancel(task)
-                except:
+                except XenAPI.Failure:
                     pass
 
         if not(wait_for_tasks(session, map(lambda x:x[0], tasks), 60)):
@@ -190,7 +190,7 @@ def parallel_clean_shutdown(session, vms):
         for (task,_,_) in tasks:
             try:
                 session.xenapi.task.destroy(task)
-            except:
+            except XenAPI.Failure:
                 # db gc thread in xapi may delete task from tasks table
                 print("\n Task %s has been destroyed" % task)
                 sys.stdout.flush()
@@ -206,7 +206,7 @@ def serial_hard_shutdown(session, vms):
 
         try:
             session.xenapi.VM.hard_shutdown(vm)
-        except Exception:
+        except XenAPI.Failure:
             print("\n  Failure performing hard shutdown of VM: %s" % record["name_label"])
             rc += 1
     return rc
@@ -277,7 +277,7 @@ if __name__ == "__main__":
     except TimeoutFunctionException:
         print("Unable to connect to coordinator within %d seconds. Exiting." % TIMEOUT_SECS)
         sys.exit(1)
-    except Exception:
+    except XenAPI.Failure:
         print('Failed to connect to coordinator.')
         sys.exit(2)
 

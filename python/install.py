@@ -100,9 +100,9 @@ def main(session):
     default_sr = session.xenapi.SR.get_record(default_sr)
     print("Choosing SR: %s (uuid %s)" % (default_sr['name_label'], default_sr['uuid']))
     print("Rewriting the disk provisioning XML")
-    spec = provision.getProvisionSpec(session, vm)
-    spec.setSR(default_sr['uuid'])
-    provision.setProvisionSpec(session, vm, spec)
+    spec = provision.get_provision_spec(session, vm)
+    spec.set_sr(default_sr['uuid'])
+    provision.set_provision_spec(session, vm, spec)
     print("Asking server to provision storage from the template specification")
     session.xenapi.VM.provision(vm)
     print("Starting VM")
@@ -119,7 +119,7 @@ def main(session):
             if "name" in os.keys():
                 return os["name"]
             return None
-        except:
+        except XenAPI.Failure:
             return None
 
     def read_ip_address(a_vm):
@@ -129,7 +129,7 @@ def main(session):
             if "0/ip" in os.keys():
                 return os["0/ip"]
             return None
-        except:
+        except XenAPI.Failure:
             return None
 
     while read_os_name(vm) is None:
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     # First acquire a valid session by logging in:
     new_session = XenAPI.Session(url)
     try:
-        new_session.xenapi.login_with_password(username, password, "1.0", "xen-api-scripts-install.py")
+        new_session.xenapi.login_with_password(username, password, "1.0", "install.py")
     except XenAPI.Failure as f:
         print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)

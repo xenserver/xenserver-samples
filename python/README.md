@@ -17,7 +17,7 @@ The following Python examples are included in this repository:
 -  `permute.py` - selects a set of VMs and uses live migration to move them
     simultaneously among hosts.
 
--  `powercycle.py` - selects a set of VMs and powercycles them.
+-  `powercycle.py` - selects a set of VMs and power-cycles them.
 
 -  `provision.py`: - parses/regenerates the "disk provisioning" XML contained 
     within templates
