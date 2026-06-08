@@ -54,7 +54,7 @@ func TestVMCreateAndDestroy(t *testing.T) {
 	t.Log("Found SR:", srRecord.NameLabel)
 
 	// Find a network
-	networkRef, err := GetFirstNetwork()
+	networkRef, err := GetManagementNetwork()
 	if err != nil {
 		t.Log(err)
 		t.Fail()
@@ -215,7 +215,7 @@ func TestVMAsyncCreateAndDestroy(t *testing.T) {
 	t.Log("Found SR:", srRecord.NameLabel)
 
 	// Find a network
-	networkRef, err := GetFirstNetwork()
+	networkRef, err := GetManagementNetwork()
 	if err != nil {
 		t.Log(err)
 		t.Fail()

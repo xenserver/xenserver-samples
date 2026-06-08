@@ -103,15 +103,24 @@ func CanCreateVdi(srType string) (bool, error) {
 	return false, nil
 }
 
-func GetFirstNetwork() (xenapi.NetworkRef, error) {
-	networkRefs, err := xenapi.Network.GetAll(session)
+func GetManagementNetwork() (xenapi.NetworkRef, error) {
+	networkRecords, err := xenapi.Network.GetAllRecords(session)
 	if err != nil {
 		return "", err
 	}
-	if len(networkRefs) == 0 {
-		return "", fmt.Errorf("No network found.")
+
+	for networkRef, networkRecord := range networkRecords {
+		for _, pifRef := range networkRecord.PIFs {
+			management, err := xenapi.PIF.GetManagement(session, pifRef)
+			if err != nil {
+				return "", err
+			}
+			if management {
+				return networkRef, nil
+			}
+		}
 	}
-	return networkRefs[0], nil
+	return "", fmt.Errorf("No management network found.")
 }
 
 func FindHaltedLinuxVM() (xenapi.VMRef, error) {
