@@ -37,38 +37,9 @@
 # timeout.
 
 import sys, time
-import signal
-import syslog
-
 import XenAPI
 
 TIMEOUT_SECS=30
-
-
-# class for determining whether xe is responsive
-class TimeoutFunctionException(Exception):
-    """Exception to raise on a timeout"""
-    pass
-
-
-class TimeoutFunction:
-
-    def __init__(self, function, timeout):
-        self.timeout = timeout
-        self.function = function
-
-    def handle_timeout(self, signum, frame):
-        raise TimeoutFunctionException()
-
-    def __call__(self, *args):
-        old = signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.timeout)
-        try:
-            result = self.function(*args)
-        finally:
-            signal.signal(signal.SIGALRM, old)
-        signal.alarm(0)
-        return result
 
 
 def task_is_pending(session, task):
@@ -125,7 +96,7 @@ def host_evacuate(session, host):
     try:
         timeout = max(estimate_evacuate_timeout(session, host), timeout)
     except Exception as e:
-        syslog.syslog(syslog.LOG_WARNING, "Evacuate timeout estimation error: %s, use default." % e)
+        print("Evacuate timeout estimation error: %s, use default." % e)
     try:
         if not(wait_for_tasks(session, [ task ], timeout)):
             print("\n  Cancelling evacuation of host")
@@ -170,7 +141,7 @@ def parallel_clean_shutdown(session, vms):
         if not tasks:
             return 0
 
-        if not(wait_for_tasks(session, map(lambda x:x[0], tasks), 60)):
+        if not(wait_for_tasks(session, list(map(lambda x:x[0], tasks)), 60)):
             # Cancel any remaining tasks.
             for (task,_,record) in tasks:
                 try:
@@ -181,7 +152,7 @@ def parallel_clean_shutdown(session, vms):
                 except XenAPI.Failure:
                     pass
 
-        if not(wait_for_tasks(session, map(lambda x:x[0], tasks), 60)):
+        if not(wait_for_tasks(session, list(map(lambda x:x[0], tasks)), 60)):
             for (_,vm,_) in tasks:
                 if session.xenapi.VM.get_power_state(vm) == "Running":
                     rc += 1
@@ -212,9 +183,10 @@ def serial_hard_shutdown(session, vms):
     return rc
 
 
-def main(session, host_uuid, force):
+def main(session, force):
     rc = 0
-    host = session.xenapi.host.get_by_uuid(host_uuid)
+    hosts = session.xenapi.host.get_all()
+    host = hosts[0]
 
     if not force:
         # VMs which can't be evacuated should be shutdown first
@@ -257,32 +229,28 @@ def main(session, host_uuid, force):
     return rc
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 and len(sys.argv) != 3:
+    if len(sys.argv) != 4 and len(sys.argv) != 5:
         print("Usage:")
-        print("%s <host-uuid> [--force]" % sys.argv[0])
+        print("%s <url> <username> <password> [--force]" % sys.argv[0])
         sys.exit(1)
 
-    uuid = sys.argv[1]
+    url = sys.argv[1]
+    username = sys.argv[2]
+    password = sys.argv[3]
 
     force = False
-    if len(sys.argv) == 3 and sys.argv[2] == "--force":
+    if len(sys.argv) == 5 and sys.argv[4] == "--force":
         force = True
 
-    new_session = XenAPI.xapi_local()
-
-    connect_to_coordinator_with_timeout = TimeoutFunction(new_session.xenapi.login_with_password, TIMEOUT_SECS)
-
+    new_session = XenAPI.Session(url)
     try:
-        connect_to_coordinator_with_timeout("root", "")
-    except TimeoutFunctionException:
-        print("Unable to connect to coordinator within %d seconds. Exiting." % TIMEOUT_SECS)
+        new_session.xenapi.login_with_password(username, password, "1.0", "shutdown.py")
+    except XenAPI.Failure as f:
+        print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)
-    except XenAPI.Failure:
-        print('Failed to connect to coordinator.')
-        sys.exit(2)
 
     try:
-        rc = main(new_session, uuid, force)
+        rc = main(new_session, force)
         sys.exit(rc)
     except Exception as e:
         print("Caught %s" % str(e))
