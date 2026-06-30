@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) Cloud Software Group, Inc.
 #
@@ -38,9 +38,6 @@
 
 import sys, time
 import XenAPI
-
-TIMEOUT_SECS=30
-
 
 def task_is_pending(session, task):
     try:
@@ -183,10 +180,9 @@ def serial_hard_shutdown(session, vms):
     return rc
 
 
-def main(session, force):
+def main(session, host_uuid, force):
     rc = 0
-    hosts = session.xenapi.host.get_all()
-    host = hosts[0]
+    host = session.xenapi.host.get_by_uuid(host_uuid)
 
     if not force:
         # VMs which can't be evacuated should be shutdown first
@@ -229,17 +225,18 @@ def main(session, force):
     return rc
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4 and len(sys.argv) != 5:
+    if len(sys.argv) != 5 and len(sys.argv) != 5:
         print("Usage:")
-        print("%s <url> <username> <password> [--force]" % sys.argv[0])
+        print("%s <url> <username> <password> <host-uuid> [--force]" % sys.argv[0])
         sys.exit(1)
 
     url = sys.argv[1]
     username = sys.argv[2]
     password = sys.argv[3]
+    host_uuid = sys.argv[4]
 
     force = False
-    if len(sys.argv) == 5 and sys.argv[4] == "--force":
+    if len(sys.argv) == 6 and sys.argv[5] == "--force":
         force = True
 
     new_session = XenAPI.Session(url)
@@ -250,7 +247,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        rc = main(new_session, force)
+        rc = main(new_session, host_uuid, force)
         sys.exit(rc)
     except Exception as e:
         print("Caught %s" % str(e))

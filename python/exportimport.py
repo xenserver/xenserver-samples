@@ -44,7 +44,7 @@ import urllib.request
 import XenAPI
 
 
-def exportimport(url, xapi, session, src_vdi, dst_vdi):
+def exportimport(url, xapi, session, src_vdi, dst_vdi, ignore_ssl):
     # If an HTTP operation fails then it will record the error on the task
     # object. Note you can't use the HTTP response code for this because
     # it must be sent *before* the stream is processed.
@@ -85,8 +85,8 @@ def exportimport(url, xapi, session, src_vdi, dst_vdi):
             return
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        context = ssl.create_default_context()
-        output = context.wrap_socket(s)
+        ctx = ssl._create_unverified_context() if ignore_ssl else ssl.create_default_context()
+        output = ctx.wrap_socket(s)
         output.connect((host, 443))
 
         # HTTP/1.0 with no transfer-encoding
@@ -145,24 +145,27 @@ def exportimport(url, xapi, session, src_vdi, dst_vdi):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 5 and len(sys.argv) != 6:
         print("Usage:")
-        print(sys.argv[0], " <url> <username> <password> <vdi-uuid>")
+        print(sys.argv[0], " <url> <username> <password> <vdi-uuid> [--ignoressl]")
         print(" -- creates a fresh VDI and streams the contents of <vdi-uuid> into it.")
         print()
         print("Example:")
         print("SR=$(xe pool-list params=default-SR --minimal)")
-        print(
-            "VDI=$(xe vdi-create sr-uuid=$SR name-label=test virtual-size=128MiB type=user)"
-        )
+        print("VDI=$(xe vdi-create sr-uuid=$SR name-label=test virtual-size=128MiB type=user)")
         print(sys.argv[0], "https://localhost password $VDI")
         sys.exit(1)
     url = sys.argv[1]
     username = sys.argv[2]
     password = sys.argv[3]
     vdi_uuid = sys.argv[4]
+
+    ignore_ssl = False
+    if len(sys.argv) == 6 and sys.argv[5] == "--ignoressl":
+        ignore_ssl = True
+
     # First acquire a valid session by logging in:
-    xapi = XenAPI.Session(url)
+    xapi = XenAPI.Session(url, ignore_ssl=ignore_ssl)
     xapi.xenapi.login_with_password(username, password, "1.0", "exportimport.py",)
     dst_vdi = None
     try:
@@ -172,7 +175,7 @@ if __name__ == "__main__":
         # to upload into
         vdi_args = xapi.xenapi.VDI.get_record(src_vdi)
         dst_vdi = xapi.xenapi.VDI.create(vdi_args)
-        exportimport(url, xapi, xapi._session, src_vdi, dst_vdi)
+        exportimport(url, xapi, xapi._session, src_vdi, dst_vdi, ignore_ssl)
     except Exception as e:
         print("Caught %s: trying to clean up" % str(e))
         traceback.print_exc()
