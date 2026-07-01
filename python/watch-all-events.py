@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) Cloud Software Group, Inc.
 #
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     else:
         new_session = XenAPI.Session(url)
     try:
-        new_session.xenapi.login_with_password(username, password, '1.0', 'xen-api-scripts-watch-all-events.py')
+        new_session.xenapi.login_with_password(username, password, '1.0', 'watch-all-events.py')
     except XenAPI.Failure as f:
         print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)

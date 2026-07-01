@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) Cloud Software Group, Inc.
 #
@@ -44,7 +44,7 @@ class Disk:
         self.size = size     # in bytes
         self.sr = sr         # uuid of SR
         self.bootable = bootable
-    def toElement(self, doc):
+    def to_element(self, doc):
         disk = doc.createElement("disk")
         disk.setAttribute("device", self.device)
         disk.setAttribute("size", self.size)
@@ -54,7 +54,7 @@ class Disk:
         disk.setAttribute("bootable", b)
         return disk
 
-def parseDisk(element):
+def parse_disk(element):
     device = element.getAttribute("device")
     size = element.getAttribute("size")
     sr = element.getAttribute("sr")
@@ -65,62 +65,62 @@ class ProvisionSpec:
     """Represents a provisioning specification: currently a list of required disks"""
     def __init__(self):
         self.disks = []
-    def toElement(self, doc):
+    def to_element(self, doc):
         element = doc.createElement("provision")
         for disk in self.disks:
-            element.appendChild(disk.toElement(doc))
+            element.appendChild(disk.to_element(doc))
         return element
-    def setSR(self, sr):
+    def set_sr(self, sr):
         """Set the requested SR for each disk"""
         for disk in self.disks:
             disk.sr = sr
 
-def parseProvisionSpec(txt):
+def parse_provision_spec(txt):
     """Return an instance of type ProvisionSpec given XML text"""
     doc = xml.dom.minidom.parseString(txt)
-    all = doc.getElementsByTagName("provision")
-    if len(all) <> 1:
-        raise "Expected to find exactly one <provision> element"
+    all_prov = doc.getElementsByTagName("provision")
+    if len(all_prov) != 1:
+        raise RuntimeError("Expected to find exactly one <provision> element")
     ps = ProvisionSpec()
-    disks = all[0].getElementsByTagName("disk")
+    disks = all_prov[0].getElementsByTagName("disk")
     for disk in disks:
-        ps.disks.append(parseDisk(disk))
+        ps.disks.append(parse_disk(disk))
     return ps
 
-def printProvisionSpec(ps):
+def print_provision_spec(ps):
     """Return a string containing pretty-printed XML corresponding to the supplied provisioning spec"""
     doc = xml.dom.minidom.Document()
-    doc.appendChild(ps.toElement(doc))
+    doc.appendChild(ps.to_element(doc))
     return doc.toprettyxml()
 
-def getProvisionSpec(session, vm):
+def get_provision_spec(session, vm):
     """Read the provision spec of a template/VM"""
     other_config = session.xenapi.VM.get_other_config(vm)
-    return parseProvisionSpec(other_config['disks'])
+    return parse_provision_spec(other_config['disks'])
 
-def setProvisionSpec(session, vm, ps):
+def set_provision_spec(session, vm, ps):
     """Set the provision spec of a template/VM"""
-    txt = printProvisionSpec(ps)
+    txt = print_provision_spec(ps)
     try:
         session.xenapi.VM.remove_from_other_config(vm, "disks")
-    except:
+    except XenAPI.Failure:
         pass
     session.xenapi.VM.add_to_other_config(vm, "disks", txt)
 
 if __name__ == "__main__":
-    print "Unit test of provision XML spec module"
-    print "--------------------------------------"
+    print("Unit test of provision XML spec module")
+    print("--------------------------------------")
     ps = ProvisionSpec()
     ps.disks.append(Disk("0", "1024", "0000-0000", True))
     ps.disks.append(Disk("1", "2048", "1111-1111", False))
-    print "* Pretty-printing spec"
-    txt = printProvisionSpec(ps)
-    print txt
-    print "* Re-parsing output"
-    ps2 = parseProvisionSpec(txt)
-    print "* Pretty-printing spec"
-    txt2 = printProvisionSpec(ps)
-    print txt2
-    if txt <> txt2:
-        raise "Sanity-check failed: print(parse(print(x))) <> print(x)"
-    print "* OK: print(parse(print(x))) == print(x)"
+    print("* Pretty-printing spec")
+    txt = print_provision_spec(ps)
+    print(txt)
+    print("* Re-parsing output")
+    ps2 = parse_provision_spec(txt)
+    print("* Pretty-printing spec")
+    txt2 = print_provision_spec(ps)
+    print(txt2)
+    if txt != txt2:
+        raise RuntimeError("Sanity-check failed: print(parse(print(x))) <> print(x)")
+    print("* OK: print(parse(print(x))) == print(x)")

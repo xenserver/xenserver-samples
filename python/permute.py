@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) Cloud Software Group, Inc.
 #
@@ -52,7 +52,7 @@ def main(session, iteration):
         if not(record["is_a_template"]) and not(record["is_control_domain"]) and record["power_state"] == "Running":
             vms.append(vm)
             hosts.append(record["resident_on"])
-    print "%d: Found %d suitable running VMs" % (iteration, len(vms))
+    print("%d: Found %d suitable running VMs" % (iteration, len(vms)))
     # use a rotation as a permutation
     hosts = [hosts[-1]] + hosts[:(len(hosts)-1)]
 
@@ -78,13 +78,15 @@ def main(session, iteration):
         if record["status"] != "success":
             allok = False
     if not allok:
-        print "One of the tasks didn't succeed at", time.strftime("%F:%HT%M:%SZ", time.gmtime())
+        print("One of the tasks didn't succeed at", time.strftime("%F:%HT%M:%SZ", time.gmtime()))
         idx = 0
         for task in tasks:
             record = records[task]
             vm_name = session.xenapi.VM.get_name_label(vms[idx])
             host_name = session.xenapi.host.get_name_label(hosts[idx])
-            print "%s : %12s %s -> %s [ status: %s; result = %s; error = %s ]" % (record["uuid"], record["name_label"], vm_name, host_name, record["status"], record["result"], repr(record["error_info"]))
+            print("%s : %12s %s -> %s [ status: %s; result = %s; error = %s ]" %
+                   (record["uuid"], record["name_label"], vm_name, host_name,
+                    record["status"], record["result"], repr(record["error_info"])))
             idx += 1
         raise XenAPI.Failure("Task failed")
     else:
@@ -93,8 +95,8 @@ def main(session, iteration):
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print "Usage:"
-        print sys.argv[0], " <url> <username> <password> <iterations>"
+        print("Usage:")
+        print("%s <url> <username> <password> <iterations>" % sys.argv[0])
         sys.exit(1)
     url = sys.argv[1]
     username = sys.argv[2]
@@ -103,16 +105,16 @@ if __name__ == "__main__":
     # First acquire a valid session by logging in:
     new_session = XenAPI.Session(url)
     try:
-        new_session.xenapi.login_with_password(username, password, "1.0", "xen-api-scripts-permute.py")
+        new_session.xenapi.login_with_password(username, password, "1.0", "permute.py")
     except XenAPI.Failure as f:
-        print "Failed to acquire a session: %s" % f.details
+        print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)
 
     try:
         for i in range(iterations):
             main(new_session, i)
     except XenAPI.Failure as e:
-        print e.details
+        print(e.details)
         sys.exit(1)
     finally:
         new_session.xenapi.session.logout()

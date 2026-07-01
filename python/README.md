@@ -4,7 +4,7 @@
 
 The following Python examples are included in this repository:
 
-- `exportimport.py` — Demonstrate how to
+- `exportimport.py` — demonstrates how to
   - export raw disk images
   - import raw disk images
   - connect an export to an import to copy a raw disk image
@@ -14,12 +14,10 @@ The following Python examples are included in this repository:
 -  `install.py` - installs a Debian VM, connects it to a network, starts it up and 
     waits for it to report its IP address.
 
--  `license.py` - uploads a fresh license to a XenServer host.
-
 -  `permute.py` - selects a set of VMs and uses live migration to move them
     simultaneously among hosts.
 
--  `powercycle.py` - selects a set of VMs and powercycles them.
+-  `powercycle.py` - selects a set of VMs and power-cycles them.
 
 -  `provision.py`: - parses/regenerates the "disk provisioning" XML contained 
     within templates

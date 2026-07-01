@@ -1,20 +1,33 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) Cloud Software Group, Inc.
 #
-# Permission to use, copy, modify, and distribute this software for any
-# purpose with or without fee is hereby granted, provided that the above
-# copyright notice and this permission notice appear in all copies.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
 #
-# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#   1) Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#
+#   2) Redistributions in binary form must reproduce the above
+#      copyright notice, this list of conditions and the following
+#      disclaimer in the documentation and/or other materials
+#      provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+# STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+# OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Prepare to shutdown a host (assumed to exist) by:
+# Prepare to shut down a host (assumed to exist) by:
 # 1. attempting to evacuate running VMs to other hosts
 # 2. remaining VMs are shutdown cleanly
 # 3. remaining VMs are shutdown forcibly
@@ -24,44 +37,12 @@
 # timeout.
 
 import sys, time
-import signal
-import syslog
-
 import XenAPI
-
-TIMEOUT_SECS=30
-
-
-# class for determining whether xe is responsive
-class TimeoutFunctionException(Exception):
-    """Exception to raise on a timeout"""
-    pass
-
-
-class TimeoutFunction:
-
-    def __init__(self, function, timeout):
-        self.timeout = timeout
-        self.function = function
-
-    def handle_timeout(self, signum, frame):
-        raise TimeoutFunctionException()
-
-    def __call__(self, *args):
-        old = signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.timeout)
-        try:
-            result = self.function(*args)
-        finally:
-            signal.signal(signal.SIGALRM, old)
-        signal.alarm(0)
-        return result
-
 
 def task_is_pending(session, task):
     try:
         return session.xenapi.task.get_status(task) == "pending"
-    except:
+    except XenAPI.Failure:
         return False
 
 
@@ -70,7 +51,7 @@ def wait_for_tasks(session, tasks, timeout):
     and false if a timeout occurs"""
     finished = False
     start = time.time ()
-    while not(finished) and ((time.time () - start) < timeout):
+    while not finished and ((time.time () - start) < timeout):
         finished = True
         for task in tasks:
             if task_is_pending(session, task):
@@ -85,8 +66,8 @@ def get_running_domains(session, host):
     for vm in session.xenapi.host.get_resident_VMs(host):
         record = session.xenapi.VM.get_record(vm)
         if not record["is_control_domain"] and record["power_state"] == "Running":
-            if record['other_config'].has_key('auto_poweroff') and record['other_config'].get('auto_poweroff') == "false":
-                print "\n  Skip running VM %s has self-managed power-off" % record["name_label"],
+            if 'auto_poweroff' in record['other_config'] and record['other_config'].get('auto_poweroff') == "false":
+                print("\n  Skip running VM %s has self-managed power-off" % record["name_label"])
                 sys.stdout.flush()
                 continue
             vms.append((vm,record))
@@ -99,43 +80,43 @@ def estimate_evacuate_timeout(session, host):
     memory_used = int(metrics['memory_total']) - int(metrics['memory_free'])
     # Conservative estimation based on 1000Mbps link, and the memory usage of
     # Dom0 (which is not going to be transferred) is an intentional surplus
-    return (memory_used * 8. / (1000. * 1024 * 1024))
+    return memory_used * 8. / (1000. * 1024 * 1024)
 
 def host_evacuate(session, host):
     """Attempts a host evacuate. If the timeout expires then it attempts to cancel
     any in-progress tasks it can find."""
     rc = 0
-    print "\n  Requesting evacuation of host",
+    print("\n  Requesting evacuation of host")
     sys.stdout.flush()
     task = session.xenapi.Async.host.evacuate(host)
     timeout = 240
     try:
         timeout = max(estimate_evacuate_timeout(session, host), timeout)
-    except Exception, e:
-        syslog.syslog(syslog.LOG_WARNING, "Evacuate timeout estimation error: %s, use default." % e)
+    except Exception as e:
+        print("Evacuate timeout estimation error: %s, use default." % e)
     try:
         if not(wait_for_tasks(session, [ task ], timeout)):
-            print "\n  Cancelling evacuation of host",
+            print("\n  Cancelling evacuation of host")
             sys.stdout.flush()
             session.xenapi.task.cancel(task)
             for vm, record in get_running_domains(session, host):
                 current = record["current_operations"]
                 for t in current.keys():
                     try:
-                        print "\n  Cancelling operation on VM: %s" % record["name_label"],
+                        print("\n  Cancelling operation on VM: %s" % record["name_label"])
                         sys.stdout.flush()
                         session.xenapi.task.cancel(t)
-                    except:
-                        print "Failed to cancel task: %s" % t,
+                    except XenAPI.Failure:
+                        print("Failed to cancel task: %s" % t)
                         sys.stdout.flush()
     finally:
         try:
             session.xenapi.task.destroy(task)
-        except Exception:
+        except XenAPI.Failure:
             # db gc thread in xapi may delete task from tasks table
-            print "\n Task %s has been destroyed" % task
+            print("\n Task %s has been destroyed" % task)
             sys.stdout.flush()
-        return rc
+    return rc
 
 
 def parallel_clean_shutdown(session, vms):
@@ -149,7 +130,7 @@ def parallel_clean_shutdown(session, vms):
             if not "clean_shutdown" in record["allowed_operations"]:
                 continue
 
-            print "\n  Requesting clean shutdown of VM: %s" % (record["name_label"]),
+            print("\n  Requesting clean shutdown of VM: %s" % record["name_label"])
             sys.stdout.flush()
             task = session.xenapi.Async.VM.clean_shutdown(vm)
             tasks.append((task,vm,record))
@@ -157,18 +138,18 @@ def parallel_clean_shutdown(session, vms):
         if not tasks:
             return 0
 
-        if not(wait_for_tasks(session, map(lambda x:x[0], tasks), 60)):
+        if not(wait_for_tasks(session, list(map(lambda x:x[0], tasks)), 60)):
             # Cancel any remaining tasks.
             for (task,_,record) in tasks:
                 try:
                     if task_is_pending(session, task):
-                        print "\n  Cancelling clean shutdown of VM: %s" % (record["name_label"]),
+                        print("\n  Cancelling clean shutdown of VM: %s" % record["name_label"])
                         sys.stdout.flush()
                         session.xenapi.task.cancel(task)
-                except:
+                except XenAPI.Failure:
                     pass
 
-        if not(wait_for_tasks(session, map(lambda x:x[0], tasks), 60)):
+        if not(wait_for_tasks(session, list(map(lambda x:x[0], tasks)), 60)):
             for (_,vm,_) in tasks:
                 if session.xenapi.VM.get_power_state(vm) == "Running":
                     rc += 1
@@ -177,28 +158,26 @@ def parallel_clean_shutdown(session, vms):
         for (task,_,_) in tasks:
             try:
                 session.xenapi.task.destroy(task)
-            except Exception:
+            except XenAPI.Failure:
                 # db gc thread in xapi may delete task from tasks table
-                print "\n Task %s has been destroyed" % task
+                print("\n Task %s has been destroyed" % task)
                 sys.stdout.flush()
-        return rc
+    return rc
 
 
 def serial_hard_shutdown(session, vms):
     """Performs a serial VM.hard_shutdown of all running VMs on a given host."""
     rc = 0
-    try:
-        for (vm,record) in vms:
-            print "\n  Requesting hard shutdown of VM: %s" % (record["name_label"]),
-            sys.stdout.flush()
+    for (vm,record) in vms:
+        print("\n  Requesting hard shutdown of VM: %s" % record["name_label"])
+        sys.stdout.flush()
 
-            try:
-                session.xenapi.VM.hard_shutdown(vm)
-            except:
-                print "\n  Failure performing hard shutdown of VM: %s" % (record["name_label"]),
-                rc += 1
-    finally:
-        return rc
+        try:
+            session.xenapi.VM.hard_shutdown(vm)
+        except XenAPI.Failure:
+            print("\n  Failure performing hard shutdown of VM: %s" % record["name_label"])
+            rc += 1
+    return rc
 
 
 def main(session, host_uuid, force):
@@ -213,26 +192,27 @@ def main(session, host_uuid, force):
 
             # check for self-managed power off
             if 'auto_poweroff' in r['other_config'] and r['other_config'].get('auto_poweroff') == "false":
-                print "\n  VM %s has self-managed power-off" % r["name_label"],
+                print("\n  VM %s has self-managed power-off" % r["name_label"])
                 sys.stdout.flush()
                 continue
 
-            print "\n  VM %s cannot be evacuated" % r["name_label"],
+            print("\n  VM %s cannot be evacuated" % r["name_label"])
             sys.stdout.flush()
             vms.append((vm, r))
         rc += parallel_clean_shutdown(session, vms)
-        vms_f = filter(lambda (vm, _): session.xenapi.VM.get_power_state(vm) == "Running", vms)
 
         # check for self-managed power off
-        vms = []
-        for (vm,record) in vms_f:
+        remaining_vms = []
+        for (vm,record) in vms:
+            if session.xenapi.VM.get_power_state(vm) != "Running":
+                continue
             if 'auto_poweroff' in record['other_config'] and record['other_config'].get('auto_poweroff') == "false":
-                print "\n  VM %s has self-managed power-off" % record["name_label"],
+                print("\n  VM %s has self-managed power-off" % record["name_label"])
                 sys.stdout.flush()
                 continue
-            vms.append((vm, record))
+            remaining_vms.append((vm, record))
 
-        rc += serial_hard_shutdown(session, vms)
+        rc += serial_hard_shutdown(session, remaining_vms)
 
         # VMs which can be evacuated should be evacuated
         rc += host_evacuate(session, host)
@@ -245,35 +225,32 @@ def main(session, host_uuid, force):
     return rc
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2 and len(sys.argv) != 3:
-        print "Usage:"
-        print sys.argv[0], "<host-uuid> [--force]"
+    if len(sys.argv) != 5 and len(sys.argv) != 5:
+        print("Usage:")
+        print("%s <url> <username> <password> <host-uuid> [--force]" % sys.argv[0])
         sys.exit(1)
 
-    uuid = sys.argv[1]
+    url = sys.argv[1]
+    username = sys.argv[2]
+    password = sys.argv[3]
+    host_uuid = sys.argv[4]
 
     force = False
-    if len(sys.argv) == 3 and sys.argv[2] == "--force":
+    if len(sys.argv) == 6 and sys.argv[5] == "--force":
         force = True
 
-    new_session = XenAPI.xapi_local()
-
-    connect_to_coordinator_with_timeout = TimeoutFunction(new_session.xenapi.login_with_password, TIMEOUT_SECS)
-
+    new_session = XenAPI.Session(url)
     try:
-        connect_to_coordinator_with_timeout("root", "")
-    except TimeoutFunctionException:
-        print "Unable to connect to coordinator within %d seconds. Exiting." % TIMEOUT_SECS
+        new_session.xenapi.login_with_password(username, password, "1.0", "shutdown.py")
+    except XenAPI.Failure as f:
+        print("Failed to acquire a session: %s" % f.details)
         sys.exit(1)
-    except Exception:
-        print 'Failed to connect to coordinator.'
-        sys.exit(2)
 
     try:
-        rc = main(new_session, uuid, force)
+        rc = main(new_session, host_uuid, force)
         sys.exit(rc)
-    except Exception, e:
-        print "Caught %s" % str(e)
+    except Exception as e:
+        print("Caught %s" % str(e))
         sys.exit(1)
     finally:
         new_session.xenapi.session.logout()
