@@ -122,10 +122,12 @@ public class VdiAndSrOps extends TestBase {
                             vdi.createClone(c, driverParams);
                             break;
                         case "VDI.snapshotAsync":
-                            vdi.snapshotAsync(c, driverParams);
+                            Task snapshotTask = vdi.snapshotAsync(c, driverParams);
+                            waitForTask(c, snapshotTask, 500);
                             break;
                         case "VDI.createCloneAsync":
-                            vdi.createCloneAsync(c, driverParams);
+                            Task createTask = vdi.createCloneAsync(c, driverParams);
+                            waitForTask(c, createTask, 500);
                             break;
                         case "VDI.destroy":
                             vdi.destroy(c);
