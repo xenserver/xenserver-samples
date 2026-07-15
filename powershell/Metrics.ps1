@@ -51,7 +51,7 @@ try{
     }
 
     $path = $env:TEMP + "\rrd.xml"
-    Receive-XenHostRrd -XenHost $svr -Path $path -DataCopiedDelegate $trackDataReceived
+    Receive-XenHostRrd -XenHost $svr -Path $path -DataCopiedDelegate $trackDataReceived -NoWarnCertificates -NoWarnNewCertificates
 }
 finally{
     ### Disconnect before finishing
