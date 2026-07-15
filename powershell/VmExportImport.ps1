@@ -80,7 +80,7 @@ try {
         Write-Host "Bytes received: $bytes"
     }
 
-    Export-XenVm -XenHost $svr -Uuid $vm.uuid -Path $path -DataCopiedDelegate $trackDataReceived
+    Export-XenVm -XenHost $svr -Uuid $vm.uuid -Path $path -DataCopiedDelegate $trackDataReceived -NoWarnCertificates -NoWarnNewCertificates
 
     Remove-XenVM -VM $vm
 
@@ -91,7 +91,7 @@ try {
         Write-Progress -Activity "Importing VM..." -PercentComplete $percent
     }
 
-    Import-XenVm -XenHost $svr -Path $path -ProgressDelegate $trackProgress
+    Import-XenVm -XenHost $svr -Path $path -ProgressDelegate $trackProgress -NoWarnCertificates -NoWarnNewCertificates
 }
 finally {
     # Disconnect before finishing

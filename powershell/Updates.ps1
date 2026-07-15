@@ -141,7 +141,7 @@ function Get-Updates([XenAPI.Host]$Coordinator) {
     $jsonPath = $env:TEMP + [System.IO.Path]::GetRandomFileName()
 
     Write-Host "Downloading update list"
-    Receive-XenUpdates -XenHost $Coordinator.address -Path $jsonPath -TaskRef $task.opaque_ref
+    Receive-XenUpdates -XenHost $Coordinator.address -Path $jsonPath -TaskRef $task.opaque_ref -NoWarnCertificates -NoWarnNewCertificates
     $task | Wait-XenTask
     Get-Content -Raw -Path $jsonPath | ConvertFrom-Json
 }

@@ -107,7 +107,7 @@ function Send-Bundle([XenAPI.Host]$Coordinator, [string]$BundleFile) {
     $task = New-XenTask -PassThru -Label "MyBundleUploadTask"
 
     Write-Host "Uploading $BundleFile to the pool"
-    Send-XenBundle -XenHost $Coordinator.address -Path $BundleFile -TaskRef $task.opaque_ref
+    Send-XenBundle -XenHost $Coordinator.address -Path $BundleFile -TaskRef $task.opaque_ref -NoWarnCertificates -NoWarnNewCertificates
 
     Write-Host "Extracting update bundle and retrieving available updates..."
     $task | Wait-XenTask -ShowProgress
@@ -122,7 +122,7 @@ function Get-Updates([XenAPI.Host]$Coordinator) {
     $jsonPath = $env:TEMP + [System.IO.Path]::GetRandomFileName()
 
     Write-Host "Downloading update list"
-    Receive-XenUpdates -XenHost $Coordinator.address -Path $jsonPath -TaskRef $task.opaque_ref
+    Receive-XenUpdates -XenHost $Coordinator.address -Path $jsonPath -TaskRef $task.opaque_ref -NoWarnCertificates -NoWarnNewCertificates
     $task | Wait-XenTask -ShowProgress
     Get-Content -Raw -Path $jsonPath | ConvertFrom-Json
 }
