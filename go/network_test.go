@@ -41,7 +41,7 @@ func TestNetworkCreateAndDestroy(t *testing.T) {
 	}
 	var selectPifRef xenapi.PIFRef
 	for pifRef, pifRecord := range pifRecords {
-		if pifRecord.Physical && pifRecord.BondSlaveOf == "OpaqueRef:NULL" {
+		if pifRecord.Physical && pifRecord.Managed && pifRecord.BondSlaveOf == "OpaqueRef:NULL" {
 			selectPifRef = pifRef
 			break
 		}

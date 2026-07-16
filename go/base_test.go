@@ -2,6 +2,7 @@ package testGoSDK
 
 import (
 	"flag"
+	"log"
 	"os"
 	"testing"
 
@@ -42,11 +43,10 @@ func TestLogin(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	exitVal := m.Run()
-	var t *testing.T
 	if !stopTests {
 		err := session.Logout()
 		if err != nil {
-			t.Log(err)
+			log.Println(err)
 		}
 	}
 	os.Exit(exitVal)

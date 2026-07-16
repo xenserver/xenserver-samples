@@ -191,6 +191,16 @@ func TestVMAsyncCreateAndDestroy(t *testing.T) {
 		return
 	}
 	vmRefs, err := xenapi.VM.GetByNameLabel(session, NEW_VM_NAME)
+	if err != nil {
+		t.Log(err)
+		t.Fail()
+		return
+	}
+	if len(vmRefs) == 0 {
+		t.Log("No VM found with name:", NEW_VM_NAME)
+		t.Fail()
+		return
+	}
 	vmRecord, err := xenapi.VM.GetRecord(session, vmRefs[0])
 	if err != nil {
 		t.Log(err)
