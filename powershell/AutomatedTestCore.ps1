@@ -160,6 +160,46 @@ function connect_server([String]$svr, [String]$usr, [String]$passwd) {
     return $true
 }
 
+function connect_server_start_job([String]$svr, [String]$usr, [String]$passwd) {
+    log_info ("connecting to server '{0}' from Start-Job" -f $svr)
+
+    $init_script = {
+        Import-Module XenServerPSModule -ErrorAction Stop
+    }
+
+    $job_script = {
+        param([String]$svr, [String]$usr, [String]$passwd)
+
+        # Trust all certificates. This is for test purposes only.
+        # DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
+        $session = Connect-XenServer -Server $svr -UserName $usr -Password $passwd -PassThru -NoWarnCertificates -NoWarnNewCertificates
+        if ($null -eq $session) {
+            return $false
+        }
+
+        Disconnect-XenServer -Session $session
+        return $true
+    }
+
+    $job = Start-Job -InitializationScript $init_script -ScriptBlock $job_script -ArgumentList @($svr, $usr, $passwd)
+    $completed = Wait-Job -Job $job -Timeout 120
+    if ($null -eq $completed) {
+        log_warn ("Start-Job timed out for server '{0}'" -f $svr)
+        Stop-Job -Job $job -ErrorAction SilentlyContinue
+        Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
+        return $false
+    }
+
+    $output = Receive-Job -Job $job
+    Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
+
+    if ($output -contains $true) {
+        return $true
+    }
+
+    return $false
+}
+
 function disconnect_server([String]$svr) {
     log_info ("disconnecting from server '{0}'" -f $svr)
     Get-XenSession -Server $svr | Disconnect-XenServer
@@ -370,6 +410,7 @@ function append_random_string_to([String]$toAppend, $length = 10) {
 
 $tests = @(
     @("Connect Server", "connect_server $svr $usr $passwd", $true),
+    @("Connect Server Start-Job", "connect_server_start_job $svr $usr $passwd", $true),
     @("Create SR", "create_nfs_sr $sr_svr $sr_path PowerShellAutoTestSR", $true),
     @("Install VM", "install_vm PowerShellAutoTestVM PowerShellAutoTestSR", $true),
     @("Start VM", "start_vm PowerShellAutoTestVM", "Running"),
