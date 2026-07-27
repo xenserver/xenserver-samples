@@ -164,6 +164,12 @@ function connect_server_start_job([String]$svr, [String]$usr, [String]$passwd) {
     log_info ("connecting to server '{0}' from Start-Job" -f $svr)
 
     $init_script = {
+        # $PROFILE is null in Start-Job; set a default so XenServerPSModule's
+        # Initialize-Environment.ps1 can call Split-Path on it without error.
+        if (-not $PROFILE) {
+            $global:PROFILE = Join-Path ([Environment]::GetFolderPath('MyDocuments')) `
+                'PowerShell\Microsoft.PowerShell_profile.ps1'
+        }
         Import-Module XenServerPSModule -ErrorAction Stop
     }
 
