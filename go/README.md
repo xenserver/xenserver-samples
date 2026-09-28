@@ -32,7 +32,7 @@ The following simple examples are included in this repository:
 
 ## Dependencies
 
-Install Go 1.22 or above on the running environment.
+Install Go 1.27 or above on the running environment.
 
 Prepare the local XenServer module for Go. 
 - Download the XenServer SDK zip package and unzip
