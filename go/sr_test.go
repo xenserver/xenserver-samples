@@ -18,7 +18,7 @@ func TestSRBase(t *testing.T) {
 	var testSRDesc = "Should be automatically deleted"
 	var testSRType = "dummy"
 	var testSRContent = "contenttype"
-	var testSRSize = 100000
+	var testSRSize int64 = 100000
 
 	hostRefs, err := xenapi.Host.GetAll(session)
 	if err != nil {
