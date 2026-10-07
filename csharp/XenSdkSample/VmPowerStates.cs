@@ -30,7 +30,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using XenAPI;
 
 
@@ -89,42 +88,6 @@ namespace XenSdkSample
 
                 Logger.Log("Unpausing VM...");
                 VM.unpause(Session, cloneVmRef);
-                Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
-
-                // here we need to delay for a bit until the suspend feature is written
-                // in the guest metrics; this check should be enough for most guests;
-                // let's try a certain number of times with sleeps of a few seconds in between
-                int max = 10;
-                int delay = 10;
-                bool canSuspend = false;
-                for (int i = 0; i < max; i++)
-                {
-                    cloneVm = VM.get_record(Session, cloneVmRef);
-                    var metrics = VM_guest_metrics.get_record(Session, cloneVm.guest_metrics);
-                    if (metrics.other.ContainsKey("feature-suspend") && metrics.other["feature-suspend"] == "1")
-                    {
-                        canSuspend = true;
-                        break;
-                    }
-
-                    Logger.Log("Checked for feature-suspend count {0} out of {1}; will re-try in {2}sec.", i + 1, max, delay);
-                    Thread.Sleep(delay * 1000);
-                }
-
-                if (!canSuspend)
-                {
-                    var msg = "The VM does not support the suspend feature. Skipping suspending VM...";
-                    Logger.Log(msg);
-                    Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
-                    throw new Exception(msg);
-                }
-
-                Logger.Log("Suspending VM...");
-                VM.suspend(Session, cloneVmRef);
-                Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
-
-                Logger.Log("Resuming VM...");
-                VM.resume(Session, cloneVmRef, false, true);
                 Logger.Log("VM Power State: {0}", VM.get_power_state(Session, cloneVmRef));
             }
             finally
