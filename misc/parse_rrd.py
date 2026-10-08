@@ -1,4 +1,4 @@
-#!/usr/bin/env/python
+#!/usr/bin/env python3
 #
 # Copyright (c) Cloud Software Group, Inc.
 #
@@ -34,9 +34,9 @@
 # Mostly this script is taken from perfmon, by Alex Zeffert
 
 import XenAPI
-import urllib
+import ssl
+import urllib.request
 from xml.dom import minidom
-from xml.parsers.expat import ExpatError
 import time
 
 # Per VM dictionary (used by RRDUpdates to look up column numbers by variable names)
@@ -113,17 +113,18 @@ class RRDUpdates:
         node = self.data_node.childNodes[self.rows - 1 - row].childNodes[0]
         return int(node.firstChild.toxml()) # node.firstChild should have nodeType TEXT_NODE
 
-    def refresh(self, session, override_params = {}, server = 'http://localhost'):
+    def refresh(self, session, override_params = {}, server = 'http://localhost', ignore_ssl = False):
         params = dict(self.params)
         params.update(override_params)
         params['session_id'] = session
         paramstr = "&".join(["%s=%s"  % (k,params[k]) for k in params])
         url = "%s/rrd_updates?%s" % (server, paramstr)
 
-        print "RRD Query:\n %s" % url
-        # this is better than urllib.urlopen() as it raises an Exception on http 401 'Unauthorised' error
-        # rather than drop into interactive mode
-        sock = urllib.URLopener().open(url)
+        print("RRD Query:\n %s" % url)
+        # urlopen raises an exception on an HTTP 401 'Unauthorised' error rather
+        # than dropping into interactive mode.
+        ctx = ssl._create_unverified_context() if ignore_ssl else ssl.create_default_context()
+        sock = urllib.request.urlopen(url, context=ctx)
         xmlsource = sock.read()
         sock.close()
         xmldoc = minidom.parseString(xmlsource)
@@ -173,7 +174,7 @@ class RRDUpdates:
 
         if vm_or_host == 'vm':
             # Create a report for this VM if it doesn't exist
-            if not self.vm_reports.has_key(uuid):
+            if uuid not in self.vm_reports:
                 self.vm_reports[uuid] = VMReport(uuid)
 
             # Update the VMReport with the col data and meta data
@@ -185,10 +186,10 @@ class RRDUpdates:
             if not self.host_report:
                 self.host_report = HostReport(uuid)
             elif self.host_report.uuid != uuid:
-                raise PerfMonException, "Host UUID changed: (was %s, is %s)" % (self.host_report.uuid, uuid)
+                raise RuntimeError("Host UUID changed: (was %s, is %s)" % (self.host_report.uuid, uuid))
 
             # Update the HostReport with the col data and meta data
             self.host_report[param] = col
 
         else:
-            raise PerfMonException, "Invalid string in : %s" % col_meta_data
+            raise RuntimeError("Invalid string in : %s" % col_meta_data)
