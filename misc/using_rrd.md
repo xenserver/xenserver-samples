@@ -9,7 +9,7 @@ The script [print_host_and_vm_rrd.py](print_host_and_vm_rrd.py) uses the XenServ
 First we need to import both the XenAPI and the [parse_rrd.py](parse_rrd.py) libraries into the python script.
 
 ```shell
-#!/usr/bin/env/python
+#!/usr/bin/env python3
 import XenAPI
 import parse_rrd
 ```
@@ -19,7 +19,9 @@ In order to download RRD updates, we need to create a XenAPI Session and pass th
 ```python
 def main():
     url = "https://<server>"
-    session = XenAPI.Session(url)
+    # Set ignore_ssl = True to skip certificate verification
+    ignore_ssl = False
+    session = XenAPI.Session(url, ignore_ssl=ignore_ssl)
     session.xenapi.login_with_password('root','<password>')
 ```
 
@@ -32,16 +34,16 @@ Then we create a RRD object and fill it with data. In the following snippet, the
     params['start'] = int(time.time()) - 10 #This is for the purposes of this tutorial
     params['interval'] = 5
     params['host'] = ""
-    rrd_updates.refresh(session.handle, params, url)
+    rrd_updates.refresh(session.handle, params, url, ignore_ssl)
 ```
 
 It is then very easy to make use of the calls provided in [parse_rrd.py](parse_rrd.py) to extract and search through the downloaded data. You can see from the code below that for getting VM data we need only specify the VM's `uuid`, the metric we want to get, and the row we're interested in. This method loops through all the metrics for a given VM and returns only the most recent value for each metric.
 
 ```python
 def print_latest_vm_data(rrd_updates, uuid):
-    print "**********************************************************"
-    print "Got values for VM: "+ uuid
-    print "**********************************************************"
+    print("**********************************************************")
+    print("Got values for VM: " + uuid)
+    print("**********************************************************")
     for param in rrd_updates.get_vm_param_list(uuid):
         if param != "":
             max_time = 0
@@ -53,7 +55,7 @@ def print_latest_vm_data(rrd_updates, uuid):
                     max_time = epoch
                     data = dv
             nt = time.strftime("%H:%M:%S", time.localtime(max_time))
-            print "%-30s (%s , %s)" % (param, nt, data)
+            print("%-30s (%s , %s)" % (param, nt, data))
 ```
 
 The script [print_host_and_vm_rrd.py](print_host_and_vm_rrd.py) contains also a similar method for printing host data. Note that, in order to download RRD updates for the host, we need to specify it in the `params` array:
@@ -113,8 +115,8 @@ def build_vm_graph_data(rrd_updates, vm_uuid, param):
             data = "#%s Seconds Ago" % param
             for row in range(rrd_updates.get_nrows()):
                 epoch = rrd_updates.get_row_time(row)
-                data = str(rrd_updates.get_vm_data(vm_uuid, param_name, row))
-                data += "\n%-14s %s" % (data, time_now - epoch)
+                value = str(rrd_updates.get_vm_data(vm_uuid, param_name, row))
+                data += "\n%-14s %s" % (value, time_now - epoch)
             return data
 ```
 
