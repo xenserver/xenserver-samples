@@ -536,10 +536,17 @@
       "name": "Disaster recovery",
       "workflows": [
         {
-          "id": "disaster-recovery",
-          "title": "Recover VMs after a disaster",
-          "description": "Replicate the pool's database to shared storage, read it back as a separate database to see what it describes, and recover a VM out of it into a second, standby pool (dr_url).",
-          "requires": "a second pool that can reach the same storage"
+          "id": "configure-disaster-recovery",
+          "title": "Configure disaster recovery",
+          "description": "Replicate the pool's metadata (the configuration of its VMs and vApps) to an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does, so that a pool at a disaster recovery site can recover the VMs from the storage array's replica of that SR.",
+          "requires": "an iSCSI or Fibre Channel SR attached to every host"
+        },
+        {
+          "id": "disaster-recovery-failover",
+          "title": "Fail over to a disaster recovery site",
+          "description": "On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes, as XenCenter's Disaster Recovery wizard does. By default it is a test failover, which removes what it recovered and detaches the replica again.",
+          "requires": "a pool at the disaster recovery site, and the storage array's replica of the protected pool's iSCSI or Fibre Channel SR (target, IQN and SCSI id), with the mirror broken",
+          "caution": "never attach a LUN that another pool still has attached: two pools using one LUN corrupt it"
         }
       ]
     }

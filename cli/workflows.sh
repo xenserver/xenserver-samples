@@ -13,11 +13,10 @@
 #
 # Most workflows need only the connection details and run against the dispatcher's built-in
 # placeholder defaults below. A few need environment-specific values to do anything real - an iSCSI
-# target address, an AD domain, a second pool to recover into - and take them as extra key=value
+# target address, an AD domain, the replica LUN to fail over to - and take them as extra key=value
 # arguments after the password, overriding that workflow's default for the named parameter (e.g.
-# `create-iscsi-sr <url> <user> <pw> target=192.0.2.30`, `disaster-recovery <url> <user> <pw>
-# dr_url=https://standby-pool`). cross-pool-copy-vm keeps its own positional form instead (<src>
-# <user> <pw> <destUrl> [<destUser> <destPassword> [<vmName>]]).
+# `create-iscsi-sr <url> <user> <pw> target=192.0.2.30`). cross-pool-copy-vm keeps its own positional
+# form instead (<src> <user> <pw> <destUrl> [<destUser> <destPassword> [<vmName>]]).
 set -e
 
 # Under Git Bash/MSYS, an argument that looks like a Unix path (e.g. serverpath=/export/vol1) gets
@@ -117,7 +116,8 @@ case "$workflow" in
     export-import-vdi)    export_import_vdi ;;
     set-default-sr)       set_default_sr ;;
     server-status-report) server_status_report ;;
-    disaster-recovery)    disaster_recovery ;;
+    configure-disaster-recovery) configure_disaster_recovery ;;
+    disaster-recovery-failover) disaster_recovery_failover ;;
     manage-secureboot-certificates) manage_secureboot_certificates ;;
     restart-host)         restart_host ;;
     manage-crash-dumps)   manage_crash_dumps ;;

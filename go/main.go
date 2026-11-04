@@ -167,10 +167,15 @@ var workflows = map[string]workflow{
 	"set-default-sr": wf(map[string]string{"nfs_server": "192.0.2.10", "nfs_path": "/export/spare"},
 		func(u, n, p string, m map[string]string) { setDefaultSr(u, n, p, m["nfs_server"], m["nfs_path"]) }),
 	"server-status-report": wf(nil, func(u, n, p string, m map[string]string) { serverStatusReport(u, n, p) }),
-	// disaster-recovery has no usable default for dr_url (null/None/empty) - a second pool is
-	// structurally required, so raise a clear error naming what's missing if it's not supplied.
-	"disaster-recovery": wf(map[string]string{"dr_url": ""},
-		func(u, n, p string, m map[string]string) { disasterRecovery(u, n, p, m["dr_url"]) }),
+	"configure-disaster-recovery": wf(map[string]string{"sr_name": ""},
+		func(u, n, p string, m map[string]string) { configureDisasterRecovery(u, n, p, m["sr_name"]) }),
+	"disaster-recovery-failover": wf(map[string]string{
+		"target": "192.0.2.31", "target_iqn": "iqn.2009-01.com.example:replica-0",
+		"scsi_id": "360a980004265656d5f4a2d63764e5738", "port": "", "sr_type": "lvmoiscsi", "test_failover": "true",
+	}, func(u, n, p string, m map[string]string) {
+		disasterRecoveryFailover(u, n, p, m["target"], m["target_iqn"], m["scsi_id"], m["port"], m["sr_type"],
+			m["test_failover"] != "false")
+	}),
 	"manage-secureboot-certificates": wf(nil, func(u, n, p string, m map[string]string) { manageSecurebootCertificates(u, n, p) }),
 	"restart-host":                   wf(nil, func(u, n, p string, m map[string]string) { restartHost(u, n, p) }),
 	"manage-crash-dumps":             wf(nil, func(u, n, p string, m map[string]string) { manageCrashDumps(u, n, p) }),

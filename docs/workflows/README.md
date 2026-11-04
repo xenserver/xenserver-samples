@@ -148,7 +148,8 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 
 | Workflow | What it does |
 |---|---|
-| [Recover VMs after a disaster](disaster-recovery.md) | Replicate the pool's database to shared storage, read it back as a separate database to see what it describes, and recover a VM out of it into a second, standby pool (dr_url). |
+| [Configure disaster recovery](configure-disaster-recovery.md) | Replicate the pool's metadata (the configuration of its VMs and vApps) to an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does, so that a pool at a disaster recovery site can recover the VMs from the storage array's replica of that SR. |
+| [Fail over to a disaster recovery site](disaster-recovery-failover.md) | On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes, as XenCenter's Disaster Recovery wizard does. |
 
 ## Source files
 

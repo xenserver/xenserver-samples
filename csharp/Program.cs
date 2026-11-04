@@ -267,8 +267,19 @@ internal static class Program
             SetDefaultSr(u, n, p, d["nfs_server"], d["nfs_path"]);
         },
         ["server-status-report"] = (u, n, p, ov) => ServerStatusReport(u, n, p),
-        ["disaster-recovery"] = (u, n, p, ov) =>
-            DisasterRecovery(u, n, p, ov.TryGetValue("dr_url", out var drUrl) ? drUrl : null),
+        ["configure-disaster-recovery"] = (u, n, p, ov) =>
+            ConfigureDisasterRecovery(u, n, p, ov.GetValueOrDefault("sr_name")),
+        ["disaster-recovery-failover"] = (u, n, p, ov) =>
+        {
+            var d = Merge(new()
+            {
+                ["target"] = "192.0.2.31", ["target_iqn"] = "iqn.2009-01.com.example:replica-0",
+                ["scsi_id"] = "360a980004265656d5f4a2d63764e5738", ["sr_type"] = "lvmoiscsi", ["test_failover"] = "true",
+            }, ov);
+            DisasterRecoveryFailover(u, n, p, d["target"], d["target_iqn"], d["scsi_id"],
+                ov.TryGetValue("port", out var port) ? int.Parse(port) : null, d["sr_type"],
+                bool.Parse(d["test_failover"]));
+        },
         ["manage-secureboot-certificates"] = (u, n, p, ov) => ManageSecurebootCertificates(u, n, p),
         ["restart-host"] = (u, n, p, ov) => RestartHost(u, n, p),
         ["manage-crash-dumps"] = (u, n, p, ov) => ManageCrashDumps(u, n, p),

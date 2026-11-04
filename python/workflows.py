@@ -20,10 +20,10 @@ Usage:
 
 Most workflows need only the connection details and run against the dispatcher's built-in
 placeholder defaults. A few need environment-specific values to do anything real - an iSCSI
-target address, an AD domain, a second pool to recover into - and take them as extra `key=value`
+target address, an AD domain, the replica LUN to fail over to - and take them as extra `key=value`
 arguments after the password, overriding that workflow's default for the named parameter (e.g.
-`create-iscsi-sr <url> <user> <pw> target=192.0.2.30`, `disaster-recovery <url> <user> <pw>
-dr_url=https://standby-pool`). See each function's docstring for its parameters.
+`create-iscsi-sr <url> <user> <pw> target=192.0.2.30`). See each function's docstring for its
+parameters.
 """
 
 import sys
@@ -121,7 +121,8 @@ from organization.pool_tags import pool_tags
 from security_and_access.list_roles import list_roles
 from security_and_access.manage_ad_users import manage_ad_users
 from security_and_access.manage_secureboot_certificates import manage_secureboot_certificates
-from disaster_recovery.disaster_recovery import disaster_recovery
+from disaster_recovery.configure_disaster_recovery import configure_disaster_recovery
+from disaster_recovery.disaster_recovery_failover import disaster_recovery_failover
 
 
 def _wf(fn, **defaults):
@@ -201,7 +202,10 @@ WORKFLOWS = {
     "export-import-vdi": _wf(export_import_vdi, sr_name="Shared NFS"),
     "set-default-sr": _wf(set_default_sr),
     "server-status-report": _wf(server_status_report),
-    "disaster-recovery": _wf(disaster_recovery),
+    "configure-disaster-recovery": _wf(configure_disaster_recovery),
+    "disaster-recovery-failover": _wf(disaster_recovery_failover, target="192.0.2.31",
+                                      target_iqn="iqn.2009-01.com.example:replica-0",
+                                      scsi_id="360a980004265656d5f4a2d63764e5738"),
     "manage-secureboot-certificates": _wf(manage_secureboot_certificates),
     "restart-host": _wf(restart_host),
     "manage-crash-dumps": _wf(manage_crash_dumps),

@@ -13,7 +13,7 @@ full API reference and the SDK downloads.
 
 ## What's inside
 
-- **94 workflow examples:** common pool-management tasks, from logging in to disaster recovery. Each
+- **95 workflow examples:** common pool-management tasks, from logging in to disaster recovery. Each
   is implemented in all six languages, except tracing API calls, which the Java SDK cannot do.
 - **[Browsable docs](docs/workflows/README.md):** one page per workflow, with the code in every language
   side by side and the output of running it.
@@ -56,7 +56,7 @@ full API reference and the SDK downloads.
 | [Updates](docs/workflows/README.md#updates) | 4 | Configure update repositories (CDN or offline), apply updates, rolling pool update |
 | [Organization & metadata](docs/workflows/README.md#organization--metadata) | 3 | Tags, folders, custom fields |
 | [Security & access](docs/workflows/README.md#security--access) | 3 | Active Directory users, roles, Secure Boot certificates |
-| [Disaster recovery](docs/workflows/README.md#disaster-recovery) | 1 | Replicate pool metadata and recover VMs on a standby pool |
+| [Disaster recovery](docs/workflows/README.md#disaster-recovery) | 2 | Replicate pool metadata, and fail over to a disaster recovery site from the storage array's replica |
 
 The full list, with a one-line description of each, is in [workflows.json](workflows.json).
 

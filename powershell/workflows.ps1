@@ -135,7 +135,8 @@ $WORKFLOWS = @{
     "export-import-vdi"              = @{ Function = "Invoke-ExportImportVdi";              Defaults = @{} }
     "set-default-sr"                 = @{ Function = "Invoke-SetDefaultSr";                 Defaults = @{} }
     "server-status-report"           = @{ Function = "Invoke-ServerStatusReport";           Defaults = @{} }
-    "disaster-recovery"              = @{ Function = "Invoke-DisasterRecovery";             Defaults = @{} }
+    "configure-disaster-recovery"    = @{ Function = "Invoke-ConfigureDisasterRecovery";    Defaults = @{} }
+    "disaster-recovery-failover"     = @{ Function = "Invoke-DisasterRecoveryFailover";     Defaults = @{ Target = "192.0.2.31"; TargetIqn = "iqn.2009-01.com.example:replica-0"; ScsiId = "360a980004265656d5f4a2d63764e5738" } }
     "manage-secureboot-certificates" = @{ Function = "Invoke-ManageSecurebootCertificates"; Defaults = @{} }
     "restart-host"                   = @{ Function = "Invoke-RestartHost";                  Defaults = @{} }
     "manage-crash-dumps"             = @{ Function = "Invoke-ManageCrashDumps";             Defaults = @{} }
@@ -184,7 +185,8 @@ foreach ($arg in $WorkflowArgs) {
     # The same key=value spelling as the other languages' samples (snake_case, e.g. source_vm=win) maps
     # onto this script's PascalCase parameters (-SourceVm); a PascalCase key works too.
     $key = (($parts[0] -split '_') | ForEach-Object { $_.Substring(0, 1).ToUpper() + $_.Substring(1) }) -join ''
-    $callParams[$key] = $parts[1]
+    # true/false become booleans, for the [bool] parameters.
+    $callParams[$key] = if ($parts[1] -in 'true', 'false') { [bool]::Parse($parts[1]) } else { $parts[1] }
 }
 
 & $entry.Function @callParams

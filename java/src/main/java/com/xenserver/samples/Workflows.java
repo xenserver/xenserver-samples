@@ -16,7 +16,8 @@
 
 package com.xenserver.samples;
 
-import com.xenserver.samples.disasterrecovery.DisasterRecovery;
+import com.xenserver.samples.disasterrecovery.ConfigureDisasterRecovery;
+import com.xenserver.samples.disasterrecovery.DisasterRecoveryFailover;
 import com.xenserver.samples.gettingstarted.ConnectInventory;
 import com.xenserver.samples.gettingstarted.ErrorHandling;
 import com.xenserver.samples.gettingstarted.Events;
@@ -195,7 +196,10 @@ public final class Workflows {
         d.put("configure-offline-updates", mapOf());
         d.put("set-default-sr", mapOf("nfs_server", "192.0.2.10", "nfs_path", "/export/spare"));
         d.put("server-status-report", mapOf());
-        d.put("disaster-recovery", mapOf()); // dr_url has no default - raised as an error if absent
+        d.put("configure-disaster-recovery", mapOf());
+        d.put("disaster-recovery-failover", mapOf("target", "192.0.2.31",
+                "target_iqn", "iqn.2009-01.com.example:replica-0", "scsi_id", "360a980004265656d5f4a2d63764e5738",
+                "sr_type", "lvmoiscsi", "test_failover", "true"));
         d.put("manage-secureboot-certificates", mapOf());
         d.put("restart-host", mapOf());
         d.put("manage-crash-dumps", mapOf());
@@ -356,7 +360,11 @@ public final class Workflows {
                 ManageSrLifecycle.run(url, user, password, p.get("nfs_server"), p.get("nfs_path")); break;
             case "set-default-sr": SetDefaultSr.run(url, user, password, p.get("nfs_server"), p.get("nfs_path")); break;
             case "server-status-report": ServerStatusReport.run(url, user, password); break;
-            case "disaster-recovery": DisasterRecovery.run(url, user, password, p.get("dr_url")); break;
+            case "configure-disaster-recovery": ConfigureDisasterRecovery.run(url, user, password, p.get("sr_name")); break;
+            case "disaster-recovery-failover":
+                DisasterRecoveryFailover.run(url, user, password, p.get("target"), p.get("target_iqn"),
+                        p.get("scsi_id"), p.get("port"), p.get("sr_type"), Boolean.parseBoolean(p.get("test_failover")));
+                break;
             case "manage-secureboot-certificates": ManageSecurebootCertificates.run(url, user, password); break;
             case "restart-host": RestartHost.run(url, user, password); break;
             case "manage-crash-dumps": ManageCrashDumps.run(url, user, password); break;
