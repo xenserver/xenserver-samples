@@ -1,0 +1,75 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.xenserver</groupId>
+    <artifactId>xen-api-workflows</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>XenServer Java SDK Workflow Examples</name>
+    <description>XenCenter-style workflow examples for the XenServer SDK for Java.</description>
+    <url>https://github.com/xenserver/xenserver-samples</url>
+    <organization>
+        <name>Cloud Software Group, Inc.</name>
+        <url>https://www.cloud.com</url>
+    </organization>
+    <licenses>
+        <license>
+            <name>BSD 2-Clause License</name>
+            <url>http://opensource.org/licenses/BSD-2-Clause</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- The version of the SDK jar you installed into your local Maven repository (see README.md).
+             Override on the command line with -Dxenapi.version=... -->
+        <xenapi.version>26.16.1</xenapi.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>com.xenserver</groupId>
+            <artifactId>xen-api</artifactId>
+            <version>${xenapi.version}</version>
+        </dependency>
+        <!-- The binding's own dependencies, at the versions it is built with. They are declared here because
+             a jar installed with install:install-file carries no usable POM to bring them in. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.22.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.6.3</version>
+        </dependency>
+        <!-- HttpClient logs through SLF4J; without a binding it prints a warning on every run. -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-nop</artifactId>
+            <version>1.7.36</version>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.12.1</version>
+                <configuration>
+                    <release>11</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <mainClass>com.xenserver.samples.Workflows</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

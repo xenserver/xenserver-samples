@@ -1,0 +1,37 @@
+function Invoke-ChangeRootPassword {
+    <#
+    .SYNOPSIS
+        Change the root password.
+    .DESCRIPTION
+        Change the local superuser password, handle the wrong-old-password failure, and change it back.
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$UserName,
+        [Parameter(Mandatory = $true)][string]$Password
+    )
+    $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
+    $temporary = 'sdk-example-temp-password'
+
+    # The module ships no cmdlet for session.change_password, so this is the one place these examples
+    # call the binding directly. The session Connect-XenServer hands back IS a XenAPI.Session, which is
+    # exactly what the static wants. Note it takes the OLD password as well as the new one, even though
+    # you are already authenticated.
+    [XenAPI.Session]::change_password($session, $Password, $temporary)
+    Write-Host "Password changed."
+
+    # The existing session stays valid afterwards - only NEW connections need the new password, so a
+    # script can carry on without reconnecting.
+    Write-Host "Session still usable: $(@(Get-XenPool).Count -eq 1)"
+
+    # change_password on a ROOT session ignores the old password entirely (CA-13567, confirmed in
+    # xapi_session.ml) - the call succeeds regardless of what is passed as the old password, so there is
+    # no "wrong old password is rejected" demonstration to show here. The real gate is who may call this
+    # at all: only a session with is_local_superuser may.
+    Write-Host "is_local_superuser: $($session.IsLocalSuperuser)"
+
+    [XenAPI.Session]::change_password($session, $temporary, $Password)
+    Write-Host "Password restored."
+    Write-Host "OK: change-root-password"
+    Disconnect-XenServer -Session $session
+}

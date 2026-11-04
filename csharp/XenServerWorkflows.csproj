@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>XenServerWorkflows</AssemblyName>
+    <RootNamespace>XenServerWorkflows</RootNamespace>
+    <Description>XenCenter-style workflow examples for the XenServer.NET SDK.</Description>
+    <Company>XenServer</Company>
+    <Copyright>Copyright (c) Cloud Software Group, Inc.</Copyright>
+    <!-- The SDK release to build against; override with -p:XenServerSdkVersion=... -->
+    <XenServerSdkVersion>26.16.1</XenServerSdkVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="XenServer.NET" Version="[$(XenServerSdkVersion)]" />
+  </ItemGroup>
+</Project>

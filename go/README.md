@@ -1,69 +1,32 @@
-# XenServer SDK for Go usage examples
+# XenServer Go examples
 
-## Overview
-
-The following simple examples are included in this repository:
-
--  `base_test`: Create the basic session, login and logout.
-
--  `event_test`: Listens for events on a connection and prints each event out 
-    as it is received.
-
--  `get_all_records_test`: Retrieves the records for all types of objects.
-
--  `network_test`: Create and destroy a new external network.
-
--  `pool_test`: Add a server to a pool and then eject it.
-
--  `session_test`: Set up session over http and https protocol with or without certificate.
-
--  `sr_nfs_test`: Creates a shared NFS SR.
-
--  `sr_test`: Performs various base SR tests, including creating
-    a dummy SR.
-
--  `vm_create_and_destroy_test`: Create and destroy a VM on the default SR with a network and DVD drive. Repeat using asynchronous calls.
-
--  `vm_power_cycle_test`: Takes a VM through the various lifecycle states. Requires a 
-    shutdown VM with tools installed.
-
--  `vm_snapshot_test`: Create, revert and destroy VM snapshot. Repeat using asynchronous calls.
-
-
-## Dependencies
-
-Install Go 1.27 or above on the running environment.
-
-Prepare the local XenServer module for Go. 
-- Download the XenServer SDK zip package and unzip
-- Create goSDK directory under ./XenServerSamples/go/
-- Copy all source files under XenServer-SDK/XenServerGo/src/ to XenServerSamples/go/goSDK folder
-
-Run the commands as follows:
-```
-go get all
-go get -u all
-go mod tidy
-```
-
-## How to run the examples
-
-The test runs with nine parameters:
+This folder holds the Go version of every workflow example ([the full list](../README.md#workflow-examples)),
+one file per workflow, all in one `main` package:
 
 ```
-<ip>           : the URL of the host (e.g. https://x.x.x.x[:port], http://x.x.x.x[:port] or raw x.x.x.x[:port])
-<username>     : the username of the host (e.g. root)
-<password>     : the password of the host
-<ca_cert_path> : the CA certificate file path for the host
-<nfs_server>   : the IP address pointing at the NFS server
-<nfs_path>     : the NFS server path
-<ip1>          : the URL of the supporter host (e.g. https://x.x.x.x[:port], http://x.x.x.x[:port] or raw x.x.x.x[:port])
-<username1>    : the username of the supporter host (e.g. root)
-<password1>    : the password of the supporter host
+go/
+  connect_inventory.go, create_vm.go, snapshot_revert.go, trace_api_calls.go, ...
+  connection.go    connecting to a pool (used by every workflow)
+  helpers.go       small helpers several workflows share (find by name, clean up, ...)
+  main.go          the command-line dispatcher that runs any workflow by name
+  goSDK/           the SDK's Go binding (you copy it here; see below)
 ```
 
-Run it as follows:
+## Build and run
+
+You need Go 1.27 or later. The SDK's Go binding is not published as a module: copy
+`XenServerGo/src` from the SDK into `goSDK/` here (`go.mod` points at it), then:
 
 ```
-go test -ip="1.1.1.1" -username="user" -password="passwd" -ca_cert_path="/ca.pem" -nfs_server="1.1.1.2" -nfs_path="/nfs" -ip1="1.1.1.3" -username1="user1" -password1="passwd1" -v
+go run . connect-inventory https://xenserver root <password>
+```
+
+## Use a workflow in your own code
+
+Each workflow is a self-contained function you can copy into your own code, together with
+`connection.go` (and any helper from `helpers.go` it uses). Its doc comment describes what it does and
+shows how to call it, e.g.:
+
+```go
+connectInventory("https://xenserver", "root", password)
 ```

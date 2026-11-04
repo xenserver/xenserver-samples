@@ -1,0 +1,547 @@
+{
+  "$comment": "The workflow examples, grouped as the docs present them. Every workflow is implemented in every language (unless 'unsupported' says otherwise) in that language's folder, and prints 'OK: <id>' when it succeeds. 'requires' names anything beyond a pool a workflow needs to do something real, and 'caution' what it changes that you may not want changed: try those on a test pool. A workflow with 'unsupported' is not implemented in the languages it names, each with the reason. The pages under docs/workflows/ are generated from this file, the sources and a run of every workflow.",
+  "sections": [
+    {
+      "name": "Getting started",
+      "workflows": [
+        {
+          "id": "connect-inventory",
+          "title": "Connect & inventory",
+          "description": "Log in to a pool and take stock of it: read the pool name, enumerate the hosts and list the virtual machines with their power state. This is the starting point for every session."
+        },
+        {
+          "id": "find-by-uuid",
+          "title": "Look up an object by UUID",
+          "description": "Resolve a stable UUID back to a live object reference — how to persist a reference to an object across sessions."
+        },
+        {
+          "id": "wait-for-task",
+          "title": "Drive an asynchronous task",
+          "description": "Start a long-running operation asynchronously to get a task back immediately, then poll it to completion and read its result — how to drive operations without blocking."
+        },
+        {
+          "id": "error-handling",
+          "title": "Handle an API error",
+          "description": "Catch an API failure and inspect its error code and parameters — the shape of every error the API returns, and how to react to it robustly."
+        },
+        {
+          "id": "trace-api-calls",
+          "title": "Trace API calls",
+          "description": "Send a W3C trace context with your API calls, so the work the pool does for them is recorded as part of your application's distributed trace.",
+          "unsupported": {
+            "java": "The Java SDK cannot add an HTTP header to the requests it sends."
+          }
+        },
+        {
+          "id": "events",
+          "title": "Event monitoring",
+          "description": "Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a client's view of the pool live."
+        }
+      ]
+    },
+    {
+      "name": "Virtual machines",
+      "workflows": [
+        {
+          "id": "create-vm",
+          "title": "Create a VM from a template",
+          "description": "Clone one of the built-in templates and provision the clone into a real, installable VM."
+        },
+        {
+          "id": "new-vm-wizard",
+          "title": "Create a VM (full workflow)",
+          "description": "Create a VM end to end: pick a template, name the VM, choose an installation source and a home server, set CPU & memory, add a disk on a storage repository, attach a network interface and start it — the full sequence, rather than a single clone call."
+        },
+        {
+          "id": "clone-vm",
+          "title": "Clone a VM",
+          "description": "Make a fast copy-on-write clone of a VM on the same storage repository — distinct from a full copy — the quick way to stamp out new VMs from a halted \"golden\" image."
+        },
+        {
+          "id": "copy-vm",
+          "title": "Copy a VM",
+          "description": "Make a full, independent copy of a VM onto a chosen storage repository (a deep copy of its disks) — distinct from a fast, copy-on-write clone."
+        },
+        {
+          "id": "cross-pool-copy-vm",
+          "title": "Cross-pool copy a VM",
+          "description": "Copy a VM from one pool to another: open a session to each pool, obtain a receiver token on the destination, then send a copy of the VM from the source. Takes the destination pool's URL as an extra argument after the password.",
+          "requires": "a second pool"
+        },
+        {
+          "id": "delete-vm",
+          "title": "Delete a VM",
+          "description": "Remove a VM and its owned disks: deleting a VM leaves its disks behind, so the disks are destroyed explicitly afterward."
+        },
+        {
+          "id": "manage-vm-groups",
+          "title": "Manage VM groups",
+          "description": "Create an anti-affinity VM group, put a VM in it, read the membership back from the group side, then take the VM out again and delete the group."
+        },
+        {
+          "id": "snapshot-schedule",
+          "title": "Snapshot schedule",
+          "description": "Create a scheduled-snapshot policy, attach a VM to it, run it on demand and watch the retention limit prune the oldest snapshot away."
+        },
+        {
+          "id": "manage-vm-disks",
+          "title": "Manage VM disks",
+          "description": "Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize operations from the VM's Storage tab."
+        },
+        {
+          "id": "vm-lifecycle",
+          "title": "VM power lifecycle",
+          "description": "Drive a VM through its power states — start it, suspend it to memory, resume it and shut it down cleanly. Suspend and clean shutdown need the guest's cooperation, so this works on a throwaway copy of a VM with a guest OS and PV drivers (source_vm), which is deleted again with its disks afterwards."
+        },
+        {
+          "id": "snapshot-revert",
+          "title": "Snapshot & revert",
+          "description": "Take a snapshot of a VM and then revert the VM back to that point-in-time, as you would before a risky change."
+        },
+        {
+          "id": "checkpoint-vm",
+          "title": "Checkpoint & revert",
+          "description": "Take a checkpoint of a running VM (disk AND memory, unlike a plain snapshot) and revert to it, as you would before a risky in-guest change. A checkpoint needs the guest's cooperation, so this works on a throwaway copy of a VM with a guest OS and PV drivers (source_vm)."
+        },
+        {
+          "id": "convert-to-template",
+          "title": "Convert a VM to a template",
+          "description": "Turn a VM into a reusable custom template. This is a one-way operation."
+        },
+        {
+          "id": "edit-vm-properties",
+          "title": "Edit VM properties",
+          "description": "Change a VM's description and custom metadata, then read the changes back."
+        },
+        {
+          "id": "vm-boot-config",
+          "title": "VM boot configuration",
+          "description": "Set a VM's vCPU counts and boot order, then read them back."
+        },
+        {
+          "id": "rename-object",
+          "title": "Rename an object",
+          "description": "Change an object's name and read it back — how any object is renamed."
+        },
+        {
+          "id": "create-vm-with-vgpu",
+          "title": "Create a VM with a vGPU",
+          "description": "Provision a VM from a template and assign it a virtual GPU: find a GPU group that offers a vGPU type, attach it, and read the assignment back.",
+          "requires": "a GPU that supports vGPU"
+        },
+        {
+          "id": "vm-ip-address",
+          "title": "Get a VM's IP address",
+          "description": "Read a running VM's IP address from its guest metrics, as reported by the in-guest agent."
+        },
+        {
+          "id": "list-templates",
+          "title": "List templates",
+          "description": "Enumerate the pool's VM templates, both built-in and custom."
+        },
+        {
+          "id": "manage-vtpm",
+          "title": "Manage a virtual TPM",
+          "description": "Attach a virtual TPM to a halted VM, read it back and remove it again. A VM may have at most one, and only while it is halted."
+        },
+        {
+          "id": "export-import-vm",
+          "title": "Export and import a VM",
+          "description": "Export a VM to an XVA file and import it back as a new one. These are HTTP transfers alongside the API rather than API calls, so the session id travels in the query string."
+        },
+        {
+          "id": "configure-dynamic-memory",
+          "title": "Configure dynamic memory",
+          "description": "Give a VM a dynamic memory range so the host can reclaim memory from it under pressure, and see the ordering rule the four bounds must obey enforced."
+        },
+        {
+          "id": "manage-vm-media",
+          "title": "Manage a VM's CD drive",
+          "description": "Add a DVD drive to a VM, insert an ISO from the library and eject it again."
+        },
+        {
+          "id": "vm-from-snapshot",
+          "title": "Create a VM and a template from a snapshot",
+          "description": "Turn a snapshot into a new VM that stands on its own, and into a reusable custom template."
+        },
+        {
+          "id": "manage-vapp",
+          "title": "Manage a vApp",
+          "description": "Group VMs into an appliance that starts and stops together in a defined order, start and shut it down as a unit, then remove it."
+        },
+        {
+          "id": "attach-usb-device",
+          "title": "Attach a USB device to a VM",
+          "description": "List the USB devices a host exposes, enable passthrough on one, attach it to a VM and detach it again.",
+          "requires": "a USB device plugged into a host"
+        }
+      ]
+    },
+    {
+      "name": "Migration",
+      "workflows": [
+        {
+          "id": "live-migrate",
+          "title": "Live migrate a VM",
+          "description": "Move a running VM to another host in the pool with no downtime: check the destination can boot it, live-migrate it and confirm where it now runs. Uses a throwaway copy of a VM with a guest OS and PV drivers (source_vm), with its disks moved first to a shared storage repository (sr_name) so the destination host can see them."
+        },
+        {
+          "id": "storage-migrate",
+          "title": "Storage live-migration",
+          "description": "Move a running VM's virtual disk to a different storage repository while the VM keeps running — live storage migration. Uses a throwaway copy of a VM with a guest OS and PV drivers (source_vm)."
+        }
+      ]
+    },
+    {
+      "name": "Storage",
+      "workflows": [
+        {
+          "id": "create-nfs-sr",
+          "title": "Create an NFS SR",
+          "description": "Create a shared NFS storage repository on an NFS export (nfs_server, nfs_path), then detach and forget it."
+        },
+        {
+          "id": "create-iscsi-sr",
+          "title": "Create an iSCSI SR",
+          "description": "Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array offers many targets, so name yours with target_iqn.",
+          "requires": "an iSCSI target",
+          "caution": "formats the LUN it uses"
+        },
+        {
+          "id": "create-smb-sr",
+          "title": "Create an SMB SR",
+          "description": "Connect a shared storage repository to an SMB/CIFS file share, passing the server, share path and credentials (the password as a secret, never in plain text).",
+          "requires": "an SMB file share"
+        },
+        {
+          "id": "create-hba-sr",
+          "title": "Create an HBA SR",
+          "description": "Connect a shared storage repository to a fibre-channel (HBA) LUN: discover the LUNs the host can see with a deliberately failing probe, then create the SR by SCSI ID. Creating the SR formats the LUN.",
+          "requires": "a Fibre Channel or SAS LUN",
+          "caution": "formats the LUN it uses"
+        },
+        {
+          "id": "create-iso-sr",
+          "title": "Create an ISO library SR",
+          "description": "Connect an ISO-library storage repository to a file share of ISO images (here an NFS export), so the images are available as installation media."
+        },
+        {
+          "id": "attach-disk",
+          "title": "Attach a new disk",
+          "description": "Create a fresh virtual disk on a storage repository and attach it to a VM."
+        },
+        {
+          "id": "vbd-inventory",
+          "title": "Inventory a VM's disks",
+          "description": "List a VM's attached disks and the size of each."
+        },
+        {
+          "id": "sr-usage",
+          "title": "Storage repository usage",
+          "description": "Report each storage repository's used and total capacity, and rescan one."
+        },
+        {
+          "id": "reclaim-space",
+          "title": "Reclaim freed space on a thin SR",
+          "description": "Reclaim space freed by deleted disks on a thin-provisioned storage repository: find a trim-capable SR, pick a host with a live connection to it, and run the trim operation."
+        },
+        {
+          "id": "manage-sr-lifecycle",
+          "title": "Detach, reattach and forget storage",
+          "description": "Take a storage repository offline and bring it back: disconnect it from every host, reconnect and rescan it, then disconnect it once more and forget it for good."
+        },
+        {
+          "id": "reconnect-sr-storage",
+          "title": "Point an SR at moved storage",
+          "description": "When the storage behind an SR moves to a new address, point the SR at it: a host's connection to an SR cannot be edited, so unplug each one, recreate it with the new settings and plug it back."
+        },
+        {
+          "id": "export-import-vdi",
+          "title": "Copy a disk's contents",
+          "description": "Upload data into a virtual disk, download the disk's raw contents and copy them into a second disk, then check that the copy matches. Disk contents travel as HTTP transfers alongside the API."
+        },
+        {
+          "id": "set-default-sr",
+          "title": "Set the pool's default storage",
+          "description": "Choose where the pool puts new disks, suspended VMs' memory images and host crash dumps by default, then put the original choice back."
+        },
+        {
+          "id": "attach-existing-disk",
+          "title": "Attach an existing disk to another VM",
+          "description": "Move a disk between VMs by detaching and re-attaching it, without copying the data."
+        },
+        {
+          "id": "changed-block-tracking",
+          "title": "Back up with changed block tracking",
+          "description": "Walk an incremental backup: turn on changed block tracking, snapshot twice, ask the server which blocks differ, then release the older snapshot's data while keeping the change metadata the next incremental needs."
+        }
+      ]
+    },
+    {
+      "name": "Networking",
+      "workflows": [
+        {
+          "id": "create-network",
+          "title": "Create a network",
+          "description": "Create an internal network — an isolated virtual switch with no physical NIC — for VMs to talk to each other privately."
+        },
+        {
+          "id": "list-networks",
+          "title": "List networks",
+          "description": "Enumerate the pool's networks with their physical and virtual interface counts."
+        },
+        {
+          "id": "manage-vif",
+          "title": "Manage network interfaces",
+          "description": "Attach a virtual network interface to a VM and remove it again."
+        },
+        {
+          "id": "create-bond",
+          "title": "Create a NIC bond",
+          "description": "Bond two spare network interfaces onto a new network for redundancy and throughput, read the bond back, then dissolve it."
+        }
+      ]
+    },
+    {
+      "name": "Hosts & pools",
+      "workflows": [
+        {
+          "id": "host-info",
+          "title": "Host information",
+          "description": "Read a host's software version, edition and CPU topology (sockets and cores)."
+        },
+        {
+          "id": "host-maintenance",
+          "title": "Enter & exit maintenance mode",
+          "description": "Put a host into maintenance mode: disable it so it accepts no new VMs, evacuate its running guests to another host in the pool, then re-enable it. A throwaway copy of a VM with a guest OS and PV drivers (source_vm), with its disks on a shared storage repository (sr_name), gives evacuation something to move."
+        },
+        {
+          "id": "read-metrics",
+          "title": "Read host & VM metrics",
+          "description": "Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory)."
+        },
+        {
+          "id": "rrd-metrics",
+          "title": "Read RRD performance metrics",
+          "description": "Pull recent host performance samples from the RRD archives over the performance-data HTTP API, parse the legends and data, and summarise a metric (here the peak PVS Accelerator cache-space utilisation per host)."
+        },
+        {
+          "id": "pool-properties",
+          "title": "Pool properties",
+          "description": "Read the pool name and default storage repository, then rename the pool and restore it."
+        },
+        {
+          "id": "configure-ha",
+          "title": "Configure high availability",
+          "description": "Turn on pool High Availability: choose a shared SR as the heartbeat statefile, compute how many host failures the pool can tolerate, enable HA, then disable it again.",
+          "caution": "while HA is on, it can restart hosts it considers failed"
+        },
+        {
+          "id": "dismiss-alerts",
+          "title": "Raise and dismiss alerts",
+          "description": "List the pool's alerts, then dismiss one — what the Notifications view does."
+        },
+        {
+          "id": "host-power-on",
+          "title": "Configure host power on",
+          "description": "Set a host's out-of-band power-on mode and credentials, then read them back.",
+          "requires": "remote power control on the hosts (iLO, DRAC or IPMI)"
+        },
+        {
+          "id": "rotate-pool-secret",
+          "title": "Rotate the pool secret",
+          "description": "Rotate the shared secret that authenticates pool members to each other."
+        },
+        {
+          "id": "manage-certificates",
+          "title": "Manage TLS certificates",
+          "description": "Install a pool-wide CA certificate, reset a host's server certificate, read the resulting fingerprints back, and turn on verification of the certificates members present to each other."
+        },
+        {
+          "id": "change-root-password",
+          "title": "Change the root password",
+          "description": "Change the local superuser password, handle the wrong-old-password failure, and change it back.",
+          "caution": "changes the root password; a failure part way can lock you out of the host"
+        },
+        {
+          "id": "gpu-inventory",
+          "title": "GPU inventory",
+          "description": "Enumerate the pool's GPU groups, their physical GPUs and the vGPU types each offers."
+        },
+        {
+          "id": "pvs-accelerator",
+          "title": "PVS Accelerator inventory",
+          "description": "Document a pool's Citrix Provisioning (PVS) Accelerator setup: each site's read cache (host, size, storage), its PVS servers (addresses and streaming port range), and which VMs are accelerated versus the whole pool."
+        },
+        {
+          "id": "configure-pvs-accelerator",
+          "title": "Configure PVS Accelerator",
+          "description": "Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then forget the site — which cascades to everything hanging off it."
+        },
+        {
+          "id": "configure-nrpe",
+          "title": "Configure NRPE monitoring",
+          "description": "Configure a host's NRPE (Nagios Remote Plugin Executor) agent through the monitoring plugin: read its status and configuration, enable it and permit a monitoring host, then read it back."
+        },
+        {
+          "id": "configure-snmp",
+          "title": "Configure SNMP monitoring",
+          "description": "Configure a host's SNMP agent through the monitoring plugin: read its configuration, enable it with a community string, then read the configuration and running status back."
+        },
+        {
+          "id": "manage-ssh-access",
+          "title": "Manage SSH access",
+          "description": "Open the pool's SSH service with an automatic cut-off, read back when it lapses, then close it again — the pool-level call fans out to every host."
+        },
+        {
+          "id": "control-domain-memory",
+          "title": "Change control domain memory",
+          "description": "Read and change a host's control domain (dom0) memory, then put it back. One setter pins the static and dynamic bounds together, because dom0 does not balloon."
+        },
+        {
+          "id": "backup-host-config",
+          "title": "Back up a host's configuration",
+          "description": "Download a host's configuration backup and hand it back as a restore would — and watch another host's backup be refused."
+        },
+        {
+          "id": "server-status-report",
+          "title": "Collect a server status report",
+          "description": "Gather a host's diagnostic bundle: read the catalogue of sections it can report on, download the whole bundle, then download a smaller one covering only the sections you pick."
+        },
+        {
+          "id": "restart-host",
+          "title": "Restart a host",
+          "description": "Take a host down and bring it back: stop it accepting new VMs, move the ones it is running elsewhere, reboot it, then power it right off and back on again.",
+          "caution": "reboots a host"
+        },
+        {
+          "id": "manage-crash-dumps",
+          "title": "Clear a host's crash dumps",
+          "description": "Find the crash dumps a host kept after a failure, report how big and how old they are, then delete them to free the space."
+        },
+        {
+          "id": "configure-pool-options",
+          "title": "Configure pool options",
+          "description": "Read and change the pool-wide options that govern how it behaves — live patching, IGMP snooping and memory-migration compression — then put them back."
+        },
+        {
+          "id": "configure-console-access",
+          "title": "Configure console access",
+          "description": "Tighten how consoles and management traffic may be used: idle timeouts for the pool's own consoles and for VM consoles, one session at a time, and refusing plain HTTP."
+        },
+        {
+          "id": "configure-host-storage",
+          "title": "Configure host storage",
+          "description": "Set a host's iSCSI initiator name and turn on storage multipathing, then restore both."
+        },
+        {
+          "id": "configure-syslog",
+          "title": "Send logs to a remote syslog server",
+          "description": "Point a host's logs at a remote syslog server — and reconfigure the daemon, without which the setting is recorded but nothing changes."
+        },
+        {
+          "id": "manage-driver-variants",
+          "title": "Manage device driver variants",
+          "description": "Inspect a host's device drivers and choose which variant of one to use, seeing the difference between the variant that is selected and the one currently loaded."
+        },
+        {
+          "id": "manage-pool-membership",
+          "title": "Manage pool membership",
+          "description": "List the pool's member hosts and which one coordinates it, promote a different host to coordinator, then promote the original back.",
+          "caution": "ejects a host from the pool"
+        },
+        {
+          "id": "configure-clustering",
+          "title": "Configure clustering",
+          "description": "Enable the clustering layer that shared block storage needs for thin provisioning, then watch quorum as a host leaves the cluster and rejoins it.",
+          "requires": "shared block storage for a GFS2 cluster"
+        },
+        {
+          "id": "wlb-recommendations",
+          "title": "Read workload-balancing recommendations",
+          "description": "Point the pool at a workload-balancing appliance, read its placement recommendations for the pool and for one VM, then disconnect it.",
+          "requires": "a Workload Balancing appliance"
+        }
+      ]
+    },
+    {
+      "name": "Updates",
+      "workflows": [
+        {
+          "id": "configure-updates",
+          "title": "Configure updates (CDN)",
+          "description": "Point the pool at a CDN update repository and turn on automatic update sync: register a repository, set it as the pool's repository, enable update sync, read it back, then tidy up."
+        },
+        {
+          "id": "configure-offline-updates",
+          "title": "Configure updates for an air-gapped pool",
+          "description": "Switch a pool with no internet access to offline updates: make an update bundle repository the pool's only repository, upload an update bundle (.xsbundle) to it if you have one, list the updates it makes available, then tidy up."
+        },
+        {
+          "id": "apply-update",
+          "title": "Apply updates from the CDN",
+          "description": "Sync the pool's update metadata from the CDN and apply it to every host, then read each host's post-update reboot guidance.",
+          "caution": "updates the hosts"
+        },
+        {
+          "id": "rolling-pool-update",
+          "title": "Rolling pool update",
+          "description": "Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host in turn disable it, evacuate its VMs to the rest of the pool, apply the updates, reboot, and re-enable it — host-by-host orchestration.",
+          "caution": "updates and reboots every host"
+        }
+      ]
+    },
+    {
+      "name": "Organization & metadata",
+      "workflows": [
+        {
+          "id": "tags-and-folders",
+          "title": "Tag and organize objects",
+          "description": "Organize a pool with tags and folders: add tags to a VM and a host (tags work on any object type), place the VM in a folder, read it all back, then tidy up."
+        },
+        {
+          "id": "pool-tags",
+          "title": "Tag the pool",
+          "description": "Add and remove a tag on the pool itself, showing that tags apply to the pool, not just VMs and hosts."
+        },
+        {
+          "id": "custom-fields",
+          "title": "Custom fields",
+          "description": "Attach and read custom name/value fields on a VM — arbitrary metadata you define, stored on the object."
+        }
+      ]
+    },
+    {
+      "name": "Security & access",
+      "workflows": [
+        {
+          "id": "manage-ad-users",
+          "title": "Manage Active Directory users",
+          "description": "Join the pool to an Active Directory domain, grant an AD user access with an RBAC role, read it back, then tidy up.",
+          "requires": "an Active Directory domain"
+        },
+        {
+          "id": "list-roles",
+          "title": "List RBAC roles",
+          "description": "Enumerate the pool's role-based access control (RBAC) roles — the roles that can be granted to users."
+        },
+        {
+          "id": "manage-secureboot-certificates",
+          "title": "Manage Secure Boot certificates",
+          "description": "Check whether the pool can supply UEFI Secure Boot certificates and whether a guest is ready to use them, then flag a guest whose certificates have gone stale for a refresh at its next boot — and unflag it again."
+        }
+      ]
+    },
+    {
+      "name": "Disaster recovery",
+      "workflows": [
+        {
+          "id": "disaster-recovery",
+          "title": "Recover VMs after a disaster",
+          "description": "Replicate the pool's database to shared storage, read it back as a separate database to see what it describes, and recover a VM out of it into a second, standby pool (dr_url).",
+          "requires": "a second pool that can reach the same storage"
+        }
+      ]
+    }
+  ]
+}
