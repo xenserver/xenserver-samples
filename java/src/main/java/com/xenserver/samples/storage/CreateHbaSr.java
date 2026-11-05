@@ -7,7 +7,6 @@ import com.xensource.xenapi.Session;
 
 import java.util.Map;
 
-import static com.xenserver.samples.Helpers.detachAndForgetSr;
 import static com.xenserver.samples.Helpers.firstTagText;
 import static com.xenserver.samples.Helpers.parseXml;
 import static com.xenserver.samples.Helpers.probeForFailure;
@@ -56,14 +55,32 @@ public final class CreateHbaSr {
             String path = firstTagText(device, "path");
             System.out.println("Discovered LUN: SCSIid " + scsiId + " on " + path);
 
-            // SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path>
-            // is for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+            // SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads like
+            // "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
             Map<String, String> dc = new java.util.HashMap<>();
             dc.put("SCSIid", scsiId);
+
+            // SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is
+            // already there, and SR.create would format it. Reattach that SR rather than
+            // destroying it.
+            org.w3c.dom.Element srListRoot =
+                parseXml(SR.probe(conn, host, dc, "lvmohba", new java.util.HashMap<>())).getDocumentElement();
+            org.w3c.dom.NodeList existing = srListRoot.getElementsByTagName("SR");
+            if (existing.getLength() > 0) {
+                String uuid = firstTagText((org.w3c.dom.Element) existing.item(0), "UUID");
+                throw new RuntimeException("LUN " + scsiId + " already holds SR "
+                    + (uuid == null ? "?" : uuid.trim()) + "; creating an SR here would format it - "
+                    + "reattach the existing SR instead of creating a new one");
+            }
+
             SR sr = SR.create(conn, host, dc, 0L, srName, "HBA SR created by the SDK example",
                 "lvmohba", "user", true, new java.util.HashMap<>());
             System.out.println("Created SR: " + sr.getUuid(conn) + " (" + sr.getPhysicalSize(conn) / GiB + " GiB)");
-            detachAndForgetSr(conn, sr);
+            // Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+            // SR.destroy needs it detached from every host first.
+            for (com.xensource.xenapi.PBD pbd : sr.getPBDs(conn))
+                if (pbd.getCurrentlyAttached(conn)) pbd.unplug(conn);
+            sr.destroy(conn);
             System.out.println("OK: create-hba-sr");
         } finally {
             Session.logout(conn);

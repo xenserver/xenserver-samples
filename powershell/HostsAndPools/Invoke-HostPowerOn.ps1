@@ -19,8 +19,8 @@ function Invoke-HostPowerOn {
     # the same way the events example does for the missing event cmdlet. Still pure PowerShell: no
     # [XenAPI.*]:: statics, and Connect has already trusted the server's certificate.
     # "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"
-    # modes were removed from the real power-on plugin (REQ-811) and fail the moment host.power_on is
-    # actually called ("{mode} script has been removed").
+    # modes were removed from the real power-on plugin and fail the moment host.power_on is actually
+    # called ("{mode} script has been removed").
     Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @(
         $xenHost.opaque_ref, 'wake-on-lan', @{})
     $updated = Get-XenHost -Ref $xenHost.opaque_ref

@@ -13,7 +13,8 @@ function Invoke-ListTemplates {
         [Parameter(Mandatory = $true)][string]$Password
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $templates = Get-XenVM | Where-Object { $_.is_a_template } | Sort-Object name_label
+    # A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
+    $templates = Get-XenVM | Where-Object { $_.is_a_template -and -not $_.is_a_snapshot } | Sort-Object name_label
     Write-Host "Templates ($(@($templates).Count)):"
     $templates | Select-Object -First 8 | ForEach-Object {
         $suffix = if ($_.other_config.ContainsKey("default_template")) { " [built-in]" } else { "" }

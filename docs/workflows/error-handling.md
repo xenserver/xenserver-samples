@@ -78,7 +78,7 @@ def error_handling(url, username, password):
         print("unexpected: no error")
     except XenAPI.Failure as f:
         print("Caught expected failure: %s" % f.details[0])
-        print("Short message: %s" % f)
+        print("Error parameters: %s" % f.details[1:])
     print("OK: error-handling")
     session.xenapi.session.logout()
 ```
@@ -87,7 +87,7 @@ def error_handling(url, username, password):
 
 ```text
 Caught expected failure: UUID_INVALID
-Short message: ['UUID_INVALID', 'host', 'this-uuid-does-not-exist']
+Error parameters: ['host', 'this-uuid-does-not-exist']
 OK: error-handling
 ```
 
@@ -262,10 +262,13 @@ Source: [`cli/getting-started/error-handling.sh`](../../cli/getting-started/erro
 #   ./workflows.sh error-handling https://xenserver root "$password"
 
 error_handling() {
-    if xe vm-param-get uuid=this-uuid-does-not-exist param-name=uuid 2>/dev/null; then
+    # xe prints a failed call's error (its code and parameters, or a friendly rendering of a common
+    # one) to stderr; capture it instead of letting it go straight to the terminal.
+    if out=$(xe vm-param-get uuid=this-uuid-does-not-exist param-name=uuid 2>&1); then
         echo "unexpected: no error"
     else
-        echo "Caught expected failure: invalid uuid (exit code $?)"
+        echo "Caught expected failure:"
+        echo "$out"
     fi
     echo "OK: error-handling"
 }
@@ -274,7 +277,11 @@ error_handling() {
 <details><summary>Sample output</summary>
 
 ```text
-Caught expected failure: invalid uuid (exit code 1)
+Caught expected failure:
+The uuid you supplied was invalid.
+type: VM
+uuid: this-uuid-does-not-exist
+[ERROR] Command Exit 1
 OK: error-handling
 ```
 

@@ -11,9 +11,8 @@ internal static partial class Workflows
 {
     /// <summary>
     /// On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-    /// storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-    /// XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-    /// recovered and detaches the storage again.
+    /// storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By
+    /// default this is a test failover, which removes what it recovered and detaches the storage again.
     /// </summary>
     /// <example>
     /// <code>
@@ -82,7 +81,7 @@ internal static partial class Workflows
                 var database = new Session(url) { opaque_ref = VDI.open_database(session, vdi).opaque_ref };
                 database.JsonRpcClient.ServerCertificateValidationCallback = (req, cert, chain, errors) => true;
 
-                // A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+                // A pool often has no name of its own; show its coordinator's name instead.
                 var pool = Pool.get_all(database)[0].opaque_ref;
                 var poolName = Pool.get_name_label(database, pool);
                 if (string.IsNullOrEmpty(poolName))

@@ -17,9 +17,8 @@ import (
 //	listRoles("https://xenserver", "root", password)
 func listRoles(url, user, password string) {
 	session := connect(url, user, password)
-	// Role is the one class XenCenter still bulk-downloads; RBAC subjects map to these roles. Role records
-	// include every permission too; the roles a user can be granted are the ones made of permissions
-	// (non-empty subroles), as xe role-list shows.
+	// RBAC subjects map to these roles. Role records include every permission too; the roles a user
+	// can be granted are the ones made of permissions (non-empty subroles), as xe role-list shows.
 	roles, err := xenapi.Role.GetAllRecords(session)
 	check(err)
 	seen := map[string]bool{}

@@ -25,8 +25,8 @@ public final class HostPowerOn {
 
         // Mode and config travel together: the config carries the credentials the mode needs.
         // "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"
-        // modes were removed from the real power-on plugin (REQ-811) and fail the moment host.power_on is
-        // actually called.
+        // modes were removed from the real power-on plugin and fail the moment host.power_on is actually
+        // called.
         Map<String, String> cfg = new HashMap<>();
         host.setPowerOnMode(conn, "wake-on-lan", cfg);
         System.out.println("Power-on mode:  " + host.getPowerOnMode(conn));

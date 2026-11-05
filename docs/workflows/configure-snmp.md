@@ -229,9 +229,9 @@ public final class ConfigureSnmp {
 <details><summary>Sample output</summary>
 
 ```text
-sdk-host1: SNMP enabled: enabled / active
-  community: sdk-community, trap destination: 192.0.2.50
 sdk-host2: SNMP enabled: enabled / active
+  community: sdk-community, trap destination: 192.0.2.50
+sdk-host1: SNMP enabled: enabled / active
   community: sdk-community, trap destination: 192.0.2.50
 OK: configure-snmp
 ```

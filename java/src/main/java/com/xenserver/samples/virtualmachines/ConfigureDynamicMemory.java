@@ -42,9 +42,10 @@ public final class ConfigureDynamicMemory {
                     gib(before.memoryStaticMin), gib(before.memoryStaticMax),
                     gib(before.memoryDynamicMin), gib(before.memoryDynamicMax));
 
-            // Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never
-            // below the static floor, which is the least the guest can boot in.
-            long floor = Math.max(before.memoryStaticMin, before.memoryStaticMax / 4);
+            // Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+            // static maximum for every supported guest (lower can make it unstable), and never below the static
+            // floor, which is the least the guest can boot in.
+            long floor = Math.max(before.memoryStaticMin, before.memoryStaticMax * 3 / 4);
             long ceiling = before.memoryStaticMax;
             vm.setMemoryDynamicRange(conn, floor, ceiling);
             System.out.printf("  dynamic range now %s-%s%n",

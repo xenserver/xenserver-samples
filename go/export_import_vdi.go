@@ -64,6 +64,9 @@ func exportImportVdi(url, user, password, srName string) {
 		received, err := io.ReadAll(response.Body)
 		response.Body.Close()
 		check(err)
+		if response.StatusCode < 200 || response.StatusCode >= 300 {
+			panic(fmt.Sprintf("%s: HTTP %s: %s", path, response.Status, received))
+		}
 
 		for {
 			status, err := xenapi.Task.GetStatus(session, task)

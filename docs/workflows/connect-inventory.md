@@ -252,10 +252,10 @@ Connected to pool: sdk-pool
 Hosts (2):
   - sdk-host2 (198.51.100.12)
   - sdk-host1 (127.0.0.1)
-  - db-01 [Halted]
-  - cache-01 [Running]
   - web-01 [Running]
   - secure-01 [Halted]
+  - db-01 [Halted]
+  - cache-01 [Running]
 VMs (4)
 OK: connect-inventory
 ```

@@ -1,9 +1,8 @@
 """Fail over to the disaster recovery site.
 
 On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-recovered and detaches the storage again.
+storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By default
+this is a test failover, which removes what it recovered and detaches the storage again.
 
 Run it::
 
@@ -69,7 +68,7 @@ def disaster_recovery_failover(url, username, password, target=None, target_iqn=
             database = XenAPI.Session(url, ignore_ssl=True)
             database._session = x.VDI.open_database(vdi)
             d = database.xenapi
-            # A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+            # A pool often has no name of its own; show its coordinator's name instead.
             pool = d.pool.get_all()[0]
             print("  pool metadata of %s" % (d.pool.get_name_label(pool)
                                              or d.host.get_name_label(d.pool.get_master(pool))))

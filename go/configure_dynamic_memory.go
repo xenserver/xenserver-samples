@@ -29,9 +29,10 @@ func configureDynamicMemory(url, user, password string) {
 		gib(before.MemoryStaticMin), gib(before.MemoryStaticMax),
 		gib(before.MemoryDynamicMin), gib(before.MemoryDynamicMax))
 
-	// Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never below the
-	// static floor, which is the least the guest can boot in.
-	floor := before.MemoryStaticMax / 4
+	// Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+	// static maximum for every supported guest (lower can make it unstable), and never below the static
+	// floor, which is the least the guest can boot in.
+	floor := before.MemoryStaticMax * 3 / 4
 	if before.MemoryStaticMin > floor {
 		floor = before.MemoryStaticMin
 	}

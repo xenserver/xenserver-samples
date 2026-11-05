@@ -15,10 +15,14 @@ function Invoke-ManageVtpm {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
+    # vTPM is not supported for a BIOS-mode VM, only a UEFI one (HVM_boot_params["firmware"] ==
+    # "uefi"), so pick one of those rather than any halted VM.
     $vm = Get-XenVM | Where-Object {
         -not $_.is_a_template -and -not $_.is_control_domain -and -not $_.is_a_snapshot -and
-        $_.power_state -eq 'Halted' -and $_.VTPMs.Count -eq 0
+        $_.power_state -eq 'Halted' -and $_.VTPMs.Count -eq 0 -and
+        $_.HVM_boot_params['firmware'] -eq 'uefi'
     } | Select-Object -First 1
+    if (-not $vm) { throw "No halted UEFI VM without a vTPM already attached was found." }
     Write-Host "Attaching a vTPM to $($vm.name_label)"
 
     # IsUnique false: the vTPM may be copied along with the VM. A VM may have at most one, and it can

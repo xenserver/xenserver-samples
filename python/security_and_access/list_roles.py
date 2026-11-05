@@ -12,7 +12,7 @@ from connection import connect
 
 
 def list_roles(url, username, password):
-    """List the RBAC roles (the one class XenCenter still bulk-downloads)."""
+    """List the RBAC roles."""
     session = connect(url, username, password)
     # Note the class is lowercase 'role' in the binding. Role records include every permission too; the
     # roles a user can be granted are the ones made of permissions (non-empty subroles), as xe role-list shows.

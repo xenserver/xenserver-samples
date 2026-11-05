@@ -28,9 +28,9 @@ internal static partial class Workflows
 
         // A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the
         // VM's console at that moment. It is an HTTP transfer alongside the API, not an API call, so the
-        // session id travels in the query string. ref names the VM's VNC (rfb) console, as XenCenter does
-        // (the VM itself works too). Only a running VM has a console to capture, and a host that can't reach
-        // it answers 404 or 500 instead of an image: the picture is incidental, so carry on.
+        // session id travels in the query string. ref names the VM's VNC (rfb) console (the VM itself
+        // works too). Only a running VM has a console to capture, and a host that can't reach it answers
+        // 404 or 500 instead of an image: the picture is incidental, so carry on.
         if (VM.get_power_state(session, vmRef) == vm_power_state.Running)
         {
             var console = VM.get_consoles(session, vmRef)

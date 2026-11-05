@@ -13,7 +13,8 @@ Source: [`csharp/HostsAndPools/ConfigureConsoleAccess.cs`](../../csharp/HostsAnd
 ```csharp
 /// <summary>
 /// Tighten how consoles and management traffic may be used: idle timeouts for the pool's own consoles and
-/// for VM consoles, one session at a time, and refusing plain HTTP.
+/// for VM consoles, one session at a time, and refusing plain HTTP. Restore every value it changed
+/// afterwards.
 /// </summary>
 /// <example>
 /// <code>
@@ -22,15 +23,17 @@ Source: [`csharp/HostsAndPools/ConfigureConsoleAccess.cs`](../../csharp/HostsAnd
 /// </example>
 /// <remarks>
 /// <para>
-/// Tighten how consoles and management traffic may be used. Idle console sessions are set at two levels —
-/// the pool's own management consoles and the VM consoles it serves — and a host can override the pool's.
-/// Requiring HTTPS refuses plain HTTP to the management interface altogether.
+/// Tighten how consoles and management traffic may be used, then put back whatever was there before.
+/// Idle console sessions are set at two levels — the pool's own management consoles and the VM consoles
+/// it serves — and a host can override the pool's. Requiring HTTPS refuses plain HTTP to the management
+/// interface altogether.
 /// </para>
 /// <para>
-/// NOTE: SDK 26.14's C# binding has Pool.set_console_idle_timeout and Pool.set_https_only but no matching
-/// GETTERS (unlike host.console_idle_timeout, which has both) — so the pool's own management-console
-/// timeout and its HTTPS-only flag can be set here but not read back through this binding. Those two read
-/// lines are therefore omitted rather than worked around.
+/// NOTE: Pool.set_console_idle_timeout and Pool.set_https_only are set below but never read back AT THE
+/// POOL LEVEL. SDK 26.14 generates a setter and no getter for either there, because both are really
+/// fan-outs that call the equivalent Host.set_* on every host rather than pool fields of their own.
+/// Host.https_only and Host.console_idle_timeout ARE ordinary readable fields, so this host's values are
+/// read back through them instead, to show the effect and to know what to restore.
 /// </para>
 /// </remarks>
 public static void ConfigureConsoleAccess(string url, string user, string password)
@@ -39,9 +42,14 @@ public static void ConfigureConsoleAccess(string url, string user, string passwo
     var pool = Pool.get_all(session)[0].opaque_ref;
     var host = Pool.get_master(session, pool).opaque_ref;
 
-    Console.WriteLine($"  {"VM console idle timeout",-26} {Pool.get_vm_console_idle_timeout(session, pool)}s");
-    Console.WriteLine($"  {"limit console sessions",-26} {Pool.get_limit_console_sessions(session, pool)}");
-    Console.WriteLine($"  {"host console idle timeout",-26} {Host.get_console_idle_timeout(session, host)}s");
+    var beforeVmConsoleIdleTimeout = Pool.get_vm_console_idle_timeout(session, pool);
+    var beforeLimitConsoleSessions = Pool.get_limit_console_sessions(session, pool);
+    var beforeHostConsoleIdleTimeout = Host.get_console_idle_timeout(session, host);
+    var beforeHostHttpsOnly = Host.get_https_only(session, host);
+    Console.WriteLine($"  {"VM console idle timeout",-26} {beforeVmConsoleIdleTimeout}s");
+    Console.WriteLine($"  {"limit console sessions",-26} {beforeLimitConsoleSessions}");
+    Console.WriteLine($"  {"host console idle timeout",-26} {beforeHostConsoleIdleTimeout}s");
+    Console.WriteLine($"  {"host https only",-26} {beforeHostHttpsOnly}");
 
     // Ten minutes of inactivity, one console session at a time, and no plain HTTP.
     Pool.set_console_idle_timeout(session, pool, 600);
@@ -54,12 +62,13 @@ public static void ConfigureConsoleAccess(string url, string user, string passwo
     Console.WriteLine($"  {"VM console idle timeout",-26} {Pool.get_vm_console_idle_timeout(session, pool)}s");
     Console.WriteLine($"  {"limit console sessions",-26} {Pool.get_limit_console_sessions(session, pool)}");
     Console.WriteLine($"  {"host console idle timeout",-26} {Host.get_console_idle_timeout(session, host)}s");
+    Console.WriteLine($"  {"host https only",-26} {Host.get_https_only(session, host)}");
 
-    Pool.set_https_only(session, pool, false);
-    Pool.set_console_idle_timeout(session, pool, 0);
-    Pool.set_vm_console_idle_timeout(session, pool, 0);
-    Pool.set_limit_console_sessions(session, pool, false);
-    Host.set_console_idle_timeout(session, host, 0);
+    Pool.set_https_only(session, pool, beforeHostHttpsOnly);
+    Pool.set_console_idle_timeout(session, pool, beforeHostConsoleIdleTimeout);
+    Pool.set_vm_console_idle_timeout(session, pool, beforeVmConsoleIdleTimeout);
+    Pool.set_limit_console_sessions(session, pool, beforeLimitConsoleSessions);
+    Host.set_console_idle_timeout(session, host, beforeHostConsoleIdleTimeout);
     Console.WriteLine("  restored");
     Console.WriteLine("OK: configure-console-access");
     session.logout();
@@ -72,10 +81,12 @@ public static void ConfigureConsoleAccess(string url, string user, string passwo
   VM console idle timeout    0s
   limit console sessions     False
   host console idle timeout  0s
+  host https only            False
 after tightening:
   VM console idle timeout    600s
   limit console sessions     True
   host console idle timeout  300s
+  host https only            True
   restored
 OK: configure-console-access
 ```
@@ -90,7 +101,8 @@ Source: [`python/hosts_and_pools/configure_console_access.py`](../../python/host
 """Configure console access.
 
 Tighten how consoles and management traffic may be used: idle timeouts for the pool's own consoles
-and for VM consoles, one session at a time, and refusing plain HTTP.
+and for VM consoles, one session at a time, and refusing plain HTTP. Restore every value it changed
+afterwards.
 
 Run it::
 
@@ -101,7 +113,8 @@ from connection import connect
 
 
 def configure_console_access(url, username, password):
-    """Tighten how consoles and management traffic may be used.
+    """Tighten how consoles and management traffic may be used, then put back whatever was there
+    before.
 
     Idle console sessions are set at two levels -- the pool's own management consoles and the
     VM consoles it serves -- and a host can override the pool's. Requiring HTTPS refuses plain
@@ -111,13 +124,19 @@ def configure_console_access(url, username, password):
     pool = x.pool.get_all()[0]
     host = x.pool.get_master(pool)
 
-    # NB: pool.https_only and pool.console_idle_timeout are SET below but never read back. SDK 26.14
-    # generates a setter and no getter for both (unlike host.console_idle_timeout, which has both), so
-    # they cannot be read through the typed bindings at all — and a sample that reached past its own
-    # binding to show a value would be teaching a workaround rather than the API.
-    print("  %-26s %ss" % ("VM console idle timeout", x.pool.get_vm_console_idle_timeout(pool)))
-    print("  %-26s %s" % ("limit console sessions", x.pool.get_limit_console_sessions(pool)))
-    print("  %-26s %ss" % ("host console idle timeout", x.host.get_console_idle_timeout(host)))
+    # NB: pool.https_only and pool.console_idle_timeout are SET below but never read back AT THE POOL
+    # LEVEL. SDK 26.14 generates a setter and no getter for either there, because both are really
+    # fan-outs that call the equivalent Host.set_* on every host rather than pool fields of their own.
+    # host.https_only and host.console_idle_timeout ARE ordinary readable fields, so read this host's
+    # values back through them instead, to show the effect and to know what to restore.
+    before_vm_console_idle_timeout = x.pool.get_vm_console_idle_timeout(pool)
+    before_limit_console_sessions = x.pool.get_limit_console_sessions(pool)
+    before_host_console_idle_timeout = x.host.get_console_idle_timeout(host)
+    before_host_https_only = x.host.get_https_only(host)
+    print("  %-26s %ss" % ("VM console idle timeout", before_vm_console_idle_timeout))
+    print("  %-26s %s" % ("limit console sessions", before_limit_console_sessions))
+    print("  %-26s %ss" % ("host console idle timeout", before_host_console_idle_timeout))
+    print("  %-26s %s" % ("host https only", before_host_https_only))
 
     # Ten minutes of inactivity, one console session at a time, and no plain HTTP.
     x.pool.set_console_idle_timeout(pool, "600")
@@ -130,12 +149,13 @@ def configure_console_access(url, username, password):
     print("  %-26s %ss" % ("VM console idle timeout", x.pool.get_vm_console_idle_timeout(pool)))
     print("  %-26s %s" % ("limit console sessions", x.pool.get_limit_console_sessions(pool)))
     print("  %-26s %ss" % ("host console idle timeout", x.host.get_console_idle_timeout(host)))
+    print("  %-26s %s" % ("host https only", x.host.get_https_only(host)))
 
-    x.pool.set_https_only(pool, False)
-    x.pool.set_console_idle_timeout(pool, "0")
-    x.pool.set_vm_console_idle_timeout(pool, "0")
-    x.pool.set_limit_console_sessions(pool, False)
-    x.host.set_console_idle_timeout(host, "0")
+    x.pool.set_https_only(pool, before_host_https_only)
+    x.pool.set_console_idle_timeout(pool, str(before_host_console_idle_timeout))
+    x.pool.set_vm_console_idle_timeout(pool, str(before_vm_console_idle_timeout))
+    x.pool.set_limit_console_sessions(pool, before_limit_console_sessions)
+    x.host.set_console_idle_timeout(host, str(before_host_console_idle_timeout))
     print("  restored")
     print("OK: configure-console-access")
     session.logout()
@@ -147,10 +167,12 @@ def configure_console_access(url, username, password):
   VM console idle timeout    0s
   limit console sessions     False
   host console idle timeout  0s
+  host https only            False
 after tightening:
   VM console idle timeout    600s
   limit console sessions     True
   host console idle timeout  300s
+  host https only            True
   restored
 OK: configure-console-access
 ```
@@ -179,7 +201,8 @@ public final class ConfigureConsoleAccess {
      * Configure console access.
      *
      * <p>Tighten how consoles and management traffic may be used: idle timeouts for the pool's own
-     * consoles and for VM consoles, one session at a time, and refusing plain HTTP.
+     * consoles and for VM consoles, one session at a time, and refusing plain HTTP. Restore every
+     * value it changed afterwards.
      *
      * <p>Run it:
      *
@@ -196,14 +219,20 @@ public final class ConfigureConsoleAccess {
             Pool pool = Pool.getAll(conn).iterator().next();
             Host host = pool.getMaster(conn);
 
-            // NB: pool.https_only and pool.console_idle_timeout are SET below but never read back. SDK
-            // 26.14 generates a setter and no getter for both (unlike host.console_idle_timeout, which
-            // has both), so they cannot be read through the typed bindings at all - and a sample that
-            // reached past its own binding to show a value would be teaching a workaround rather than
-            // the API.
-            System.out.printf("  %-26s %ss%n", "VM console idle timeout", pool.getVmConsoleIdleTimeout(conn));
-            System.out.printf("  %-26s %s%n", "limit console sessions", pool.getLimitConsoleSessions(conn));
-            System.out.printf("  %-26s %ss%n", "host console idle timeout", host.getConsoleIdleTimeout(conn));
+            // NB: pool.https_only and pool.console_idle_timeout are SET below but never read back AT THE
+            // POOL LEVEL. SDK 26.14 generates a setter and no getter for either there, because both are
+            // really fan-outs that call the equivalent Host.set* on every host rather than pool fields of
+            // their own. host.https_only and host.console_idle_timeout ARE ordinary readable fields, so
+            // read this host's values back through them instead, to show the effect and to know what to
+            // restore.
+            long beforeVmConsoleIdleTimeout = pool.getVmConsoleIdleTimeout(conn);
+            boolean beforeLimitConsoleSessions = pool.getLimitConsoleSessions(conn);
+            long beforeHostConsoleIdleTimeout = host.getConsoleIdleTimeout(conn);
+            boolean beforeHostHttpsOnly = host.getHttpsOnly(conn);
+            System.out.printf("  %-26s %ss%n", "VM console idle timeout", beforeVmConsoleIdleTimeout);
+            System.out.printf("  %-26s %s%n", "limit console sessions", beforeLimitConsoleSessions);
+            System.out.printf("  %-26s %ss%n", "host console idle timeout", beforeHostConsoleIdleTimeout);
+            System.out.printf("  %-26s %s%n", "host https only", beforeHostHttpsOnly);
 
             // Ten minutes of inactivity, one console session at a time, and no plain HTTP.
             pool.setConsoleIdleTimeout(conn, 600L);
@@ -216,12 +245,13 @@ public final class ConfigureConsoleAccess {
             System.out.printf("  %-26s %ss%n", "VM console idle timeout", pool.getVmConsoleIdleTimeout(conn));
             System.out.printf("  %-26s %s%n", "limit console sessions", pool.getLimitConsoleSessions(conn));
             System.out.printf("  %-26s %ss%n", "host console idle timeout", host.getConsoleIdleTimeout(conn));
+            System.out.printf("  %-26s %s%n", "host https only", host.getHttpsOnly(conn));
 
-            pool.setHttpsOnly(conn, false);
-            pool.setConsoleIdleTimeout(conn, 0L);
-            pool.setVmConsoleIdleTimeout(conn, 0L);
-            pool.setLimitConsoleSessions(conn, false);
-            host.setConsoleIdleTimeout(conn, 0L);
+            pool.setHttpsOnly(conn, beforeHostHttpsOnly);
+            pool.setConsoleIdleTimeout(conn, beforeHostConsoleIdleTimeout);
+            pool.setVmConsoleIdleTimeout(conn, beforeVmConsoleIdleTimeout);
+            pool.setLimitConsoleSessions(conn, beforeLimitConsoleSessions);
+            host.setConsoleIdleTimeout(conn, beforeHostConsoleIdleTimeout);
             System.out.println("  restored");
             System.out.println("OK: configure-console-access");
         } finally {
@@ -237,10 +267,12 @@ public final class ConfigureConsoleAccess {
   VM console idle timeout    0s
   limit console sessions     false
   host console idle timeout  0s
+  host https only            false
 after tightening:
   VM console idle timeout    600s
   limit console sessions     true
   host console idle timeout  300s
+  host https only            true
   restored
 OK: configure-console-access
 ```
@@ -263,7 +295,8 @@ import (
 // configureConsoleAccess - Configure console access.
 //
 // Tighten how consoles and management traffic may be used: idle timeouts for the pool's own
-// consoles and for VM consoles, one session at a time, and refusing plain HTTP.
+// consoles and for VM consoles, one session at a time, and refusing plain HTTP. Restore every
+// value it changed afterwards.
 //
 // Idle console sessions are set at two levels - the pool's own management consoles and the VM
 // consoles it serves - and a host can override the pool's. Requiring HTTPS refuses plain HTTP to the
@@ -282,19 +315,23 @@ func configureConsoleAccess(url, user, password string) {
 	host, err := xenapi.Pool.GetMaster(session, pool)
 	check(err)
 
-	// NB: pool.https_only and pool.console_idle_timeout are SET below but never read back. SDK 26.14
-	// generates a setter and no getter for both (unlike host.console_idle_timeout, which has both), so
-	// they cannot be read through the typed bindings at all - and a sample that reached past its own
-	// binding to show a value would be teaching a workaround rather than the API.
-	vmConsoleTimeout, err := xenapi.Pool.GetVMConsoleIdleTimeout(session, pool)
+	// NB: pool.https_only and pool.console_idle_timeout are SET below but never read back AT THE POOL
+	// LEVEL. SDK 26.14 generates a setter and no getter for either there, because both are really
+	// fan-outs that call the equivalent Host.Set* on every host rather than pool fields of their own.
+	// host.https_only and host.console_idle_timeout ARE ordinary readable fields, so read this host's
+	// values back through them instead, to show the effect and to know what to restore.
+	beforeVMConsoleTimeout, err := xenapi.Pool.GetVMConsoleIdleTimeout(session, pool)
 	check(err)
-	limitSessions, err := xenapi.Pool.GetLimitConsoleSessions(session, pool)
+	beforeLimitSessions, err := xenapi.Pool.GetLimitConsoleSessions(session, pool)
 	check(err)
-	hostTimeout, err := xenapi.Host.GetConsoleIdleTimeout(session, host)
+	beforeHostTimeout, err := xenapi.Host.GetConsoleIdleTimeout(session, host)
 	check(err)
-	fmt.Printf("  %-26s %ds\n", "VM console idle timeout", vmConsoleTimeout)
-	fmt.Printf("  %-26s %t\n", "limit console sessions", limitSessions)
-	fmt.Printf("  %-26s %ds\n", "host console idle timeout", hostTimeout)
+	beforeHostHTTPSOnly, err := xenapi.Host.GetHTTPSOnly(session, host)
+	check(err)
+	fmt.Printf("  %-26s %ds\n", "VM console idle timeout", beforeVMConsoleTimeout)
+	fmt.Printf("  %-26s %t\n", "limit console sessions", beforeLimitSessions)
+	fmt.Printf("  %-26s %ds\n", "host console idle timeout", beforeHostTimeout)
+	fmt.Printf("  %-26s %t\n", "host https only", beforeHostHTTPSOnly)
 
 	// Ten minutes of inactivity, one console session at a time, and no plain HTTP.
 	check(xenapi.Pool.SetConsoleIdleTimeout(session, pool, 600))
@@ -304,18 +341,20 @@ func configureConsoleAccess(url, user, password string) {
 	check(xenapi.Pool.SetHTTPSOnly(session, pool, true))
 
 	fmt.Println("after tightening:")
-	vmConsoleTimeout, _ = xenapi.Pool.GetVMConsoleIdleTimeout(session, pool)
-	limitSessions, _ = xenapi.Pool.GetLimitConsoleSessions(session, pool)
-	hostTimeout, _ = xenapi.Host.GetConsoleIdleTimeout(session, host)
+	vmConsoleTimeout, _ := xenapi.Pool.GetVMConsoleIdleTimeout(session, pool)
+	limitSessions, _ := xenapi.Pool.GetLimitConsoleSessions(session, pool)
+	hostTimeout, _ := xenapi.Host.GetConsoleIdleTimeout(session, host)
+	hostHTTPSOnly, _ := xenapi.Host.GetHTTPSOnly(session, host)
 	fmt.Printf("  %-26s %ds\n", "VM console idle timeout", vmConsoleTimeout)
 	fmt.Printf("  %-26s %t\n", "limit console sessions", limitSessions)
 	fmt.Printf("  %-26s %ds\n", "host console idle timeout", hostTimeout)
+	fmt.Printf("  %-26s %t\n", "host https only", hostHTTPSOnly)
 
-	check(xenapi.Pool.SetHTTPSOnly(session, pool, false))
-	check(xenapi.Pool.SetConsoleIdleTimeout(session, pool, 0))
-	check(xenapi.Pool.SetVMConsoleIdleTimeout(session, pool, 0))
-	check(xenapi.Pool.SetLimitConsoleSessions(session, pool, false))
-	check(xenapi.Host.SetConsoleIdleTimeout(session, host, 0))
+	check(xenapi.Pool.SetHTTPSOnly(session, pool, beforeHostHTTPSOnly))
+	check(xenapi.Pool.SetConsoleIdleTimeout(session, pool, beforeHostTimeout))
+	check(xenapi.Pool.SetVMConsoleIdleTimeout(session, pool, beforeVMConsoleTimeout))
+	check(xenapi.Pool.SetLimitConsoleSessions(session, pool, beforeLimitSessions))
+	check(xenapi.Host.SetConsoleIdleTimeout(session, host, beforeHostTimeout))
 	fmt.Println("  restored")
 	fmt.Println("OK: configure-console-access")
 }
@@ -327,10 +366,12 @@ func configureConsoleAccess(url, user, password string) {
   VM console idle timeout    0s
   limit console sessions     false
   host console idle timeout  0s
+  host https only            false
 after tightening:
   VM console idle timeout    600s
   limit console sessions     true
   host console idle timeout  300s
+  host https only            true
   restored
 OK: configure-console-access
 ```
@@ -348,7 +389,8 @@ function Invoke-ConfigureConsoleAccess {
         Configure console access.
     .DESCRIPTION
         Tighten how consoles and management traffic may be used: idle timeouts for the pool's own consoles
-        and for VM consoles, one session at a time, and refusing plain HTTP.
+        and for VM consoles, one session at a time, and refusing plain HTTP. Restore every value it
+        changed afterwards.
     .EXAMPLE
         Invoke-ConfigureConsoleAccess -Url https://xenserver -UserName root -Password $password
     #>
@@ -361,13 +403,19 @@ function Invoke-ConfigureConsoleAccess {
     $pool = Get-XenPool | Select-Object -First 1
     $xenHost = Get-XenHost -Ref $pool.master.opaque_ref
 
-    # NB: pool.https_only and pool.console_idle_timeout are SET below but never read back. SDK 26.14
-    # generates a setter and no getter for both (unlike host.console_idle_timeout, which has both), so
-    # they cannot be read through the typed bindings at all - and a sample that reached past its own
-    # binding to show a value would be teaching a workaround rather than the API.
-    Write-Host ("  {0,-26} {1}s" -f "VM console idle timeout", $pool.vm_console_idle_timeout)
-    Write-Host ("  {0,-26} {1}" -f "limit console sessions", $pool.limit_console_sessions)
-    Write-Host ("  {0,-26} {1}s" -f "host console idle timeout", $xenHost.console_idle_timeout)
+    # NB: pool.https_only and pool.console_idle_timeout are SET below but never read back AT THE POOL
+    # LEVEL. SDK 26.14 generates a setter and no getter for either there, because both are really
+    # fan-outs that call the equivalent Set-XenHost on every host rather than pool fields of their own.
+    # host.https_only and host.console_idle_timeout ARE ordinary readable fields, so this host's values
+    # are read back through them instead, to show the effect and to know what to restore.
+    $beforeVmConsoleIdleTimeout = $pool.vm_console_idle_timeout
+    $beforeLimitConsoleSessions = $pool.limit_console_sessions
+    $beforeHostConsoleIdleTimeout = $xenHost.console_idle_timeout
+    $beforeHostHttpsOnly = $xenHost.https_only
+    Write-Host ("  {0,-26} {1}s" -f "VM console idle timeout", $beforeVmConsoleIdleTimeout)
+    Write-Host ("  {0,-26} {1}" -f "limit console sessions", $beforeLimitConsoleSessions)
+    Write-Host ("  {0,-26} {1}s" -f "host console idle timeout", $beforeHostConsoleIdleTimeout)
+    Write-Host ("  {0,-26} {1}" -f "host https only", $beforeHostHttpsOnly)
 
     # Ten minutes of inactivity, one console session at a time, and no plain HTTP.
     $pool | Set-XenPool -ConsoleIdleTimeout 600
@@ -380,12 +428,13 @@ function Invoke-ConfigureConsoleAccess {
     Write-Host ("  {0,-26} {1}s" -f "VM console idle timeout", (Get-XenPool -Ref $pool.opaque_ref).vm_console_idle_timeout)
     Write-Host ("  {0,-26} {1}" -f "limit console sessions", (Get-XenPool -Ref $pool.opaque_ref).limit_console_sessions)
     Write-Host ("  {0,-26} {1}s" -f "host console idle timeout", (Get-XenHost -Ref $xenHost.opaque_ref).console_idle_timeout)
+    Write-Host ("  {0,-26} {1}" -f "host https only", (Get-XenHost -Ref $xenHost.opaque_ref).https_only)
 
-    $pool | Set-XenPool -HttpsOnly $false
-    $pool | Set-XenPool -ConsoleIdleTimeout 0
-    $pool | Set-XenPool -VmConsoleIdleTimeout 0
-    $pool | Set-XenPool -LimitConsoleSessions $false
-    $xenHost | Set-XenHost -ConsoleIdleTimeout 0
+    $pool | Set-XenPool -HttpsOnly $beforeHostHttpsOnly
+    $pool | Set-XenPool -ConsoleIdleTimeout $beforeHostConsoleIdleTimeout
+    $pool | Set-XenPool -VmConsoleIdleTimeout $beforeVmConsoleIdleTimeout
+    $pool | Set-XenPool -LimitConsoleSessions $beforeLimitConsoleSessions
+    $xenHost | Set-XenHost -ConsoleIdleTimeout $beforeHostConsoleIdleTimeout
     Write-Host "  restored"
     Write-Host "OK: configure-console-access"
     $session | Disconnect-XenServer
@@ -398,10 +447,12 @@ function Invoke-ConfigureConsoleAccess {
   VM console idle timeout    0s
   limit console sessions     False
   host console idle timeout  0s
+  host https only            False
 after tightening:
   VM console idle timeout    600s
   limit console sessions     True
   host console idle timeout  300s
+  host https only            True
   restored
 OK: configure-console-access
 ```
@@ -416,7 +467,7 @@ Source: [`cli/hosts-and-pools/configure-console-access.sh`](../../cli/hosts-and-
 # Configure console access.
 #
 # Tighten how consoles and management traffic may be used: idle timeouts for the pool's own consoles and for
-# VM consoles, one session at a time, and refusing plain HTTP.
+# VM consoles, one session at a time, and refusing plain HTTP. Restore every value it changed afterwards.
 #
 # Run it:
 #   ./workflows.sh configure-console-access https://xenserver root "$password"
@@ -426,12 +477,19 @@ configure_console_access() {
     pool=$(first_csv "$(xe pool-list --minimal)")
     host_uuid=$(xe pool-param-get uuid=$pool param-name=master)
 
-    # NB: https-only and the pool console-idle-timeout are set but never read back. The generated SDK
-    # bindings have a setter and no getter for both, so the other languages cannot show them - and these
-    # samples are meant to read the same across all seven.
-    printf '  %-26s %ss\n' "VM console idle timeout" "$(xe pool-param-get uuid=$pool param-name=vm-console-idle-timeout)"
-    printf '  %-26s %s\n' "limit console sessions" "$(xe pool-param-get uuid=$pool param-name=limit-console-sessions)"
-    printf '  %-26s %ss\n' "host console idle timeout" "$(xe host-param-get uuid=$host_uuid param-name=console-idle-timeout)"
+    # NB: pool https-only and pool console-idle-timeout are set below but never read back AT THE POOL
+    # LEVEL. The generated SDK bindings have a setter and no getter for either there, because both are
+    # really fan-outs that set the equivalent host field on every host rather than pool fields of their
+    # own. host https-only and host console-idle-timeout ARE ordinary readable fields, so read this host's
+    # values back instead, to show the effect and to know what to restore.
+    before_vm_console_idle_timeout=$(xe pool-param-get uuid=$pool param-name=vm-console-idle-timeout)
+    before_limit_console_sessions=$(xe pool-param-get uuid=$pool param-name=limit-console-sessions)
+    before_host_console_idle_timeout=$(xe host-param-get uuid=$host_uuid param-name=console-idle-timeout)
+    before_host_https_only=$(xe host-param-get uuid=$host_uuid param-name=https-only)
+    printf '  %-26s %ss\n' "VM console idle timeout" "$before_vm_console_idle_timeout"
+    printf '  %-26s %s\n' "limit console sessions" "$before_limit_console_sessions"
+    printf '  %-26s %ss\n' "host console idle timeout" "$before_host_console_idle_timeout"
+    printf '  %-26s %s\n' "host https only" "$before_host_https_only"
 
     # Ten minutes of inactivity, one console session at a time, and no plain HTTP.
     xe pool-param-set uuid=$pool console-idle-timeout=600
@@ -444,12 +502,13 @@ configure_console_access() {
     printf '  %-26s %ss\n' "VM console idle timeout" "$(xe pool-param-get uuid=$pool param-name=vm-console-idle-timeout)"
     printf '  %-26s %s\n' "limit console sessions" "$(xe pool-param-get uuid=$pool param-name=limit-console-sessions)"
     printf '  %-26s %ss\n' "host console idle timeout" "$(xe host-param-get uuid=$host_uuid param-name=console-idle-timeout)"
+    printf '  %-26s %s\n' "host https only" "$(xe host-param-get uuid=$host_uuid param-name=https-only)"
 
-    xe pool-param-set uuid=$pool https-only=false
-    xe pool-param-set uuid=$pool console-idle-timeout=0
-    xe pool-param-set uuid=$pool vm-console-idle-timeout=0
-    xe pool-param-set uuid=$pool limit-console-sessions=false
-    xe host-param-set uuid=$host_uuid console-idle-timeout=0
+    xe pool-param-set uuid=$pool https-only=$before_host_https_only
+    xe pool-param-set uuid=$pool console-idle-timeout=$before_host_console_idle_timeout
+    xe pool-param-set uuid=$pool vm-console-idle-timeout=$before_vm_console_idle_timeout
+    xe pool-param-set uuid=$pool limit-console-sessions=$before_limit_console_sessions
+    xe host-param-set uuid=$host_uuid console-idle-timeout=$before_host_console_idle_timeout
     echo "  restored"
     echo "OK: configure-console-access"
 }
@@ -461,10 +520,12 @@ configure_console_access() {
   VM console idle timeout    0s
   limit console sessions     false
   host console idle timeout  0s
+  host https only            false
 after tightening:
   VM console idle timeout    600s
   limit console sessions     true
   host console idle timeout  300s
+  host https only            true
   restored
 OK: configure-console-access
 ```

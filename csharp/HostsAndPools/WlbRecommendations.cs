@@ -66,9 +66,9 @@ internal static partial class Workflows
 
             // A VM's own recommendations are keyed by host and star-rate each as a destination:
             // [0] "wlb", [1] the rating - higher is better (a real appliance rated hosts 6.1 here, so not
-            // capped at XenCenter's five stars). Right after connecting, the appliance is still
-            // discovering the pool: WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025
-            // ("... has not been completed"), then 4016 ("WLB does not have current metrics") - keep asking.
+            // capped at five). Right after connecting, the appliance is still discovering the pool:
+            // WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025 ("... has not been
+            // completed"), then 4016 ("WLB does not have current metrics") - keep asking.
             var vm = VM.get_by_name_label(session, vmName)[0];
             var deadline = DateTime.UtcNow.AddMinutes(10);
             Dictionary<XenRef<Host>, string[]> vmRecs;

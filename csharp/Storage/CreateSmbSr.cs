@@ -6,11 +6,19 @@ namespace XenServerWorkflows;
 
 internal static partial class Workflows
 {
-    /// <summary> Connect a shared storage repository to an SMB/CIFS file share, passing the server, share path and
-    /// credentials (the password as a secret, never in plain text). </summary> <example> <code>
+    /// <summary>
+    /// Connect a shared storage repository to an SMB/CIFS file share, passing the server, share path and
+    /// credentials (the password as a secret, never in plain text).
+    /// </summary>
+    /// <example>
+    /// <code>
     /// Workflows.CreateSmbSr("https://xenserver", "root", password, "192.0.2.40", "/vmstore", "Administrator", "Password1");
-    /// </code> </example> <remarks> Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share).
-    /// The password travels as a Secret, not plaintext device-config - the way XenCenter does it. </remarks>
+    /// </code>
+    /// </example>
+    /// <remarks>
+    /// Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share). The password
+    /// travels as a Secret, not plaintext device-config.
+    /// </remarks>
     public static void CreateSmbSr(string url, string user, string password, string server, string share,
         string smbUsername, string smbPassword, string srName = "sdk-example-smb")
     {

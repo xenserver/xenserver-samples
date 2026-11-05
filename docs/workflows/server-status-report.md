@@ -41,8 +41,8 @@ public static void ServerStatusReport(string url, string user, string password)
                           + $"pii={(string)capability.Attribute("pii")!}");
     }
 
-    // Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-    // section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+    // Take the sections the host marks default-checked: asking for every section can mean gigabytes (VM
+    // memory dumps, every log) and a long wait while the host builds it.
     var whole = FetchStatusReport(session, url, defaults);
     Console.WriteLine($"default sections ({defaults.Count} of {keys.Count}): {whole} bytes");
 
@@ -192,8 +192,8 @@ def server_status_report(url, username, password):
               % (capability.get("key"), capability.get("max-size"),
                  capability.get("default-checked"), capability.get("pii")))
 
-    # Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-    # section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+    # Take the sections the host marks default-checked: asking for every section can mean gigabytes (VM
+    # memory dumps, every log) and a long wait while the host builds it.
     whole = fetch_status_report(url, session, ctx, defaults)
     print("default sections (%d of %d): %d bytes" % (len(defaults), len(keys), whole))
 
@@ -340,9 +340,8 @@ public final class ServerStatusReport {
             // The download is an HTTP transfer alongside the API, so the session id travels in the
             // query string.
             String session = conn.getSessionReference();
-            // Take the sections the host marks default-checked, as XenCenter's dialog does: asking for
-            // every section can mean gigabytes (VM memory dumps, every log) and a long wait while the
-            // host builds it.
+            // Take the sections the host marks default-checked: asking for every section can mean
+            // gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
             long whole = fetchStatusReport(url, session, defaults);
             System.out.printf("default sections (%d of %d): %d bytes%n", defaults.size(), keys.size(), whole);
 
@@ -510,8 +509,8 @@ func serverStatusReport(url, user, password string) {
 	// The download is an HTTP transfer alongside the API, so the session id travels in the query string.
 	// The Go binding keeps its own session private, so obtain one of our own.
 	sid := rawLogin(url, user, password)
-	// Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-	// section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+	// Take the sections the host marks default-checked: asking for every section can mean gigabytes (VM
+	// memory dumps, every log) and a long wait while the host builds it.
 	whole := fetchStatusReport(url, sid, defaults)
 	fmt.Printf("default sections (%d of %d): %d bytes\n", len(defaults), len(keys), whole)
 
@@ -653,9 +652,9 @@ function Invoke-ServerStatusReport {
     }
 
     # The download is an HTTP transfer alongside the API, so the session id travels in the query string.
-    # Still pure PowerShell: Connect-Example has already trusted the server's certificate.
-    # Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-    # section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+    # Still pure PowerShell: Connect-Example has already trusted the server's certificate. Take the
+    # sections the host marks default-checked: asking for every section can mean gigabytes (VM memory
+    # dumps, every log) and a long wait while the host builds it.
     $whole = Get-StatusReportSize -Url $Url -Session $session -Entries $defaults
     Write-Host ("default sections ({0} of {1}): {2} bytes" -f $defaults.Count, $keys.Count, $whole)
 
@@ -797,8 +796,8 @@ server_status_report() {
     IFS=$old_ifs
 
     rm -f cli-status-all.tar cli-status-config.tar
-    # Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-    # section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+    # Take the sections the host marks default-checked: asking for every section can mean gigabytes (VM
+    # memory dumps, every log) and a long wait while the host builds it.
     xe host-get-system-status uuid=$target filename=cli-status-all.tar entries="$defaults"
     whole=$(stat -c %s cli-status-all.tar)
     echo "default sections ($(count_csv "$defaults") of $(count_csv "$keys")): $whole bytes"

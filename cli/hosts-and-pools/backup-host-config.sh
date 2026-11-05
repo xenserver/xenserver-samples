@@ -9,7 +9,8 @@
 backup_host_config() {
     # Deliberately not `host`: that is the variable the xe() helper dials, and shadowing it here sent
     # every later command to a server named after the host's UUID.
-    target=$(nth_csv "$(xe host-list --minimal)" 1)
+    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    target=$(xe pool-param-get uuid=$(xe pool-list --minimal) param-name=master)
     echo "Backing up $(xe host-param-get uuid=$target param-name=name-label)"
 
     # Relative to the working directory: xe.exe and this script must agree on the path, and a Windows
@@ -25,7 +26,8 @@ backup_host_config() {
     xe host-restore uuid=$target file-name="$file"
     echo "  restoring it to $(xe host-param-get uuid=$target param-name=name-label): accepted"
 
-    other=$(nth_csv "$(xe host-list --minimal)" 2)
+    other=""
+    for h in $(each_csv "$(xe host-list --minimal)"); do [ "$h" = "$target" ] || { other=$h; break; }; done
     if [ -n "$other" ]; then
         # host-backup/host-restore are served only by whichever host physically accepted the connection -
         # xe's own uri_of_someone already dials that host's address directly by uuid, there is no

@@ -159,7 +159,7 @@ from helpers import template_by_name
 
 def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm"):
     """
-    Reproduce XenCenter's New VM wizard end to end: start from the named template, name the VM,
+    Create a VM the way a New VM wizard does, end to end: start from the named template, name the VM,
     choose an installation source, a home server, CPU & memory, add a disk, attach a network,
     then start it.
     """
@@ -248,7 +248,7 @@ def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f209-000000000000
+Created VM:    00000001-0000-0000-f509-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -413,7 +413,7 @@ public final class NewVmWizard {
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f809-000000000000
+Created VM:    00000001-0000-0000-f709-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -575,7 +575,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f009-000000000000
+Created VM:    00000001-0000-0000-f609-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -683,7 +683,7 @@ function Invoke-NewVmWizard {
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f209-000000000000
+Created VM:    00000001-0000-0000-f509-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -717,10 +717,10 @@ Source: [`cli/virtual-machines/new-vm-wizard.sh`](../../cli/virtual-machines/new
 
 new_vm_wizard() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-wizard-vm sr-uuid=$(shared_sr))
+    vm=$(xe vm-install template="$template" new-name-label=xe-wizard-vm)
     xe vm-param-set uuid=$vm VCPUs-max=2 VCPUs-at-startup=2
     xe vm-memory-limits-set uuid=$vm static-min=512MiB static-max=2GiB dynamic-min=2GiB dynamic-max=2GiB
-    vdi=$(xe vdi-create sr-uuid=$(shared_sr) name-label="xe-wizard disk" virtual-size=24GiB type=user)
+    vdi=$(xe vdi-create sr-uuid=$(default_sr) name-label="xe-wizard disk" virtual-size=24GiB type=user)
     xe vbd-create vm-uuid=$vm vdi-uuid=$vdi device=1 type=Disk mode=RW >/dev/null
     xe vif-create vm-uuid=$vm network-uuid=$(first_csv "$(xe network-list --minimal)") device=0 >/dev/null
     xe vm-start uuid=$vm

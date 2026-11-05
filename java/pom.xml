@@ -7,7 +7,7 @@
     <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>XenServer Java SDK Workflow Examples</name>
-    <description>XenCenter-style workflow examples for the XenServer SDK for Java.</description>
+    <description>Workflow examples for the XenServer SDK for Java.</description>
     <url>https://github.com/xenserver/xenserver-samples</url>
     <organization>
         <name>Cloud Software Group, Inc.</name>

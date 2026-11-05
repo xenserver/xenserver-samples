@@ -10,9 +10,9 @@ import (
 // configureDisasterRecovery - Configure disaster recovery.
 //
 // Turn on pool metadata replication: the pool writes its database - the configuration of its VMs and
-// vApps - to a disk on an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does. Have your
-// storage array replicate that SR, and the VMs' SRs, to the disaster recovery site; a pool there can then
-// recover the VMs from the replica (see disasterRecoveryFailover).
+// vApps - to a disk on an iSCSI or Fibre Channel SR. Have your storage array replicate that SR, and
+// the VMs' SRs, to the disaster recovery site; a pool there can then recover the VMs from the
+// replica (see disasterRecoveryFailover).
 //
 // Only SRs on a LUN - iSCSI or Fibre Channel/SAS (HBA) - can hold the pool's database, and every host
 // must have the SR attached. The server says which qualify: SR.assert_supports_database_replication fails

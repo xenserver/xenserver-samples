@@ -32,9 +32,9 @@ def snapshot_revert(url, username, password, vm_name, snapshot_name="sdk-example
 
     # A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the
     # VM's console at that moment. It is an HTTP transfer alongside the API, not an API call, so the
-    # session id travels in the query string. ref names the VM's VNC (rfb) console, as XenCenter does
-    # (the VM itself works too). Only a running VM has a console to capture, and a host that can't
-    # reach it answers 404 or 500 instead of an image: the picture is incidental, so carry on.
+    # session id travels in the query string. ref names the VM's VNC (rfb) console (the VM itself
+    # works too). Only a running VM has a console to capture, and a host that can't reach it answers
+    # 404 or 500 instead of an image: the picture is incidental, so carry on.
     if session.xenapi.VM.get_power_state(vm_ref) == "Running":
         console = next(c for c in session.xenapi.VM.get_consoles(vm_ref)
                        if session.xenapi.console.get_protocol(c) == "rfb")

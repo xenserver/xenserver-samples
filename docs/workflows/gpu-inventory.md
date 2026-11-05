@@ -168,7 +168,7 @@ public final class GpuInventory {
 ```text
 GPU groups (2):
   - Group of NVIDIA GRID K1: 1 pGPU(s), vGPU types: passthrough, GRID K100
-  - Group of NVIDIA GRID K1: 1 pGPU(s), vGPU types: passthrough, GRID K100
+  - Group of NVIDIA GRID K1: 1 pGPU(s), vGPU types: GRID K100, passthrough
 Allocation:      depth_first -> breadth_first
 OK: gpu-inventory
 ```

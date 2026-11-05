@@ -43,7 +43,7 @@ func configureClustering(url, user, password string) {
 		for ref := range was {
 			check(xenapi.PIF.SetDisallowUnplug(session, ref, true))
 		}
-		// token_timeout is in seconds (XenCenter's default 20.0, coefficient 1.0): XS9 refuses 20000 as
+		// token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses 20000 as
 		// "too large" - it is not milliseconds.
 		cluster, err = xenapi.Cluster.PoolCreate(session, network, "corosync", 20.0, 1.0)
 		check(err)

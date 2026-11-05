@@ -12,7 +12,7 @@ def reclaim_space(url, username, password):
 
     A thin SR supports the trim/do_trim host plugin. Find one via its storage manager's
     SR_TRIM feature, pick a host with a live (currently-attached) connection to it, and run
-    the plugin — exactly what XenCenter's Reclaim-freed-space command does.
+    the plugin.
     """
     session = connect(url, username, password)
     # Storage-manager backends that advertise SR_TRIM in their features map are trim-capable.

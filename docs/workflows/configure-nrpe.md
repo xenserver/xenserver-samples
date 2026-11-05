@@ -24,14 +24,26 @@ public static void ConfigureNrpe(string url, string user, string password)
 {
     var session = Connect(url, user, password);
     // host.call_plugin is per-host - there is no pool-wide fan-out for plugin calls the way there is
-    // for pool.enable_ssh - so configure every host in the pool, and restore each one to disabled
-    // again afterwards.
+    // for pool.enable_ssh - so configure every host in the pool, and restore each one to exactly the
+    // state (enabled or not, and its configuration) it was found in afterwards.
     foreach (var host in Host.get_all(session))
     {
         string Nrpe(string fn, Dictionary<string, string> args) =>
             Host.call_plugin(session, host.opaque_ref, "nrpe", fn, args);
         var label = Host.get_name_label(session, host.opaque_ref);
-        Console.WriteLine($"{label}: NRPE status before: {Nrpe("status", new()).Trim()}");
+
+        // Capture what we're about to change, to put back afterwards.
+        var statusBefore = Nrpe("status", new()).Trim();
+        var wasEnabled = statusBefore.Split(' ', StringSplitOptions.RemoveEmptyEntries).Last() == "enabled";
+        var beforeConfig = new Dictionary<string, string>();
+        foreach (var line in Nrpe("get-config", new()).Split('\n'))
+        {
+            var parts = line.Split(':', 2);
+            if (parts.Length == 2 && new[] { "allowed_hosts", "debug", "ssl_logging" }.Contains(parts[0].Trim()))
+                beforeConfig[parts[0].Trim()] = parts[1].Trim();
+        }
+
+        Console.WriteLine($"{label}: NRPE status before: {statusBefore}");
         Nrpe("enable", new());
         Nrpe("set-config", new()
         {
@@ -44,7 +56,14 @@ public static void ConfigureNrpe(string url, string user, string password)
         foreach (var line in Nrpe("get-config", new()).Split('\n'))
             if (line.StartsWith("allowed_hosts:"))
                 Console.WriteLine($"  allowed hosts: {line.Split(':', 2)[1].Trim()}");
-        Nrpe("disable", new()); // restore: leave it as we found it
+
+        // Restore exactly what was found, rather than always disabling: a host that already had
+        // NRPE enabled and configured should not be left changed.
+        Nrpe("set-config", beforeConfig);
+        if (wasEnabled)
+            Nrpe("restart", new());
+        else
+            Nrpe("disable", new());
     }
     Console.WriteLine("OK: configure-nrpe");
     session.logout();
@@ -83,14 +102,25 @@ def configure_nrpe(url, username, password):
     """Enable the NRPE agent on every host and allow a monitoring host, through the nrpe plugin.
 
     host.call_plugin is per-host - there is no pool-wide fan-out for plugin calls the way there is
-    for pool.enable_ssh - so configure every host in the pool, and restore each one to disabled
-    again afterwards."""
+    for pool.enable_ssh - so configure every host in the pool, and restore each one to exactly the
+    state (enabled or not, and its configuration) it was found in afterwards."""
     session = connect(url, username, password)
     for host in session.xenapi.host.get_all():
         def nrpe(fn, args=None, host=host):
             return session.xenapi.host.call_plugin(host, "nrpe", fn, args or {})
         label = session.xenapi.host.get_name_label(host)
-        print("%s: NRPE status before: %s" % (label, nrpe("status").strip()))
+
+        # Capture what we're about to change, to put back afterwards: whether NRPE was already
+        # enabled, and its allowed_hosts/debug/ssl_logging settings.
+        status_before = nrpe("status").strip()
+        was_enabled = status_before.split()[-1] == "enabled"
+        before_config = {}
+        for line in nrpe("get-config").split("\n"):
+            key, sep, value = line.partition(":")
+            if sep and key.strip() in ("allowed_hosts", "debug", "ssl_logging"):
+                before_config[key.strip()] = value.strip()
+
+        print("%s: NRPE status before: %s" % (label, status_before))
         nrpe("enable")
         nrpe("set-config", {"allowed_hosts": "127.0.0.1,::1,192.0.2.60", "debug": "0", "ssl_logging": "0x00"})
         nrpe("restart")
@@ -98,7 +128,14 @@ def configure_nrpe(url, username, password):
         for line in nrpe("get-config").split("\n"):
             if line.startswith("allowed_hosts:"):
                 print("  allowed hosts: %s" % line.split(":", 1)[1].strip())
-        nrpe("disable")  # restore: leave it as we found it
+
+        # Restore exactly what was found, rather than always disabling: a host that already had NRPE
+        # enabled and configured should not be left changed.
+        nrpe("set-config", before_config)
+        if was_enabled:
+            nrpe("restart")
+        else:
+            nrpe("disable")
     print("OK: configure-nrpe")
     session.logout()
 ```
@@ -128,6 +165,7 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Session;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import static com.xenserver.samples.PoolConnection.connect;
@@ -143,8 +181,8 @@ public final class ConfigureNrpe {
      * its status and configuration, enable it and permit a monitoring host, then read it back.
      *
      * <p>host.callPlugin is per-host - there is no pool-wide fan-out for plugin calls the way there is for
-     * pool.enableSsh - so configure every host in the pool, and restore each one to disabled again
-     * afterwards.
+     * pool.enableSsh - so configure every host in the pool, and restore each one to exactly the state
+     * (enabled or not, and its configuration) it was found in afterwards.
      *
      * <p>Run it:
      *
@@ -157,8 +195,20 @@ public final class ConfigureNrpe {
         try {
             for (Host host : Host.getAll(conn)) {
                 String label = host.getNameLabel(conn);
-                System.out.println(label + ": NRPE status before: "
-                        + host.callPlugin(conn, "nrpe", "status", new java.util.HashMap<>()).trim());
+
+                // Capture what we're about to change, to put back afterwards.
+                String statusBefore = host.callPlugin(conn, "nrpe", "status", new java.util.HashMap<>()).trim();
+                String[] statusWords = statusBefore.split("\\s+");
+                boolean wasEnabled = statusWords[statusWords.length - 1].equals("enabled");
+                Map<String, String> beforeConfig = new java.util.HashMap<>();
+                for (String line : host.callPlugin(conn, "nrpe", "get-config", new java.util.HashMap<>()).split("\n")) {
+                    String[] parts = line.split(":", 2);
+                    if (parts.length == 2
+                            && Arrays.asList("allowed_hosts", "debug", "ssl_logging").contains(parts[0].trim()))
+                        beforeConfig.put(parts[0].trim(), parts[1].trim());
+                }
+
+                System.out.println(label + ": NRPE status before: " + statusBefore);
                 host.callPlugin(conn, "nrpe", "enable", new java.util.HashMap<>());
                 Map<String, String> cfg = new java.util.HashMap<>();
                 cfg.put("allowed_hosts", "127.0.0.1,::1,192.0.2.60");
@@ -172,7 +222,14 @@ public final class ConfigureNrpe {
                     if (line.startsWith("allowed_hosts:"))
                         System.out.println("  allowed hosts: " + line.split(":", 2)[1].trim());
                 }
-                host.callPlugin(conn, "nrpe", "disable", new java.util.HashMap<>()); // restore
+
+                // Restore exactly what was found, rather than always disabling: a host that already had
+                // NRPE enabled and configured should not be left changed.
+                host.callPlugin(conn, "nrpe", "set-config", beforeConfig);
+                if (wasEnabled)
+                    host.callPlugin(conn, "nrpe", "restart", new java.util.HashMap<>());
+                else
+                    host.callPlugin(conn, "nrpe", "disable", new java.util.HashMap<>());
             }
             System.out.println("OK: configure-nrpe");
         } finally {
@@ -185,10 +242,10 @@ public final class ConfigureNrpe {
 <details><summary>Sample output</summary>
 
 ```text
-sdk-host1: NRPE status before: inactive disabled
+sdk-host2: NRPE status before: inactive disabled
   status after:  active enabled
   allowed hosts: 127.0.0.1,::1,192.0.2.60
-sdk-host2: NRPE status before: inactive disabled
+sdk-host1: NRPE status before: inactive disabled
   status after:  active enabled
   allowed hosts: 127.0.0.1,::1,192.0.2.60
 OK: configure-nrpe
@@ -216,8 +273,8 @@ import (
 // its status and configuration, enable it and permit a monitoring host, then read it back.
 //
 // host.call_plugin is per-host - there is no pool-wide fan-out for plugin calls the way there is
-// for pool.enable_ssh - so configure every host in the pool, and restore each one to disabled
-// again afterwards.
+// for pool.enable_ssh - so configure every host in the pool, and restore each one to exactly the
+// state (enabled or not, and its configuration) it was found in afterwards.
 func configureNrpe(url, user, password string) {
 	session := connect(url, user, password)
 	hosts, err := xenapi.Host.GetAll(session)
@@ -229,7 +286,23 @@ func configureNrpe(url, user, password string) {
 			return r
 		}
 		label, _ := xenapi.Host.GetNameLabel(session, host)
-		fmt.Printf("%s: NRPE status before: %s\n", label, strings.TrimSpace(nrpe("status", map[string]string{})))
+
+		// Capture what we're about to change, to put back afterwards.
+		statusBefore := strings.TrimSpace(nrpe("status", map[string]string{}))
+		statusWords := strings.Fields(statusBefore)
+		wasEnabled := statusWords[len(statusWords)-1] == "enabled"
+		beforeConfig := map[string]string{}
+		for _, line := range strings.Split(nrpe("get-config", map[string]string{}), "\n") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				if key == "allowed_hosts" || key == "debug" || key == "ssl_logging" {
+					beforeConfig[key] = strings.TrimSpace(parts[1])
+				}
+			}
+		}
+
+		fmt.Printf("%s: NRPE status before: %s\n", label, statusBefore)
 		nrpe("enable", map[string]string{})
 		nrpe("set-config", map[string]string{"allowed_hosts": "127.0.0.1,::1,192.0.2.60", "debug": "0", "ssl_logging": "0x00"})
 		nrpe("restart", map[string]string{})
@@ -239,7 +312,15 @@ func configureNrpe(url, user, password string) {
 				fmt.Printf("  allowed hosts: %s\n", strings.TrimSpace(strings.SplitN(line, ":", 2)[1]))
 			}
 		}
-		nrpe("disable", map[string]string{}) // restore: leave it as we found it
+
+		// Restore exactly what was found, rather than always disabling: a host that already had NRPE
+		// enabled and configured should not be left changed.
+		nrpe("set-config", beforeConfig)
+		if wasEnabled {
+			nrpe("restart", map[string]string{})
+		} else {
+			nrpe("disable", map[string]string{})
+		}
 	}
 	fmt.Println("OK: configure-nrpe")
 	session.Logout()
@@ -281,14 +362,26 @@ function Invoke-ConfigureNrpe {
         [Parameter(Mandatory = $true)][string]$Password
     )
     # host.call_plugin is per-host - there is no pool-wide fan-out for plugin calls the way there is for
-    # pool.enable_ssh - so configure every host in the pool, and restore each one to disabled again
-    # afterwards.
+    # pool.enable_ssh - so configure every host in the pool, and restore each one to exactly the state
+    # (enabled or not, and its configuration) it was found in afterwards.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     foreach ($xenHost in Get-XenHost) {
         function Invoke-Nrpe([string]$Fn, [hashtable]$PluginArgs = @{}) {
             $xenHost | Invoke-XenHost -XenAction CallPlugin -Plugin nrpe -Fn $Fn -Args $PluginArgs -PassThru
         }
-        Write-Host "$($xenHost.name_label): NRPE status before: $((Invoke-Nrpe 'status').Trim())"
+
+        # Capture what we're about to change, to put back afterwards.
+        $statusBefore = (Invoke-Nrpe 'status').Trim()
+        $wasEnabled = ($statusBefore -split '\s+')[-1] -eq 'enabled'
+        $beforeConfig = @{}
+        foreach ($line in ((Invoke-Nrpe 'get-config') -split "`n")) {
+            $parts = $line.Split(':', 2)
+            if ($parts.Length -eq 2 -and @('allowed_hosts', 'debug', 'ssl_logging') -contains $parts[0].Trim()) {
+                $beforeConfig[$parts[0].Trim()] = $parts[1].Trim()
+            }
+        }
+
+        Write-Host "$($xenHost.name_label): NRPE status before: $statusBefore"
         Invoke-Nrpe 'enable' | Out-Null
         Invoke-Nrpe 'set-config' @{ allowed_hosts = "127.0.0.1,::1,192.0.2.60"; debug = "0"; ssl_logging = "0x00" } | Out-Null
         Invoke-Nrpe 'restart' | Out-Null
@@ -298,7 +391,15 @@ function Invoke-ConfigureNrpe {
                 Write-Host "  allowed hosts: $($line.Split(':', 2)[1].Trim())"
             }
         }
-        Invoke-Nrpe 'disable' | Out-Null   # restore: leave it as we found it
+
+        # Restore exactly what was found, rather than always disabling: a host that already had NRPE
+        # enabled and configured should not be left changed.
+        Invoke-Nrpe 'set-config' $beforeConfig | Out-Null
+        if ($wasEnabled) {
+            Invoke-Nrpe 'restart' | Out-Null
+        } else {
+            Invoke-Nrpe 'disable' | Out-Null
+        }
     }
     Write-Host "OK: configure-nrpe"
     $session | Disconnect-XenServer
@@ -333,17 +434,35 @@ Source: [`cli/hosts-and-pools/configure-nrpe.sh`](../../cli/hosts-and-pools/conf
 #   ./workflows.sh configure-nrpe https://xenserver root "$password"
 
 # host-call-plugin is per-host - there is no pool-wide fan-out for plugin calls, unlike pool-enable-ssh -
-# so configure every host, and disable NRPE again afterwards (the original left it enabled with no
-# tidy-up at all).
+# so configure every host, and restore each one to exactly the state (enabled or not, and its
+# configuration) it was found in afterwards.
 configure_nrpe() {
     for h in $(each_csv "$(xe host-list --minimal)"); do
-        echo "$(xe host-param-get uuid=$h param-name=name-label): NRPE status before: $(xe host-call-plugin host-uuid=$h plugin=nrpe fn=status)"
+        # Capture what we're about to change, to put back afterwards.
+        status_before=$(xe host-call-plugin host-uuid=$h plugin=nrpe fn=status)
+        was_enabled=false
+        [ "${status_before##* }" = "enabled" ] && was_enabled=true
+        config_before=$(xe host-call-plugin host-uuid=$h plugin=nrpe fn=get-config)
+        allowed_hosts_before=$(echo "$config_before" | sed -n 's/^allowed_hosts: *//p')
+        debug_before=$(echo "$config_before" | sed -n 's/^debug: *//p')
+        ssl_logging_before=$(echo "$config_before" | sed -n 's/^ssl_logging: *//p')
+
+        echo "$(xe host-param-get uuid=$h param-name=name-label): NRPE status before: $status_before"
         xe host-call-plugin host-uuid=$h plugin=nrpe fn=enable >/dev/null
         xe host-call-plugin host-uuid=$h plugin=nrpe fn=set-config \
             args:allowed_hosts=127.0.0.1,::1,192.0.2.60 args:debug=0 args:ssl_logging=0x00 >/dev/null
         xe host-call-plugin host-uuid=$h plugin=nrpe fn=restart >/dev/null
         echo "  status after:  $(xe host-call-plugin host-uuid=$h plugin=nrpe fn=status)"
-        xe host-call-plugin host-uuid=$h plugin=nrpe fn=disable >/dev/null   # restore
+
+        # Restore exactly what was found, rather than always disabling: a host that already had NRPE
+        # enabled and configured should not be left changed.
+        xe host-call-plugin host-uuid=$h plugin=nrpe fn=set-config \
+            "args:allowed_hosts=$allowed_hosts_before" "args:debug=$debug_before" "args:ssl_logging=$ssl_logging_before" >/dev/null
+        if $was_enabled; then
+            xe host-call-plugin host-uuid=$h plugin=nrpe fn=restart >/dev/null
+        else
+            xe host-call-plugin host-uuid=$h plugin=nrpe fn=disable >/dev/null
+        fi
     done
     echo "OK: configure-nrpe"
 }

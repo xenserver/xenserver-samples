@@ -55,8 +55,10 @@ public static void ManageCertificates(string url, string user, string password)
     session.logout();
 }
 
-/// <summary> A throwaway self-signed certificate and private key (PEM). .NET's own X509 API builds
-/// one directly - no external tool needed. </summary>
+/// <summary>
+/// A throwaway self-signed certificate and private key (PEM). .NET's own X509 API builds one directly -
+/// no external tool needed.
+/// </summary>
 private static (string CertPem, string KeyPem) SelfSignedCertPem()
 {
     using var rsa = RSA.Create(2048);
@@ -611,7 +613,7 @@ self_signed_cert() {
 
 ```text
 Certificates:   5
-00000001-0000-0000-fb0a-000000000000
+00000001-0000-0000-d70a-000000000000
 After CA add:   6
 Host certificate replaced with a real, generated certificate.
 Host certificate reset (a fresh self-signed identity).

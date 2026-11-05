@@ -19,15 +19,20 @@ function Invoke-VmIpAddress {
     # networks map) - retry for a while rather than giving up on the first look.
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ($true) {
-        # A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip").
-        $vm = Get-XenVM | Where-Object {
-            $_.power_state -eq 'Running' -and -not $_.is_a_template -and -not $_.is_control_domain -and
-            $_.guest_metrics.opaque_ref -ne 'OpaqueRef:NULL'
-        } | Select-Object -First 1
+        # A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip"). Not every
+        # running VM has one (no guest tools, no NIC, still booting), so look at each until one does.
+        $vm = $null
         $ip = $null
-        if ($vm) {
-            $networks = (Get-XenVMGuestMetrics -Ref $vm.guest_metrics.opaque_ref).networks
-            if ($networks.ContainsKey("0/ip")) { $ip = $networks["0/ip"] }
+        foreach ($candidate in Get-XenVM | Where-Object {
+                $_.power_state -eq 'Running' -and -not $_.is_a_template -and -not $_.is_control_domain -and
+                $_.guest_metrics.opaque_ref -ne 'OpaqueRef:NULL'
+            }) {
+            $networks = (Get-XenVMGuestMetrics -Ref $candidate.guest_metrics.opaque_ref).networks
+            if ($networks.ContainsKey("0/ip") -and $networks["0/ip"]) {
+                $vm = $candidate
+                $ip = $networks["0/ip"]
+                break
+            }
         }
         if ($ip) {
             Write-Host "  $($vm.name_label): $ip"

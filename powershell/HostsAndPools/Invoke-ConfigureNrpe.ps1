@@ -14,14 +14,26 @@ function Invoke-ConfigureNrpe {
         [Parameter(Mandatory = $true)][string]$Password
     )
     # host.call_plugin is per-host - there is no pool-wide fan-out for plugin calls the way there is for
-    # pool.enable_ssh - so configure every host in the pool, and restore each one to disabled again
-    # afterwards.
+    # pool.enable_ssh - so configure every host in the pool, and restore each one to exactly the state
+    # (enabled or not, and its configuration) it was found in afterwards.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     foreach ($xenHost in Get-XenHost) {
         function Invoke-Nrpe([string]$Fn, [hashtable]$PluginArgs = @{}) {
             $xenHost | Invoke-XenHost -XenAction CallPlugin -Plugin nrpe -Fn $Fn -Args $PluginArgs -PassThru
         }
-        Write-Host "$($xenHost.name_label): NRPE status before: $((Invoke-Nrpe 'status').Trim())"
+
+        # Capture what we're about to change, to put back afterwards.
+        $statusBefore = (Invoke-Nrpe 'status').Trim()
+        $wasEnabled = ($statusBefore -split '\s+')[-1] -eq 'enabled'
+        $beforeConfig = @{}
+        foreach ($line in ((Invoke-Nrpe 'get-config') -split "`n")) {
+            $parts = $line.Split(':', 2)
+            if ($parts.Length -eq 2 -and @('allowed_hosts', 'debug', 'ssl_logging') -contains $parts[0].Trim()) {
+                $beforeConfig[$parts[0].Trim()] = $parts[1].Trim()
+            }
+        }
+
+        Write-Host "$($xenHost.name_label): NRPE status before: $statusBefore"
         Invoke-Nrpe 'enable' | Out-Null
         Invoke-Nrpe 'set-config' @{ allowed_hosts = "127.0.0.1,::1,192.0.2.60"; debug = "0"; ssl_logging = "0x00" } | Out-Null
         Invoke-Nrpe 'restart' | Out-Null
@@ -31,7 +43,15 @@ function Invoke-ConfigureNrpe {
                 Write-Host "  allowed hosts: $($line.Split(':', 2)[1].Trim())"
             }
         }
-        Invoke-Nrpe 'disable' | Out-Null   # restore: leave it as we found it
+
+        # Restore exactly what was found, rather than always disabling: a host that already had NRPE
+        # enabled and configured should not be left changed.
+        Invoke-Nrpe 'set-config' $beforeConfig | Out-Null
+        if ($wasEnabled) {
+            Invoke-Nrpe 'restart' | Out-Null
+        } else {
+            Invoke-Nrpe 'disable' | Out-Null
+        }
     }
     Write-Host "OK: configure-nrpe"
     $session | Disconnect-XenServer

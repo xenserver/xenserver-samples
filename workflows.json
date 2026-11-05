@@ -81,7 +81,7 @@
         {
           "id": "snapshot-schedule",
           "title": "Snapshot schedule",
-          "description": "Create a scheduled-snapshot policy, attach a VM to it, run it on demand and watch the retention limit prune the oldest snapshot away."
+          "description": "Create a scheduled-snapshot policy, attach a VM to it, run it on demand (the xe CLI version only creates and removes the schedule) and watch the retention limit prune the oldest snapshot away."
         },
         {
           "id": "manage-vm-disks",
@@ -127,7 +127,7 @@
           "id": "create-vm-with-vgpu",
           "title": "Create a VM with a vGPU",
           "description": "Provision a VM from a template and assign it a virtual GPU: find a GPU group that offers a vGPU type, attach it, and read the assignment back.",
-          "requires": "a GPU that supports vGPU"
+          "requires": "a GPU that supports vGPU, and a license that includes GPU virtualization (Premium Edition)"
         },
         {
           "id": "vm-ip-address",
@@ -173,7 +173,8 @@
           "id": "attach-usb-device",
           "title": "Attach a USB device to a VM",
           "description": "List the USB devices a host exposes, enable passthrough on one, attach it to a VM and detach it again.",
-          "requires": "a USB device plugged into a host"
+          "requires": "a USB device plugged into a host, and a license that includes USB pass-through (Premium Edition)",
+          "caution": "a VM with a USB passed through cannot be snapshotted, suspended, or pool/storage migrated"
         }
       ]
     },
@@ -205,7 +206,7 @@
           "title": "Create an iSCSI SR",
           "description": "Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array offers many targets, so name yours with target_iqn.",
           "requires": "an iSCSI target",
-          "caution": "formats the LUN it uses"
+          "caution": "formats the LUN it uses (name it with scsi_id; it refuses a LUN that already holds an SR) and destroys the new SR again afterwards"
         },
         {
           "id": "create-smb-sr",
@@ -218,7 +219,7 @@
           "title": "Create an HBA SR",
           "description": "Connect a shared storage repository to a fibre-channel (HBA) LUN: discover the LUNs the host can see with a deliberately failing probe, then create the SR by SCSI ID. Creating the SR formats the LUN.",
           "requires": "a Fibre Channel or SAS LUN",
-          "caution": "formats the LUN it uses"
+          "caution": "formats the LUN it uses (name it with scsi_id; it refuses a LUN that already holds an SR) and destroys the new SR again afterwards"
         },
         {
           "id": "create-iso-sr",
@@ -298,7 +299,8 @@
         {
           "id": "create-bond",
           "title": "Create a NIC bond",
-          "description": "Bond two spare network interfaces onto a new network for redundancy and throughput, read the bond back, then dissolve it."
+          "description": "Bond two spare network interfaces onto a new network for redundancy and throughput, read the bond back, then dissolve it.",
+          "requires": "two spare network interfaces on one host"
         }
       ]
     },
@@ -313,7 +315,8 @@
         {
           "id": "host-maintenance",
           "title": "Enter & exit maintenance mode",
-          "description": "Put a host into maintenance mode: disable it so it accepts no new VMs, evacuate its running guests to another host in the pool, then re-enable it. A throwaway copy of a VM with a guest OS and PV drivers (source_vm), with its disks on a shared storage repository (sr_name), gives evacuation something to move."
+          "description": "Put a host into maintenance mode: disable it so it accepts no new VMs, evacuate its running guests to another host in the pool, then re-enable it. A throwaway copy of a VM with a guest OS and PV drivers (source_vm), with its disks on a shared storage repository (sr_name), gives evacuation something to move.",
+          "caution": "moves the host's running VMs to other hosts while it is in maintenance mode"
         },
         {
           "id": "read-metrics",
@@ -345,7 +348,7 @@
           "id": "host-power-on",
           "title": "Configure host power on",
           "description": "Set a host's out-of-band power-on mode and credentials, then read them back.",
-          "requires": "remote power control on the hosts (iLO, DRAC or IPMI)"
+          "requires": "a power-on method configured on the hosts (IPMI, Wake-on-LAN or a custom script)"
         },
         {
           "id": "rotate-pool-secret",
@@ -360,7 +363,7 @@
         {
           "id": "change-root-password",
           "title": "Change the root password",
-          "description": "Change the local superuser password, handle the wrong-old-password failure, and change it back.",
+          "description": "Change the local superuser password to a temporary one and back again, noting that a root session's old password is not checked.",
           "caution": "changes the root password; a failure part way can lock you out of the host"
         },
         {
@@ -376,7 +379,7 @@
         {
           "id": "configure-pvs-accelerator",
           "title": "Configure PVS Accelerator",
-          "description": "Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then forget the site — which cascades to everything hanging off it."
+          "description": "Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then remove the proxy and the server and forget the site, which removes its cache storage."
         },
         {
           "id": "configure-nrpe",
@@ -448,7 +451,7 @@
           "id": "manage-pool-membership",
           "title": "Manage pool membership",
           "description": "List the pool's member hosts and which one coordinates it, promote a different host to coordinator, then promote the original back.",
-          "caution": "ejects a host from the pool"
+          "caution": "hands the coordinator role to another host and back, which restarts the toolstack on every host and briefly drops every management connection"
         },
         {
           "id": "configure-clustering",
@@ -481,13 +484,15 @@
           "id": "apply-update",
           "title": "Apply updates from the CDN",
           "description": "Sync the pool's update metadata from the CDN and apply it to every host, then read each host's post-update reboot guidance.",
+          "requires": "High Availability and Workload Balancing turned off first, as the update documentation describes (turn them back on afterwards)",
           "caution": "updates the hosts"
         },
         {
           "id": "rolling-pool-update",
           "title": "Rolling pool update",
-          "description": "Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host in turn disable it, evacuate its VMs to the rest of the pool, apply the updates, reboot, and re-enable it — host-by-host orchestration.",
-          "caution": "updates and reboots every host"
+          "description": "Apply the CDN's updates across the pool host by host, coordinator first: sync the metadata, then for each host apply the updates, moving its VMs to the rest of the pool and rebooting it only when the update requires, so the VMs keep running.",
+          "requires": "High Availability and Workload Balancing turned off first, as the update documentation describes (turn them back on afterwards)",
+          "caution": "updates every host, one at a time, moving its VMs off and rebooting it when the update requires"
         }
       ]
     },
@@ -528,7 +533,8 @@
         {
           "id": "manage-secureboot-certificates",
           "title": "Manage Secure Boot certificates",
-          "description": "Check whether the pool can supply UEFI Secure Boot certificates and whether a guest is ready to use them, then flag a guest whose certificates have gone stale for a refresh at its next boot — and unflag it again."
+          "description": "Check whether the pool can supply UEFI Secure Boot certificates and whether a guest is ready to use them, then flag a guest whose certificates have gone stale for a refresh at its next boot — and unflag it again.",
+          "caution": "updating a guest's certificates can trigger BitLocker recovery (TPM PCR7 changes)"
         }
       ]
     },
@@ -538,13 +544,13 @@
         {
           "id": "configure-disaster-recovery",
           "title": "Configure disaster recovery",
-          "description": "Replicate the pool's metadata (the configuration of its VMs and vApps) to an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does, so that a pool at a disaster recovery site can recover the VMs from the storage array's replica of that SR.",
+          "description": "Replicate the pool's metadata (the configuration of its VMs and vApps) to an iSCSI or Fibre Channel SR, so that a pool at a disaster recovery site can recover the VMs from the storage array's replica of that SR.",
           "requires": "an iSCSI or Fibre Channel SR attached to every host"
         },
         {
           "id": "disaster-recovery-failover",
           "title": "Fail over to a disaster recovery site",
-          "description": "On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes, as XenCenter's Disaster Recovery wizard does. By default it is a test failover, which removes what it recovered and detaches the replica again.",
+          "description": "On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By default it is a test failover, which removes what it recovered and detaches the replica again.",
           "requires": "a pool at the disaster recovery site, and the storage array's replica of the protected pool's iSCSI or Fibre Channel SR (target, IQN and SCSI id), with the mirror broken",
           "caution": "never attach a LUN that another pool still has attached: two pools using one LUN corrupt it"
         }

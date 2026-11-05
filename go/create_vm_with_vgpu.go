@@ -27,14 +27,13 @@ func createVMWithVgpu(url, user, password, templateName, newVMName string) {
 	check(err)
 	provision(session, vmRef)
 
-	// Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty. Same call as
-	// XenCenter's New VM wizard GPU page and the VM Properties GPU page.
+	// Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
 	vgpuRef, err := xenapi.VGPU.Create(session, vmRef, groupRef, "0", map[string]string{}, typeRef)
 	check(err)
 	uuid, _ := xenapi.VGPU.GetUUID(session, vgpuRef)
 	fmt.Printf("Created vGPU: %s\n", uuid)
 
-	// Read the assignment back, as XenCenter's GPU tab does.
+	// Read the assignment back.
 	vgpus, _ := xenapi.VM.GetVGPUs(session, vmRef)
 	assignedType, _ := xenapi.VGPU.GetType(session, vgpus[0])
 	assigned, _ := xenapi.VGPUType.GetModelName(session, assignedType)

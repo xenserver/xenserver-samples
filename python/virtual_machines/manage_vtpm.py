@@ -15,15 +15,17 @@ def manage_vtpm(url, username, password):
     """Attach a virtual TPM to a halted VM, read it back, then remove it.
 
     A VM may have at most one, and it can only be attached while the VM is Halted — the
-    device is presented at boot. XenCenter additionally only offers this for a UEFI guest,
-    since that is what a vTPM is for; the API itself does not insist."""
+    device is presented at boot. vTPM is not supported for a BIOS-mode VM, only a UEFI one
+    (HVM_boot_params["firmware"] == "uefi"), so pick one of those rather than any halted VM."""
     session = connect(url, username, password)
     x = session.xenapi
 
-    vm = next(ref for ref, v in x.VM.get_all_records().items()
+    vm = next((ref for ref, v in x.VM.get_all_records().items()
               if not v["is_a_template"] and not v["is_control_domain"]
               and not v["is_a_snapshot"] and v["power_state"] == "Halted"
-              and not v["VTPMs"])
+              and not v["VTPMs"] and v["HVM_boot_params"].get("firmware") == "uefi"), None)
+    if vm is None:
+        raise RuntimeError("no halted UEFI VM without a vTPM already attached was found")
     print("Attaching a vTPM to %s" % x.VM.get_name_label(vm))
 
     vtpm = x.VTPM.create(vm, False)   # is_unique=False: the vTPM may be copied with the VM

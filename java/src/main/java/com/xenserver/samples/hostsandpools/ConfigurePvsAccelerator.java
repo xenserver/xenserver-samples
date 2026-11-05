@@ -61,8 +61,9 @@ public final class ConfigurePvsAccelerator {
             PVSServer.introduce(conn, new java.util.HashSet<>(java.util.Arrays.asList("203.0.113.90")),
                 6910L, 6930L, site);
 
-            // The read cache must be on LOCAL storage. The point of the accelerator is to keep reads off
-            // the network, so a cache on a shared SR would defeat it and the server rejects one.
+            // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+            // the network; the server does not enforce that, but a cache on shared storage rarely makes
+            // sense and can't be shared between hosts anyway.
             for (Host host : Host.getAll(conn)) {
                 SR local = localSr(conn, host);
                 if (local == null) continue;

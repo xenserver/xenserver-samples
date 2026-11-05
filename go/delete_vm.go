@@ -17,7 +17,7 @@ import (
 func deleteVM(url, user, password, templateName, newVMName string) {
 	session := connect(url, user, password)
 	// Make a throwaway VM to delete. VM.Destroy removes the VM but leaves its disks, so the
-	// owned VDIs are destroyed explicitly afterward - exactly what XenCenter's Delete VM does.
+	// owned VDIs are destroyed explicitly afterward.
 	vm, err := xenapi.VM.Clone(session, templateByName(session, templateName), newVMName)
 	check(err)
 	provision(session, vm)

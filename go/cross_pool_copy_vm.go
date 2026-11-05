@@ -19,14 +19,20 @@ import (
 //
 //	crossPoolCopyVM("https://poolA", "root", password, "https://poolB", "db-01", "", "")
 func crossPoolCopyVM(url, user, password, destURL, vmName, destUser, destPassword string) {
+	crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, destPassword, "")
+}
+
+// crossPoolCopyVMOverNetwork is crossPoolCopyVM, but carrying the migration traffic over the
+// destination network named by transferNetwork instead of the destination's management network;
+// an empty transferNetwork falls back to the management network.
+func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, destPassword, transferNetwork string) {
 	source := connect(url, user, password)
 	if destUser == "" {
 		destUser, destPassword = user, password
 	}
 	dest := connect(destURL, destUser, destPassword)
 	// Destination: choose a host, network and SR, then ask for a receiver token. The disks go to
-	// the destination pool's default SR and the data travels over the host's management network -
-	// one both pools can certainly reach (the first network listed may well not be).
+	// the destination pool's default SR.
 	destPools, err := xenapi.Pool.GetAll(dest)
 	check(err)
 	destHost, err := xenapi.Pool.GetMaster(dest, destPools[0])
@@ -35,17 +41,30 @@ func crossPoolCopyVM(url, user, password, destURL, vmName, destUser, destPasswor
 	check(err)
 	pifs, err := xenapi.Host.GetPIFs(dest, destHost)
 	check(err)
-	var destNetwork xenapi.NetworkRef
+	var destManagementNetwork xenapi.NetworkRef
 	for _, pif := range pifs {
 		if management, _ := xenapi.PIF.GetManagement(dest, pif); management {
-			destNetwork, err = xenapi.PIF.GetNetwork(dest, pif)
+			destManagementNetwork, err = xenapi.PIF.GetNetwork(dest, pif)
 			check(err)
 		}
 	}
-	receiver, err := xenapi.Host.MigrateReceive(dest, destHost, destNetwork, map[string]string{})
+	migrationNetwork := destManagementNetwork
+	if transferNetwork != "" {
+		nets, err := xenapi.Network.GetAllRecords(dest)
+		check(err)
+		for ref, net := range nets {
+			if net.NameLabel == transferNetwork {
+				migrationNetwork = ref
+			}
+		}
+	}
+	// For performance, production use should carry migration traffic over a dedicated network
+	// rather than the management network - pass transferNetwork with the name of one.
+	receiver, err := xenapi.Host.MigrateReceive(dest, destHost, migrationNetwork, map[string]string{})
 	check(err)
 
-	// Source: map every disk to the destination SR and every NIC to the destination network,
+	// Source: map every disk to the destination SR and every NIC to the destination pool's
+	// management network (the VM's guest-visible NICs, independent of the migration transfer),
 	// then send with copy=true (the source VM is left intact).
 	vm := vmByName(source, vmName)
 	vbds, _ := xenapi.VM.GetVBDs(source, vm)
@@ -60,7 +79,7 @@ func crossPoolCopyVM(url, user, password, destURL, vmName, destUser, destPasswor
 	vifs, _ := xenapi.VM.GetVIFs(source, vm)
 	vifMap := map[xenapi.VIFRef]xenapi.NetworkRef{}
 	for _, vif := range vifs {
-		vifMap[vif] = destNetwork
+		vifMap[vif] = destManagementNetwork
 	}
 
 	// MigrateSend8 is the 8-argument form every pool version accepts; MigrateSend itself takes newer

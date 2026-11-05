@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 
 	"go/xenapi"
@@ -8,10 +10,13 @@ import (
 
 // changeRootPassword - Change the root password.
 //
-// Change the local superuser password, handle the wrong-old-password failure, and change it back.
+// Change the local superuser password, then change it back.
 func changeRootPassword(url, user, password string) {
 	session := connect(url, user, password)
-	const temporary = "sdk-example-temp-password"
+	randomBytes := make([]byte, 18)
+	_, err := rand.Read(randomBytes)
+	check(err)
+	temporary := base64.RawURLEncoding.EncodeToString(randomBytes)
 
 	// ChangePassword takes the OLD password as well as the new one, even though you are already
 	// authenticated.

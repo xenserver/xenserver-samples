@@ -23,9 +23,10 @@ function Invoke-ConfigureDynamicMemory {
         (Format-Gib $vm.memory_static_min), (Format-Gib $vm.memory_static_max),
         (Format-Gib $vm.memory_dynamic_min), (Format-Gib $vm.memory_dynamic_max))
 
-    # Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never below the
-    # static floor, which is the least the guest can boot in.
-    $floor = [Math]::Max($vm.memory_static_min, [long]($vm.memory_static_max / 4))
+    # Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+    # static maximum for every supported guest (lower can make it unstable), and never below the static
+    # floor, which is the least the guest can boot in.
+    $floor = [Math]::Max($vm.memory_static_min, [long]($vm.memory_static_max * 3 / 4))
     $ceiling = $vm.memory_static_max
     # MemoryDynamicRange takes the pair as one array argument, so the two bounds are set together and
     # cannot momentarily cross each other.

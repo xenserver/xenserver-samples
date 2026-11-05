@@ -23,8 +23,8 @@ function Invoke-ControlDomainMemory {
     Write-Host ("$($xenHost.name_label) dom0: {0:N1} GiB" -f ($original / 1GB))
 
     # -Memory, not -MemoryDynamicRange: dom0 does not balloon, so this one setter pins the static and
-    # dynamic bounds and the target together. The new size takes effect at the next reboot, which is why XenCenter offers
-    # this only in maintenance mode — the API itself does not stop you.
+    # dynamic bounds and the target together. The new size takes effect at the next reboot, so change
+    # it with the host in maintenance mode — the API itself does not stop you.
     Set-XenVM -VM $dom0 -Memory ($original + 1GB)
     $updated = Get-XenVM -Ref $dom0.opaque_ref
     Write-Host ("  now {0:N1} GiB (static {1}-{2}, dynamic {3}-{4})" -f

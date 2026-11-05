@@ -29,16 +29,19 @@ public final class ManageVtpm {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         try {
+            // vTPM is not supported for a BIOS-mode VM, only a UEFI one (HVM_boot_params["firmware"]
+            // == "uefi"), so pick one of those rather than any halted VM.
             VM vm = null;
             VM.Record record = null;
             for (Map.Entry<VM, VM.Record> e : VM.getAllRecords(conn).entrySet()) {
                 VM.Record v = e.getValue();
                 if (!v.isATemplate && !v.isControlDomain && !v.isASnapshot
-                        && v.powerState == Types.VmPowerState.HALTED && v.VTPMs.isEmpty()) {
+                        && v.powerState == Types.VmPowerState.HALTED && v.VTPMs.isEmpty()
+                        && "uefi".equals(v.HVMBootParams.get("firmware"))) {
                     vm = e.getKey(); record = v; break;
                 }
             }
-            if (vm == null) throw new Exception("no halted VM without a vTPM");
+            if (vm == null) throw new Exception("no halted UEFI VM without a vTPM already attached was found");
             System.out.println("Attaching a vTPM to " + record.nameLabel);
 
             // isUnique=false: the vTPM may be copied along with the VM. A VM may have at most one, and

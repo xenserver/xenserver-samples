@@ -6,7 +6,7 @@
     <Nullable>disable</Nullable>
     <AssemblyName>XenServerWorkflows</AssemblyName>
     <RootNamespace>XenServerWorkflows</RootNamespace>
-    <Description>XenCenter-style workflow examples for the XenServer.NET SDK.</Description>
+    <Description>Workflow examples for the XenServer.NET SDK.</Description>
     <Company>XenServer</Company>
     <Copyright>Copyright (c) Cloud Software Group, Inc.</Copyright>
     <!-- The SDK release to build against; override with -p:XenServerSdkVersion=... -->

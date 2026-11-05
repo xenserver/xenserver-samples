@@ -10,7 +10,7 @@ function Invoke-ManageVapp {
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$UserName,
         [Parameter(Mandatory = $true)][string]$Password,
-        [string]$VmName = "web-01"
+        [string]$VmName = "db-01"
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $vm = Get-XenVM -Name $VmName

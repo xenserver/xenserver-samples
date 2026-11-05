@@ -23,7 +23,8 @@ public static void ListTemplates(string url, string user, string password)
 {
     var session = Connect(url, user, password);
     var templates = VM.get_all_records(session).Values
-        .Where(v => v.is_a_template).OrderBy(v => v.name_label).ToList();
+        // A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
+        .Where(v => v.is_a_template && !v.is_a_snapshot).OrderBy(v => v.name_label).ToList();
     Console.WriteLine($"Templates ({templates.Count}):");
     foreach (var t in templates.Take(8))
     {
@@ -72,7 +73,9 @@ from connection import connect
 def list_templates(url, username, password):
     """List the pool's templates, flagging the built-in (default) ones."""
     session = connect(url, username, password)
-    templates = sorted((v for v in session.xenapi.VM.get_all_records().values() if v["is_a_template"]),
+    # A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
+    templates = sorted((v for v in session.xenapi.VM.get_all_records().values()
+                        if v["is_a_template"] and not v["is_a_snapshot"]),
                        key=lambda v: v["name_label"])
     print("Templates (%d):" % len(templates))
     for t in templates[:8]:
@@ -131,7 +134,8 @@ public final class ListTemplates {
         Connection conn = connect(url, user, password);
         java.util.List<VM.Record> templates = new java.util.ArrayList<>();
         for (VM.Record v : VM.getAllRecords(conn).values())
-            if (v.isATemplate) templates.add(v);
+            // A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
+            if (v.isATemplate && !v.isASnapshot) templates.add(v);
         templates.sort(java.util.Comparator.comparing((VM.Record r) -> r.nameLabel));
         System.out.println("Templates (" + templates.size() + "):");
         int shown = 0;
@@ -172,6 +176,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 
 	"go/xenapi"
 )
@@ -187,12 +192,14 @@ func listTemplates(url, user, password string) {
 	session := connect(url, user, password)
 	vms, err := xenapi.VM.GetAllRecords(session)
 	check(err)
+	// A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
 	var templates []xenapi.VMRecord
 	for _, v := range vms {
-		if v.IsATemplate {
+		if v.IsATemplate && !v.IsASnapshot {
 			templates = append(templates, v)
 		}
 	}
+	sort.Slice(templates, func(i, j int) bool { return templates[i].NameLabel < templates[j].NameLabel })
 	fmt.Printf("Templates (%d):\n", len(templates))
 	for i, t := range templates {
 		if i >= 8 {
@@ -213,14 +220,14 @@ func listTemplates(url, user, password string) {
 
 ```text
 Templates (27):
-  - Gooroom Platform 2.0 [built-in]
-  - Ubuntu Resolute Raccoon 26.04 [built-in]
-  - Debian Bullseye 11 [built-in]
-  - CentOS Stream 9 [built-in]
-  - Other install media [built-in]
+  - AlmaLinux 10 [built-in]
   - AlmaLinux 8 [built-in]
-  - Windows Server 2016 (64-bit) [built-in]
-  - Windows Server 2019 (64-bit) [built-in]
+  - AlmaLinux 9 [built-in]
+  - CentOS Stream 10 [built-in]
+  - CentOS Stream 9 [built-in]
+  - Debian Bookworm 12 [built-in]
+  - Debian Bullseye 11 [built-in]
+  - Gooroom Platform 2.0 [built-in]
 OK: list-templates
 ```
 
@@ -246,7 +253,8 @@ function Invoke-ListTemplates {
         [Parameter(Mandatory = $true)][string]$Password
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $templates = Get-XenVM | Where-Object { $_.is_a_template } | Sort-Object name_label
+    # A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
+    $templates = Get-XenVM | Where-Object { $_.is_a_template -and -not $_.is_a_snapshot } | Sort-Object name_label
     Write-Host "Templates ($(@($templates).Count)):"
     $templates | Select-Object -First 8 | ForEach-Object {
         $suffix = if ($_.other_config.ContainsKey("default_template")) { " [built-in]" } else { "" }
@@ -287,9 +295,18 @@ Source: [`cli/virtual-machines/list-templates.sh`](../../cli/virtual-machines/li
 #   ./workflows.sh list-templates https://xenserver root "$password"
 
 list_templates() {
+    local t name
+    # template-list leaves out snapshots, which are templates too. A built-in template carries
+    # other-config:default_template.
     echo "Templates ($(count_csv "$(xe template-list --minimal)")):"
-    IFS=, read -ra names <<< "$(xe template-list params=name-label --minimal)"
-    printf '%s\n' "${names[@]:0:8}"
+    for t in $(each_csv "$(xe template-list --minimal)"); do
+        name=$(xe template-param-get uuid=$t param-name=name-label)
+        if xe template-param-get uuid=$t param-name=other-config param-key=default_template >/dev/null 2>&1; then
+            printf '%s\t  - %s [built-in]\n' "$name" "$name"
+        else
+            printf '%s\t  - %s\n' "$name" "$name"
+        fi
+    done | sort | head -8 | cut -f2-
     echo "OK: list-templates"
 }
 ```
@@ -298,14 +315,14 @@ list_templates() {
 
 ```text
 Templates (27):
-AlmaLinux 10
-AlmaLinux 8
-AlmaLinux 9
-CentOS Stream 10
-CentOS Stream 9
-Debian Bookworm 12
-Debian Bullseye 11
-Gooroom Platform 2.0
+  - AlmaLinux 10 [built-in]
+  - AlmaLinux 8 [built-in]
+  - AlmaLinux 9 [built-in]
+  - CentOS Stream 10 [built-in]
+  - CentOS Stream 9 [built-in]
+  - Debian Bookworm 12 [built-in]
+  - Debian Bullseye 11 [built-in]
+  - Gooroom Platform 2.0 [built-in]
 OK: list-templates
 ```
 

@@ -52,7 +52,7 @@ public static void CopyVm(string url, string user, string password,
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-fd09-000000000000
+Copied VM:     00000001-0000-0000-000a-000000000000
 Copy has 1 VBD(s), is_a_template = False
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm
@@ -189,7 +189,7 @@ public final class CopyVm {
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-030a-000000000000
+Copied VM:     00000001-0000-0000-0a0a-000000000000
 Copy has 1 VBD(s), is_a_template = false
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm
@@ -260,7 +260,7 @@ func copyVM(url, user, password, vmName, srName, copyName string) {
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-f609-000000000000
+Copied VM:     00000001-0000-0000-0a0a-000000000000
 Copy has 1 VBD(s), is_a_template = false
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm
@@ -324,7 +324,7 @@ function Invoke-CopyVm {
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-050a-000000000000
+Copied VM:     00000001-0000-0000-080a-000000000000
 Copy has 1 VBD(s), is_a_template = False
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm
@@ -344,6 +344,9 @@ Source: [`cli/virtual-machines/copy-vm.sh`](../../cli/virtual-machines/copy-vm.s
 #
 # Run it:
 #   ./workflows.sh copy-vm https://xenserver root "$password"
+#
+# Optional key=value arguments (default):
+#   sr_name (Shared NFS)
 
 copy_vm() {
     local vm was_running
@@ -352,7 +355,7 @@ copy_vm() {
     # so shut it down first if it's running, and start it back up again after the copy.
     was_running=$([ "$(xe vm-param-get uuid=$vm param-name=power-state)" = "running" ] && echo true || echo false)
     [ "$was_running" = true ] && xe vm-shutdown uuid=$vm
-    copy=$(xe vm-copy uuid=$vm new-name-label=xe-example-copy sr-uuid=$(shared_sr))
+    copy=$(xe vm-copy uuid=$vm new-name-label=xe-example-copy sr-uuid=$(sr_by_name "$(param sr_name "Shared NFS")"))
     echo "Copied VM: $copy"
     [ "$was_running" = true ] && xe vm-start uuid=$vm
     # Tidy up: vm-uninstall destroys the copy and its disks, leaving the source VM intact.
@@ -364,7 +367,7 @@ copy_vm() {
 <details><summary>Sample output</summary>
 
 ```text
-Copied VM: 00000001-0000-0000-060a-000000000000
+Copied VM: 00000001-0000-0000-020a-000000000000
 OK: copy-vm
 ```
 

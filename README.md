@@ -67,7 +67,7 @@ Every workflow follows the same pattern, so once you've read one you can read th
 - **It's self-contained.** Each workflow is a single function in a file of its own, grouped by area. It
   opens its own session, does one job, cleans up after itself and prints `OK: <workflow>` when it
   succeeds. Copy it into your own code as it is: its documentation comment shows the call.
-- **It connects the way XenCenter does.** The shared connect helper accepts a host's self-signed
+- **It connects to any pool member.** The shared connect helper accepts a host's self-signed
   certificate. If you point it at a pool member rather than the coordinator, it follows the
   `HOST_IS_SLAVE` redirect.
 - **It runs from the command line.** Each language's dispatcher (`workflows.py`, `workflows.ps1`, ...)

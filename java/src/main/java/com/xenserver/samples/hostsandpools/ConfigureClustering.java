@@ -53,7 +53,7 @@ public final class ConfigureClustering {
                 // Corosync must not lose its network, so each host's PIF on it has to refuse unplugging
                 // first: Cluster.poolCreate fails PIF_ALLOWS_UNPLUG otherwise. was remembers the settings.
                 for (PIF pif : was.keySet()) pif.setDisallowUnplug(conn, true);
-                // token_timeout is in seconds (XenCenter's default 20.0, coefficient 1.0): XS9 refuses
+                // token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses
                 // 20000 as "too large" - it is not milliseconds.
                 cluster = Cluster.poolCreate(conn, network, "corosync", 20.0, 1.0);
             }

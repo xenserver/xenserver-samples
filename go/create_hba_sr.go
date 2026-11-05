@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"go/xenapi"
 )
@@ -30,16 +31,36 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 		"SCSIid", scsiID)
 	fmt.Printf("Discovered LUN: SCSIid %s on %s\n", device["SCSIid"], device["path"])
 
-	// SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-	// for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+	// SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+	// like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
 	dc := map[string]string{"SCSIid": device["SCSIid"]}
+
+	// SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+	// there, and SR.create would format it. Reattach that SR rather than destroying it.
+	srProbe, err := xenapi.SR.Probe(session, host, dc, "lvmohba", map[string]string{})
+	check(err)
+	if existing := findXMLElements(srProbe, "SR"); len(existing) > 0 {
+		panic(fmt.Sprintf("LUN %s already holds SR %s; creating an SR here would format it - "+
+			"reattach the existing SR instead of creating a new one",
+			device["SCSIid"], strings.TrimSpace(existing[0]["UUID"])))
+	}
+
 	sr, err := xenapi.SR.Create(session, host, dc, 0, srName,
 		"HBA SR created by the SDK example", "lvmohba", "user", true, map[string]string{})
 	check(err)
 	size, _ := xenapi.SR.GetPhysicalSize(session, sr)
 	uuid, _ := xenapi.SR.GetUUID(session, sr)
 	fmt.Printf("Created SR: %s (%d GiB)\n", uuid, size/GiB)
-	detachAndForgetSR(session, sr)
+	// Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+	// SR.destroy needs it detached from every host first.
+	pbds, err := xenapi.SR.GetPBDs(session, sr)
+	check(err)
+	for _, pbd := range pbds {
+		if attached, _ := xenapi.PBD.GetCurrentlyAttached(session, pbd); attached {
+			check(xenapi.PBD.Unplug(session, pbd))
+		}
+	}
+	check(xenapi.SR.Destroy(session, sr))
 	fmt.Println("OK: create-hba-sr")
 	session.Logout()
 }

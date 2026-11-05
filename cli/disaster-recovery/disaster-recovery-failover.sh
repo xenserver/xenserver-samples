@@ -1,9 +1,8 @@
 # Fail over to the disaster recovery site.
 #
 # On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-# storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-# XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-# recovered and detaches the storage again.
+# storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By
+# default this is a test failover, which removes what it recovered and detaches the storage again.
 #
 # Run it:
 #   ./workflows.sh disaster-recovery-failover https://dr-site-pool root "$password" \
@@ -72,7 +71,7 @@ disaster_recovery_failover() {
             [ "${t,,}" = metadata ] || continue
             db=database:vdi-uuid=$vdi
 
-            # A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+            # A pool often has no name of its own; show its coordinator's name instead.
             pool_name=$(xe pool-list $db params=name-label --minimal)
             if [ -z "$pool_name" ]; then
                 master=$(xe pool-list $db params=master --minimal)

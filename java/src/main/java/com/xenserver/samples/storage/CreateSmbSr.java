@@ -22,7 +22,7 @@ public final class CreateSmbSr {
      * credentials (the password as a secret, never in plain text).
      *
      * <p>Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share). The
-     * password travels as a Secret, not plaintext device-config - the way XenCenter does it.
+     * password travels as a Secret, not plaintext device-config.
      *
      * <p>Run it:
      *

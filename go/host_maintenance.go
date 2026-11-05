@@ -51,7 +51,7 @@ func hostMaintenance(url, user, password, sourceVM, srName, newVMName string) {
 	fmt.Printf("Guest resident on:%s\n", onName)
 
 	// Enter maintenance mode: disable the host, then evacuate its guests.
-	check(xenapi.Host.Disable(session, hostRef, false))
+	check(xenapi.Host.Disable(session, hostRef, true))
 	enabled, _ := xenapi.Host.GetEnabled(session, hostRef)
 	fmt.Printf("After disable:    host.enabled = %v\n", enabled)
 	check(xenapi.Host.Evacuate2(session, hostRef))

@@ -18,9 +18,8 @@ function Invoke-ManageVmDisks {
     # non-system disks default to unpluggable), so Unplug on it fails on a real host with
     # VBD_NOT_UNPLUGGABLE - and the VM has to be running in the first place, or unplug fails with
     # VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead,
-    # matching XenCenter's own "deactivate" action, which only ever targets additional disks, and tidy
-    # up afterwards so the example is repeatable. No shrink: real SR backends refuse one outright
-    # (SR_BACKEND_FAILURE_79), so this only ever grows.
+    # and tidy up afterwards so the example is repeatable. No shrink: real SR backends refuse one
+    # outright (SR_BACKEND_FAILURE_79), so this only ever grows.
     #
     # Plugging and unplugging a disk on a running VM needs the guest's PV drivers
     # (VM_MISSING_PV_DRIVERS otherwise), so the VM is a throwaway copy of SourceVm, a VM with a guest OS

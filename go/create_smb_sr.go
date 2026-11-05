@@ -12,7 +12,7 @@ import (
 // credentials (the password as a secret, never in plain text).
 //
 // Connect a shared SR to an SMB/CIFS file share. The password travels as a Secret, not plaintext
-// device-config - the way XenCenter does it.
+// device-config.
 func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)

@@ -30,12 +30,11 @@ internal static partial class Workflows
         var vmRef = VM.clone(session, templateRef, newVmName).opaque_ref;
         Provision(session, vmRef);
 
-        // Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty. This is the
-        // same call XenCenter makes from the New VM wizard GPU page and the VM Properties GPU page.
+        // Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
         var vgpuRef = VGPU.create(session, vmRef, groupRef, "0", new Dictionary<string, string>(), typeRef).opaque_ref;
         Console.WriteLine($"Created vGPU: {VGPU.get_uuid(session, vgpuRef)}");
 
-        // Read the assignment back, as XenCenter's GPU tab does.
+        // Read the assignment back.
         var vgpus = VM.get_VGPUs(session, vmRef);
         var assigned = VGPU_type.get_model_name(session, VGPU.get_type(session, vgpus[0].opaque_ref).opaque_ref);
         Console.WriteLine($"VM now has {vgpus.Count} vGPU(s); type = {assigned}");

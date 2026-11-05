@@ -477,7 +477,7 @@ attach_existing_disk() {
     halted=$(xe vm-list power-state=halted --minimal)
     first=$(nth_csv "$halted" 1)
     second=$(nth_csv "$halted" 2)
-    sr=$(shared_sr)
+    sr=$(default_sr)
 
     vdi=$(xe vdi-create sr-uuid=$sr name-label=xe-example-portable-disk virtual-size=4294967296 type=user)
     echo "Disk $(xe vdi-param-get uuid=$vdi param-name=name-label) created on $(xe sr-param-get uuid=$sr param-name=name-label)"

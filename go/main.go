@@ -1,8 +1,8 @@
 // XenServer Go SDK - real-world workflow examples.
 //
-// Each example mirrors a task you would perform in XenCenter, driven through the XenServer
-// Management API (XenAPI). The Go binding speaks JSON-RPC and skips certificate validation
-// by default for https URLs, which suits a host with a self-signed certificate.
+// Each example is a common administration task, driven through the XenServer Management API (XenAPI). The Go
+// binding speaks JSON-RPC and skips certificate validation by default for https URLs, which suits a host with
+// a self-signed certificate.
 //
 // Each workflow is a function in a file of its own (connect_inventory.go, create_vm.go, ...). It takes
 // the connection details (and any object it acts on, looked up by name) as parameters, opens its own
@@ -196,10 +196,10 @@ var workflows = map[string]workflow{
 	}),
 	"create-iscsi-sr": wf(map[string]string{
 		"target": "192.0.2.30", "port": "", "chap_user": "", "chap_password": "", "target_iqn": "",
-		"sr_name": "sdk-example-iscsi",
+		"scsi_id": "360a980004265656d5f4a2d63764e5734", "sr_name": "sdk-example-iscsi",
 	}, func(u, n, p string, m map[string]string) {
 		createIscsiSr(u, n, p, m["target"], m["port"], m["chap_user"], m["chap_password"], m["target_iqn"],
-			m["sr_name"])
+			m["scsi_id"], m["sr_name"])
 	}),
 	"create-smb-sr": wf(map[string]string{
 		"server": "192.0.2.40", "share": "/vmstore", "smb_username": "Administrator",

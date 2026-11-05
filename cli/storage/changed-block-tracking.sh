@@ -7,7 +7,12 @@
 #   ./workflows.sh changed-block-tracking https://xenserver root "$password"
 
 changed_block_tracking() {
-    vm=$(nth_csv "$(xe vm-list is-control-domain=false --minimal)" 1)
+    vm=""
+    for candidate in $(each_csv "$(xe vm-list is-a-template=false is-control-domain=false is-a-snapshot=false --minimal)"); do
+        [ -n "$(first_disk_vdi "$candidate")" ] || continue
+        vm=$candidate; break
+    done
+    [ -n "$vm" ] || { echo "no VM with a disk was found" >&2; exit 1; }
     echo "Backing up $(xe vm-param-get uuid=$vm param-name=name-label)"
 
     # CBT is switched on for the VM's own disk, and every snapshot taken from then on inherits it. It

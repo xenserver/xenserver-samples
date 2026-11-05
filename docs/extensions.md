@@ -9,7 +9,7 @@ the management tools rely on them, and so can you.
 
 Most classes carry an `other_config` map for client-owned metadata. Management tools use keyed entries
 here: for example a VM's folder placement lives in `other_config["folder"]`, and custom fields under
-`other_config["XenCenter.CustomFields.<name>"]`. See [Custom fields](workflows/custom-fields.md) and
+`other_config["XenCenter.CustomFields.<name>"]` (the key keeps its historical name). See [Custom fields](workflows/custom-fields.md) and
 [Tag and organize objects](workflows/tags-and-folders.md).
 
 ## Tags

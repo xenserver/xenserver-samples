@@ -46,8 +46,9 @@ function Invoke-ConfigurePvsAccelerator {
     Invoke-XenMethod -Session $session -Method 'PVS_server.introduce' `
         -Params @(@('203.0.113.90'), 6910, 6930, $site) | Out-Null
 
-    # The read cache must be on LOCAL storage: keeping reads off the network is the point, so a cache on
-    # a shared SR would defeat it and the server rejects one. New-XenPVSCacheStorage is a real cmdlet.
+    # The read cache should be on LOCAL storage: keeping reads off the network is the point, and the
+    # server does not enforce that, but a cache on shared storage rarely makes sense and can't be
+    # shared between hosts anyway. New-XenPVSCacheStorage is a real cmdlet.
     foreach ($xenHost in Get-XenHost) {
         $local = Get-XenPBD | Where-Object { $_.host.opaque_ref -eq $xenHost.opaque_ref } |
             ForEach-Object { Get-XenSR -Ref $_.SR.opaque_ref } |

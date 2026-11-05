@@ -27,9 +27,9 @@ def configure_ha(url, username, password, heartbeat_sr_name):
     guest = next(ref for ref, r in session.xenapi.VM.get_all_records().items()
                  if not r["is_a_template"] and not r["is_control_domain"] and not r["is_a_snapshot"])
 
-    # How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those
-    # (as XenCenter's HA wizard does): a target computed with none protected can be too high, and
-    # protecting a VM afterwards then fails HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
+    # How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those: a
+    # target computed with none protected can be too high, and protecting a VM afterwards then fails
+    # HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
     ntol = session.xenapi.pool.ha_compute_hypothetical_max_host_failures_to_tolerate({guest: "restart"})
     print("Max failures:  %s" % ntol)
     session.xenapi.pool.set_ha_host_failures_to_tolerate(pool_ref, ntol)

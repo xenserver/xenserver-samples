@@ -43,8 +43,9 @@ func configurePvsAccelerator(url, user, password, vmName string) {
 	_, err = xenapi.PVSServer.Introduce(session, []string{"203.0.113.90"}, 6910, 6930, site)
 	check(err)
 
-	// The read cache must be on LOCAL storage. The point of the accelerator is to keep reads off the
-	// network, so a cache on a shared SR would defeat it and the server rejects one.
+	// The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off the
+	// network; the server does not enforce that, but a cache on shared storage rarely makes sense and
+	// can't be shared between hosts anyway.
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	for _, host := range hosts {

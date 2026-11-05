@@ -23,7 +23,7 @@ func vmBootConfig(url, user, password, templateName, newVMName string) {
 	check(xenapi.VM.SetVCPUsAtStartup(session, vm, 2))
 
 	// Boot mode: firmware ("bios"/"uefi") lives in HVM_boot_params; Secure Boot in
-	// platform["secureboot"]. "auto" (not a hard-coded "true") is the real xe/XenCenter convention:
+	// platform["secureboot"]. "auto" (not a hard-coded "true") is the xe convention:
 	// xapi resolves it against whether the pool actually holds Secure Boot certificates, at
 	// VM.start time - a hard "true" would claim Secure Boot is on even on a template that was never
 	// set up for it, since set_platform does no validation of its own.

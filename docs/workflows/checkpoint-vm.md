@@ -58,7 +58,7 @@ public static void CheckpointVm(string url, string user, string password,
 <details><summary>Sample output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-5b0a-000000000000
+Created checkpoint: 00000001-0000-0000-6f0a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -122,7 +122,7 @@ def checkpoint_vm(url, username, password, source_vm, new_vm_name="sdk-example-c
 <details><summary>Sample output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-470a-000000000000
+Created checkpoint: 00000001-0000-0000-460a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -200,7 +200,7 @@ public final class CheckpointVm {
 <details><summary>Sample output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-6b0a-000000000000
+Created checkpoint: 00000001-0000-0000-560a-000000000000
 is_a_snapshot = true
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -265,7 +265,7 @@ func checkpointVM(url, user, password, sourceVM, newVMName string) {
 <details><summary>Sample output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-610a-000000000000
+Created checkpoint: 00000001-0000-0000-890a-000000000000
 is_a_snapshot = true
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -330,7 +330,7 @@ function Invoke-CheckpointVm {
 <details><summary>Sample output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-6b0a-000000000000
+Created checkpoint: 00000001-0000-0000-6e0a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -383,7 +383,7 @@ checkpoint_vm() {
 <details><summary>Sample output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-750a-000000000000
+Created checkpoint: 00000001-0000-0000-600a-000000000000
 Reverted to the checkpoint; power-state now: suspended
 OK: checkpoint-vm
 ```

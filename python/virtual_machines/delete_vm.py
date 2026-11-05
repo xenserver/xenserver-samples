@@ -14,7 +14,7 @@ from helpers import disk_vdis, provision, template_by_name
 
 def delete_vm(url, username, password, template_name, new_vm_name="sdk-example-delete"):
     """Make a throwaway VM, then delete it: VM.destroy removes the VM but leaves its disks, so the
-    owned VDIs are destroyed explicitly afterward — exactly what XenCenter's Delete VM does."""
+    owned VDIs are destroyed explicitly afterward."""
     session = connect(url, username, password)
     vm = session.xenapi.VM.clone(template_by_name(session, template_name), new_vm_name)
     provision(session, vm)

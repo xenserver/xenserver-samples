@@ -13,18 +13,26 @@ Workflow `manage-ad-users`. [All workflows](README.md) · [Connecting](connectin
 Source: [`csharp/SecurityAndAccess/ManageAdUsers.cs`](../../csharp/SecurityAndAccess/ManageAdUsers.cs)
 
 ```csharp
-/// <summary> Join the pool to an Active Directory domain, grant an AD user access with an RBAC role, read
-/// it back, then tidy up. </summary> <example> <code> Workflows.ManageAdUsers("https://xenserver",
-/// "root", password); </code> </example> <remarks> Join AD, add a user as a subject with an RBAC role,
-/// read it back, then tidy up. Needs a real, reachable AD domain controller - enable_external_auth fails
-/// at the very first call (DNS/LDAP/Kerberos) without one, so domain/admin_user/admin_password have to
-/// identify a real domain to join. Before joining, every host must resolve the domain (point its DNS at a
-/// domain controller) and keep its clock close to the DC's (Kerberos). Current Windows DCs want LDAPS
-/// (ldaps="true"), which also needs the pool to trust the DC's CA certificate
-/// (Pool.install_trusted_certificate with purpose "ldaps"). new_user is the account to grant a role to;
-/// its subject identity is looked up against the directory, so it has to be a real account there too. A
-/// pool already joined to this domain is used as it is - and left joined. The defaults are placeholders:
-/// pass your own domain, administrator account and user. </remarks>
+/// <summary>
+/// Join the pool to an Active Directory domain, grant an AD user access with an RBAC role, read it back,
+/// then tidy up.
+/// </summary>
+/// <example>
+/// <code>
+/// Workflows.ManageAdUsers("https://xenserver", "root", password);
+/// </code>
+/// </example>
+/// <remarks>
+/// Join AD, add a user as a subject with an RBAC role, read it back, then tidy up. Needs a real,
+/// reachable AD domain controller - enable_external_auth fails at the very first call (DNS/LDAP/Kerberos)
+/// without one, so domain/admin_user/admin_password have to identify a real domain to join. Before
+/// joining, every host must resolve the domain (point its DNS at a domain controller) and keep its clock
+/// close to the DC's (Kerberos). Current Windows DCs want LDAPS (ldaps="true"), which also needs the pool
+/// to trust the DC's CA certificate (Pool.install_trusted_certificate with purpose "ldaps"). new_user is
+/// the account to grant a role to; its subject identity is looked up against the directory, so it has to
+/// be a real account there too. A pool already joined to this domain is used as it is - and left joined.
+/// The defaults are placeholders: pass your own domain, administrator account and user.
+/// </remarks>
 public static void ManageAdUsers(string url, string user, string password, string domain = "",
     string adminUser = "alice", string adminPassword = "Password1", string newUser = "alice",
     string ldaps = "false")

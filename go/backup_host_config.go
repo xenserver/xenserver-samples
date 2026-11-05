@@ -34,8 +34,19 @@ func backupHostConfig(url, user, password string) {
 	check(err)
 	defer session.Logout()
 
-	hosts, err := xenapi.Host.GetAll(session)
+	// The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
+	coordinator, err := xenapi.Pool.GetMaster(session, pools[0])
+	check(err)
+	all, err := xenapi.Host.GetAll(session)
+	check(err)
+	hosts := []xenapi.HostRef{coordinator}
+	for _, h := range all {
+		if h != coordinator {
+			hosts = append(hosts, h)
+		}
+	}
 	host := hosts[0]
 	name, err := xenapi.Host.GetNameLabel(session, host)
 	check(err)

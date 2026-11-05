@@ -33,8 +33,9 @@ configure_pvs_accelerator() {
     site=$(xe pvs-site-introduce name-label=sdk-example-pvs name-description="Created by the SDK examples")
     xe pvs-server-introduce addresses=203.0.113.90 first-port=6910 last-port=6930 pvs-site-uuid="$site" >/dev/null
 
-    # The read cache must be on LOCAL storage: keeping reads off the network is the point, so a cache
-    # on a shared SR would defeat it and the server rejects one.
+    # The read cache should be on LOCAL storage: keeping reads off the network is the point, and the
+    # server does not enforce that, but a cache on shared storage rarely makes sense and can't be
+    # shared between hosts anyway.
     for h in $(each_csv "$(xe host-list --minimal)"); do
         for pbd in $(each_csv "$(xe pbd-list host-uuid=$h --minimal)"); do
             sr=$(xe pbd-param-get uuid=$pbd param-name=sr-uuid)

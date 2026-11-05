@@ -2,6 +2,7 @@ package com.xenserver.samples.virtualmachines;
 
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
@@ -30,9 +31,16 @@ public final class CloneVm {
         // Unlike Copy (a full, independent copy onto a chosen SR), Clone is a fast copy-on-write
         // duplicate on the same SR — ideal for a halted "golden" VM.
         VM source = vmByName(conn, vmName);
+
+        // VM.clone (like VM.copy) requires a Halted source (VM_BAD_POWER_STATE otherwise).
+        boolean wasRunning = source.getPowerState(conn) == Types.VmPowerState.RUNNING;
+        if (wasRunning) source.cleanShutdown(conn);
+
         VM clone = source.createClone(conn, cloneName);
         System.out.println("Cloned '" + source.getNameLabel(conn) + "' → " + clone.getNameLabel(conn));
         System.out.println("Clone has " + clone.getVBDs(conn).size() + " VBD(s)");
+
+        if (wasRunning) source.start(conn, false, true);
 
         // Tidy up: destroy the clone and its (owned) disks.
         destroyVmAndDisks(conn, clone);

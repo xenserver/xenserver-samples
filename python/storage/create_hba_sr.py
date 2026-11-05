@@ -7,7 +7,7 @@ with a deliberately failing probe, then create the SR by SCSI ID. Creating the S
 import xml.etree.ElementTree as ET
 
 from connection import connect
-from helpers import detach_and_forget_sr, probe_for_failure
+from helpers import probe_for_failure
 
 
 def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"):
@@ -31,13 +31,28 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
     path = device.find("path").text
     print("Discovered LUN: SCSIid %s on %s" % (scsi_id, path))
 
-    # SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-    # for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+    # SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+    # like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
     dc = {"SCSIid": scsi_id}
+
+    # SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+    # there, and SR.create would format it. Reattach that SR rather than destroying it.
+    srlist_xml = ET.fromstring(session.xenapi.SR.probe(host, dc, "lvmohba", {}))
+    existing = srlist_xml.find("SR")
+    if existing is not None:
+        raise RuntimeError("LUN %s already holds SR %s; creating an SR here would format it - "
+                            "reattach the existing SR instead of creating a new one"
+                            % (scsi_id, existing.find("UUID").text.strip()))
+
     sr = session.xenapi.SR.create(host, dc, "0", sr_name,
                                   "HBA SR created by the SDK example", "lvmohba", "user", True, {})
     print("Created SR: %s (%d GiB)"
           % (session.xenapi.SR.get_uuid(sr), int(session.xenapi.SR.get_physical_size(sr)) // GIB))
-    detach_and_forget_sr(session, sr)
+    # Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+    # SR.destroy needs it detached from every host first.
+    for pbd in session.xenapi.SR.get_PBDs(sr):
+        if session.xenapi.PBD.get_currently_attached(pbd):
+            session.xenapi.PBD.unplug(pbd)
+    session.xenapi.SR.destroy(sr)
     print("OK: create-hba-sr")
     session.logout()

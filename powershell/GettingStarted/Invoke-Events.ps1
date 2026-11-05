@@ -22,7 +22,7 @@ function Invoke-Events {
     Write-Host "Established event token after initial snapshot."
 
     $vm = Get-XenVM -Name $VmName |
-        Where-Object { -not $_.is_a_template -and -not $_.is_control_domain } | Select-Object -First 1
+        Where-Object { -not $_.is_a_template -and -not $_.is_control_domain -and -not $_.is_a_snapshot } | Select-Object -First 1
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     $original = $vm.name_description
     $vm | Set-XenVM -NameDescription "changed-to-trigger-event"

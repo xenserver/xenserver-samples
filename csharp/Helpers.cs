@@ -34,9 +34,9 @@ internal static partial class Workflows
             .Key.opaque_ref;
 
     /// <summary>
-    /// Detach an SR from every host, then forget it: XenCenter's Detach followed by Forget. SR.forget
-    /// refuses an SR that is still attached (SR_HAS_PBD), so unplug its PBDs first. Forgetting drops the
-    /// pool's record of the SR but leaves the data on the storage itself.
+    /// Detach an SR from every host, then forget it. SR.forget refuses an SR that is still attached
+    /// (SR_HAS_PBD), so unplug its PBDs first. Forgetting drops the pool's record of the SR but leaves
+    /// the data on the storage itself.
     /// </summary>
     internal static void DetachAndForgetSr(Session session, string sr)
     {
@@ -72,11 +72,13 @@ internal static partial class Workflows
         f.ErrorDescription.AsEnumerable().Reverse()
             .FirstOrDefault(d => !string.IsNullOrEmpty(d) && d.TrimStart().StartsWith("<"));
 
-    /// <summary> Return the XML a backend sends back on its deliberately-failing discovery probe. The
-    /// New SR wizard discovers iSCSI/HBA LUNs by asking with an incomplete device-config on purpose: the
-    /// backend can't create anything from it yet, so it fails with an SR_BACKEND_FAILURE_&lt;n&gt; error
-    /// whose params carry an XML fragment describing what it found. Never probe by attempting SR.create
-    /// instead: on real storage a create that unexpectedly succeeds formats the LUN. </summary>
+    /// <summary>
+    /// Return the XML a backend sends back on its deliberately-failing discovery probe. The New SR wizard
+    /// discovers iSCSI/HBA LUNs by asking with an incomplete device-config on purpose: the backend can't
+    /// create anything from it yet, so it fails with an SR_BACKEND_FAILURE_&lt;n&gt; error whose params carry
+    /// an XML fragment describing what it found. Never probe by attempting SR.create instead: on real storage
+    /// a create that unexpectedly succeeds formats the LUN.
+    /// </summary>
     internal static string ProbeForFailure(Session session, string host,
         Dictionary<string, string> deviceConfig, string smType)
     {
@@ -260,10 +262,10 @@ internal static partial class Workflows
     }
 
     /// <summary>
-    /// Introduce the pool's update repositories the way XenCenter does: the release's base packages
-    /// (update=false) and its update stream (update=true, which pool.sync_updates needs - otherwise
-    /// NO_REPOSITORY_ENABLED). A real host checks the URLs (INVALID_BASE_URL for an unknown domain), so
-    /// these are the XenServer CDN's, e.g. https://repo.ops.xenserver.com/xs9/{base,normal}.
+    /// Introduce the pool's update repositories: the release's base packages (update=false) and its
+    /// update stream (update=true, which pool.sync_updates needs - otherwise NO_REPOSITORY_ENABLED). A
+    /// real host checks the URLs (INVALID_BASE_URL for an unknown domain), so these are the XenServer
+    /// CDN's, e.g. https://repo.ops.xenserver.com/xs9/{base,normal}.
     /// </summary>
     internal static List<XenRef<Repository>> IntroduceUpdateRepositories(Session session, string repoUrl,
         string sourceUrl) =>

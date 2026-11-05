@@ -26,10 +26,18 @@ public static void CloneVm(string url, string user, string password,
     var session = Connect(url, user, password);
     // Unlike Copy (a full, independent copy onto a chosen SR), Clone is a fast copy-on-write
     // duplicate on the same SR — ideal for a halted "golden" VM.
+    // VM.clone (like VM.copy) raises VM_BAD_POWER_STATE on a running source, so shut it down
+    // first if it's running, and start it back up again after the clone.
     var source = VmByName(session, vmName);
+
+    var wasRunning = VM.get_power_state(session, source) == vm_power_state.Running;
+    if (wasRunning) VM.clean_shutdown(session, source);
+
     var clone = VM.clone(session, source, cloneName).opaque_ref;
     Console.WriteLine($"Cloned '{VM.get_name_label(session, source)}' → {VM.get_name_label(session, clone)}");
     Console.WriteLine($"Clone has {VM.get_VBDs(session, clone).Count} VBD(s)");
+
+    if (wasRunning) VM.start(session, source, false, true);
 
     // Tidy up: destroy the clone and its (owned) disks.
     DestroyVmAndDisks(session, clone);
@@ -69,13 +77,25 @@ from helpers import destroy_vm_and_disks, vm_by_name
 
 def clone_vm(url, username, password, vm_name, clone_name="sdk-example-clone"):
     """Fast copy-on-write clone of a halted VM (unlike Copy, which is a full, independent copy
-    onto a chosen SR). Ideal for duplicating a halted "golden" VM on the same SR."""
+    onto a chosen SR). Ideal for duplicating a halted "golden" VM on the same SR.
+
+    VM.clone (like VM.copy) only works on a Halted VM - a running source fails with
+    VM_BAD_POWER_STATE - so shut it down first if it's running, and start it back up again after
+    the clone, rather than assuming the VM is already halted."""
     session = connect(url, username, password)
     source = vm_by_name(session, vm_name)
+
+    was_running = session.xenapi.VM.get_power_state(source) == "Running"
+    if was_running:
+        session.xenapi.VM.clean_shutdown(source)
+
     clone = session.xenapi.VM.clone(source, clone_name)
     print("Cloned '%s' -> %s"
           % (session.xenapi.VM.get_name_label(source), session.xenapi.VM.get_name_label(clone)))
     print("Clone has %d VBD(s)" % len(session.xenapi.VM.get_VBDs(clone)))
+
+    if was_running:
+        session.xenapi.VM.start(source, False, True)
 
     # Tidy up: destroy the clone and its (owned) disks.
     destroy_vm_and_disks(session, clone)
@@ -102,6 +122,7 @@ package com.xenserver.samples.virtualmachines;
 
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
@@ -130,9 +151,16 @@ public final class CloneVm {
         // Unlike Copy (a full, independent copy onto a chosen SR), Clone is a fast copy-on-write
         // duplicate on the same SR — ideal for a halted "golden" VM.
         VM source = vmByName(conn, vmName);
+
+        // VM.clone (like VM.copy) requires a Halted source (VM_BAD_POWER_STATE otherwise).
+        boolean wasRunning = source.getPowerState(conn) == Types.VmPowerState.RUNNING;
+        if (wasRunning) source.cleanShutdown(conn);
+
         VM clone = source.createClone(conn, cloneName);
         System.out.println("Cloned '" + source.getNameLabel(conn) + "' → " + clone.getNameLabel(conn));
         System.out.println("Clone has " + clone.getVBDs(conn).size() + " VBD(s)");
+
+        if (wasRunning) source.start(conn, false, true);
 
         // Tidy up: destroy the clone and its (owned) disks.
         destroyVmAndDisks(conn, clone);
@@ -178,6 +206,16 @@ func cloneVM(url, user, password, vmName, cloneName string) {
 	// Unlike Copy (a full, independent copy onto a chosen SR), Clone is a fast copy-on-write
 	// duplicate on the same SR - ideal for a halted "golden" VM.
 	source := vmByName(session, vmName)
+
+	// VM.Clone (like VM.Copy) requires a Halted source - VM_BAD_POWER_STATE otherwise - so shut a
+	// running source down first and start it back up again afterwards, rather than assuming it is
+	// already halted.
+	wasRunning := false
+	if state, _ := xenapi.VM.GetPowerState(session, source); state == xenapi.VMPowerStateRunning {
+		wasRunning = true
+		check(xenapi.VM.CleanShutdown(session, source))
+	}
+
 	clone, err := xenapi.VM.Clone(session, source, cloneName)
 	check(err)
 	srcName, _ := xenapi.VM.GetNameLabel(session, source)
@@ -185,6 +223,10 @@ func cloneVM(url, user, password, vmName, cloneName string) {
 	fmt.Printf("Cloned '%s' -> %s\n", srcName, cloneLabel)
 	vbds, _ := xenapi.VM.GetVBDs(session, clone)
 	fmt.Printf("Clone has %d VBD(s)\n", len(vbds))
+
+	if wasRunning {
+		check(xenapi.VM.Start(session, source, false, true))
+	}
 
 	// Tidy up: destroy the clone and its (owned) disks.
 	destroyVMAndDisks(session, clone)
@@ -233,9 +275,17 @@ function Invoke-CloneVm {
         Select-Object -First 1
     if (-not $source) { throw "No VM named '$VmName' was found." }
 
+    # VM.clone (like VM.copy) only works on a Halted VM - a running source fails with
+    # VM_BAD_POWER_STATE - so shut it down first if it's running, and start it back up again after the
+    # clone, rather than assuming the VM is already halted.
+    $wasRunning = (Get-XenVM -Ref $source.opaque_ref).power_state -eq 'Running'
+    if ($wasRunning) { $source | Invoke-XenVM -XenAction CleanShutdown }
+
     $clone = $source | Invoke-XenVM -XenAction Clone -NewName $CloneName -PassThru
     Write-Host "Cloned '$($source.name_label)' -> $($clone.name_label)"
     Write-Host "Clone has $(@($clone.VBDs).Count) VBD(s)"
+
+    if ($wasRunning) { $source | Invoke-XenVM -XenAction Start }
 
     # Tidy up: destroy the clone and its (owned) disks.
     Remove-VmAndDisks -Ref $clone.opaque_ref
@@ -268,8 +318,15 @@ Source: [`cli/virtual-machines/clone-vm.sh`](../../cli/virtual-machines/clone-vm
 #   ./workflows.sh clone-vm https://xenserver root "$password"
 
 clone_vm() {
-    clone=$(xe vm-clone uuid=$(vm_uuid db-01) new-name-label=xe-example-clone)
+    local vm was_running
+    vm=$(vm_uuid db-01)
+    # vm-clone (like vm-copy) only works on a Halted VM - a running source fails with VM_BAD_POWER_STATE -
+    # so shut it down first if it's running, and start it back up again after the clone.
+    was_running=$([ "$(xe vm-param-get uuid=$vm param-name=power-state)" = "running" ] && echo true || echo false)
+    [ "$was_running" = true ] && xe vm-shutdown uuid=$vm
+    clone=$(xe vm-clone uuid=$vm new-name-label=xe-example-clone)
     echo "Cloned VM: $clone"
+    [ "$was_running" = true ] && xe vm-start uuid=$vm
     # Tidy up: vm-uninstall destroys the clone and the disks it owns (vm-destroy would leave them).
     xe vm-uninstall uuid=$clone force=true
     echo "OK: clone-vm"
@@ -279,7 +336,7 @@ clone_vm() {
 <details><summary>Sample output</summary>
 
 ```text
-Cloned VM: 00000001-0000-0000-020a-000000000000
+Cloned VM: 00000001-0000-0000-f909-000000000000
 OK: clone-vm
 ```
 

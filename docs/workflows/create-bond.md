@@ -4,6 +4,8 @@
 
 Bond two spare network interfaces onto a new network for redundancy and throughput, read the bond back, then dissolve it.
 
+**Requires:** two spare network interfaces on one host.
+
 Workflow `create-bond`. [All workflows](README.md) · [Connecting](connecting.md)
 
 ## C# (.NET)
@@ -315,7 +317,7 @@ func createBond(url, user, password string) {
 <details><summary>Sample output</summary>
 
 ```text
-Bonding:      eth2, eth1
+Bonding:      eth1, eth2
 Bond master:  bond0
 Mode:         balance-slb
 Bonds left:   0
@@ -437,7 +439,7 @@ create_bond() {
 <details><summary>Sample output</summary>
 
 ```text
-Bonding:      00000001-0000-0000-2600-000000000000,00000001-0000-0000-2800-000000000000
+Bonding:      00000001-0000-0000-2700-000000000000,00000001-0000-0000-2900-000000000000
 Bond master:  bond0
 Mode:         balance-slb
 Bonds left:   0

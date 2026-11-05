@@ -13,9 +13,8 @@ import (
 // disasterRecoveryFailover - Fail over to the disaster recovery site.
 //
 // On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-// storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-// XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-// recovered and detaches the storage again.
+// storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By
+// default this is a test failover, which removes what it recovered and detaches the storage again.
 //
 // The replica is the LUN the storage array mirrors the protected pool's SR to: name it by the iSCSI
 // target, IQN and SCSI id (srType "lvmoiscsi"), or by SCSI id alone for Fibre Channel/SAS (srType
@@ -112,7 +111,7 @@ func disasterRecoveryFailover(url, user, password, target, targetIQN, scsiID, po
 			check(err)
 			database := string(ref)
 
-			// A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+			// A pool often has no name of its own; show its coordinator's name instead.
 			var poolRecords map[string]struct {
 				NameLabel string `json:"name_label"`
 				Master    string `json:"master"`

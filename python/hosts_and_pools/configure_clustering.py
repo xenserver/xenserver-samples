@@ -32,7 +32,7 @@ def configure_clustering(url, username, password):
         was = {ref: pifs[ref]["disallow_unplug"] for ref in network_pifs}
         for ref in network_pifs:
             x.PIF.set_disallow_unplug(ref, True)
-        # token_timeout is in seconds (XenCenter's default 20.0, coefficient 1.0): XS9 refuses 20000 as
+        # token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses 20000 as
         # "too large" - it is not milliseconds.
         cluster = x.Cluster.pool_create(network, "corosync", 20.0, 1.0)
 

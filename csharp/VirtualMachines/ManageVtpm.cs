@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using XenAPI;
 using Console = System.Console; // XenAPI also defines a Console class
@@ -19,9 +20,14 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
 
-        var vm = VM.get_all_records(session).First(kv =>
+        // vTPM is not supported for a BIOS-mode VM, only a UEFI one (HVM_boot_params["firmware"] ==
+        // "uefi"), so pick one of those rather than any halted VM.
+        var candidates = VM.get_all_records(session).Where(kv =>
             !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot &&
-            kv.Value.power_state == vm_power_state.Halted && kv.Value.VTPMs.Count == 0);
+            kv.Value.power_state == vm_power_state.Halted && kv.Value.VTPMs.Count == 0 &&
+            kv.Value.HVM_boot_params.TryGetValue("firmware", out var firmware) && firmware == "uefi");
+        if (!candidates.Any()) throw new Exception("no halted UEFI VM without a vTPM already attached was found");
+        var vm = candidates.First();
         Console.WriteLine($"Attaching a vTPM to {vm.Value.name_label}");
 
         // is_unique=false: the vTPM may be copied along with the VM. A VM may have at most one, and it

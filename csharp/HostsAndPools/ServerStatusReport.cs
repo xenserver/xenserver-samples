@@ -41,8 +41,8 @@ internal static partial class Workflows
                               + $"pii={(string)capability.Attribute("pii")!}");
         }
 
-        // Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-        // section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+        // Take the sections the host marks default-checked: asking for every section can mean gigabytes (VM
+        // memory dumps, every log) and a long wait while the host builds it.
         var whole = FetchStatusReport(session, url, defaults);
         Console.WriteLine($"default sections ({defaults.Count} of {keys.Count}): {whole} bytes");
 

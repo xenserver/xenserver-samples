@@ -21,15 +21,6 @@ function Invoke-SrUsage {
     # A rescan refreshes an SR's utilisation from its backend.
     $scanMe = Get-XenSR | Where-Object { $_.physical_size -gt 0 } | Select-Object -First 1
     $scanMe | Invoke-XenSR -XenAction Scan
-
-    # Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by
-    # setting o_direct, which asks the storage layer to bypass the cache entirely. Add-XenSR appends
-    # one other_config entry as a KeyValuePair; Remove-XenSRProperty drops it again by key.
-    $scanMe | Remove-XenSRProperty -OtherConfig "o_direct"
-    $scanMe | Add-XenSR -OtherConfig ([System.Collections.Generic.KeyValuePair[string, string]]::new("o_direct", "true"))
-    $cachingOff = (Get-XenSR -Ref $scanMe.opaque_ref).other_config["o_direct"] -eq "true"
-    Write-Host "  read caching on $($scanMe.name_label): $(if ($cachingOff) { 'off' } else { 'on' })"
-    $scanMe | Remove-XenSRProperty -OtherConfig "o_direct"
     Write-Host "OK: sr-usage"
     $session | Disconnect-XenServer
 }

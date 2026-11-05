@@ -28,7 +28,7 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 | [Cross-pool copy a VM](cross-pool-copy-vm.md) | Copy a VM from one pool to another: open a session to each pool, obtain a receiver token on the destination, then send a copy of the VM from the source. |
 | [Delete a VM](delete-vm.md) | Remove a VM and its owned disks: deleting a VM leaves its disks behind, so the disks are destroyed explicitly afterward. |
 | [Manage VM groups](manage-vm-groups.md) | Create an anti-affinity VM group, put a VM in it, read the membership back from the group side, then take the VM out again and delete the group. |
-| [Snapshot schedule](snapshot-schedule.md) | Create a scheduled-snapshot policy, attach a VM to it, run it on demand and watch the retention limit prune the oldest snapshot away. |
+| [Snapshot schedule](snapshot-schedule.md) | Create a scheduled-snapshot policy, attach a VM to it, run it on demand (the xe CLI version only creates and removes the schedule) and watch the retention limit prune the oldest snapshot away. |
 | [Manage VM disks](manage-vm-disks.md) | Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize operations from the VM's Storage tab. |
 | [VM power lifecycle](vm-lifecycle.md) | Drive a VM through its power states — start it, suspend it to memory, resume it and shut it down cleanly. |
 | [Snapshot & revert](snapshot-revert.md) | Take a snapshot of a VM and then revert the VM back to that point-in-time, as you would before a risky change. |
@@ -98,10 +98,10 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 | [Configure host power on](host-power-on.md) | Set a host's out-of-band power-on mode and credentials, then read them back. |
 | [Rotate the pool secret](rotate-pool-secret.md) | Rotate the shared secret that authenticates pool members to each other. |
 | [Manage TLS certificates](manage-certificates.md) | Install a pool-wide CA certificate, reset a host's server certificate, read the resulting fingerprints back, and turn on verification of the certificates members present to each other. |
-| [Change the root password](change-root-password.md) | Change the local superuser password, handle the wrong-old-password failure, and change it back. |
+| [Change the root password](change-root-password.md) | Change the local superuser password to a temporary one and back again, noting that a root session's old password is not checked. |
 | [GPU inventory](gpu-inventory.md) | Enumerate the pool's GPU groups, their physical GPUs and the vGPU types each offers. |
 | [PVS Accelerator inventory](pvs-accelerator.md) | Document a pool's Citrix Provisioning (PVS) Accelerator setup: each site's read cache (host, size, storage), its PVS servers (addresses and streaming port range), and which VMs are accelerated versus the whole pool. |
-| [Configure PVS Accelerator](configure-pvs-accelerator.md) | Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then forget the site — which cascades to everything hanging off it. |
+| [Configure PVS Accelerator](configure-pvs-accelerator.md) | Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then remove the proxy and the server and forget the site, which removes its cache storage. |
 | [Configure NRPE monitoring](configure-nrpe.md) | Configure a host's NRPE (Nagios Remote Plugin Executor) agent through the monitoring plugin: read its status and configuration, enable it and permit a monitoring host, then read it back. |
 | [Configure SNMP monitoring](configure-snmp.md) | Configure a host's SNMP agent through the monitoring plugin: read its configuration, enable it with a community string, then read the configuration and running status back. |
 | [Manage SSH access](manage-ssh-access.md) | Open the pool's SSH service with an automatic cut-off, read back when it lapses, then close it again — the pool-level call fans out to every host. |
@@ -126,7 +126,7 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 | [Configure updates (CDN)](configure-updates.md) | Point the pool at a CDN update repository and turn on automatic update sync: register a repository, set it as the pool's repository, enable update sync, read it back, then tidy up. |
 | [Configure updates for an air-gapped pool](configure-offline-updates.md) | Switch a pool with no internet access to offline updates: make an update bundle repository the pool's only repository, upload an update bundle (.xsbundle) to it if you have one, list the updates it makes available, then tidy up. |
 | [Apply updates from the CDN](apply-update.md) | Sync the pool's update metadata from the CDN and apply it to every host, then read each host's post-update reboot guidance. |
-| [Rolling pool update](rolling-pool-update.md) | Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host in turn disable it, evacuate its VMs to the rest of the pool, apply the updates, reboot, and re-enable it — host-by-host orchestration. |
+| [Rolling pool update](rolling-pool-update.md) | Apply the CDN's updates across the pool host by host, coordinator first: sync the metadata, then for each host apply the updates, moving its VMs to the rest of the pool and rebooting it only when the update requires, so the VMs keep running. |
 
 ## Organization & metadata
 
@@ -148,8 +148,8 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 
 | Workflow | What it does |
 |---|---|
-| [Configure disaster recovery](configure-disaster-recovery.md) | Replicate the pool's metadata (the configuration of its VMs and vApps) to an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does, so that a pool at a disaster recovery site can recover the VMs from the storage array's replica of that SR. |
-| [Fail over to a disaster recovery site](disaster-recovery-failover.md) | On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes, as XenCenter's Disaster Recovery wizard does. |
+| [Configure disaster recovery](configure-disaster-recovery.md) | Replicate the pool's metadata (the configuration of its VMs and vApps) to an iSCSI or Fibre Channel SR, so that a pool at a disaster recovery site can recover the VMs from the storage array's replica of that SR. |
+| [Fail over to a disaster recovery site](disaster-recovery-failover.md) | On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. |
 
 ## Source files
 

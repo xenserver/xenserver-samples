@@ -16,8 +16,8 @@ def control_domain_memory(url, username, password):
 
     VM.set_memory is a single-value setter: it pins the static and dynamic bounds and the
     target together, which is what dom0 needs — it does not balloon. The new size takes
-    effect when the host next reboots, so in XenCenter this is offered only in maintenance
-    mode; the API itself does not stop you."""
+    effect when the host next reboots, so change it with the host in maintenance mode; the API
+    itself does not stop you."""
     session = connect(url, username, password)
     x = session.xenapi
 

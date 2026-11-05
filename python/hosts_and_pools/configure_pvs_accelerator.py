@@ -32,8 +32,9 @@ def configure_pvs_accelerator(url, username, password, vm_name):
     site = x.PVS_site.introduce("sdk-example-pvs", "Created by the SDK examples", "")
     x.PVS_server.introduce(["203.0.113.90"], 6910, 6930, site)
 
-    # The read cache must be on LOCAL storage. The point of the accelerator is to keep reads off
-    # the network, so a cache on a shared SR would defeat it and xapi rejects one.
+    # The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+    # the network; xapi does not enforce that, but a cache on shared storage rarely makes sense and
+    # can't be shared between hosts anyway.
     for host in x.host.get_all():
         local = local_sr(x, host)
         if local:

@@ -20,7 +20,7 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
         // Make a throwaway VM to delete. VM.destroy removes the VM but leaves its disks, so the
-        // owned VDIs are destroyed explicitly afterward — exactly what XenCenter's Delete VM does.
+        // owned VDIs are destroyed explicitly afterward.
         var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
         Provision(session, vm);
         var uuid = VM.get_uuid(session, vm);

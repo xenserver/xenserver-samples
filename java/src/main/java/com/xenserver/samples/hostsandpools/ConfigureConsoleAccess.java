@@ -15,7 +15,8 @@ public final class ConfigureConsoleAccess {
      * Configure console access.
      *
      * <p>Tighten how consoles and management traffic may be used: idle timeouts for the pool's own
-     * consoles and for VM consoles, one session at a time, and refusing plain HTTP.
+     * consoles and for VM consoles, one session at a time, and refusing plain HTTP. Restore every
+     * value it changed afterwards.
      *
      * <p>Run it:
      *
@@ -32,14 +33,20 @@ public final class ConfigureConsoleAccess {
             Pool pool = Pool.getAll(conn).iterator().next();
             Host host = pool.getMaster(conn);
 
-            // NB: pool.https_only and pool.console_idle_timeout are SET below but never read back. SDK
-            // 26.14 generates a setter and no getter for both (unlike host.console_idle_timeout, which
-            // has both), so they cannot be read through the typed bindings at all - and a sample that
-            // reached past its own binding to show a value would be teaching a workaround rather than
-            // the API.
-            System.out.printf("  %-26s %ss%n", "VM console idle timeout", pool.getVmConsoleIdleTimeout(conn));
-            System.out.printf("  %-26s %s%n", "limit console sessions", pool.getLimitConsoleSessions(conn));
-            System.out.printf("  %-26s %ss%n", "host console idle timeout", host.getConsoleIdleTimeout(conn));
+            // NB: pool.https_only and pool.console_idle_timeout are SET below but never read back AT THE
+            // POOL LEVEL. SDK 26.14 generates a setter and no getter for either there, because both are
+            // really fan-outs that call the equivalent Host.set* on every host rather than pool fields of
+            // their own. host.https_only and host.console_idle_timeout ARE ordinary readable fields, so
+            // read this host's values back through them instead, to show the effect and to know what to
+            // restore.
+            long beforeVmConsoleIdleTimeout = pool.getVmConsoleIdleTimeout(conn);
+            boolean beforeLimitConsoleSessions = pool.getLimitConsoleSessions(conn);
+            long beforeHostConsoleIdleTimeout = host.getConsoleIdleTimeout(conn);
+            boolean beforeHostHttpsOnly = host.getHttpsOnly(conn);
+            System.out.printf("  %-26s %ss%n", "VM console idle timeout", beforeVmConsoleIdleTimeout);
+            System.out.printf("  %-26s %s%n", "limit console sessions", beforeLimitConsoleSessions);
+            System.out.printf("  %-26s %ss%n", "host console idle timeout", beforeHostConsoleIdleTimeout);
+            System.out.printf("  %-26s %s%n", "host https only", beforeHostHttpsOnly);
 
             // Ten minutes of inactivity, one console session at a time, and no plain HTTP.
             pool.setConsoleIdleTimeout(conn, 600L);
@@ -52,12 +59,13 @@ public final class ConfigureConsoleAccess {
             System.out.printf("  %-26s %ss%n", "VM console idle timeout", pool.getVmConsoleIdleTimeout(conn));
             System.out.printf("  %-26s %s%n", "limit console sessions", pool.getLimitConsoleSessions(conn));
             System.out.printf("  %-26s %ss%n", "host console idle timeout", host.getConsoleIdleTimeout(conn));
+            System.out.printf("  %-26s %s%n", "host https only", host.getHttpsOnly(conn));
 
-            pool.setHttpsOnly(conn, false);
-            pool.setConsoleIdleTimeout(conn, 0L);
-            pool.setVmConsoleIdleTimeout(conn, 0L);
-            pool.setLimitConsoleSessions(conn, false);
-            host.setConsoleIdleTimeout(conn, 0L);
+            pool.setHttpsOnly(conn, beforeHostHttpsOnly);
+            pool.setConsoleIdleTimeout(conn, beforeHostConsoleIdleTimeout);
+            pool.setVmConsoleIdleTimeout(conn, beforeVmConsoleIdleTimeout);
+            pool.setLimitConsoleSessions(conn, beforeLimitConsoleSessions);
+            host.setConsoleIdleTimeout(conn, beforeHostConsoleIdleTimeout);
             System.out.println("  restored");
             System.out.println("OK: configure-console-access");
         } finally {

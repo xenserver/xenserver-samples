@@ -1,8 +1,8 @@
 # XenServer SDK — a short guide
 
 The XenServer SDK is a set of language bindings for the XenServer Management API, the "XenAPI": the same
-remote API XenCenter uses to manage a pool of XenServer hosts. If you can do it in XenCenter, you can do
-it from code.
+remote API every XenServer management client uses to manage a pool of XenServer hosts. If a client can do
+it, you can do it from code.
 
 This guide is deliberately short. It gives you enough to get oriented, then hands you to the
 [workflow examples](workflows/README.md): real, runnable code for 90 common tasks, each in C#, Python,

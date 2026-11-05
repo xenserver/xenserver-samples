@@ -1,6 +1,6 @@
 // Connecting to a pool: log in (the Go binding skips certificate validation for https URLs, which
 // suits a host's self-signed certificate) and follow HOST_IS_SLAVE to the coordinator when given a
-// pool member - as XenCenter does.
+// pool member.
 
 package main
 
@@ -17,8 +17,7 @@ func connect(url, user, password string) *xenapi.Session {
 	if err == nil {
 		return session
 	}
-	// A pool member names the coordinator's address; reconnect there (assuming the coordinator is up),
-	// exactly as XenCenter does when you add a member server.
+	// A pool member names the coordinator's address; reconnect there (assuming the coordinator is up).
 	coordinator := coordinatorFromSlaveError(err)
 	if coordinator == "" {
 		panic(err)

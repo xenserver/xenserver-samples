@@ -19,7 +19,10 @@ function Invoke-CrossPoolCopyVm {
         [string]$VmName = "db-01",
         # The destination pool's credentials, if they differ from the source's.
         [string]$DestUserName = $UserName,
-        [string]$DestPassword = $Password
+        [string]$DestPassword = $Password,
+        # A network on the destination pool to carry the migration traffic - pass the name of a
+        # dedicated migration network. Defaults to the destination's management network.
+        [string]$TransferNetwork
     )
     # Two pools, so two sessions. Every cmdlet takes -SessionOpaqueRef, so we drive each pool explicitly
     # (Connect-Example sets a default session too, but being explicit keeps the two pools apart).
@@ -29,21 +32,30 @@ function Invoke-CrossPoolCopyVm {
     $dstRef = $dest.opaque_ref
 
     # Destination: choose a host, network and SR, then ask for a receiver token (a string->string map).
-    # The disks go to the destination pool's default SR and the data travels over the host's management
-    # network - one both pools can certainly reach (the first network listed may well not be).
+    # The disks go to the destination pool's default SR.
     $destPool = Get-XenPool -SessionOpaqueRef $dstRef | Select-Object -First 1
     $destHost = Get-XenHost -SessionOpaqueRef $dstRef -Ref $destPool.master.opaque_ref
     $destSr = Get-XenSR -SessionOpaqueRef $dstRef -Ref $destPool.default_SR.opaque_ref
     $managementPif = Get-XenPIF -SessionOpaqueRef $dstRef |
         Where-Object { $_.management -and $_.host.opaque_ref -eq $destHost.opaque_ref } | Select-Object -First 1
-    $destNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Ref $managementPif.network.opaque_ref
+    $destManagementNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Ref $managementPif.network.opaque_ref
+    if ($TransferNetwork) {
+        $migrationNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Name $TransferNetwork | Select-Object -First 1
+        if (-not $migrationNet) { throw "No network named '$TransferNetwork' was found on the destination pool." }
+    }
+    else {
+        # For performance, production use should carry migration traffic over a dedicated network
+        # rather than the management network - pass -TransferNetwork with the name of one.
+        $migrationNet = $destManagementNet
+    }
     $receiver = $destHost | Invoke-XenHost -SessionOpaqueRef $dstRef -XenAction MigrateReceive `
-        -Network $destNet -Options @{} -PassThru
+        -Network $migrationNet -Options @{} -PassThru
 
     # Source: find the VM, then map every disk to the destination SR and every NIC to the destination
-    # network. migrate_send's maps are strongly-typed (source XenRef -> destination XenRef) dictionaries,
-    # so build them as such; ConvertTo-XenRef turns each destination object into the typed ref the values
-    # need (the source refs come straight off the VM's .VBDs/.VIFs).
+    # pool's management network (the VM's guest-visible NICs, independent of the migration transfer).
+    # migrate_send's maps are strongly-typed (source XenRef -> destination XenRef) dictionaries, so build
+    # them as such; ConvertTo-XenRef turns each destination object into the typed ref the values need
+    # (the source refs come straight off the VM's .VBDs/.VIFs).
     $vm = Get-XenVM -SessionOpaqueRef $srcRef -Name $VmName |
         Where-Object { -not $_.is_a_template -and -not $_.is_control_domain } | Select-Object -First 1
 
@@ -55,7 +67,7 @@ function Invoke-CrossPoolCopyVm {
         }
     }
     $vifMap = New-Object 'System.Collections.Generic.Dictionary[XenAPI.XenRef[XenAPI.VIF], XenAPI.XenRef[XenAPI.Network]]'
-    foreach ($vifRef in $vm.VIFs) { $vifMap[$vifRef] = ConvertTo-XenRef -XenObject $destNet }
+    foreach ($vifRef in $vm.VIFs) { $vifMap[$vifRef] = ConvertTo-XenRef -XenObject $destManagementNet }
 
     # Send with copy=true (the source VM is left intact). Dest/VdiMap/VifMap/VgpuMap are the migrate_send
     # action's parameters.

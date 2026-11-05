@@ -15,7 +15,9 @@ function Invoke-BackupHostConfig {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
-    $hosts = @(Get-XenHost)
+    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    $coordinator = (Get-XenPool).master.opaque_ref
+    $hosts = @(Get-XenHost | Sort-Object { $_.opaque_ref -ne $coordinator })
     $vmHost = $hosts[0]
     $hostUrl = Get-HostUrl -Url $Url -Address $vmHost.address
     Write-Host "Backing up $($vmHost.name_label)"

@@ -26,12 +26,11 @@ def create_vm_with_vgpu(url, username, password, template_name, new_vm_name="sdk
     vm_ref = session.xenapi.VM.clone(template_ref, new_vm_name)
     provision(session, vm_ref)
 
-    # Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty. This is the
-    # same call XenCenter makes from the New VM wizard's GPU page and the VM Properties GPU page.
+    # Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
     vgpu_ref = session.xenapi.VGPU.create(vm_ref, group_ref, "0", {}, vgpu_type_ref)
     print("Created vGPU: %s" % session.xenapi.VGPU.get_uuid(vgpu_ref))
 
-    # Read the assignment back, as XenCenter's GPU tab does.
+    # Read the assignment back.
     vgpus = session.xenapi.VM.get_VGPUs(vm_ref)
     assigned = session.xenapi.VGPU_type.get_model_name(session.xenapi.VGPU.get_type(vgpus[0]))
     print("VM now has %d vGPU(s); type = %s" % (len(vgpus), assigned))

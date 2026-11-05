@@ -3,8 +3,8 @@
 #     (-NoWarnCertificates / -NoWarnNewCertificates), and -SetDefaultSession lets the other
 #     Get-Xen*/Invoke-Xen* cmdlets use the session implicitly; and
 #   * if you point it at a pool *member* rather than the coordinator, the login is rejected with
-#     HOST_IS_SLAVE naming the coordinator - so you reconnect to that address (exactly what XenCenter
-#     does for you when you add a member server). Connect-Example wraps both concerns:
+#     HOST_IS_SLAVE naming the coordinator - so you reconnect to that address. Connect-Example wraps
+#     both concerns:
 #
 #     $session = Connect-Example -Url https://xenserver -UserName root -Password $password
 #     <# ... call cmdlets ... #>
@@ -32,7 +32,7 @@ function Connect-Example {
     }
     catch {
         # A pool member reports the coordinator's address in the HOST_IS_SLAVE error; reconnect there
-        # (assuming the coordinator is up, as XenCenter does when you add a member server).
+        # (assuming the coordinator is up).
         $desc = $_.Exception.ErrorDescription
         if ($desc[0] -ne "HOST_IS_SLAVE") { throw }
         return Connect-XenServer -Url "https://$($desc[1])" -UserName $UserName -Password $Password `

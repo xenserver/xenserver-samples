@@ -14,22 +14,33 @@ from helpers import destroy_vm_and_disks, vm_by_name
 
 
 def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
-                       dest_username=None, dest_password=None):
+                       dest_username=None, dest_password=None, transfer_network=None):
     """Copy a VM from one pool to another (Storage XenMotion copy): get a receiver token from the
-    destination with host.migrate_receive, then VM.migrate_send with copy=true on the source."""
+    destination with host.migrate_receive, then VM.migrate_send with copy=true on the source.
+
+    transfer_network, if given, is the name of a network on the destination pool to carry the
+    migration traffic (the VM's disks and memory) - pass the name of a dedicated migration network."""
     source = connect(url, username, password)
     dest = connect(dest_url, dest_username or username, dest_password or password)
     # Destination: choose a host, network and SR, then ask for a receiver token. The disks go to
-    # the destination pool's default SR and the data travels over the host's management network -
-    # one both pools can certainly reach (the first network listed may well not be).
+    # the destination pool's default SR.
     dest_pool = dest.xenapi.pool.get_all()[0]
     dest_host = dest.xenapi.pool.get_master(dest_pool)
     dest_sr = dest.xenapi.pool.get_default_SR(dest_pool)
-    dest_network = next(dest.xenapi.PIF.get_network(pif) for pif in dest.xenapi.host.get_PIFs(dest_host)
-                        if dest.xenapi.PIF.get_management(pif))
-    receiver = dest.xenapi.host.migrate_receive(dest_host, dest_network, {})
+    dest_management_network = next(dest.xenapi.PIF.get_network(pif)
+                                   for pif in dest.xenapi.host.get_PIFs(dest_host)
+                                   if dest.xenapi.PIF.get_management(pif))
+    if transfer_network:
+        migration_network = next(net for net in dest.xenapi.network.get_all()
+                                 if dest.xenapi.network.get_name_label(net) == transfer_network)
+    else:
+        # For performance, production use should carry migration traffic over a dedicated network
+        # rather than the management network - pass transfer_network with the name of one.
+        migration_network = dest_management_network
+    receiver = dest.xenapi.host.migrate_receive(dest_host, migration_network, {})
 
-    # Source: map every disk to the destination SR and every NIC to the destination network,
+    # Source: map every disk to the destination SR and every NIC to the destination pool's
+    # management network (the VM's guest-visible NICs, independent of the migration transfer),
     # then send with copy=true (source VM is left intact).
     vm = vm_by_name(source, vm_name)
     vdi_map = {}
@@ -39,7 +50,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
         vdi = source.xenapi.VBD.get_VDI(vbd)
         if vdi != "OpaqueRef:NULL":
             vdi_map[vdi] = dest_sr
-    vif_map = {vif: dest_network for vif in source.xenapi.VM.get_VIFs(vm)}
+    vif_map = {vif: dest_management_network for vif in source.xenapi.VM.get_VIFs(vm)}
 
     copy = source.xenapi.VM.migrate_send(vm, receiver, False, vdi_map, vif_map, {"copy": "true"}, {})
     print("Sent '%s' to the destination pool (copy); source still present: %s"

@@ -34,8 +34,9 @@ def backup_host_config(url, username, password):
     x = session.xenapi
     ctx = ssl._create_unverified_context()
 
-    hosts = x.host.get_all()
-    host = hosts[0]
+    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    host = x.pool.get_master(x.pool.get_all()[0])
+    hosts = [host] + [h for h in x.host.get_all() if h != host]
     host_url = _host_url(url, x.host.get_address(host))
     print("Backing up %s" % x.host.get_name_label(host))
 

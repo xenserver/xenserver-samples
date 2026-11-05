@@ -60,11 +60,10 @@ wlb_recommendations() {
     xe pool-retrieve-wlb-recommendations
 
     # A VM's own recommendations are keyed by host and star-rate each as a destination - higher is better
-    # (a real appliance rated hosts 6.1 here, so not capped at XenCenter's five stars). Right after
-    # connecting, the appliance is still discovering the pool: WLB_INTERNAL_ERROR 4024 ("Pool discovery has
-    # not been started"), 4025 ("... has not been completed"), then 4016 ("WLB does not have current
-    # metrics") - keep asking for a while. xe prints the error's message, not its
-    # code, so match on the text.
+    # (a real appliance rated hosts 6.1 here, so not capped at five). Right after connecting, the appliance
+    # is still discovering the pool: WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025
+    # ("... has not been completed"), then 4016 ("WLB does not have current metrics") - keep asking for a
+    # while. xe prints the error's message, not its code, so match on the text.
     vm=$(vm_uuid "$vm_name")
     deadline=$((SECONDS + 600))
     while true; do

@@ -37,8 +37,8 @@ server_status_report() {
     IFS=$old_ifs
 
     rm -f cli-status-all.tar cli-status-config.tar
-    # Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-    # section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+    # Take the sections the host marks default-checked: asking for every section can mean gigabytes (VM
+    # memory dumps, every log) and a long wait while the host builds it.
     xe host-get-system-status uuid=$target filename=cli-status-all.tar entries="$defaults"
     whole=$(stat -c %s cli-status-all.tar)
     echo "default sections ($(count_csv "$defaults") of $(count_csv "$keys")): $whole bytes"

@@ -2,7 +2,7 @@
 
 # Fail over to a disaster recovery site
 
-On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes, as XenCenter's Disaster Recovery wizard does. By default it is a test failover, which removes what it recovered and detaches the replica again.
+On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By default it is a test failover, which removes what it recovered and detaches the replica again.
 
 **Requires:** a pool at the disaster recovery site, and the storage array's replica of the protected pool's iSCSI or Fibre Channel SR (target, IQN and SCSI id), with the mirror broken.
 
@@ -17,9 +17,8 @@ Source: [`csharp/DisasterRecovery/DisasterRecoveryFailover.cs`](../../csharp/Dis
 ```csharp
 /// <summary>
 /// On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-/// storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-/// XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-/// recovered and detaches the storage again.
+/// storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By
+/// default this is a test failover, which removes what it recovered and detaches the storage again.
 /// </summary>
 /// <example>
 /// <code>
@@ -88,7 +87,7 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
             var database = new Session(url) { opaque_ref = VDI.open_database(session, vdi).opaque_ref };
             database.JsonRpcClient.ServerCertificateValidationCallback = (req, cert, chain, errors) => true;
 
-            // A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+            // A pool often has no name of its own; show its coordinator's name instead.
             var pool = Pool.get_all(database)[0].opaque_ref;
             var poolName = Pool.get_name_label(database, pool);
             if (string.IsNullOrEmpty(poolName))
@@ -203,9 +202,8 @@ Source: [`python/disaster_recovery/disaster_recovery_failover.py`](../../python/
 """Fail over to the disaster recovery site.
 
 On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-recovered and detaches the storage again.
+storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By default
+this is a test failover, which removes what it recovered and detaches the storage again.
 
 Run it::
 
@@ -271,7 +269,7 @@ def disaster_recovery_failover(url, username, password, target=None, target_iqn=
             database = XenAPI.Session(url, ignore_ssl=True)
             database._session = x.VDI.open_database(vdi)
             d = database.xenapi
-            # A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+            # A pool often has no name of its own; show its coordinator's name instead.
             pool = d.pool.get_all()[0]
             print("  pool metadata of %s" % (d.pool.get_name_label(pool)
                                              or d.host.get_name_label(d.pool.get_master(pool))))
@@ -399,9 +397,9 @@ public final class DisasterRecoveryFailover {
      * Fail over to the disaster recovery site.
      *
      * <p>On the pool at the disaster recovery site, attach the storage array's replica of the protected
-     * pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes -
-     * as XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what
-     * it recovered and detaches the storage again.
+     * pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it
+     * describes. By default this is a test failover, which removes what it recovered and detaches the
+     * storage again.
      *
      * <p>The replica is the LUN the storage array mirrors the protected pool's SR to: name it by the iSCSI
      * target, IQN and SCSI id (srType "lvmoiscsi"), or by SCSI id alone for Fibre Channel/SAS (srType
@@ -469,7 +467,7 @@ public final class DisasterRecoveryFailover {
                     if (vdi.getType(conn) != Types.VdiType.METADATA || !vdi.getMetadataLatest(conn)) continue;
                     Database db = new Database(conn, vdi.openDatabase(conn));
 
-                    // A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+                    // A pool often has no name of its own; show its coordinator's name instead.
                     Pool.Record pool = db.call("pool.get_all_records", new TypeReference<Map<Pool, Pool.Record>>() {})
                             .values().iterator().next();
                     String poolName = pool.nameLabel.isEmpty()
@@ -629,9 +627,8 @@ import (
 // disasterRecoveryFailover - Fail over to the disaster recovery site.
 //
 // On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-// storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-// XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-// recovered and detaches the storage again.
+// storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By
+// default this is a test failover, which removes what it recovered and detaches the storage again.
 //
 // The replica is the LUN the storage array mirrors the protected pool's SR to: name it by the iSCSI
 // target, IQN and SCSI id (srType "lvmoiscsi"), or by SCSI id alone for Fibre Channel/SAS (srType
@@ -728,7 +725,7 @@ func disasterRecoveryFailover(url, user, password, target, targetIQN, scsiID, po
 			check(err)
 			database := string(ref)
 
-			// A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+			// A pool often has no name of its own; show its coordinator's name instead.
 			var poolRecords map[string]struct {
 				NameLabel string `json:"name_label"`
 				Master    string `json:"master"`
@@ -883,9 +880,8 @@ function Invoke-DisasterRecoveryFailover {
         Fail over to the disaster recovery site.
     .DESCRIPTION
         On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-        storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-        XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-        recovered and detaches the storage again.
+        storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By
+        default this is a test failover, which removes what it recovered and detaches the storage again.
     .EXAMPLE
         Invoke-DisasterRecoveryFailover -Url https://dr-site-pool -UserName root -Password $password `
             -Target 192.0.2.31 -TargetIqn iqn.2009-01.com.example:replica-0 -ScsiId 360a98...
@@ -926,7 +922,7 @@ function Invoke-DisasterRecoveryFailover {
     $master = (Get-XenPool).master.opaque_ref
     $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $master -DeviceConfig $deviceConfig `
         -Type $SrType -SmConfig @{ metadata = 'true' } -PassThru
-    $srs = @(([xml]$probe).SRlist.SR)
+    $srs = @(([xml]$probe).SelectNodes('/SRlist/SR'))
     foreach ($found in $srs) {
         $withMetadata = if ("$($found.pool_metadata_detected)".Trim() -eq 'true') { ", with pool metadata" } else { "" }
         Write-Host "Found SR $("$($found.name_label)".Trim()) ($("$($found.UUID)".Trim()))$withMetadata"
@@ -954,7 +950,7 @@ function Invoke-DisasterRecoveryFailover {
             $databaseRef = Invoke-XenMethod -Session $session -Method 'VDI.open_database' -Params @($vdi.opaque_ref)
             $database = [pscustomobject]@{ opaque_ref = $databaseRef; Url = $session.Url }
 
-            # A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+            # A pool often has no name of its own; show its coordinator's name instead.
             $pool = (Invoke-XenMethod -Session $database -Method 'pool.get_all_records').PSObject.Properties |
                 Select-Object -First 1
             $poolName = $pool.Value.name_label
@@ -1074,9 +1070,8 @@ Source: [`cli/disaster-recovery/disaster-recovery-failover.sh`](../../cli/disast
 # Fail over to the disaster recovery site.
 #
 # On the pool at the disaster recovery site, attach the storage array's replica of the protected pool's
-# storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes - as
-# XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what it
-# recovered and detaches the storage again.
+# storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes. By
+# default this is a test failover, which removes what it recovered and detaches the storage again.
 #
 # Run it:
 #   ./workflows.sh disaster-recovery-failover https://dr-site-pool root "$password" \
@@ -1145,7 +1140,7 @@ disaster_recovery_failover() {
             [ "${t,,}" = metadata ] || continue
             db=database:vdi-uuid=$vdi
 
-            # A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+            # A pool often has no name of its own; show its coordinator's name instead.
             pool_name=$(xe pool-list $db params=name-label --minimal)
             if [ -z "$pool_name" ]; then
                 master=$(xe pool-list $db params=master --minimal)

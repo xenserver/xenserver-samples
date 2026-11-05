@@ -35,12 +35,11 @@ function Invoke-CreateVmWithVgpu {
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
     Invoke-VmProvision -Ref $vm.opaque_ref
 
-    # Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty. Same call as
-    # XenCenter's New VM wizard GPU page and the VM Properties GPU page.
+    # Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
     $vgpu = New-XenVGPU -VM $vm.opaque_ref -GPUGroup $group.opaque_ref -Device "0" -OtherConfig @{} -Type $vgpuType.opaque_ref -PassThru
     Write-Host "Created vGPU: $($vgpu.uuid)"
 
-    # Read the assignment back, as XenCenter's GPU tab does.
+    # Read the assignment back.
     $assignedVm = Get-XenVM -Ref $vm.opaque_ref
     $assigned = (Get-XenVGPUType -Ref (Get-XenVGPU -Ref $assignedVm.VGPUs[0]).type).model_name
     Write-Host "VM now has $($assignedVm.VGPUs.Count) vGPU(s); type = $assigned"

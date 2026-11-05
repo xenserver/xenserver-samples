@@ -27,9 +27,10 @@ def configure_dynamic_memory(url, username, password):
           % (before["name_label"], gib(before["memory_static_min"]), gib(before["memory_static_max"]),
              gib(before["memory_dynamic_min"]), gib(before["memory_dynamic_max"])))
 
-    # Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never
-    # below the static floor, which is the least the guest can boot in.
-    floor = max(int(before["memory_static_min"]), int(before["memory_static_max"]) // 4)
+    # Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+    # static maximum for every supported guest (lower can make it unstable), and never below the static
+    # floor, which is the least the guest can boot in.
+    floor = max(int(before["memory_static_min"]), int(before["memory_static_max"]) * 3 // 4)
     ceiling = int(before["memory_static_max"])
     x.VM.set_memory_dynamic_range(vm, str(floor), str(ceiling))
     after = x.VM.get_record(vm)

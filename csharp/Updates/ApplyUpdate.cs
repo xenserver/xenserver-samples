@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using XenAPI;
 using Console = System.Console; // XenAPI also defines a Console class
 
@@ -6,8 +8,8 @@ namespace XenServerWorkflows;
 internal static partial class Workflows
 {
     /// <summary>
-    /// Sync the pool's update metadata from the CDN and apply it to every host, then read each host's
-    /// post-update reboot guidance.
+    /// Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+    /// coordinator, then read each host's post-update reboot guidance.
     /// </summary>
     /// <example>
     /// <code>
@@ -18,10 +20,16 @@ internal static partial class Workflows
     public static void ApplyUpdate(string url, string user, string password, string repoUrl, string sourceUrl)
     {
         var session = Connect(url, user, password);
+        var pool = Pool.get_all(session)[0].opaque_ref;
+        // Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
+        // for Workload Balancing to be switched off before you start updating - so check both up front
+        // and stop rather than disabling either for you; turn them back on again once the update is done.
+        if (Pool.get_ha_enabled(session, pool) || Pool.get_wlb_enabled(session, pool))
+            throw new Exception("HA and Workload Balancing must both be off before updating the pool; " +
+                                 "disable them, run this again, then re-enable them once it finishes");
         // pool.sync_updates needs at least one repository with update=true enabled
         // (NO_REPOSITORY_ENABLED otherwise) - introduce and attach a throwaway one, and forget it again
         // afterwards.
-        var pool = Pool.get_all(session)[0].opaque_ref;
         var repos = IntroduceUpdateRepositories(session, repoUrl, sourceUrl);
         // Remember the pool's own repositories, to put them back afterwards.
         var previous = Pool.get_repositories(session, pool);
@@ -32,12 +40,18 @@ internal static partial class Workflows
             var hash = Pool.sync_updates(session, pool, false, "", "");
             Console.WriteLine($"Synced updates; hash length {hash.Length}");
 
-            // Apply the synced updates to each host. XenCenter then reads the reboot guidance to decide
-            // whether a Rolling Pool Upgrade reboot is needed. Applying a batch whose mandatory guidance
-            // needs an evacuation fails with HOST_EVACUATION_IS_REQUIRED unless the host's resident VMs
-            // are moved off first - handle that rather than assuming an update batch never needs one.
-            foreach (var (hostRef, host) in Host.get_all_records(session))
+            // Apply the synced updates to each host, coordinator first as the documentation requires.
+            // Then read the reboot guidance to decide whether a host needs a reboot. Applying a batch
+            // whose mandatory guidance needs an evacuation fails with HOST_EVACUATION_IS_REQUIRED
+            // unless the host's resident VMs are moved off first - handle that rather than assuming
+            // an update batch never needs one. (Guidance that targets VMs instead of hosts, for
+            // example restarting a VM, is not handled here.)
+            var hosts = Host.get_all_records(session);
+            var master = Pool.get_master(session, pool);
+            var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => r.opaque_ref != master.opaque_ref));
+            foreach (var hostRef in orderedRefs)
             {
+                var host = hosts[hostRef];
                 try
                 {
                     Host.apply_updates(session, hostRef.opaque_ref, hash);

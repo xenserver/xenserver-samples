@@ -4,7 +4,7 @@
 
 List the pool's member hosts and which one coordinates it, promote a different host to coordinator, then promote the original back.
 
-**Caution:** ejects a host from the pool.
+**Caution:** hands the coordinator role to another host and back, which restarts the toolstack on every host and briefly drops every management connection.
 
 Workflow `manage-pool-membership`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -360,8 +360,8 @@ public final class ManagePoolMembership {
 
 ```text
 Coordinator: sdk-host1
-  member: sdk-host1 (coordinator)
   member: sdk-host2
+  member: sdk-host1 (coordinator)
 Promoting:   sdk-host2 (xapi restarts pool-wide; reconnecting)
 Promoted:    sdk-host2
 Restoring:   sdk-host1 (reconnecting again)

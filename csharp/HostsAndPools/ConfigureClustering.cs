@@ -37,7 +37,7 @@ internal static partial class Workflows
             // first: Cluster.pool_create fails PIF_ALLOWS_UNPLUG otherwise. was remembers the settings.
             foreach (var pif in was.Keys)
                 PIF.set_disallow_unplug(session, pif, true);
-            // token_timeout is in seconds (XenCenter's default 20.0, coefficient 1.0): XS9 refuses 20000
+            // token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses 20000
             // as "too large" - it is not milliseconds.
             cluster = Cluster.pool_create(session, network, "corosync", 20.0, 1.0).opaque_ref;
         }

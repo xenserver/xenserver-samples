@@ -6,7 +6,7 @@ Connect a shared storage repository to a fibre-channel (HBA) LUN: discover the L
 
 **Requires:** a Fibre Channel or SAS LUN.
 
-**Caution:** formats the LUN it uses.
+**Caution:** formats the LUN it uses (name it with scsi_id; it refuses a LUN that already holds an SR) and destroys the new SR again afterwards.
 
 Workflow `create-hba-sr`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -50,13 +50,27 @@ public static void CreateHbaSr(string url, string user, string password, string 
     var path = device.Element("path")!.Value;
     Console.WriteLine($"Discovered LUN: SCSIid {scsiId} on {path}");
 
-    // SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-    // for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+    // SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+    // like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
     var dc = new Dictionary<string, string> { ["SCSIid"] = scsiId };
+
+    // SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+    // there, and SR.create would format it. Reattach that SR rather than destroying it.
+    var srListXml = XDocument.Parse(SR.probe(session, host, dc, "lvmohba", new Dictionary<string, string>()));
+    var existing = srListXml.Descendants("SR").FirstOrDefault();
+    if (existing != null)
+        throw new Exception($"LUN {scsiId} already holds SR {existing.Element("UUID")!.Value.Trim()}; "
+            + "creating an SR here would format it - reattach the existing SR instead of creating a new one");
+
     var sr = SR.create(session, host, dc, 0, srName, "HBA SR created by the SDK example",
         "lvmohba", "user", true, new Dictionary<string, string>());
     Console.WriteLine($"Created SR: {SR.get_uuid(session, sr)} ({SR.get_physical_size(session, sr) / GiB} GiB)");
-    DetachAndForgetSr(session, sr);
+    // Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+    // SR.destroy needs it detached from every host first.
+    foreach (var pbd in SR.get_PBDs(session, sr))
+        if (PBD.get_currently_attached(session, pbd.opaque_ref))
+            PBD.unplug(session, pbd.opaque_ref);
+    SR.destroy(session, sr);
     Console.WriteLine("OK: create-hba-sr");
     session.logout();
 }
@@ -66,7 +80,7 @@ public static void CreateHbaSr(string url, string user, string password, string 
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-850a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-770a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -86,7 +100,7 @@ with a deliberately failing probe, then create the SR by SCSI ID. Creating the S
 import xml.etree.ElementTree as ET
 
 from connection import connect
-from helpers import detach_and_forget_sr, probe_for_failure
+from helpers import probe_for_failure
 
 
 def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"):
@@ -110,14 +124,29 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
     path = device.find("path").text
     print("Discovered LUN: SCSIid %s on %s" % (scsi_id, path))
 
-    # SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-    # for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+    # SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+    # like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
     dc = {"SCSIid": scsi_id}
+
+    # SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+    # there, and SR.create would format it. Reattach that SR rather than destroying it.
+    srlist_xml = ET.fromstring(session.xenapi.SR.probe(host, dc, "lvmohba", {}))
+    existing = srlist_xml.find("SR")
+    if existing is not None:
+        raise RuntimeError("LUN %s already holds SR %s; creating an SR here would format it - "
+                            "reattach the existing SR instead of creating a new one"
+                            % (scsi_id, existing.find("UUID").text.strip()))
+
     sr = session.xenapi.SR.create(host, dc, "0", sr_name,
                                   "HBA SR created by the SDK example", "lvmohba", "user", True, {})
     print("Created SR: %s (%d GiB)"
           % (session.xenapi.SR.get_uuid(sr), int(session.xenapi.SR.get_physical_size(sr)) // GIB))
-    detach_and_forget_sr(session, sr)
+    # Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+    # SR.destroy needs it detached from every host first.
+    for pbd in session.xenapi.SR.get_PBDs(sr):
+        if session.xenapi.PBD.get_currently_attached(pbd):
+            session.xenapi.PBD.unplug(pbd)
+    session.xenapi.SR.destroy(sr)
     print("OK: create-hba-sr")
     session.logout()
 ```
@@ -146,7 +175,6 @@ import com.xensource.xenapi.Session;
 
 import java.util.Map;
 
-import static com.xenserver.samples.Helpers.detachAndForgetSr;
 import static com.xenserver.samples.Helpers.firstTagText;
 import static com.xenserver.samples.Helpers.parseXml;
 import static com.xenserver.samples.Helpers.probeForFailure;
@@ -195,14 +223,32 @@ public final class CreateHbaSr {
             String path = firstTagText(device, "path");
             System.out.println("Discovered LUN: SCSIid " + scsiId + " on " + path);
 
-            // SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path>
-            // is for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+            // SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads like
+            // "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
             Map<String, String> dc = new java.util.HashMap<>();
             dc.put("SCSIid", scsiId);
+
+            // SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is
+            // already there, and SR.create would format it. Reattach that SR rather than
+            // destroying it.
+            org.w3c.dom.Element srListRoot =
+                parseXml(SR.probe(conn, host, dc, "lvmohba", new java.util.HashMap<>())).getDocumentElement();
+            org.w3c.dom.NodeList existing = srListRoot.getElementsByTagName("SR");
+            if (existing.getLength() > 0) {
+                String uuid = firstTagText((org.w3c.dom.Element) existing.item(0), "UUID");
+                throw new RuntimeException("LUN " + scsiId + " already holds SR "
+                    + (uuid == null ? "?" : uuid.trim()) + "; creating an SR here would format it - "
+                    + "reattach the existing SR instead of creating a new one");
+            }
+
             SR sr = SR.create(conn, host, dc, 0L, srName, "HBA SR created by the SDK example",
                 "lvmohba", "user", true, new java.util.HashMap<>());
             System.out.println("Created SR: " + sr.getUuid(conn) + " (" + sr.getPhysicalSize(conn) / GiB + " GiB)");
-            detachAndForgetSr(conn, sr);
+            // Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+            // SR.destroy needs it detached from every host first.
+            for (com.xensource.xenapi.PBD pbd : sr.getPBDs(conn))
+                if (pbd.getCurrentlyAttached(conn)) pbd.unplug(conn);
+            sr.destroy(conn);
             System.out.println("OK: create-hba-sr");
         } finally {
             Session.logout(conn);
@@ -215,7 +261,7 @@ public final class CreateHbaSr {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-f50a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-9d0a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -230,6 +276,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"go/xenapi"
 )
@@ -258,16 +305,36 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 		"SCSIid", scsiID)
 	fmt.Printf("Discovered LUN: SCSIid %s on %s\n", device["SCSIid"], device["path"])
 
-	// SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-	// for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+	// SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+	// like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
 	dc := map[string]string{"SCSIid": device["SCSIid"]}
+
+	// SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+	// there, and SR.create would format it. Reattach that SR rather than destroying it.
+	srProbe, err := xenapi.SR.Probe(session, host, dc, "lvmohba", map[string]string{})
+	check(err)
+	if existing := findXMLElements(srProbe, "SR"); len(existing) > 0 {
+		panic(fmt.Sprintf("LUN %s already holds SR %s; creating an SR here would format it - "+
+			"reattach the existing SR instead of creating a new one",
+			device["SCSIid"], strings.TrimSpace(existing[0]["UUID"])))
+	}
+
 	sr, err := xenapi.SR.Create(session, host, dc, 0, srName,
 		"HBA SR created by the SDK example", "lvmohba", "user", true, map[string]string{})
 	check(err)
 	size, _ := xenapi.SR.GetPhysicalSize(session, sr)
 	uuid, _ := xenapi.SR.GetUUID(session, sr)
 	fmt.Printf("Created SR: %s (%d GiB)\n", uuid, size/GiB)
-	detachAndForgetSR(session, sr)
+	// Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+	// SR.destroy needs it detached from every host first.
+	pbds, err := xenapi.SR.GetPBDs(session, sr)
+	check(err)
+	for _, pbd := range pbds {
+		if attached, _ := xenapi.PBD.GetCurrentlyAttached(session, pbd); attached {
+			check(xenapi.PBD.Unplug(session, pbd))
+		}
+	}
+	check(xenapi.SR.Destroy(session, sr))
 	fmt.Println("OK: create-hba-sr")
 	session.Logout()
 }
@@ -277,7 +344,7 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-880a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f50a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -323,14 +390,29 @@ function Invoke-CreateHbaSr {
     $path = $device.path
     Write-Host "Discovered LUN: SCSIid $scsiId on $path"
 
-    # SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-    # for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+    # SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+    # like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
     $deviceConfig = @{ SCSIid = $scsiId }
+
+    # SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+    # there, and SR.create would format it. Reattach that SR rather than destroying it.
+    $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $xenHost.opaque_ref `
+        -DeviceConfig $deviceConfig -Type lvmohba -SmConfig @{} -PassThru
+    $existing = @(([xml]$probe).SelectNodes('/SRlist/SR'))
+    if ($existing.Count -gt 0) {
+        throw "LUN $scsiId already holds SR $("$($existing[0].UUID)".Trim()); creating an SR here would " +
+            "format it - reattach the existing SR instead of creating a new one"
+    }
+
     $sr = New-XenSR -XenHost $xenHost -DeviceConfig $deviceConfig -PhysicalSize 0 `
         -NameLabel $SrName -NameDescription "HBA SR created by the SDK example" `
         -Type "lvmohba" -ContentType "user" -Shared $true -PassThru
     Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
-    Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
+    # Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+    # SR.destroy needs it detached from every host first.
+    Get-XenPBD | Where-Object { $_.SR.opaque_ref -eq $sr.opaque_ref -and $_.currently_attached } |
+        ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
+    Remove-XenSR -Ref $sr.opaque_ref
     Write-Host "OK: create-hba-sr"
     $session | Disconnect-XenServer
 }
@@ -340,7 +422,7 @@ function Invoke-CreateHbaSr {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-df0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-e20a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -386,12 +468,28 @@ create_hba_sr() {
     path=$(xml_tag_text "$block" path)
     echo "Discovered LUN: SCSIid $scsi_id on $path"
 
-    # SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-    # for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+    # SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+    # like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+    #
+    # SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+    # there, and sr-create would format it. Reattach that SR rather than destroying it.
+    local existing_xml uuid
+    existing_xml=$(xe sr-probe type=lvmohba device-config:SCSIid="$scsi_id")
+    if uuid=$(xml_tag_text "$existing_xml" UUID); then
+        echo "LUN $scsi_id already holds SR $uuid; creating an SR here would format it - reattach the" \
+             "existing SR instead of creating a new one" >&2
+        return 1
+    fi
+
     sr=$(xe sr-create host-uuid="$h" type=lvmohba name-label="$sr_name" shared=true \
         device-config:SCSIid="$scsi_id")
     echo "Created HBA SR: $sr ($(( $(xe sr-param-get uuid=$sr param-name=physical-size) / 1024 / 1024 / 1024 )) GiB)"
-    detach_and_forget_sr $sr
+    # Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+    # SR.destroy needs it detached from every host first.
+    for pbd in $(each_csv "$(xe pbd-list sr-uuid=$sr currently-attached=true --minimal)"); do
+        xe pbd-unplug uuid=$pbd
+    done
+    xe sr-destroy uuid=$sr
     echo "OK: create-hba-sr"
 }
 ```
@@ -400,7 +498,7 @@ create_hba_sr() {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created HBA SR: 00000001-0000-0000-8b0a-000000000000 (512 GiB)
+Created HBA SR: 00000001-0000-0000-7a0a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 

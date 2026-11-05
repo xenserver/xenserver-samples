@@ -33,14 +33,29 @@ function Invoke-CreateHbaSr {
     $path = $device.path
     Write-Host "Discovered LUN: SCSIid $scsiId on $path"
 
-    # SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-    # for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+    # SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+    # like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
     $deviceConfig = @{ SCSIid = $scsiId }
+
+    # SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+    # there, and SR.create would format it. Reattach that SR rather than destroying it.
+    $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $xenHost.opaque_ref `
+        -DeviceConfig $deviceConfig -Type lvmohba -SmConfig @{} -PassThru
+    $existing = @(([xml]$probe).SelectNodes('/SRlist/SR'))
+    if ($existing.Count -gt 0) {
+        throw "LUN $scsiId already holds SR $("$($existing[0].UUID)".Trim()); creating an SR here would " +
+            "format it - reattach the existing SR instead of creating a new one"
+    }
+
     $sr = New-XenSR -XenHost $xenHost -DeviceConfig $deviceConfig -PhysicalSize 0 `
         -NameLabel $SrName -NameDescription "HBA SR created by the SDK example" `
         -Type "lvmohba" -ContentType "user" -Shared $true -PassThru
     Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
-    Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
+    # Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+    # SR.destroy needs it detached from every host first.
+    Get-XenPBD | Where-Object { $_.SR.opaque_ref -eq $sr.opaque_ref -and $_.currently_attached } |
+        ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
+    Remove-XenSR -Ref $sr.opaque_ref
     Write-Host "OK: create-hba-sr"
     $session | Disconnect-XenServer
 }

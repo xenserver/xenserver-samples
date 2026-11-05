@@ -24,9 +24,14 @@ public static void ManageVtpm(string url, string user, string password)
 {
     var session = Connect(url, user, password);
 
-    var vm = VM.get_all_records(session).First(kv =>
+    // vTPM is not supported for a BIOS-mode VM, only a UEFI one (HVM_boot_params["firmware"] ==
+    // "uefi"), so pick one of those rather than any halted VM.
+    var candidates = VM.get_all_records(session).Where(kv =>
         !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot &&
-        kv.Value.power_state == vm_power_state.Halted && kv.Value.VTPMs.Count == 0);
+        kv.Value.power_state == vm_power_state.Halted && kv.Value.VTPMs.Count == 0 &&
+        kv.Value.HVM_boot_params.TryGetValue("firmware", out var firmware) && firmware == "uefi");
+    if (!candidates.Any()) throw new Exception("no halted UEFI VM without a vTPM already attached was found");
+    var vm = candidates.First();
     Console.WriteLine($"Attaching a vTPM to {vm.Value.name_label}");
 
     // is_unique=false: the vTPM may be copied along with the VM. A VM may have at most one, and it
@@ -51,7 +56,7 @@ public static void ManageVtpm(string url, string user, string password)
 <details><summary>Sample output</summary>
 
 ```text
-Attaching a vTPM to db-01
+Attaching a vTPM to secure-01
   persistence backend: xapi
   unique to this VM:   False
   VM now has 1 vTPM(s)
@@ -84,15 +89,17 @@ def manage_vtpm(url, username, password):
     """Attach a virtual TPM to a halted VM, read it back, then remove it.
 
     A VM may have at most one, and it can only be attached while the VM is Halted — the
-    device is presented at boot. XenCenter additionally only offers this for a UEFI guest,
-    since that is what a vTPM is for; the API itself does not insist."""
+    device is presented at boot. vTPM is not supported for a BIOS-mode VM, only a UEFI one
+    (HVM_boot_params["firmware"] == "uefi"), so pick one of those rather than any halted VM."""
     session = connect(url, username, password)
     x = session.xenapi
 
-    vm = next(ref for ref, v in x.VM.get_all_records().items()
+    vm = next((ref for ref, v in x.VM.get_all_records().items()
               if not v["is_a_template"] and not v["is_control_domain"]
               and not v["is_a_snapshot"] and v["power_state"] == "Halted"
-              and not v["VTPMs"])
+              and not v["VTPMs"] and v["HVM_boot_params"].get("firmware") == "uefi"), None)
+    if vm is None:
+        raise RuntimeError("no halted UEFI VM without a vTPM already attached was found")
     print("Attaching a vTPM to %s" % x.VM.get_name_label(vm))
 
     vtpm = x.VTPM.create(vm, False)   # is_unique=False: the vTPM may be copied with the VM
@@ -113,7 +120,7 @@ def manage_vtpm(url, username, password):
 <details><summary>Sample output</summary>
 
 ```text
-Attaching a vTPM to db-01
+Attaching a vTPM to secure-01
   persistence backend: xapi
   unique to this VM:   False
   VM now has 1 vTPM(s)
@@ -160,16 +167,19 @@ public final class ManageVtpm {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         try {
+            // vTPM is not supported for a BIOS-mode VM, only a UEFI one (HVM_boot_params["firmware"]
+            // == "uefi"), so pick one of those rather than any halted VM.
             VM vm = null;
             VM.Record record = null;
             for (Map.Entry<VM, VM.Record> e : VM.getAllRecords(conn).entrySet()) {
                 VM.Record v = e.getValue();
                 if (!v.isATemplate && !v.isControlDomain && !v.isASnapshot
-                        && v.powerState == Types.VmPowerState.HALTED && v.VTPMs.isEmpty()) {
+                        && v.powerState == Types.VmPowerState.HALTED && v.VTPMs.isEmpty()
+                        && "uefi".equals(v.HVMBootParams.get("firmware"))) {
                     vm = e.getKey(); record = v; break;
                 }
             }
-            if (vm == null) throw new Exception("no halted VM without a vTPM");
+            if (vm == null) throw new Exception("no halted UEFI VM without a vTPM already attached was found");
             System.out.println("Attaching a vTPM to " + record.nameLabel);
 
             // isUnique=false: the vTPM may be copied along with the VM. A VM may have at most one, and
@@ -197,7 +207,7 @@ public final class ManageVtpm {
 <details><summary>Sample output</summary>
 
 ```text
-Attaching a vTPM to db-01
+Attaching a vTPM to secure-01
   persistence backend: xapi
   unique to this VM:   false
   VM now has 1 vTPM(s)
@@ -233,12 +243,19 @@ func manageVtpm(url, user, password string) {
 	check(err)
 	var vm xenapi.VMRef
 	var record xenapi.VMRecord
+	found := false
+	// vTPM is not supported for a BIOS-mode VM, only a UEFI one (HVM_boot_params["firmware"] ==
+	// "uefi"), so pick one of those rather than any halted VM.
 	for ref, v := range vms {
 		if !v.IsATemplate && !v.IsControlDomain && !v.IsASnapshot &&
-			v.PowerState == xenapi.VMPowerStateHalted && len(v.VTPMs) == 0 {
-			vm, record = ref, v
+			v.PowerState == xenapi.VMPowerStateHalted && len(v.VTPMs) == 0 &&
+			v.HVMBootParams["firmware"] == "uefi" {
+			vm, record, found = ref, v, true
 			break
 		}
+	}
+	if !found {
+		panic("no halted UEFI VM without a vTPM already attached was found")
 	}
 	fmt.Printf("Attaching a vTPM to %s\n", record.NameLabel)
 
@@ -309,10 +326,14 @@ function Invoke-ManageVtpm {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
+    # vTPM is not supported for a BIOS-mode VM, only a UEFI one (HVM_boot_params["firmware"] ==
+    # "uefi"), so pick one of those rather than any halted VM.
     $vm = Get-XenVM | Where-Object {
         -not $_.is_a_template -and -not $_.is_control_domain -and -not $_.is_a_snapshot -and
-        $_.power_state -eq 'Halted' -and $_.VTPMs.Count -eq 0
+        $_.power_state -eq 'Halted' -and $_.VTPMs.Count -eq 0 -and
+        $_.HVM_boot_params['firmware'] -eq 'uefi'
     } | Select-Object -First 1
+    if (-not $vm) { throw "No halted UEFI VM without a vTPM already attached was found." }
     Write-Host "Attaching a vTPM to $($vm.name_label)"
 
     # IsUnique false: the vTPM may be copied along with the VM. A VM may have at most one, and it can
@@ -335,7 +356,7 @@ function Invoke-ManageVtpm {
 <details><summary>Sample output</summary>
 
 ```text
-Attaching a vTPM to db-01
+Attaching a vTPM to secure-01
   persistence backend: xapi
   unique to this VM:   False
   VM now has 1 vTPM(s)
@@ -361,10 +382,15 @@ Source: [`cli/virtual-machines/manage-vtpm.sh`](../../cli/virtual-machines/manag
 
 manage_vtpm() {
     # A halted VM with no vTPM yet. A VM may have at most one, and it can only be attached while halted
-    # - the device is presented to the guest at boot.
+    # - the device is presented to the guest at boot. vTPM is not supported for a BIOS-mode VM, only a
+    # UEFI one (HVM-boot-params:firmware = uefi), so pick one of those rather than any halted VM.
+    vm=""
     for v in $(each_csv "$(xe vm-list power-state=halted --minimal)"); do
-        [ -z "$(xe vm-param-get uuid=$v param-name=vtpms)" ] && { vm=$v; break; }
+        [ -z "$(xe vm-param-get uuid=$v param-name=vtpms)" ] &&
+        [ "$(xe vm-param-get uuid=$v param-name=HVM-boot-params param-key=firmware 2>/dev/null)" = "uefi" ] &&
+            { vm=$v; break; }
     done
+    [ -n "$vm" ] || { echo "no halted UEFI VM without a vTPM already attached was found" >&2; exit 1; }
     echo "Attaching a vTPM to $(xe vm-param-get uuid=$vm param-name=name-label)"
 
     vtpm=$(xe vtpm-create vm-uuid=$vm is-unique=false)
@@ -387,7 +413,7 @@ manage_vtpm() {
 <details><summary>Sample output</summary>
 
 ```text
-Attaching a vTPM to db-01
+Attaching a vTPM to secure-01
   unique to this VM:   false
   protected:           false
   VM now has 1 vTPM(s)

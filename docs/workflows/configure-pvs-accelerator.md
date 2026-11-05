@@ -2,7 +2,7 @@
 
 # Configure PVS Accelerator
 
-Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then forget the site — which cascades to everything hanging off it.
+Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then remove the proxy and the server and forget the site, which removes its cache storage.
 
 Workflow `configure-pvs-accelerator`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -40,8 +40,9 @@ public static void ConfigurePvsAccelerator(string url, string user, string passw
     var site = PVS_site.introduce(session, "sdk-example-pvs", "Created by the SDK examples", "");
     PVS_server.introduce(session, new[] { "203.0.113.90" }, 6910, 6930, site);
 
-    // The read cache must be on LOCAL storage. The point of the accelerator is to keep reads off
-    // the network, so a cache on a shared SR would defeat it and the server rejects one.
+    // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+    // the network; the server does not enforce that, but a cache on shared storage rarely makes
+    // sense and can't be shared between hosts anyway.
     foreach (var hostRef in Host.get_all(session))
     {
         var local = LocalSr(session, hostRef);
@@ -142,8 +143,9 @@ def configure_pvs_accelerator(url, username, password, vm_name):
     site = x.PVS_site.introduce("sdk-example-pvs", "Created by the SDK examples", "")
     x.PVS_server.introduce(["203.0.113.90"], 6910, 6930, site)
 
-    # The read cache must be on LOCAL storage. The point of the accelerator is to keep reads off
-    # the network, so a cache on a shared SR would defeat it and xapi rejects one.
+    # The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+    # the network; xapi does not enforce that, but a cache on shared storage rarely makes sense and
+    # can't be shared between hosts anyway.
     for host in x.host.get_all():
         local = local_sr(x, host)
         if local:
@@ -264,8 +266,9 @@ public final class ConfigurePvsAccelerator {
             PVSServer.introduce(conn, new java.util.HashSet<>(java.util.Arrays.asList("203.0.113.90")),
                 6910L, 6930L, site);
 
-            // The read cache must be on LOCAL storage. The point of the accelerator is to keep reads off
-            // the network, so a cache on a shared SR would defeat it and the server rejects one.
+            // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+            // the network; the server does not enforce that, but a cache on shared storage rarely makes
+            // sense and can't be shared between hosts anyway.
             for (Host host : Host.getAll(conn)) {
                 SR local = localSr(conn, host);
                 if (local == null) continue;
@@ -376,8 +379,9 @@ func configurePvsAccelerator(url, user, password, vmName string) {
 	_, err = xenapi.PVSServer.Introduce(session, []string{"203.0.113.90"}, 6910, 6930, site)
 	check(err)
 
-	// The read cache must be on LOCAL storage. The point of the accelerator is to keep reads off the
-	// network, so a cache on a shared SR would defeat it and the server rejects one.
+	// The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off the
+	// network; the server does not enforce that, but a cache on shared storage rarely makes sense and
+	// can't be shared between hosts anyway.
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	for _, host := range hosts {
@@ -508,8 +512,9 @@ function Invoke-ConfigurePvsAccelerator {
     Invoke-XenMethod -Session $session -Method 'PVS_server.introduce' `
         -Params @(@('203.0.113.90'), 6910, 6930, $site) | Out-Null
 
-    # The read cache must be on LOCAL storage: keeping reads off the network is the point, so a cache on
-    # a shared SR would defeat it and the server rejects one. New-XenPVSCacheStorage is a real cmdlet.
+    # The read cache should be on LOCAL storage: keeping reads off the network is the point, and the
+    # server does not enforce that, but a cache on shared storage rarely makes sense and can't be
+    # shared between hosts anyway. New-XenPVSCacheStorage is a real cmdlet.
     foreach ($xenHost in Get-XenHost) {
         $local = Get-XenPBD | Where-Object { $_.host.opaque_ref -eq $xenHost.opaque_ref } |
             ForEach-Object { Get-XenSR -Ref $_.SR.opaque_ref } |
@@ -592,8 +597,9 @@ configure_pvs_accelerator() {
     site=$(xe pvs-site-introduce name-label=sdk-example-pvs name-description="Created by the SDK examples")
     xe pvs-server-introduce addresses=203.0.113.90 first-port=6910 last-port=6930 pvs-site-uuid="$site" >/dev/null
 
-    # The read cache must be on LOCAL storage: keeping reads off the network is the point, so a cache
-    # on a shared SR would defeat it and the server rejects one.
+    # The read cache should be on LOCAL storage: keeping reads off the network is the point, and the
+    # server does not enforce that, but a cache on shared storage rarely makes sense and can't be
+    # shared between hosts anyway.
     for h in $(each_csv "$(xe host-list --minimal)"); do
         for pbd in $(each_csv "$(xe pbd-list host-uuid=$h --minimal)"); do
             sr=$(xe pbd-param-get uuid=$pbd param-name=sr-uuid)

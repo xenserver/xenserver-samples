@@ -317,7 +317,14 @@ public final class ExportImportVdi {
             if (data != null) request.setEntity(new ByteArrayEntity(data, null));
             byte[] body;
             try (CloseableHttpClient http = trustingHttpClient()) {
-                body = http.execute(request, response -> EntityUtils.toByteArray(response.getEntity()));
+                body = http.execute(request, response -> {
+                    byte[] received = EntityUtils.toByteArray(response.getEntity());
+                    if (response.getCode() < 200 || response.getCode() >= 300) {
+                        throw new RuntimeException(path + ": HTTP " + response.getCode() + ": "
+                            + new String(received, java.nio.charset.StandardCharsets.UTF_8));
+                    }
+                    return received;
+                });
             }
             while (task.getStatus(conn) == Types.TaskStatusType.PENDING) Thread.sleep(500);
             if (task.getStatus(conn) != Types.TaskStatusType.SUCCESS)
@@ -413,6 +420,9 @@ func exportImportVdi(url, user, password, srName string) {
 		received, err := io.ReadAll(response.Body)
 		response.Body.Close()
 		check(err)
+		if response.StatusCode < 200 || response.StatusCode >= 300 {
+			panic(fmt.Sprintf("%s: HTTP %s: %s", path, response.Status, received))
+		}
 
 		for {
 			status, err := xenapi.Task.GetStatus(session, task)

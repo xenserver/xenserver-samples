@@ -21,6 +21,10 @@ manage_secureboot_certificates() {
     # A guest whose certificates have gone stale. The state is a plain field, so it filters like any other.
     # This is a deliberately-seeded state, not one an ordinarily-provisioned pool is ever in - report and
     # stop cleanly when no VM needs it, rather than operating on an empty uuid.
+    #
+    # Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+    # BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+    # suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window.
     vm=$(first_csv "$(xe vm-list secureboot-certificates-state=update_available --minimal)")
     if [ -z "$vm" ]; then
         echo "No guest needs a Secure Boot certificate refresh right now."

@@ -21,6 +21,6 @@ def error_handling(url, username, password):
         print("unexpected: no error")
     except XenAPI.Failure as f:
         print("Caught expected failure: %s" % f.details[0])
-        print("Short message: %s" % f)
+        print("Error parameters: %s" % f.details[1:])
     print("OK: error-handling")
     session.xenapi.session.logout()

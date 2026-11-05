@@ -1,7 +1,7 @@
 <#
     XenServer PowerShell SDK - real-world workflow examples.
 
-    Each example mirrors a task you would perform in XenCenter, driven through the XenServer
+    Each example is a common administration task, driven through the XenServer
     PowerShell module (which wraps the XenAPI .NET binding and speaks JSON-RPC).
 
     Written in idiomatic PowerShell: the module's cmdlets take their object from the pipeline, so an
@@ -154,7 +154,7 @@ $WORKFLOWS = @{
     "reclaim-space"                  = @{ Function = "Invoke-ReclaimSpace";                 Defaults = @{} }
     "vm-ip-address"                  = @{ Function = "Invoke-VmIpAddress";                  Defaults = @{} }
     "manage-ad-users"                = @{ Function = "Invoke-ManageAdUsers";                Defaults = @{ Domain = ""; AdminUser = "alice"; AdminPassword = "Password1"; NewUser = "alice"; Ldaps = "false" } }
-    "create-iscsi-sr"                = @{ Function = "Invoke-CreateIscsiSr";                Defaults = @{ Target = "192.0.2.30" } }
+    "create-iscsi-sr"                = @{ Function = "Invoke-CreateIscsiSr";                Defaults = @{ Target = "192.0.2.30"; ScsiId = "360a980004265656d5f4a2d63764e5734" } }
     "create-smb-sr"                  = @{ Function = "Invoke-CreateSmbSr";                  Defaults = @{ Server = "192.0.2.40"; Share = "/vmstore"; SmbUsername = "Administrator"; SmbPassword = "Password1" } }
     "create-hba-sr"                  = @{ Function = "Invoke-CreateHbaSr";                  Defaults = @{} }
     "create-iso-sr"                  = @{ Function = "Invoke-CreateIsoSr";                  Defaults = @{ Location = "192.0.2.10:/isos" } }

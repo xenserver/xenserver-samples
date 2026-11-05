@@ -18,7 +18,8 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
         var templates = VM.get_all_records(session).Values
-            .Where(v => v.is_a_template).OrderBy(v => v.name_label).ToList();
+            // A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
+            .Where(v => v.is_a_template && !v.is_a_snapshot).OrderBy(v => v.name_label).ToList();
         Console.WriteLine($"Templates ({templates.Count}):");
         foreach (var t in templates.Take(8))
         {

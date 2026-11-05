@@ -1,7 +1,7 @@
 // XenServer Java SDK - real-world workflow examples.
 //
-// Each example mirrors a task you would perform in XenCenter, driven through the XenServer
-// Management API (XenAPI). The Java binding speaks JSON-RPC (Apache HttpClient 5 + Jackson).
+// Each example is a common administration task, driven through the XenServer Management API (XenAPI). The
+// Java binding speaks JSON-RPC (Apache HttpClient 5 + Jackson).
 //
 // Each workflow is a class of its own, in a package per area (gettingstarted, virtualmachines,
 // storage, ...). Its run method takes the connection details (and any object it acts on, looked up by
@@ -218,7 +218,8 @@ public final class Workflows {
         d.put("vm-ip-address", mapOf("timeout", "60", "interval", "2"));
         d.put("manage-ad-users", mapOf("domain", "", "admin_user", "alice",
                 "admin_password", "Password1", "new_user", "alice", "ldaps", "false"));
-        d.put("create-iscsi-sr", mapOf("target", "192.0.2.30", "sr_name", "sdk-example-iscsi"));
+        d.put("create-iscsi-sr", mapOf("target", "192.0.2.30", "scsi_id", "360a980004265656d5f4a2d63764e5734",
+                "sr_name", "sdk-example-iscsi"));
         d.put("create-smb-sr", mapOf("server", "192.0.2.40", "share", "/vmstore",
                 "smb_username", "Administrator", "smb_password", "Password1", "sr_name", "sdk-example-smb"));
         d.put("create-hba-sr", mapOf("scsi_id", "", "sr_name", "sdk-example-hba"));
@@ -382,7 +383,7 @@ public final class Workflows {
                         p.get("admin_password"), p.get("new_user"), p.get("ldaps")); break;
             case "create-iscsi-sr":
                 CreateIscsiSr.run(url, user, password, p.get("target"), p.get("port"), p.get("chap_user"),
-                        p.get("chap_password"), p.get("target_iqn"), p.get("sr_name")); break;
+                        p.get("chap_password"), p.get("target_iqn"), p.get("scsi_id"), p.get("sr_name")); break;
             case "create-smb-sr":
                 CreateSmbSr.run(url, user, password, p.get("server"), p.get("share"), p.get("smb_username"),
                         p.get("smb_password"), p.get("sr_name")); break;

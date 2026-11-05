@@ -47,9 +47,9 @@ public final class ConfigureHa {
             if (!r.isATemplate && !r.isControlDomain && !r.isASnapshot) { guest = e.getKey(); break; }
         }
 
-        // How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those
-        // (as XenCenter's HA wizard does): a target computed with none protected can be too high, and
-        // protecting a VM afterwards then fails HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
+        // How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those:
+        // a target computed with none protected can be too high, and protecting a VM afterwards then
+        // fails HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
         Map<VM, String> plan = new java.util.HashMap<>();
         plan.put(guest, "restart");
         long ntol = Pool.haComputeHypotheticalMaxHostFailuresToTolerate(conn, plan);

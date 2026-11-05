@@ -16,9 +16,11 @@ function Invoke-ConfigureHostStorage {
     $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master.opaque_ref
 
     # The IQN identifies this host to iSCSI targets, so a target's access list is written against it -
-    # changing it on a host with live iSCSI storage cuts it off. Multipathing uses every path to the
-    # storage rather than one, and on real hardware you put the host into maintenance mode before
-    # changing it, because the paths are rebuilt.
+    # changing it on a host with live iSCSI storage cuts it off. Existing iSCSI SRs must be detached
+    # first: changing the IQN underneath them can make the host unable to reconnect to new or existing
+    # SRs until the storage target is updated to match. Multipathing uses every path to the storage
+    # rather than one, and on real hardware you put the host into maintenance mode before changing it,
+    # because the paths are rebuilt.
     $beforeIqn = $xenHost.iscsi_iqn
     $beforeMultipathing = $xenHost.multipathing
     Write-Host "$($xenHost.name_label): iSCSI IQN '$beforeIqn', multipathing $beforeMultipathing"

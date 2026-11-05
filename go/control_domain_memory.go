@@ -27,8 +27,8 @@ func controlDomainMemory(url, user, password string) {
 	fmt.Printf("%s dom0: %.1f GiB\n", name, float64(original)/(1024*1024*1024))
 
 	// One setter, not a range: dom0 does not balloon, so SetMemory pins the static and dynamic bounds
-	// and the target together. The new size takes effect at the next reboot, which is why XenCenter
-	// offers this only in maintenance mode — the API itself does not stop you.
+	// and the target together. The new size takes effect at the next reboot, so change it with the
+	// host in maintenance mode — the API itself does not stop you.
 	check(xenapi.VM.SetMemory(session, dom0, original+1024*1024*1024))
 	record, err := xenapi.VM.GetRecord(session, dom0)
 	check(err)

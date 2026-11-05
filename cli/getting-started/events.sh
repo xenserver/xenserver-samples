@@ -8,8 +8,15 @@
 
 events() {
     vm=$(vm_uuid web-01)
-    # event-wait blocks until the object matches; here the condition already holds, so it returns at once.
-    xe event-wait class=vm uuid=$vm power-state=running
-    echo "web-01 reached power-state=running"
+    original=$(xe vm-param-get uuid=$vm param-name=name-description)
+
+    # event-wait blocks until the object matches the condition, so there has to be something left to
+    # happen when it starts watching: make the change in the background, timed to land only after the
+    # foreground event-wait below is already watching for it.
+    (sleep 2; xe vm-param-set uuid=$vm name-description="changed-to-trigger-event") &
+    xe event-wait class=vm uuid=$vm name-description="changed-to-trigger-event"
+    echo "Observed web-01's name-description change via event-wait"
+
+    xe vm-param-set uuid=$vm name-description="$original"  # put it back
     echo "OK: events"
 }

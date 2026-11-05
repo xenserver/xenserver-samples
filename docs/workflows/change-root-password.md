@@ -2,7 +2,7 @@
 
 # Change the root password
 
-Change the local superuser password, handle the wrong-old-password failure, and change it back.
+Change the local superuser password to a temporary one and back again, noting that a root session's old password is not checked.
 
 **Caution:** changes the root password; a failure part way can lock you out of the host.
 
@@ -14,7 +14,7 @@ Source: [`csharp/HostsAndPools/ChangeRootPassword.cs`](../../csharp/HostsAndPool
 
 ```csharp
 /// <summary>
-/// Change the local superuser password, handle the wrong-old-password failure, and change it back.
+/// Change the local superuser password, then change it back.
 /// </summary>
 /// <example>
 /// <code>
@@ -24,23 +24,30 @@ Source: [`csharp/HostsAndPools/ChangeRootPassword.cs`](../../csharp/HostsAndPool
 public static void ChangeRootPassword(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    const string temporary = "sdk-example-temp-password";
+    var temporary = Convert.ToBase64String(RandomNumberGenerator.GetBytes(18))
+        .Replace('+', '-').Replace('/', '_').TrimEnd('=');
 
     // session.change_password takes the OLD password as well as the new one, even though you are
     // already authenticated.
     Session.change_password(session, password, temporary);
     Console.WriteLine("Password changed.");
+    try
+    {
+        // The existing session stays valid afterwards — only NEW connections need the new password, so a
+        // script can carry on without reconnecting.
+        Console.WriteLine($"Session still usable: {Pool.get_all(session).Count == 1}");
 
-    // The existing session stays valid afterwards — only NEW connections need the new password, so a
-    // script can carry on without reconnecting.
-    Console.WriteLine($"Session still usable: {Pool.get_all(session).Count == 1}");
-
-    // session.change_password on a ROOT session ignores the old password entirely (CA-13567): the
-    // call succeeds regardless of what old_pwd is, so "supplying the wrong old password" is not a
-    // real failure to demonstrate here. The real gate is who may call this at all.
-    Console.WriteLine($"Is local superuser (may call change_password): {session.IsLocalSuperuser}");
-
-    Session.change_password(session, temporary, password);
+        // session.change_password on a ROOT session ignores the old password entirely (CA-13567): the
+        // call succeeds regardless of what old_pwd is, so there is no wrong-old-password failure to
+        // demonstrate here. The real gate is who may call this at all.
+        Console.WriteLine($"Is local superuser (may call change_password): {session.IsLocalSuperuser}");
+    }
+    finally
+    {
+        // Put the original password back however the above went, so a failure part-way through
+        // doesn't leave root on the temporary one.
+        Session.change_password(session, temporary, password);
+    }
     Console.WriteLine("Password restored.");
     Console.WriteLine("OK: change-root-password");
     session.logout();
@@ -66,12 +73,14 @@ Source: [`python/hosts_and_pools/change_root_password.py`](../../python/hosts_an
 ```python
 """Change the root password.
 
-Change the local superuser password, handle the wrong-old-password failure, and change it back.
+Change the local superuser password, then change it back.
 
 Run it::
 
     change_root_password("https://xenserver", "root", password)
 """
+
+import secrets
 
 from connection import connect
 
@@ -79,23 +88,25 @@ from connection import connect
 def change_root_password(url, username, password):
     """Change the local superuser password, then change it back."""
     session = connect(url, username, password)
-    temporary = "sdk-example-temp-password"
+    temporary = secrets.token_urlsafe(18)
 
     # change_password takes the OLD password as well as the new one, even though you are already
     # authenticated.
     session.xenapi.session.change_password(password, temporary)
     print("Password changed.")
+    try:
+        # The existing session stays valid afterwards - only NEW connections need the new password.
+        print("Session still usable: %s" % (len(session.xenapi.pool.get_all()) == 1))
 
-    # The existing session stays valid afterwards - only NEW connections need the new password.
-    print("Session still usable: %s" % (len(session.xenapi.pool.get_all()) == 1))
-
-    # change_password on a ROOT session ignores the old password entirely (CA-13567): the call
-    # succeeds whatever old_pwd is, so a wrong old password is not a failure to demonstrate here. The
-    # real gate is who may call this at all: only a local superuser session.
-    print("Is local superuser (may call change_password): %s"
-          % session.xenapi.session.get_is_local_superuser(session._session))
-
-    session.xenapi.session.change_password(temporary, password)
+        # change_password on a ROOT session ignores the old password entirely (CA-13567): the call
+        # succeeds whatever old_pwd is, so there is no wrong-old-password failure to demonstrate here.
+        # The real gate is who may call this at all: only a local superuser session.
+        print("Is local superuser (may call change_password): %s"
+              % session.xenapi.session.get_is_local_superuser(session._session))
+    finally:
+        # Put the original password back however the above went, so a failure part-way through
+        # doesn't leave root on the temporary one.
+        session.xenapi.session.change_password(temporary, password)
     print("Password restored.")
     print("OK: change-root-password")
     session.xenapi.session.logout()
@@ -124,6 +135,9 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
 
+import java.security.SecureRandom;
+import java.util.Base64;
+
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ChangeRootPassword {
@@ -133,26 +147,31 @@ public final class ChangeRootPassword {
     /**
      * Change the root password.
      *
-     * <p>Change the local superuser password, handle the wrong-old-password failure, and change it back.
+     * <p>Change the local superuser password, then change it back.
      */
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
-        final String temporary = "sdk-example-temp-password";
+        byte[] randomBytes = new byte[18];
+        new SecureRandom().nextBytes(randomBytes);
+        final String temporary = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
 
         // changePassword takes the OLD password as well as the new one, even though you are already
         // authenticated.
         Session.changePassword(conn, password, temporary);
         System.out.println("Password changed.");
+        try {
+            // The existing session stays valid afterwards - only NEW connections need the new password.
+            System.out.println("Session still usable: " + (Pool.getAll(conn).size() == 1));
 
-        // The existing session stays valid afterwards - only NEW connections need the new password.
-        System.out.println("Session still usable: " + (Pool.getAll(conn).size() == 1));
-
-        // Not demonstrated: a "wrong old password is rejected" check. session.change_password on a
-        // ROOT session ignores old_pwd entirely (CA-13567, confirmed in xapi_session.ml) - the call
-        // succeeds regardless of what's passed as the old password. The real gate is that only a
-        // session with is_local_superuser may call this at all.
-
-        Session.changePassword(conn, temporary, password);
+            // Not demonstrated: a "wrong old password is rejected" check. session.change_password on a
+            // ROOT session ignores old_pwd entirely (CA-13567, confirmed in xapi_session.ml) - the call
+            // succeeds regardless of what's passed as the old password. The real gate is that only a
+            // session with is_local_superuser may call this at all.
+        } finally {
+            // Put the original password back however the above went, so a failure part-way through
+            // doesn't leave root on the temporary one.
+            Session.changePassword(conn, temporary, password);
+        }
         System.out.println("Password restored.");
         System.out.println("OK: change-root-password");
         Session.logout(conn);
@@ -179,6 +198,8 @@ Source: [`go/change_root_password.go`](../../go/change_root_password.go)
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 
 	"go/xenapi"
@@ -186,10 +207,13 @@ import (
 
 // changeRootPassword - Change the root password.
 //
-// Change the local superuser password, handle the wrong-old-password failure, and change it back.
+// Change the local superuser password, then change it back.
 func changeRootPassword(url, user, password string) {
 	session := connect(url, user, password)
-	const temporary = "sdk-example-temp-password"
+	randomBytes := make([]byte, 18)
+	_, err := rand.Read(randomBytes)
+	check(err)
+	temporary := base64.RawURLEncoding.EncodeToString(randomBytes)
 
 	// ChangePassword takes the OLD password as well as the new one, even though you are already
 	// authenticated.
@@ -250,7 +274,7 @@ function Invoke-ChangeRootPassword {
     .SYNOPSIS
         Change the root password.
     .DESCRIPTION
-        Change the local superuser password, handle the wrong-old-password failure, and change it back.
+        Change the local superuser password, then change it back.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Url,
@@ -258,7 +282,9 @@ function Invoke-ChangeRootPassword {
         [Parameter(Mandatory = $true)][string]$Password
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $temporary = 'sdk-example-temp-password'
+    $randomBytes = [byte[]]::new(18)
+    [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($randomBytes)
+    $temporary = [Convert]::ToBase64String($randomBytes).Replace('+', '-').Replace('/', '_').TrimEnd('=')
 
     # The module ships no cmdlet for session.change_password, so this is the one place these examples
     # call the binding directly. The session Connect-XenServer hands back IS a XenAPI.Session, which is
@@ -266,18 +292,21 @@ function Invoke-ChangeRootPassword {
     # you are already authenticated.
     [XenAPI.Session]::change_password($session, $Password, $temporary)
     Write-Host "Password changed."
+    try {
+        # The existing session stays valid afterwards - only NEW connections need the new password, so a
+        # script can carry on without reconnecting.
+        Write-Host "Session still usable: $(@(Get-XenPool).Count -eq 1)"
 
-    # The existing session stays valid afterwards - only NEW connections need the new password, so a
-    # script can carry on without reconnecting.
-    Write-Host "Session still usable: $(@(Get-XenPool).Count -eq 1)"
-
-    # change_password on a ROOT session ignores the old password entirely (CA-13567, confirmed in
-    # xapi_session.ml) - the call succeeds regardless of what is passed as the old password, so there is
-    # no "wrong old password is rejected" demonstration to show here. The real gate is who may call this
-    # at all: only a session with is_local_superuser may.
-    Write-Host "is_local_superuser: $($session.IsLocalSuperuser)"
-
-    [XenAPI.Session]::change_password($session, $temporary, $Password)
+        # change_password on a ROOT session ignores the old password entirely (CA-13567, confirmed in
+        # xapi_session.ml) - the call succeeds regardless of what is passed as the old password, so there is
+        # no wrong-old-password failure to demonstrate here. The real gate is who may call this at all: only
+        # a session with is_local_superuser may.
+        Write-Host "is_local_superuser: $($session.IsLocalSuperuser)"
+    } finally {
+        # Put the original password back however the above went, so a failure part-way through doesn't
+        # leave root on the temporary one.
+        [XenAPI.Session]::change_password($session, $temporary, $Password)
+    }
     Write-Host "Password restored."
     Write-Host "OK: change-root-password"
     Disconnect-XenServer -Session $session
@@ -303,7 +332,7 @@ Source: [`cli/hosts-and-pools/change-root-password.sh`](../../cli/hosts-and-pool
 ```bash
 # Change the root password.
 #
-# Change the local superuser password, handle the wrong-old-password failure, and change it back.
+# Change the local superuser password, then change it back.
 #
 # Run it:
 #   ./workflows.sh change-root-password https://xenserver root "$password"
@@ -312,8 +341,8 @@ change_root_password() {
     # xe exposes this as user-password-change. It takes the OLD password as well as the new one, even
     # though you are already authenticated - but a root session's old_pwd is never actually checked
     # (CA-13567): the only real gate is that the SESSION itself has to be a local superuser's, which this
-    # one necessarily is. There is no "wrong old password is rejected" demonstration worth making here.
-    original=$pass temporary=xe-example-temp-password
+    # one necessarily is. There is no wrong-old-password failure to demonstrate here.
+    original=$pass temporary=$(head -c 18 /dev/urandom | base64 | tr -d '/+=')
     xe user-password-change old="$original" new=$temporary
     echo "Password changed."
     # Unlike an SDK session, xe has no session to keep: every command logs in afresh, so from here on

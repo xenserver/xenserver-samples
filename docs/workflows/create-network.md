@@ -48,7 +48,7 @@ public static void CreateNetwork(string url, string user, string password,
 <details><summary>Sample output</summary>
 
 ```text
-Created network: 00000001-0000-0000-ee0a-000000000000
+Created network: 00000001-0000-0000-c30a-000000000000
 MTU now:         9000
 OK: create-network
 ```
@@ -97,7 +97,7 @@ def create_network(url, username, password, network_name="sdk-example-net"):
 <details><summary>Sample output</summary>
 
 ```text
-Created network: 00000001-0000-0000-ac0a-000000000000
+Created network: 00000001-0000-0000-6e0a-000000000000
 MTU now:         9000
 OK: create-network
 ```
@@ -163,7 +163,7 @@ public final class CreateNetwork {
 <details><summary>Sample output</summary>
 
 ```text
-Created network: 00000001-0000-0000-130b-000000000000
+Created network: 00000001-0000-0000-150b-000000000000
 MTU now:         9000
 OK: create-network
 ```
@@ -221,7 +221,7 @@ func createNetwork(url, user, password, networkName string) {
 <details><summary>Sample output</summary>
 
 ```text
-Created network: 00000001-0000-0000-ad0a-000000000000
+Created network: 00000001-0000-0000-cb0a-000000000000
 MTU now:         9000
 OK: create-network
 ```
@@ -268,7 +268,7 @@ function Invoke-CreateNetwork {
 <details><summary>Sample output</summary>
 
 ```text
-Created network: 00000001-0000-0000-170b-000000000000
+Created network: 00000001-0000-0000-1a0b-000000000000
 MTU now:         9000
 OK: create-network
 ```
@@ -304,7 +304,7 @@ create_network() {
 <details><summary>Sample output</summary>
 
 ```text
-Created network: 00000001-0000-0000-ef0a-000000000000
+Created network: 00000001-0000-0000-6f0a-000000000000
 MTU now:         9000
 OK: create-network
 ```

@@ -38,14 +38,6 @@ public final class SrUsage {
         for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet())
             if (e.getValue().physicalSize > 0) { scanMe = e.getKey(); break; }
         scanMe.scan(conn);
-
-        // Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by
-        // setting o_direct, which asks the storage layer to bypass the cache entirely.
-        scanMe.removeFromOtherConfig(conn, "o_direct");
-        scanMe.addToOtherConfig(conn, "o_direct", "true");
-        System.out.println("  read caching on " + scanMe.getNameLabel(conn) + ": "
-                + ("true".equals(scanMe.getOtherConfig(conn).get("o_direct")) ? "off" : "on"));
-        scanMe.removeFromOtherConfig(conn, "o_direct");
         System.out.println("OK: sr-usage");
         Session.logout(conn);
     }

@@ -32,8 +32,8 @@ public static void ControlDomainMemory(string url, string user, string password)
                       + $"{original / (double)(1024 * 1024 * 1024):F1} GiB");
 
     // One setter, not a range: dom0 does not balloon, so set_memory pins the static and dynamic
-    // bounds and the target together. The new size takes effect at the next reboot, which is why
-    // XenCenter offers this only in maintenance mode — the API itself does not stop you.
+    // bounds and the target together. The new size takes effect at the next reboot, so change
+    // it with the host in maintenance mode — the API itself does not stop you.
     VM.set_memory(session, dom0.opaque_ref, original + 1024L * 1024 * 1024);
     var record = VM.get_record(session, dom0.opaque_ref);
     Console.WriteLine($"  now {record.memory_dynamic_min / (double)(1024 * 1024 * 1024):F1} GiB "
@@ -79,8 +79,8 @@ def control_domain_memory(url, username, password):
 
     VM.set_memory is a single-value setter: it pins the static and dynamic bounds and the
     target together, which is what dom0 needs — it does not balloon. The new size takes
-    effect when the host next reboots, so in XenCenter this is offered only in maintenance
-    mode; the API itself does not stop you."""
+    effect when the host next reboots, so change it with the host in maintenance mode; the API
+    itself does not stop you."""
     session = connect(url, username, password)
     x = session.xenapi
 
@@ -155,8 +155,8 @@ public final class ControlDomainMemory {
                 original / (double) (1024L * 1024 * 1024));
 
             // One setter, not a range: dom0 does not balloon, so setMemory pins the static and dynamic
-            // bounds and the target together. The new size takes effect at the next reboot, which is why
-            // XenCenter offers this only in maintenance mode — the API itself does not stop you.
+            // bounds and the target together. The new size takes effect at the next reboot, so change
+            // it with the host in maintenance mode — the API itself does not stop you.
             dom0.setMemory(conn, original + 1024L * 1024 * 1024);
             VM.Record record = dom0.getRecord(conn);
             System.out.printf("  now %.1f GiB (static %d-%d, dynamic %d-%d)%n",
@@ -176,7 +176,7 @@ public final class ControlDomainMemory {
 <details><summary>Sample output</summary>
 
 ```text
-sdk-host1 dom0: 2.0 GiB
+sdk-host2 dom0: 2.0 GiB
   now 3.0 GiB (static 2147483648-3221225472, dynamic 3221225472-3221225472)
 OK: control-domain-memory
 ```
@@ -217,8 +217,8 @@ func controlDomainMemory(url, user, password string) {
 	fmt.Printf("%s dom0: %.1f GiB\n", name, float64(original)/(1024*1024*1024))
 
 	// One setter, not a range: dom0 does not balloon, so SetMemory pins the static and dynamic bounds
-	// and the target together. The new size takes effect at the next reboot, which is why XenCenter
-	// offers this only in maintenance mode — the API itself does not stop you.
+	// and the target together. The new size takes effect at the next reboot, so change it with the
+	// host in maintenance mode — the API itself does not stop you.
 	check(xenapi.VM.SetMemory(session, dom0, original+1024*1024*1024))
 	record, err := xenapi.VM.GetRecord(session, dom0)
 	check(err)
@@ -285,8 +285,8 @@ function Invoke-ControlDomainMemory {
     Write-Host ("$($xenHost.name_label) dom0: {0:N1} GiB" -f ($original / 1GB))
 
     # -Memory, not -MemoryDynamicRange: dom0 does not balloon, so this one setter pins the static and
-    # dynamic bounds and the target together. The new size takes effect at the next reboot, which is why XenCenter offers
-    # this only in maintenance mode — the API itself does not stop you.
+    # dynamic bounds and the target together. The new size takes effect at the next reboot, so change
+    # it with the host in maintenance mode — the API itself does not stop you.
     Set-XenVM -VM $dom0 -Memory ($original + 1GB)
     $updated = Get-XenVM -Ref $dom0.opaque_ref
     Write-Host ("  now {0:N1} GiB (static {1}-{2}, dynamic {3}-{4})" -f

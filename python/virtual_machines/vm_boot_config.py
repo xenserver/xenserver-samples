@@ -23,10 +23,11 @@ def vm_boot_config(url, username, password, template_name, new_vm_name="sdk-exam
           (session.xenapi.VM.get_VCPUs_at_startup(vm), session.xenapi.VM.get_VCPUs_max(vm)))
 
     # Boot mode: firmware ("bios"/"uefi") lives in HVM_boot_params; Secure Boot in
-    # platform["secureboot"]. "auto" (not a hard-coded "true") is the real xe/XenCenter
-    # convention: xapi resolves it against whether the pool actually holds Secure Boot
-    # certificates, at VM.start time - a hard "true" would claim Secure Boot is on even on a
-    # template that was never set up for it, since set_platform does no validation of its own.
+    # platform["secureboot"]. "auto" (not a hard-coded "true") is the xe
+    # convention: xapi resolves it against whether the pool actually holds Secure
+    # Boot certificates, at VM.start time - a hard "true" would claim Secure Boot
+    # is on even on a template that was never set up for it, since set_platform
+    # does no validation of its own.
     session.xenapi.VM.set_HVM_boot_params(vm, {"order": "cdn", "firmware": "uefi"})
     platform = session.xenapi.VM.get_platform(vm)
     platform["secureboot"] = "auto"

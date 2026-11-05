@@ -87,9 +87,9 @@ public final class Helpers {
     }
 
     /**
-     * Detach an SR from every host, then forget it: XenCenter's Detach followed by Forget. SR.forget
-     * refuses an SR that is still attached (SR_HAS_PBD), so unplug its PBDs first. Forgetting drops the
-     * pool's record of the SR but leaves the data on the storage itself.
+     * Detach an SR from every host, then forget it. SR.forget refuses an SR that is still attached
+     * (SR_HAS_PBD), so unplug its PBDs first. Forgetting drops the pool's record of the SR but leaves
+     * the data on the storage itself.
      */
     public static void detachAndForgetSr(Connection conn, SR sr) throws Exception {
         for (PBD pbd : sr.getPBDs(conn)) {
@@ -306,10 +306,10 @@ public final class Helpers {
     }
 
     /**
-     * Introduce the pool's update repositories the way XenCenter does: the release's base packages
-     * (update=false) and its update stream (update=true, which pool.syncUpdates needs - otherwise
-     * NO_REPOSITORY_ENABLED). A real host checks the URLs (INVALID_BASE_URL for an unknown domain), so
-     * these are the XenServer CDN's, e.g. https://repo.ops.xenserver.com/xs9/{base,normal}.
+     * Introduce the pool's update repositories: the release's base packages (update=false) and its
+     * update stream (update=true, which pool.syncUpdates needs - otherwise NO_REPOSITORY_ENABLED). A
+     * real host checks the URLs (INVALID_BASE_URL for an unknown domain), so these are the XenServer
+     * CDN's, e.g. https://repo.ops.xenserver.com/xs9/{base,normal}.
      */
     public static Set<Repository> introduceUpdateRepositories(Connection conn, String repoUrl,
             String sourceUrl) throws Exception {

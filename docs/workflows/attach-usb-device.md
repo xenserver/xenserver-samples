@@ -4,7 +4,9 @@
 
 List the USB devices a host exposes, enable passthrough on one, attach it to a VM and detach it again.
 
-**Requires:** a USB device plugged into a host.
+**Requires:** a USB device plugged into a host, and a license that includes USB pass-through (Premium Edition).
+
+**Caution:** a VM with a USB passed through cannot be snapshotted, suspended, or pool/storage migrated.
 
 Workflow `attach-usb-device`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -246,7 +248,7 @@ func attachUsbDevice(url, user, password, vmName string) {
 <details><summary>Sample output</summary>
 
 ```text
-Device:         Logitech, Inc. Unifying Receiver
+Device:         Kingston Technology DataTraveler 3.0
 Attached:       1 device(s)
 OK: attach-usb-device
 ```

@@ -52,9 +52,8 @@ public final class ServerStatusReport {
             // The download is an HTTP transfer alongside the API, so the session id travels in the
             // query string.
             String session = conn.getSessionReference();
-            // Take the sections the host marks default-checked, as XenCenter's dialog does: asking for
-            // every section can mean gigabytes (VM memory dumps, every log) and a long wait while the
-            // host builds it.
+            // Take the sections the host marks default-checked: asking for every section can mean
+            // gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
             long whole = fetchStatusReport(url, session, defaults);
             System.out.printf("default sections (%d of %d): %d bytes%n", defaults.size(), keys.size(), whole);
 

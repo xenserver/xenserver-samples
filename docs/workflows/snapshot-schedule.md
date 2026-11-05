@@ -2,7 +2,7 @@
 
 # Snapshot schedule
 
-Create a scheduled-snapshot policy, attach a VM to it, run it on demand and watch the retention limit prune the oldest snapshot away.
+Create a scheduled-snapshot policy, attach a VM to it, run it on demand (the xe CLI version only creates and removes the schedule) and watch the retention limit prune the oldest snapshot away.
 
 Workflow `snapshot-schedule`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -62,7 +62,7 @@ public static void SnapshotSchedule(string url, string user, string password,
 <details><summary>Sample output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-160a-000000000000
+Created schedule: 00000001-0000-0000-060a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -130,7 +130,7 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
 <details><summary>Sample output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-100a-000000000000
+Created schedule: 00000001-0000-0000-120a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -217,7 +217,7 @@ public final class SnapshotSchedule {
 <details><summary>Sample output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-070a-000000000000
+Created schedule: 00000001-0000-0000-1b0a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -301,7 +301,7 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 <details><summary>Sample output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-1b0a-000000000000
+Created schedule: 00000001-0000-0000-130a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -366,7 +366,7 @@ function Invoke-SnapshotSchedule {
 <details><summary>Sample output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-160a-000000000000
+Created schedule: 00000001-0000-0000-190a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -410,7 +410,7 @@ snapshot_schedule() {
 <details><summary>Sample output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-260a-000000000000
+Created schedule: 00000001-0000-0000-1c0a-000000000000
 Members:          1
 Keeps:            2 snapshot(s)
 OK: snapshot-schedule

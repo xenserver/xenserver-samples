@@ -509,10 +509,10 @@ manage_driver_variants() {
 
 ```text
 sdk-host1 has 5 driver(s)
-  ahci           storage    1 variant(s), active=00000001-0000-0000-4900-000000000000
-  bnxt_en        network    1 variant(s), active=00000001-0000-0000-4300-000000000000
+  ahci           storage    1 variant(s), active=00000001-0000-0000-4b00-000000000000
+  bnxt_en        network    1 variant(s), active=00000001-0000-0000-4500-000000000000
   i40e           network    1 variant(s), active=<not in database>
-  ahci: selected 00000001-0000-0000-4900-000000000000, active 00000001-0000-0000-4900-000000000000
+  ahci: selected 00000001-0000-0000-4b00-000000000000, active 00000001-0000-0000-4b00-000000000000
 OK: manage-driver-variants
 ```
 

@@ -31,7 +31,7 @@ public static void VmBootConfig(string url, string user, string password,
     Console.WriteLine($"vCPUs: {VM.get_VCPUs_at_startup(session, vm)}/{VM.get_VCPUs_max(session, vm)}");
 
     // Boot mode: firmware ("bios"/"uefi") lives in HVM_boot_params; Secure Boot in
-    // platform["secureboot"]. "auto" (not a hard-coded "true") is the real xe/XenCenter convention:
+    // platform["secureboot"]. "auto" (not a hard-coded "true") is the xe convention:
     // xapi resolves it against whether the pool actually holds Secure Boot certificates, at
     // VM.start time - a hard "true" would claim Secure Boot is on even on a template that was never
     // set up for it, since set_platform does no validation of its own.
@@ -91,10 +91,11 @@ def vm_boot_config(url, username, password, template_name, new_vm_name="sdk-exam
           (session.xenapi.VM.get_VCPUs_at_startup(vm), session.xenapi.VM.get_VCPUs_max(vm)))
 
     # Boot mode: firmware ("bios"/"uefi") lives in HVM_boot_params; Secure Boot in
-    # platform["secureboot"]. "auto" (not a hard-coded "true") is the real xe/XenCenter
-    # convention: xapi resolves it against whether the pool actually holds Secure Boot
-    # certificates, at VM.start time - a hard "true" would claim Secure Boot is on even on a
-    # template that was never set up for it, since set_platform does no validation of its own.
+    # platform["secureboot"]. "auto" (not a hard-coded "true") is the xe
+    # convention: xapi resolves it against whether the pool actually holds Secure
+    # Boot certificates, at VM.start time - a hard "true" would claim Secure Boot
+    # is on even on a template that was never set up for it, since set_platform
+    # does no validation of its own.
     session.xenapi.VM.set_HVM_boot_params(vm, {"order": "cdn", "firmware": "uefi"})
     platform = session.xenapi.VM.get_platform(vm)
     platform["secureboot"] = "auto"
@@ -163,7 +164,7 @@ public final class VmBootConfig {
         vm.setVCPUsAtStartup(conn, 2L);
 
         // Boot mode: firmware ("bios"/"uefi") lives in HVM_boot_params; Secure Boot in
-        // platform["secureboot"]. "auto" (not a hard-coded "true") is the real xe/XenCenter convention:
+        // platform["secureboot"]. "auto" (not a hard-coded "true") is the xe convention:
         // xapi resolves it against whether the pool actually holds Secure Boot certificates, at VM.start
         // time - a hard "true" would claim Secure Boot is on even on a template that was never set up for
         // it, since setPlatform does no validation of its own.
@@ -228,7 +229,7 @@ func vmBootConfig(url, user, password, templateName, newVMName string) {
 	check(xenapi.VM.SetVCPUsAtStartup(session, vm, 2))
 
 	// Boot mode: firmware ("bios"/"uefi") lives in HVM_boot_params; Secure Boot in
-	// platform["secureboot"]. "auto" (not a hard-coded "true") is the real xe/XenCenter convention:
+	// platform["secureboot"]. "auto" (not a hard-coded "true") is the xe convention:
 	// xapi resolves it against whether the pool actually holds Secure Boot certificates, at
 	// VM.start time - a hard "true" would claim Secure Boot is on even on a template that was never
 	// set up for it, since set_platform does no validation of its own.
@@ -291,10 +292,10 @@ function Invoke-VmBootConfig {
     $ref = $vm.opaque_ref
 
     # Set the vCPU topology and switch the VM to UEFI boot: firmware ("bios"/"uefi") lives in
-    # HVM_boot_params, Secure Boot in platform["secureboot"]. "auto" (not a hard-coded "true") is the
-    # real xe/XenCenter convention: xapi resolves it against whether the pool actually holds Secure Boot
-    # certificates, at VM.start time - a hard "true" would claim Secure Boot is on even on a template
-    # that was never set up for it, since Set-XenVM does no validation of its own.
+    # HVM_boot_params, Secure Boot in platform["secureboot"]. "auto" (not a hard-coded "true") is the xe
+    # convention: xapi resolves it against whether the pool actually holds Secure Boot certificates, at
+    # VM.start time - a hard "true" would claim Secure Boot is on even on a template that was never set up for
+    # it, since Set-XenVM does no validation of its own.
     $vm | Set-XenVM -VCPUsMax 4 -VCPUsAtStartup 2 -HVMBootParams @{ order = "cdn"; firmware = "uefi" }
     $platform = (Get-XenVM -Ref $ref).platform
     $platform["secureboot"] = "auto"
@@ -339,10 +340,10 @@ Source: [`cli/virtual-machines/vm-boot-config.sh`](../../cli/virtual-machines/vm
 
 vm_boot_config() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-example-boot sr-uuid=$(shared_sr))
+    vm=$(xe vm-install template="$template" new-name-label=xe-example-boot)
     xe vm-param-set uuid=$vm VCPUs-max=4 VCPUs-at-startup=2
     # Boot mode: firmware ("bios"/"uefi") lives in HVM-boot-params; Secure Boot in platform:secureboot.
-    # "auto" (not a hard-coded "true") is the real xe/XenCenter convention: xapi resolves it against
+    # "auto" (not a hard-coded "true") is the xe convention: xapi resolves it against
     # whether the pool actually holds Secure Boot certificates, at vm-start time - a hard "true" would
     # claim Secure Boot is on even on a template that was never set up for it, since platform:secureboot
     # does no validation of its own.

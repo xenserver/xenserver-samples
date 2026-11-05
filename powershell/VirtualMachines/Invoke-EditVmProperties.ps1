@@ -15,7 +15,7 @@ function Invoke-EditVmProperties {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $vm = Get-XenVM -Name $VmName |
-        Where-Object { -not $_.is_a_template -and -not $_.is_control_domain } | Select-Object -First 1
+        Where-Object { -not $_.is_a_template -and -not $_.is_control_domain -and -not $_.is_a_snapshot } | Select-Object -First 1
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     $originalDesc = $vm.name_description
 

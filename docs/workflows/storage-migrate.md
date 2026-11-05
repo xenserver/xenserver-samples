@@ -62,7 +62,7 @@ public static void StorageMigrate(string url, string user, string password,
 
 ```text
 Disk is on SR: Shared NFS
-Disk moved to:  Local storage
+Disk moved to:  iSCSI storage
 OK: storage-migrate
 ```
 
@@ -126,7 +126,7 @@ def storage_migrate(url, username, password, source_vm, new_vm_name="sdk-example
 
 ```text
 Disk is on SR: Shared NFS
-Disk moved to:  Local storage
+Disk moved to:  iSCSI storage
 OK: storage-migrate
 ```
 
@@ -219,7 +219,7 @@ public final class StorageMigrate {
 
 ```text
 Disk is on SR: Shared NFS
-Disk moved to:  Local storage
+Disk moved to:  iSCSI storage
 OK: storage-migrate
 ```
 
@@ -383,7 +383,7 @@ function Invoke-StorageMigrate {
 
 ```text
 Disk is on SR: Shared NFS
-Disk moved to:  Local storage
+Disk moved to:  iSCSI storage
 OK: storage-migrate
 ```
 
@@ -445,7 +445,7 @@ storage_migrate() {
 
 ```text
 Disk is on SR: Shared NFS
-Disk moved to: Local storage
+Disk moved to: iSCSI storage
 OK: storage-migrate
 ```
 

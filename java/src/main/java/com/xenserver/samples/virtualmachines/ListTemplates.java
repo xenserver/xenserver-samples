@@ -25,7 +25,8 @@ public final class ListTemplates {
         Connection conn = connect(url, user, password);
         java.util.List<VM.Record> templates = new java.util.ArrayList<>();
         for (VM.Record v : VM.getAllRecords(conn).values())
-            if (v.isATemplate) templates.add(v);
+            // A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
+            if (v.isATemplate && !v.isASnapshot) templates.add(v);
         templates.sort(java.util.Comparator.comparing((VM.Record r) -> r.nameLabel));
         System.out.println("Templates (" + templates.size() + "):");
         int shown = 0;

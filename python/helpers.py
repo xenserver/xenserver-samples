@@ -36,7 +36,7 @@ def sr_by_name(session, name, shared=False):
 
 
 def detach_and_forget_sr(session, sr):
-    """Detach an SR from every host, then forget it - XenCenter's Detach followed by Forget.
+    """Detach an SR from every host, then forget it.
 
     SR.forget refuses an SR that is still attached (SR_HAS_PBD), so unplug its PBDs first. Forgetting
     drops the pool's record of the SR but leaves the data on the storage itself."""
@@ -207,10 +207,10 @@ def destroy_vm_and_disks(session, vm_ref):
 
 
 def introduce_update_repositories(session, repo_url, source_url):
-    """Introduce the pool's update repositories the way XenCenter does: the release's base packages
-    (update=False) and its update stream (update=True, which pool.sync_updates needs - otherwise
-    NO_REPOSITORY_ENABLED). A real host checks the URLs (INVALID_BASE_URL for an unknown domain), so
-    these are the XenServer CDN's, e.g. https://repo.ops.xenserver.com/xs9/{base,normal}."""
+    """Introduce the pool's update repositories: the release's base packages (update=False) and its
+    update stream (update=True, which pool.sync_updates needs - otherwise NO_REPOSITORY_ENABLED). A
+    real host checks the URLs (INVALID_BASE_URL for an unknown domain), so these are the XenServer
+    CDN's, e.g. https://repo.ops.xenserver.com/xs9/{base,normal}."""
     return [session.xenapi.Repository.introduce(
                 "sdk-example-%s" % stage, "SDK example %s repository" % stage,
                 "%s/%s" % (repo_url, stage), "%s/%s" % (source_url, stage), stage != "base", "")

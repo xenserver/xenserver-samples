@@ -2,7 +2,7 @@
 
 # Connecting
 
-Every workflow starts the same way: open a session to the pool's coordinator, accepting its certificate (hosts ship with a self-signed one) and logging in. If you connect to a pool member instead, login fails with `HOST_IS_SLAVE` naming the coordinator, and these helpers reconnect there, as XenCenter does.
+Every workflow starts the same way: open a session to the pool's coordinator, accepting its certificate (hosts ship with a self-signed one) and logging in. If you connect to a pool member instead, login fails with `HOST_IS_SLAVE` naming the coordinator, and these helpers reconnect there.
 
 [All workflows](README.md)
 
@@ -18,7 +18,7 @@ internal static Session Connect(string url, string user, string password)
     catch (Failure f) when (f.ErrorDescription[0] == "HOST_IS_SLAVE")
     {
         // A pool member names the coordinator's address; reconnect there (assuming the coordinator
-        // is up), exactly as XenCenter does when you add a member server.
+        // is up).
         return Login($"https://{f.ErrorDescription[1]}", user, password);
     }
 }
@@ -40,8 +40,7 @@ def connect(url, username, password):
     """Open a session, skipping certificate validation for the host's self-signed cert.
 
     If url points at a pool *member* rather than the coordinator, login fails with HOST_IS_SLAVE
-    naming the coordinator's address; we reconnect to it (assuming the coordinator is up), exactly
-    as XenCenter does when you add a member server."""
+    naming the coordinator's address; we reconnect to it (assuming the coordinator is up)."""
     session = XenAPI.Session(url, ignore_ssl=True)
     try:
         session.login_with_password(username, password, "1.0", "sdk-examples")
@@ -62,8 +61,8 @@ public static Connection connect(String url, String user, String password) throw
         return login(http, url, user, password);
     } catch (Types.HostIsSlave e) {
         // A pool member names the coordinator's address; reconnect there (assuming the coordinator
-        // is up), exactly as XenCenter does when you add a member server. SDKs before CA-432633 read
-        // that address as "" under JSON-RPC: say so rather than connecting to "https://".
+        // is up). SDKs before CA-432633 read that address as "" under JSON-RPC: say so rather than
+        // connecting to "https://".
         if (e.masterIPAddress == null || e.masterIPAddress.isEmpty())
             throw new CoordinatorUnknown(url);
         return login(http, "https://" + e.masterIPAddress, user, password);
@@ -88,8 +87,13 @@ public static CloseableHttpClient trustingHttpClient() throws Exception {
         .loadTrustMaterial((chain, authType) -> true)
         .build();
     SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(ssl, NoopHostnameVerifier.INSTANCE);
+    // A synchronous call blocks until the operation finishes, and checkpointing, copying or exporting a
+    // large VM can take many minutes: wait up to an hour for the answer rather than HttpClient's
+    // three-minute default. (For anything longer, use the Async form and poll the task - see
+    // WaitForTask.)
     PoolingHttpClientConnectionManager cm = PoolingHttpClientConnectionManagerBuilder.create()
         .setSSLSocketFactory(sslsf)
+        .setDefaultConnectionConfig(ConnectionConfig.custom().setSocketTimeout(Timeout.ofHours(1)).build())
         .build();
     return HttpClients.custom().setConnectionManager(cm).build();
 }
@@ -109,8 +113,7 @@ func connect(url, user, password string) *xenapi.Session {
 	if err == nil {
 		return session
 	}
-	// A pool member names the coordinator's address; reconnect there (assuming the coordinator is up),
-	// exactly as XenCenter does when you add a member server.
+	// A pool member names the coordinator's address; reconnect there (assuming the coordinator is up).
 	coordinator := coordinatorFromSlaveError(err)
 	if coordinator == "" {
 		panic(err)
@@ -170,7 +173,7 @@ function Connect-Example {
     }
     catch {
         # A pool member reports the coordinator's address in the HOST_IS_SLAVE error; reconnect there
-        # (assuming the coordinator is up, as XenCenter does when you add a member server).
+        # (assuming the coordinator is up).
         $desc = $_.Exception.ErrorDescription
         if ($desc[0] -ne "HOST_IS_SLAVE") { throw }
         return Connect-XenServer -Url "https://$($desc[1])" -UserName $UserName -Password $Password `
@@ -194,7 +197,7 @@ xe() {
 }
 
 # A pool member refuses every command with HOST_IS_SLAVE, naming the coordinator's address; send
-# everything there instead (assuming the coordinator is up), as XenCenter does when you add a member server.
+# everything there instead (assuming the coordinator is up).
 _probe=$(xe pool-list --minimal 2>&1) || true
 if [[ $_probe =~ (Master|Coordinator)\ IP\ address:\ ([0-9A-Fa-f.:]+) ]]; then host=${BASH_REMATCH[2]}; fi
 ```

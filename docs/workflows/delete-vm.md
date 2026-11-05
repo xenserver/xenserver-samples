@@ -25,7 +25,7 @@ public static void DeleteVm(string url, string user, string password,
 {
     var session = Connect(url, user, password);
     // Make a throwaway VM to delete. VM.destroy removes the VM but leaves its disks, so the
-    // owned VDIs are destroyed explicitly afterward — exactly what XenCenter's Delete VM does.
+    // owned VDIs are destroyed explicitly afterward.
     var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
     Provision(session, vm);
     var uuid = VM.get_uuid(session, vm);
@@ -45,7 +45,7 @@ public static void DeleteVm(string url, string user, string password,
 <details><summary>Sample output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-0c0a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-160a-000000000000 with 1 disk(s)
 VM still present: False
 OK: delete-vm
 ```
@@ -73,7 +73,7 @@ from helpers import disk_vdis, provision, template_by_name
 
 def delete_vm(url, username, password, template_name, new_vm_name="sdk-example-delete"):
     """Make a throwaway VM, then delete it: VM.destroy removes the VM but leaves its disks, so the
-    owned VDIs are destroyed explicitly afterward — exactly what XenCenter's Delete VM does."""
+    owned VDIs are destroyed explicitly afterward."""
     session = connect(url, username, password)
     vm = session.xenapi.VM.clone(template_by_name(session, template_name), new_vm_name)
     provision(session, vm)
@@ -94,7 +94,7 @@ def delete_vm(url, username, password, template_name, new_vm_name="sdk-example-d
 <details><summary>Sample output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-0e0a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-f809-000000000000 with 1 disk(s)
 VM still present: False
 OK: delete-vm
 ```
@@ -140,7 +140,7 @@ public final class DeleteVm {
             String templateName, String newVmName) throws Exception {
         Connection conn = connect(url, user, password);
         // Make a throwaway VM to delete. VM.destroy removes the VM but leaves its disks, so the
-        // owned VDIs are destroyed explicitly afterward — exactly what XenCenter's Delete VM does.
+        // owned VDIs are destroyed explicitly afterward.
         VM vm = templateByName(conn, templateName).createClone(conn, newVmName);
         provision(conn, vm);
         String uuid = vm.getUuid(conn);
@@ -163,7 +163,7 @@ public final class DeleteVm {
 <details><summary>Sample output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-000a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-120a-000000000000 with 1 disk(s)
 VM still present: false
 OK: delete-vm
 ```
@@ -194,7 +194,7 @@ import (
 func deleteVM(url, user, password, templateName, newVMName string) {
 	session := connect(url, user, password)
 	// Make a throwaway VM to delete. VM.Destroy removes the VM but leaves its disks, so the
-	// owned VDIs are destroyed explicitly afterward - exactly what XenCenter's Delete VM does.
+	// owned VDIs are destroyed explicitly afterward.
 	vm, err := xenapi.VM.Clone(session, templateByName(session, templateName), newVMName)
 	check(err)
 	provision(session, vm)
@@ -225,7 +225,7 @@ func deleteVM(url, user, password, templateName, newVMName string) {
 <details><summary>Sample output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-ff09-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-1e0a-000000000000 with 1 disk(s)
 VM still present: false
 OK: delete-vm
 ```
@@ -256,7 +256,7 @@ function Invoke-DeleteVm {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     # Make a throwaway VM to delete. Remove-XenVM removes the VM but leaves its disks, so the owned
-    # VDIs are destroyed explicitly afterward - exactly what XenCenter's Delete VM does.
+    # VDIs are destroyed explicitly afterward.
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
@@ -282,7 +282,7 @@ function Invoke-DeleteVm {
 <details><summary>Sample output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-0e0a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-110a-000000000000 with 1 disk(s)
 VM still present: False
 OK: delete-vm
 ```
@@ -307,9 +307,9 @@ Source: [`cli/virtual-machines/delete-vm.sh`](../../cli/virtual-machines/delete-
 
 delete_vm() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-example-delete sr-uuid=$(shared_sr))
-    # vm-uninstall destroys the VM and the disks it owns, what XenCenter's Delete VM does; vm-destroy
-    # would remove only the VM record and leave its disks behind.
+    vm=$(xe vm-install template="$template" new-name-label=xe-example-delete)
+    # vm-uninstall destroys the VM and the disks it owns; vm-destroy would remove only the VM record
+    # and leave its disks behind.
     xe vm-uninstall uuid=$vm force=true
     echo "VM still present: $([ -z "$(xe vm-list uuid=$vm --minimal)" ] && echo false || echo true)"
     echo "OK: delete-vm"

@@ -46,7 +46,7 @@ public static void ManageVapp(string url, string user, string password, string v
     VM_appliance.shutdown(session, vapp.opaque_ref);
     Console.WriteLine($"Shut down:      {VM.get_power_state(session, vm.opaque_ref)}");
 
-    VM.set_appliance(session, vm.opaque_ref, null);
+    VM.set_appliance(session, vm.opaque_ref, "OpaqueRef:NULL"); // the null reference, spelled out: null would send ""
     VM_appliance.destroy(session, vapp.opaque_ref);
     Console.WriteLine("OK: manage-vapp");
     session.logout();
@@ -244,7 +244,7 @@ func manageVapp(url, user, password, vmName string) {
 	state, _ = xenapi.VM.GetPowerState(session, vm)
 	fmt.Printf("Shut down:      %s\n", state)
 
-	check(xenapi.VM.SetAppliance(session, vm, ""))
+	check(xenapi.VM.SetAppliance(session, vm, "OpaqueRef:NULL")) // the null reference: "" is not one
 	check(xenapi.VMAppliance.Destroy(session, vapp))
 	fmt.Println("OK: manage-vapp")
 	session.Logout()
@@ -278,7 +278,7 @@ function Invoke-ManageVapp {
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$UserName,
         [Parameter(Mandatory = $true)][string]$Password,
-        [string]$VmName = "web-01"
+        [string]$VmName = "db-01"
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $vm = Get-XenVM -Name $VmName
@@ -346,9 +346,11 @@ manage_vapp() {
     xe appliance-start uuid="$vapp_uuid"
     echo "Started:        $(xe vm-list uuid="$vm_uuid" params=power-state --minimal)"
 
-    # A plain appliance-shutdown is clean only, and fails OPERATION_PARTIALLY_FAILED if any member can't
-    # shut down cleanly (no guest OS or PV drivers); force=true shuts the members down hard.
-    xe appliance-shutdown uuid="$vapp_uuid" force=true
+    # A plain appliance-shutdown tries a clean shutdown of every member and fails
+    # OPERATION_PARTIALLY_FAILED if any member can't shut down cleanly (no guest OS or PV drivers);
+    # force=true is not a per-member fallback - it hard-shuts-down every member directly - so only
+    # reach for it if the clean attempt failed.
+    xe appliance-shutdown uuid="$vapp_uuid" || xe appliance-shutdown uuid="$vapp_uuid" force=true
     echo "Shut down:      $(xe vm-list uuid="$vm_uuid" params=power-state --minimal)"
 
     xe vm-param-set uuid="$vm_uuid" appliance=

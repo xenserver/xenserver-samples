@@ -55,7 +55,7 @@ public static void ManageVmGroups(string url, string user, string password,
 <details><summary>Sample output</summary>
 
 ```text
-Created group:  00000001-0000-0000-150a-000000000000
+Created group:  00000001-0000-0000-050a-000000000000
 Group members:  1
   web-01
 OK: manage-vm-groups
@@ -114,7 +114,7 @@ def manage_vm_groups(url, username, password, vm_name, group_name="sdk-example-g
 <details><summary>Sample output</summary>
 
 ```text
-Created group:  00000001-0000-0000-080a-000000000000
+Created group:  00000001-0000-0000-150a-000000000000
 Group members:  1
   web-01
 OK: manage-vm-groups
@@ -188,7 +188,7 @@ public final class ManageVmGroups {
 <details><summary>Sample output</summary>
 
 ```text
-Created group:  00000001-0000-0000-060a-000000000000
+Created group:  00000001-0000-0000-120a-000000000000
 Group members:  1
   web-01
 OK: manage-vm-groups
@@ -250,7 +250,7 @@ func manageVMGroups(url, user, password, vmName, groupName string) {
 <details><summary>Sample output</summary>
 
 ```text
-Created group:  00000001-0000-0000-0f0a-000000000000
+Created group:  00000001-0000-0000-1a0a-000000000000
 Group members:  1
   web-01
 OK: manage-vm-groups
@@ -309,7 +309,7 @@ function Invoke-ManageVmGroups {
 <details><summary>Sample output</summary>
 
 ```text
-Created group:  00000001-0000-0000-150a-000000000000
+Created group:  00000001-0000-0000-180a-000000000000
 Group members:  1
   web-01
 OK: manage-vm-groups
@@ -350,7 +350,7 @@ manage_vm_groups() {
 <details><summary>Sample output</summary>
 
 ```text
-Created group:  00000001-0000-0000-090a-000000000000
+Created group:  00000001-0000-0000-160a-000000000000
 Group members:  0
 OK: manage-vm-groups
 ```

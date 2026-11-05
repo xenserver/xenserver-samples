@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"go/xenapi"
 )
@@ -31,6 +32,7 @@ func waitForTask(url, user, password, templateName, newVMName string) {
 		}
 		progress, _ := xenapi.Task.GetProgress(session, task)
 		fmt.Printf("  progress: %.0f%%\n", progress*100)
+		time.Sleep(200 * time.Millisecond)
 	}
 	status, _ := xenapi.Task.GetStatus(session, task)
 	fmt.Printf("Task status: %s\n", status)

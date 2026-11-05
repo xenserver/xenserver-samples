@@ -32,7 +32,7 @@ public final class DeleteVm {
             String templateName, String newVmName) throws Exception {
         Connection conn = connect(url, user, password);
         // Make a throwaway VM to delete. VM.destroy removes the VM but leaves its disks, so the
-        // owned VDIs are destroyed explicitly afterward — exactly what XenCenter's Delete VM does.
+        // owned VDIs are destroyed explicitly afterward.
         VM vm = templateByName(conn, templateName).createClone(conn, newVmName);
         provision(conn, vm);
         String uuid = vm.getUuid(conn);

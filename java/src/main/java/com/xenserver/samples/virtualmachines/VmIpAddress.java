@@ -33,17 +33,19 @@ public final class VmIpAddress {
         try {
             long deadline = System.currentTimeMillis() + timeoutMs;
             while (true) {
-                // A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip").
+                // A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip"). Not
+                // every running VM has one (no guest tools, no NIC, still booting), so look at each until
+                // one does.
                 VM.Record vm = null;
-                for (VM.Record r : VM.getAllRecords(conn).values())
-                    if (r.powerState == Types.VmPowerState.RUNNING && !r.isATemplate && !r.isControlDomain
-                            && !r.guestMetrics.toWireString().equals("OpaqueRef:NULL")) { vm = r; break; }
                 String ip = null;
-                if (vm != null) {
-                    Map<String, String> networks = vm.guestMetrics.getRecord(conn).networks;
+                for (VM.Record r : VM.getAllRecords(conn).values()) {
+                    if (r.powerState != Types.VmPowerState.RUNNING || r.isATemplate || r.isControlDomain
+                            || r.guestMetrics.toWireString().equals("OpaqueRef:NULL")) continue;
+                    Map<String, String> networks = r.guestMetrics.getRecord(conn).networks;
                     ip = networks.get("0/ip");
+                    if (ip != null && !ip.isEmpty()) { vm = r; break; }
                 }
-                if (ip != null) {
+                if (vm != null) {
                     System.out.println("  " + vm.nameLabel + ": " + ip);
                     break;
                 }

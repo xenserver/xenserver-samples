@@ -80,7 +80,7 @@ private static string FirstDisk(Session session, string vmRef)
 
 ```text
 Backing up web-01
-  12666 blocks of 409600 changed (791.6 MiB to copy, not 25600.0 MiB)
+  12759 blocks of 409600 changed (797.4 MiB to copy, not 25600.0 MiB)
   older snapshot is now type=cbt_metadata, still cbt_enabled=True
 OK: changed-block-tracking
 ```
@@ -169,7 +169,7 @@ def first_disk(x, vm):
 
 ```text
 Backing up web-01
-  12761 blocks of 409600 changed (797.6 MiB to copy, not 25600.0 MiB)
+  12832 blocks of 409600 changed (802.0 MiB to copy, not 25600.0 MiB)
   older snapshot is now type=cbt_metadata, still cbt_enabled=True
 OK: changed-block-tracking
 ```
@@ -282,7 +282,7 @@ public final class ChangedBlockTracking {
 
 ```text
 Backing up web-01
-  12876 blocks of 409600 changed (804.8 MiB to copy, not 25600.0 MiB)
+  12962 blocks of 409600 changed (810.1 MiB to copy, not 25600.0 MiB)
   older snapshot is now type=cbt_metadata, still cbt_enabled=true
 OK: changed-block-tracking
 ```
@@ -396,8 +396,8 @@ func firstDisk(session *xenapi.Session, vm xenapi.VMRef) xenapi.VDIRef {
 <details><summary>Sample output</summary>
 
 ```text
-Backing up web-01
-  12588 blocks of 409600 changed (786.8 MiB to copy, not 25600.0 MiB)
+Backing up db-01
+  12542 blocks of 409600 changed (783.9 MiB to copy, not 25600.0 MiB)
   older snapshot is now type=cbt_metadata, still cbt_enabled=true
 OK: changed-block-tracking
 ```
@@ -500,7 +500,7 @@ function Get-FirstDisk {
 
 ```text
 Backing up web-01
-  12926 blocks of 409600 changed (807.9 MiB to copy, not 25,600.0 MiB)
+  12639 blocks of 409600 changed (789.9 MiB to copy, not 25,600.0 MiB)
   older snapshot is now type=cbt_metadata, still cbt_enabled=True
 OK: changed-block-tracking
 ```
@@ -521,7 +521,12 @@ Source: [`cli/storage/changed-block-tracking.sh`](../../cli/storage/changed-bloc
 #   ./workflows.sh changed-block-tracking https://xenserver root "$password"
 
 changed_block_tracking() {
-    vm=$(nth_csv "$(xe vm-list is-control-domain=false --minimal)" 1)
+    vm=""
+    for candidate in $(each_csv "$(xe vm-list is-a-template=false is-control-domain=false is-a-snapshot=false --minimal)"); do
+        [ -n "$(first_disk_vdi "$candidate")" ] || continue
+        vm=$candidate; break
+    done
+    [ -n "$vm" ] || { echo "no VM with a disk was found" >&2; exit 1; }
     echo "Backing up $(xe vm-param-get uuid=$vm param-name=name-label)"
 
     # CBT is switched on for the VM's own disk, and every snapshot taken from then on inherits it. It

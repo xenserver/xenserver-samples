@@ -53,8 +53,10 @@ internal static partial class Workflows
         session.logout();
     }
 
-    /// <summary> A throwaway self-signed certificate and private key (PEM). .NET's own X509 API builds
-    /// one directly - no external tool needed. </summary>
+    /// <summary>
+    /// A throwaway self-signed certificate and private key (PEM). .NET's own X509 API builds one directly -
+    /// no external tool needed.
+    /// </summary>
     private static (string CertPem, string KeyPem) SelfSignedCertPem()
     {
         using var rsa = RSA.Create(2048);

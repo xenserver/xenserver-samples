@@ -39,9 +39,9 @@ public final class DisasterRecoveryFailover {
      * Fail over to the disaster recovery site.
      *
      * <p>On the pool at the disaster recovery site, attach the storage array's replica of the protected
-     * pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it describes -
-     * as XenCenter's Disaster Recovery wizard does. By default this is a test failover, which removes what
-     * it recovered and detaches the storage again.
+     * pool's storage, read the pool metadata replicated to it, and recover the VMs and vApps it
+     * describes. By default this is a test failover, which removes what it recovered and detaches the
+     * storage again.
      *
      * <p>The replica is the LUN the storage array mirrors the protected pool's SR to: name it by the iSCSI
      * target, IQN and SCSI id (srType "lvmoiscsi"), or by SCSI id alone for Fibre Channel/SAS (srType
@@ -109,7 +109,7 @@ public final class DisasterRecoveryFailover {
                     if (vdi.getType(conn) != Types.VdiType.METADATA || !vdi.getMetadataLatest(conn)) continue;
                     Database db = new Database(conn, vdi.openDatabase(conn));
 
-                    // A pool often has no name of its own; XenCenter shows its coordinator's name instead.
+                    // A pool often has no name of its own; show its coordinator's name instead.
                     Pool.Record pool = db.call("pool.get_all_records", new TypeReference<Map<Pool, Pool.Record>>() {})
                             .values().iterator().next();
                     String poolName = pool.nameLabel.isEmpty()

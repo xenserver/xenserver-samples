@@ -4,7 +4,7 @@
 
 Set a host's out-of-band power-on mode and credentials, then read them back.
 
-**Requires:** remote power control on the hosts (iLO, DRAC or IPMI).
+**Requires:** a power-on method configured on the hosts (IPMI, Wake-on-LAN or a custom script).
 
 Workflow `host-power-on`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -23,8 +23,8 @@ public static void HostPowerOn(string url, string user, string password)
 
     // Mode and config travel together: the config carries the credentials the mode needs.
     // "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"
-    // modes were removed from the real power-on plugin (REQ-811) and fail the moment host.power_on
-    // is actually called ("{mode} script has been removed").
+    // modes were removed from the real power-on plugin and fail the moment host.power_on is actually
+    // called ("{mode} script has been removed").
     Host.set_power_on_mode(session, hostRef, "wake-on-lan", new Dictionary<string, string>());
     Console.WriteLine($"Power-on mode:  {Host.get_power_on_mode(session, hostRef)}");
     foreach (var kv in Host.get_power_on_config(session, hostRef))
@@ -65,8 +65,8 @@ def host_power_on(url, username, password):
 
     # Mode and config travel together: the config carries the credentials the mode needs.
     # "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/
-    # "DRAC" modes were removed from the real power-on plugin (REQ-811) and fail the moment
-    # host.power_on is actually called.
+    # "DRAC" modes were removed from the real power-on plugin and fail the moment host.power_on
+    # is actually called.
     session.xenapi.host.set_power_on_mode(host_ref, "wake-on-lan", {})
     print("Power-on mode:  %s" % session.xenapi.host.get_power_on_mode(host_ref))
     for k, v in sorted(session.xenapi.host.get_power_on_config(host_ref).items()):
@@ -118,8 +118,8 @@ public final class HostPowerOn {
 
         // Mode and config travel together: the config carries the credentials the mode needs.
         // "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"
-        // modes were removed from the real power-on plugin (REQ-811) and fail the moment host.power_on is
-        // actually called.
+        // modes were removed from the real power-on plugin and fail the moment host.power_on is actually
+        // called.
         Map<String, String> cfg = new HashMap<>();
         host.setPowerOnMode(conn, "wake-on-lan", cfg);
         System.out.println("Power-on mode:  " + host.getPowerOnMode(conn));
@@ -218,8 +218,8 @@ function Invoke-HostPowerOn {
     # the same way the events example does for the missing event cmdlet. Still pure PowerShell: no
     # [XenAPI.*]:: statics, and Connect has already trusted the server's certificate.
     # "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"
-    # modes were removed from the real power-on plugin (REQ-811) and fail the moment host.power_on is
-    # actually called ("{mode} script has been removed").
+    # modes were removed from the real power-on plugin and fail the moment host.power_on is actually
+    # called ("{mode} script has been removed").
     Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @(
         $xenHost.opaque_ref, 'wake-on-lan', @{})
     $updated = Get-XenHost -Ref $xenHost.opaque_ref

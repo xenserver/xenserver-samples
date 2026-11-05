@@ -44,13 +44,27 @@ internal static partial class Workflows
         var path = device.Element("path")!.Value;
         Console.WriteLine($"Discovered LUN: SCSIid {scsiId} on {path}");
 
-        // SCSIid is all lvmohba needs - it is what XenCenter's New SR wizard sends. (The probe's <path> is
-        // for display: on a real host it reads like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
+        // SCSIid is all lvmohba needs. (The probe's <path> is for display: on a real host it reads
+        // like "/dev/sde [sdc] [sdg] [sdi]", one entry per path.)
         var dc = new Dictionary<string, string> { ["SCSIid"] = scsiId };
+
+        // SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
+        // there, and SR.create would format it. Reattach that SR rather than destroying it.
+        var srListXml = XDocument.Parse(SR.probe(session, host, dc, "lvmohba", new Dictionary<string, string>()));
+        var existing = srListXml.Descendants("SR").FirstOrDefault();
+        if (existing != null)
+            throw new Exception($"LUN {scsiId} already holds SR {existing.Element("UUID")!.Value.Trim()}; "
+                + "creating an SR here would format it - reattach the existing SR instead of creating a new one");
+
         var sr = SR.create(session, host, dc, 0, srName, "HBA SR created by the SDK example",
             "lvmohba", "user", true, new Dictionary<string, string>());
         Console.WriteLine($"Created SR: {SR.get_uuid(session, sr)} ({SR.get_physical_size(session, sr) / GiB} GiB)");
-        DetachAndForgetSr(session, sr);
+        // Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
+        // SR.destroy needs it detached from every host first.
+        foreach (var pbd in SR.get_PBDs(session, sr))
+            if (PBD.get_currently_attached(session, pbd.opaque_ref))
+                PBD.unplug(session, pbd.opaque_ref);
+        SR.destroy(session, sr);
         Console.WriteLine("OK: create-hba-sr");
         session.logout();
     }

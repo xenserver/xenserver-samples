@@ -13,11 +13,19 @@ Workflow `create-smb-sr`. [All workflows](README.md) · [Connecting](connecting.
 Source: [`csharp/Storage/CreateSmbSr.cs`](../../csharp/Storage/CreateSmbSr.cs)
 
 ```csharp
-/// <summary> Connect a shared storage repository to an SMB/CIFS file share, passing the server, share path and
-/// credentials (the password as a secret, never in plain text). </summary> <example> <code>
+/// <summary>
+/// Connect a shared storage repository to an SMB/CIFS file share, passing the server, share path and
+/// credentials (the password as a secret, never in plain text).
+/// </summary>
+/// <example>
+/// <code>
 /// Workflows.CreateSmbSr("https://xenserver", "root", password, "192.0.2.40", "/vmstore", "Administrator", "Password1");
-/// </code> </example> <remarks> Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share).
-/// The password travels as a Secret, not plaintext device-config - the way XenCenter does it. </remarks>
+/// </code>
+/// </example>
+/// <remarks>
+/// Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share). The password
+/// travels as a Secret, not plaintext device-config.
+/// </remarks>
 public static void CreateSmbSr(string url, string user, string password, string server, string share,
     string smbUsername, string smbPassword, string srName = "sdk-example-smb")
 {
@@ -50,7 +58,7 @@ public static void CreateSmbSr(string url, string user, string password, string 
 <details><summary>Sample output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-820a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-700a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -75,8 +83,7 @@ def create_smb_sr(url, username, password, server, share, smb_username, smb_pass
                    sr_name="sdk-example-smb"):
     """Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share).
 
-    The password travels as a Secret, not plaintext device-config - the way XenCenter does
-    it."""
+    The password travels as a Secret, not plaintext device-config."""
     GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
     host = session.xenapi.host.get_all()[0]
@@ -98,7 +105,7 @@ def create_smb_sr(url, username, password, server, share, smb_username, smb_pass
 <details><summary>Sample output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-a70a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-0c0b-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -133,7 +140,7 @@ public final class CreateSmbSr {
      * credentials (the password as a secret, never in plain text).
      *
      * <p>Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share). The
-     * password travels as a Secret, not plaintext device-config - the way XenCenter does it.
+     * password travels as a Secret, not plaintext device-config.
      *
      * <p>Run it:
      *
@@ -174,7 +181,7 @@ public final class CreateSmbSr {
 <details><summary>Sample output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-ef0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-740a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -199,7 +206,7 @@ import (
 // credentials (the password as a secret, never in plain text).
 //
 // Connect a shared SR to an SMB/CIFS file share. The password travels as a Secret, not plaintext
-// device-config - the way XenCenter does it.
+// device-config.
 func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
@@ -234,7 +241,7 @@ func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, s
 <details><summary>Sample output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-ab0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-100b-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -267,7 +274,7 @@ function Invoke-CreateSmbSr {
     )
     # Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share).
     #
-    # The password travels as a Secret, not plaintext device-config - the way XenCenter does it.
+    # The password travels as a Secret, not plaintext device-config.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $xenHost = Get-XenHost | Select-Object -First 1
 
@@ -292,7 +299,7 @@ function Invoke-CreateSmbSr {
 <details><summary>Sample output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-dc0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-df0a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -326,8 +333,8 @@ create_smb_sr() {
     smb_password=$(param smb_password "Password1")
     sr_name=$(param sr_name "xe-example-smb")
 
-    # The password travels as a Secret, not plaintext device-config - the convention XenCenter follows
-    # (0/3 real captured sr-create calls for this type use plaintext).
+    # The password travels as a Secret, not plaintext device-config (0/3 real captured sr-create calls for
+    # this type use plaintext).
     secret=$(xe secret-create value="$smb_password")
     sr=$(xe sr-create host-uuid=$(first_host) type=smb name-label="$sr_name" shared=true \
         device-config:server="//$server$share" \
@@ -342,7 +349,7 @@ create_smb_sr() {
 <details><summary>Sample output</summary>
 
 ```text
-Created SMB SR: 00000001-0000-0000-af0a-000000000000 (512 GiB)
+Created SMB SR: 00000001-0000-0000-140b-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 

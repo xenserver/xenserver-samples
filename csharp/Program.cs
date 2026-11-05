@@ -31,9 +31,10 @@ internal static class Program
         return result;
     }
 
-    /// <summary> Maps the &lt;workflow&gt; argument to its method, merging the dispatcher's placeholder
-    /// defaults with any key=value overrides supplied on the command line. In your own code you would call
-    /// the methods directly (each one's &lt;example&gt; shows how) rather than through this dispatcher.
+    /// <summary>
+    /// Maps the &lt;workflow&gt; argument to its method, merging the dispatcher's placeholder defaults with
+    /// any key=value overrides supplied on the command line. In your own code you would call the methods
+    /// directly (each one's &lt;example&gt; shows how) rather than through this dispatcher.
     /// </summary>
     private static readonly Dictionary<string, Action<string, string, string, Dictionary<string, string>>> ById = new()
     {
@@ -306,12 +307,13 @@ internal static class Program
         },
         ["create-iscsi-sr"] = (u, n, p, ov) =>
         {
-            var d = Merge(new() { ["target"] = "192.0.2.30", ["sr_name"] = "sdk-example-iscsi" }, ov);
+            var d = Merge(new() { ["target"] = "192.0.2.30", ["scsi_id"] = "360a980004265656d5f4a2d63764e5734",
+                                   ["sr_name"] = "sdk-example-iscsi" }, ov);
             int? port = ov.TryGetValue("port", out var portStr) ? int.Parse(portStr) : (int?)null;
             var chapUser = ov.TryGetValue("chap_user", out var cu) ? cu : null;
             var chapPassword = ov.TryGetValue("chap_password", out var cp) ? cp : null;
             CreateIscsiSr(u, n, p, d["target"], port, chapUser, chapPassword,
-                ov.GetValueOrDefault("target_iqn"), d["sr_name"]);
+                ov.GetValueOrDefault("target_iqn"), d["scsi_id"], d["sr_name"]);
         },
         ["create-smb-sr"] = (u, n, p, ov) =>
         {

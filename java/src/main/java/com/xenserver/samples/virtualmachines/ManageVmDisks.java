@@ -31,10 +31,9 @@ public final class ManageVmDisks {
      * <p>Not the VM's root/boot disk: a real VM's system disk is unpluggable=false (only a template's
      * non-system disks default to unpluggable), so VBD.unplug on it fails on a real host with
      * VBD_NOT_UNPLUGGABLE - and the VM has to be running in the first place, or unplug fails with
-     * VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead, matching
-     * XenCenter's own "deactivate" action, which only ever targets additional disks, and tidy up
-     * afterwards so the example is repeatable. No shrink: real SR backends refuse one outright
-     * (SR_BACKEND_FAILURE_79), so this only ever grows.
+     * VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead, and
+     * tidy up afterwards so the example is repeatable. No shrink: real SR backends refuse one
+     * outright (SR_BACKEND_FAILURE_79), so this only ever grows.
      *
      * <p>Plugging and unplugging a disk on a running VM needs the guest's PV drivers
      * (VM_MISSING_PV_DRIVERS otherwise), so the VM is a throwaway copy of sourceVm, a VM with a guest OS

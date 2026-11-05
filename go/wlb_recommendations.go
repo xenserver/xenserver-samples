@@ -61,7 +61,7 @@ func wlbRecommendations(url, user, password, vmName, wlbHostPort, wlbUsername, w
 	}
 
 	// A VM's own are keyed by host and star-rate each destination: [0] "wlb", [1] the rating - higher
-	// is better (a real appliance rated hosts 6.1 here, so not capped at XenCenter's five stars).
+	// is better (a real appliance rated hosts 6.1 here, so not capped at five).
 	// Right after connecting, the appliance is still discovering the pool and answers
 	// WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025 ("... has not been
 	// completed"), then 4016 ("WLB does not have current metrics") - keep asking for a while.

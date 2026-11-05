@@ -8,8 +8,8 @@
 
 # Send a W3C trace context with every command, so the work the pool does for them is recorded as part of
 # your application's distributed trace. xe sends $TRACEPARENT to the server as a traceparent header (or
-# take --traceparent <value>); in a traced script, export the caller's own. The Windows xe.exe that
-# ships with XenCenter does not send one.
+# take --traceparent <value>); in a traced script, export the caller's own. The Windows xe.exe does not
+# send one.
 trace_api_calls() {
     # version 00, a 16-byte trace id, the 8-byte id of the calling span, and flags 01 (sampled)
     local trace_id span_id

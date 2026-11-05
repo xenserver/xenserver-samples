@@ -11,20 +11,29 @@ Workflow `backup-host-config`. [All workflows](README.md) · [Connecting](connec
 Source: [`csharp/HostsAndPools/BackupHostConfig.cs`](../../csharp/HostsAndPools/BackupHostConfig.cs)
 
 ```csharp
-/// <summary> Download a host's configuration backup and hand it back as a restore would — and watch
-/// another host's backup be refused. </summary> <example> <code>
-/// Workflows.BackupHostConfig("https://xenserver", "root", password); </code> </example> <remarks> Both
-/// /host_backup and /host_restore are served only by whichever host physically accepted the HTTP
+/// <summary>
+/// Download a host's configuration backup and hand it back as a restore would — and watch another host's
+/// backup be refused.
+/// </summary>
+/// <example>
+/// <code>
+/// Workflows.BackupHostConfig("https://xenserver", "root", password);
+/// </code>
+/// </example>
+/// <remarks>
+/// Both /host_backup and /host_restore are served only by whichever host physically accepted the HTTP
 /// connection - the handler is keyed off the connection's own address, not any ref= in the query string.
 /// So backing up/restoring a host means opening the connection to THAT host's own address, not the pool's
 /// (coordinator) url - a restore sent to the wrong host's connection silently restores the WRONG host.
-/// ref= is kept in the query string for readability in the host's logs. </remarks>
+/// ref= is kept in the query string for readability in the host's logs.
+/// </remarks>
 public static void BackupHostConfig(string url, string user, string password)
 {
     var session = Connect(url, user, password);
 
-    var hosts = Host.get_all(session).Select(h => h.opaque_ref).ToList();
-    var host = hosts[0];
+    // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+    var hosts = Host.get_all(session).Select(h => h.opaque_ref).OrderBy(h => h != host).ToList();
     var hostUrl = HostUrl(url, Host.get_address(session, host));
     Console.WriteLine($"Backing up {Host.get_name_label(session, host)}");
 
@@ -125,9 +134,9 @@ private static string RestoreHostConfig(Session session, string hostUrl, string 
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-856f988d8da5482eb3d795930d4137a5.backup
+  wrote 83 bytes to sdk-example-host-61ff127b714c4cbfadd0e962699d86a4.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:43152 directly (One or more errors occurred. (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:43152)))
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:22292 directly (One or more errors occurred. (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:22292)))
 OK: backup-host-config
 ```
 
@@ -174,8 +183,9 @@ def backup_host_config(url, username, password):
     x = session.xenapi
     ctx = ssl._create_unverified_context()
 
-    hosts = x.host.get_all()
-    host = hosts[0]
+    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    host = x.pool.get_master(x.pool.get_all()[0])
+    hosts = [host] + [h for h in x.host.get_all() if h != host]
     host_url = _host_url(url, x.host.get_address(host))
     print("Backing up %s" % x.host.get_name_label(host))
 
@@ -253,7 +263,7 @@ def restore_host_config(session, ctx, host_url, host, path):
 Backing up sdk-host1
   wrote 83 bytes to sdk-example-host.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:21942 directly (<urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>)
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:40566 directly (<urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>)
 OK: backup-host-config
 ```
 
@@ -311,8 +321,13 @@ public final class BackupHostConfig {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         try {
-            java.util.List<Host> hosts = new java.util.ArrayList<Host>(Host.getAll(conn));
-            Host host = hosts.get(0);
+            // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+            // getAll is a set, in no particular order, so put the coordinator first.
+            Host host = com.xensource.xenapi.Pool.getAll(conn).iterator().next().getMaster(conn);
+            java.util.List<Host> hosts = new java.util.ArrayList<Host>();
+            hosts.add(host);
+            for (Host h : Host.getAll(conn))
+                if (!h.toWireString().equals(host.toWireString())) hosts.add(h);
             String session = conn.getSessionReference();
             String hostUrl = hostUrl(url, host.getAddress(conn));
             System.out.println("Backing up " + host.getNameLabel(conn));
@@ -431,9 +446,9 @@ public final class BackupHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host14788031293413581874.backup
+  wrote 83 bytes to sdk-example-host168748643465404095.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect directly (org.apache.hc.client5.http.HttpHostConnectException: Connect to https://198.51.100.12:20457 [/198.51.100.12] failed: Connection timed out: getsockopt)
+  restoring it to sdk-host2: could not connect directly (org.apache.hc.client5.http.HttpHostConnectException: Connect to https://198.51.100.12:39715 [/198.51.100.12] failed: Connection timed out: getsockopt)
 OK: backup-host-config
 ```
 
@@ -480,8 +495,19 @@ func backupHostConfig(url, user, password string) {
 	check(err)
 	defer session.Logout()
 
-	hosts, err := xenapi.Host.GetAll(session)
+	// The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
+	coordinator, err := xenapi.Pool.GetMaster(session, pools[0])
+	check(err)
+	all, err := xenapi.Host.GetAll(session)
+	check(err)
+	hosts := []xenapi.HostRef{coordinator}
+	for _, h := range all {
+		if h != coordinator {
+			hosts = append(hosts, h)
+		}
+	}
 	host := hosts[0]
 	name, err := xenapi.Host.GetNameLabel(session, host)
 	check(err)
@@ -605,9 +631,9 @@ func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.Hos
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-641191609.backup
+  wrote 83 bytes to sdk-example-host-1918929038.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:39123 directly (Put "https://198.51.100.12:39123/host_restore?session_id=OpaqueRef:00000001-session-2884&ref=OpaqueRef:00000001-host-77&task_id=OpaqueRef:00000001-task-2886": dial tcp 198.51.100.12:39123: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.)
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:20550 directly (Put "https://198.51.100.12:20550/host_restore?session_id=OpaqueRef:00000001-session-2896&ref=OpaqueRef:00000001-host-79&task_id=OpaqueRef:00000001-task-2898": dial tcp 198.51.100.12:20550: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.)
 OK: backup-host-config
 ```
 
@@ -635,7 +661,9 @@ function Invoke-BackupHostConfig {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
-    $hosts = @(Get-XenHost)
+    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    $coordinator = (Get-XenPool).master.opaque_ref
+    $hosts = @(Get-XenHost | Sort-Object { $_.opaque_ref -ne $coordinator })
     $vmHost = $hosts[0]
     $hostUrl = Get-HostUrl -Url $Url -Address $vmHost.address
     Write-Host "Backing up $($vmHost.name_label)"
@@ -726,9 +754,9 @@ function Restore-ExampleHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-5d3e6daa-1348-49eb-9c77-e05c5fbdd2d5.backup
+  wrote 83 bytes to sdk-example-host-2a64b052-3ca0-4549-9929-cd6cc0ff3f68.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:31107 directly (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:31107))
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:38882 directly (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:38882))
 OK: backup-host-config
 ```
 
@@ -750,7 +778,8 @@ Source: [`cli/hosts-and-pools/backup-host-config.sh`](../../cli/hosts-and-pools/
 backup_host_config() {
     # Deliberately not `host`: that is the variable the xe() helper dials, and shadowing it here sent
     # every later command to a server named after the host's UUID.
-    target=$(nth_csv "$(xe host-list --minimal)" 1)
+    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    target=$(xe pool-param-get uuid=$(xe pool-list --minimal) param-name=master)
     echo "Backing up $(xe host-param-get uuid=$target param-name=name-label)"
 
     # Relative to the working directory: xe.exe and this script must agree on the path, and a Windows
@@ -766,7 +795,8 @@ backup_host_config() {
     xe host-restore uuid=$target file-name="$file"
     echo "  restoring it to $(xe host-param-get uuid=$target param-name=name-label): accepted"
 
-    other=$(nth_csv "$(xe host-list --minimal)" 2)
+    other=""
+    for h in $(each_csv "$(xe host-list --minimal)"); do [ "$h" = "$target" ] || { other=$h; break; }; done
     if [ -n "$other" ]; then
         # host-backup/host-restore are served only by whichever host physically accepted the connection -
         # xe's own uri_of_someone already dials that host's address directly by uuid, there is no

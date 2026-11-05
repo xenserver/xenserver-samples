@@ -1,5 +1,5 @@
 // Connecting to a pool: accept the host's self-signed certificate, log in, and follow
-// HOST_IS_SLAVE to the coordinator when given a pool member - as XenCenter does.
+// HOST_IS_SLAVE to the coordinator when given a pool member.
 
 using XenAPI;
 
@@ -17,7 +17,7 @@ internal static partial class Workflows
         catch (Failure f) when (f.ErrorDescription[0] == "HOST_IS_SLAVE")
         {
             // A pool member names the coordinator's address; reconnect there (assuming the coordinator
-            // is up), exactly as XenCenter does when you add a member server.
+            // is up).
             return Login($"https://{f.ErrorDescription[1]}", user, password);
         }
     }

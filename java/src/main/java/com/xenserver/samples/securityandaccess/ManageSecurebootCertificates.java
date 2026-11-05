@@ -21,6 +21,10 @@ public final class ManageSecurebootCertificates {
      * use them, then flag a guest whose certificates have gone stale for a refresh at its next boot — and
      * unflag it again.
      *
+     * <p>Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+     * BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+     * suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window.
+     *
      * <p>Run it:
      *
      * <pre>{@code

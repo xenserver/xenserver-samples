@@ -23,7 +23,7 @@ internal static partial class Workflows
         else
         {
             Console.WriteLine($"Dismissing:     {first.Value.name} (priority {first.Value.priority})");
-            // Dismiss in XenCenter's Notifications view is exactly this call.
+            // Dismissing an alert is this one call.
             Message.destroy(session, first.Key);
             Console.WriteLine($"Alerts left:    {Message.get_all_records(session).Count}");
         }

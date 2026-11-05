@@ -30,6 +30,6 @@ xe() {
 }
 
 # A pool member refuses every command with HOST_IS_SLAVE, naming the coordinator's address; send
-# everything there instead (assuming the coordinator is up), as XenCenter does when you add a member server.
+# everything there instead (assuming the coordinator is up).
 _probe=$(xe pool-list --minimal 2>&1) || true
 if [[ $_probe =~ (Master|Coordinator)\ IP\ address:\ ([0-9A-Fa-f.:]+) ]]; then host=${BASH_REMATCH[2]}; fi

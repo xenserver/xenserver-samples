@@ -27,8 +27,8 @@ internal static partial class Workflows
                           + $"{original / (double)(1024 * 1024 * 1024):F1} GiB");
 
         // One setter, not a range: dom0 does not balloon, so set_memory pins the static and dynamic
-        // bounds and the target together. The new size takes effect at the next reboot, which is why
-        // XenCenter offers this only in maintenance mode — the API itself does not stop you.
+        // bounds and the target together. The new size takes effect at the next reboot, so change
+        // it with the host in maintenance mode — the API itself does not stop you.
         VM.set_memory(session, dom0.opaque_ref, original + 1024L * 1024 * 1024);
         var record = VM.get_record(session, dom0.opaque_ref);
         Console.WriteLine($"  now {record.memory_dynamic_min / (double)(1024 * 1024 * 1024):F1} GiB "

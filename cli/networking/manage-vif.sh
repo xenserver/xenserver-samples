@@ -10,7 +10,7 @@
 
 manage_vif() {
     local template=$(param template_name "Rocky Linux 8") device
-    vm=$(xe vm-install template="$template" new-name-label=xe-example-vif sr-uuid=$(shared_sr))
+    vm=$(xe vm-install template="$template" new-name-label=xe-example-vif)
     net=$(first_csv "$(xe network-list --minimal)")
     device=$(first_csv "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=allowed-VIF-devices)")")
     vif=$(xe vif-create vm-uuid=$vm network-uuid=$net device=$device)

@@ -10,7 +10,7 @@
 
 create_vm() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-example-vm sr-uuid=$(shared_sr))
+    vm=$(xe vm-install template="$template" new-name-label=xe-example-vm)
     echo "Created VM: $vm"
     echo "is-a-template = $(xe vm-param-get uuid=$vm param-name=is-a-template)"
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy

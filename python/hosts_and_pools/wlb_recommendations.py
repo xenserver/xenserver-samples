@@ -54,10 +54,10 @@ def wlb_recommendations(url, username, password, vm_name, wlb_host_port="wlb.exa
             print(f"  move {x.VM.get_name_label(vm_ref)} -> host {fields[1]} ({fields[4]})")
 
         # A VM's own recommendations are keyed by host and star-rate each as a destination:
-        # [0] "wlb", [1] the rating - higher is better (a real appliance rated hosts 6.1 here, so not
-        # capped at XenCenter's five stars). Right after connecting, the appliance is still
-        # discovering the pool: WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025
-        # ("... has not been completed"), then 4016 ("WLB does not have current metrics") - keep asking.
+        # [0] "wlb", [1] the rating - higher is better (a real appliance rated hosts 6.1 here, so not capped
+        # at five). Right after connecting, the appliance is still discovering the pool: WLB_INTERNAL_ERROR
+        # 4024 ("Pool discovery has not been started"), 4025 ("... has not been completed"), then 4016 ("WLB
+        # does not have current metrics") - keep asking.
         vm = x.VM.get_by_name_label(vm_name)[0]
         deadline = time.time() + 600
         while True:

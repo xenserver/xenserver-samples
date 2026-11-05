@@ -36,8 +36,9 @@ internal static partial class Workflows
         var site = PVS_site.introduce(session, "sdk-example-pvs", "Created by the SDK examples", "");
         PVS_server.introduce(session, new[] { "203.0.113.90" }, 6910, 6930, site);
 
-        // The read cache must be on LOCAL storage. The point of the accelerator is to keep reads off
-        // the network, so a cache on a shared SR would defeat it and the server rejects one.
+        // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+        // the network; the server does not enforce that, but a cache on shared storage rarely makes
+        // sense and can't be shared between hosts anyway.
         foreach (var hostRef in Host.get_all(session))
         {
             var local = LocalSr(session, hostRef);

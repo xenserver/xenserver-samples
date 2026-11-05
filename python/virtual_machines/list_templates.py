@@ -13,7 +13,9 @@ from connection import connect
 def list_templates(url, username, password):
     """List the pool's templates, flagging the built-in (default) ones."""
     session = connect(url, username, password)
-    templates = sorted((v for v in session.xenapi.VM.get_all_records().values() if v["is_a_template"]),
+    # A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
+    templates = sorted((v for v in session.xenapi.VM.get_all_records().values()
+                        if v["is_a_template"] and not v["is_a_snapshot"]),
                        key=lambda v: v["name_label"])
     print("Templates (%d):" % len(templates))
     for t in templates[:8]:

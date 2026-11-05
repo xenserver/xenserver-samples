@@ -393,7 +393,7 @@ func restartHost(url, user, password string) {
 	fmt.Printf("  enabled=%t, guests=%d\n", enabled, guestCount(session, host))
 
 	// Disabled means "accept no new VMs"; it does not move anything on its own.
-	check(xenapi.Host.Disable(session, host, false))
+	check(xenapi.Host.Disable(session, host, true))
 	enabled, _ = xenapi.Host.GetEnabled(session, host)
 	fmt.Printf("  disabled:   enabled=%t\n", enabled)
 
@@ -418,7 +418,7 @@ func restartHost(url, user, password string) {
 	// working), and waiting for each transition before starting the next.
 	mode, _ := xenapi.Host.GetPowerOnMode(session, host)
 	if mode != "" {
-		check(xenapi.Host.Disable(session, host, false))
+		check(xenapi.Host.Disable(session, host, true))
 		check(xenapi.Host.Shutdown(session, host))
 		waitForHostLive(session, host, false)
 		fmt.Printf("  shut down:  live=%t\n", hostLive(session, host))

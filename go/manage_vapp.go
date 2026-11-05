@@ -38,7 +38,7 @@ func manageVapp(url, user, password, vmName string) {
 	state, _ = xenapi.VM.GetPowerState(session, vm)
 	fmt.Printf("Shut down:      %s\n", state)
 
-	check(xenapi.VM.SetAppliance(session, vm, ""))
+	check(xenapi.VM.SetAppliance(session, vm, "OpaqueRef:NULL")) // the null reference: "" is not one
 	check(xenapi.VMAppliance.Destroy(session, vapp))
 	fmt.Println("OK: manage-vapp")
 	session.Logout()

@@ -4,6 +4,8 @@
 
 Check whether the pool can supply UEFI Secure Boot certificates and whether a guest is ready to use them, then flag a guest whose certificates have gone stale for a refresh at its next boot — and unflag it again.
 
+**Caution:** updating a guest's certificates can trigger BitLocker recovery (TPM PCR7 changes).
+
 Workflow `manage-secureboot-certificates`. [All workflows](README.md) · [Connecting](connecting.md)
 
 ## C# (.NET)
@@ -16,6 +18,11 @@ Source: [`csharp/SecurityAndAccess/ManageSecurebootCertificates.cs`](../../cshar
 /// them, then flag a guest whose certificates have gone stale for a refresh at its next boot — and unflag
 /// it again.
 /// </summary>
+/// <remarks>
+/// Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+/// BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+/// suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window.
+/// </remarks>
 /// <example>
 /// <code>
 /// Workflows.ManageSecurebootCertificates("https://xenserver", "root", password);
@@ -111,7 +118,11 @@ def manage_secureboot_certificates(url, username, password):
     certificates are already due to refresh (secureboot_certificates_state == update_available).
     That's a deliberately-provisioned state, not one a normally-provisioned Secure Boot guest is
     ever in - so report and stop cleanly when no VM needs it, rather than failing with a bare
-    lookup error."""
+    lookup error.
+
+    Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+    BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+    suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window."""
     session = connect(url, username, password)
     x = session.xenapi
     pool = x.pool.get_all()[0]
@@ -185,6 +196,10 @@ public final class ManageSecurebootCertificates {
      * <p>Check whether the pool can supply UEFI Secure Boot certificates and whether a guest is ready to
      * use them, then flag a guest whose certificates have gone stale for a refresh at its next boot — and
      * unflag it again.
+     *
+     * <p>Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+     * BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+     * suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window.
      *
      * <p>Run it:
      *
@@ -278,6 +293,10 @@ import (
 // use them, then flag a guest whose certificates have gone stale for a refresh at its next boot —
 // and unflag it again.
 //
+// Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+// BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+// suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window.
+//
 // Run it:
 //
 //	manageSecurebootCertificates("https://xenserver", "root", password)
@@ -366,6 +385,10 @@ function Invoke-ManageSecurebootCertificates {
         Check whether the pool can supply UEFI Secure Boot certificates and whether a guest is ready to use
         them, then flag a guest whose certificates have gone stale for a refresh at its next boot — and
         unflag it again.
+
+        Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+        BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+        suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window.
     .EXAMPLE
         Invoke-ManageSecurebootCertificates -Url https://xenserver -UserName root -Password $password
     #>
@@ -458,6 +481,10 @@ manage_secureboot_certificates() {
     # A guest whose certificates have gone stale. The state is a plain field, so it filters like any other.
     # This is a deliberately-seeded state, not one an ordinarily-provisioned pool is ever in - report and
     # stop cleanly when no VM needs it, rather than operating on an empty uuid.
+    #
+    # Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+    # BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+    # suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window.
     vm=$(first_csv "$(xe vm-list secureboot-certificates-state=update_available --minimal)")
     if [ -z "$vm" ]; then
         echo "No guest needs a Secure Boot certificate refresh right now."

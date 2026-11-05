@@ -44,7 +44,7 @@ public static void CreateVm(string url, string user, string password,
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-e609-000000000000
+Cloned new VM: 00000001-0000-0000-ee09-000000000000
 Provisioned. is_a_template = False
 Cleaned up the example VM.
 OK: create-vm
@@ -95,7 +95,7 @@ def create_vm(url, username, password, template_name, new_vm_name="sdk-example-v
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-eb09-000000000000
+Cloned new VM: 00000001-0000-0000-f009-000000000000
 Provisioned. is_a_template = False
 Cleaned up the example VM.
 OK: create-vm
@@ -159,7 +159,7 @@ public final class CreateVm {
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-e909-000000000000
+Cloned new VM: 00000001-0000-0000-eb09-000000000000
 Provisioned. is_a_template = false
 Cleaned up the example VM.
 OK: create-vm
@@ -214,7 +214,7 @@ func createVM(url, user, password, templateName, newVMName string) {
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-ec09-000000000000
+Cloned new VM: 00000001-0000-0000-eb09-000000000000
 Provisioned. is_a_template = false
 Cleaned up the example VM.
 OK: create-vm
@@ -267,7 +267,7 @@ function Invoke-CreateVm {
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-eb09-000000000000
+Cloned new VM: 00000001-0000-0000-ee09-000000000000
 Provisioned. is_a_template = False
 Cleaned up the example VM.
 OK: create-vm
@@ -292,7 +292,7 @@ Source: [`cli/virtual-machines/create-vm.sh`](../../cli/virtual-machines/create-
 
 create_vm() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-example-vm sr-uuid=$(shared_sr))
+    vm=$(xe vm-install template="$template" new-name-label=xe-example-vm)
     echo "Created VM: $vm"
     echo "is-a-template = $(xe vm-param-get uuid=$vm param-name=is-a-template)"
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy
@@ -305,7 +305,7 @@ create_vm() {
 <details><summary>Sample output</summary>
 
 ```text
-Created VM: 00000001-0000-0000-eb09-000000000000
+Created VM: 00000001-0000-0000-f209-000000000000
 is-a-template = false
 OK: create-vm
 ```

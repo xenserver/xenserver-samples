@@ -44,7 +44,7 @@ public static void ConfigureClustering(string url, string user, string password)
         // first: Cluster.pool_create fails PIF_ALLOWS_UNPLUG otherwise. was remembers the settings.
         foreach (var pif in was.Keys)
             PIF.set_disallow_unplug(session, pif, true);
-        // token_timeout is in seconds (XenCenter's default 20.0, coefficient 1.0): XS9 refuses 20000
+        // token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses 20000
         // as "too large" - it is not milliseconds.
         cluster = Cluster.pool_create(session, network, "corosync", 20.0, 1.0).opaque_ref;
     }
@@ -129,7 +129,7 @@ def configure_clustering(url, username, password):
         was = {ref: pifs[ref]["disallow_unplug"] for ref in network_pifs}
         for ref in network_pifs:
             x.PIF.set_disallow_unplug(ref, True)
-        # token_timeout is in seconds (XenCenter's default 20.0, coefficient 1.0): XS9 refuses 20000 as
+        # token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses 20000 as
         # "too large" - it is not milliseconds.
         cluster = x.Cluster.pool_create(network, "corosync", 20.0, 1.0)
 
@@ -231,7 +231,7 @@ public final class ConfigureClustering {
                 // Corosync must not lose its network, so each host's PIF on it has to refuse unplugging
                 // first: Cluster.poolCreate fails PIF_ALLOWS_UNPLUG otherwise. was remembers the settings.
                 for (PIF pif : was.keySet()) pif.setDisallowUnplug(conn, true);
-                // token_timeout is in seconds (XenCenter's default 20.0, coefficient 1.0): XS9 refuses
+                // token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses
                 // 20000 as "too large" - it is not milliseconds.
                 cluster = Cluster.poolCreate(conn, network, "corosync", 20.0, 1.0);
             }
@@ -328,7 +328,7 @@ func configureClustering(url, user, password string) {
 		for ref := range was {
 			check(xenapi.PIF.SetDisallowUnplug(session, ref, true))
 		}
-		// token_timeout is in seconds (XenCenter's default 20.0, coefficient 1.0): XS9 refuses 20000 as
+		// token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses 20000 as
 		// "too large" - it is not milliseconds.
 		cluster, err = xenapi.Cluster.PoolCreate(session, network, "corosync", 20.0, 1.0)
 		check(err)

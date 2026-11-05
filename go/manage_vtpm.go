@@ -18,12 +18,19 @@ func manageVtpm(url, user, password string) {
 	check(err)
 	var vm xenapi.VMRef
 	var record xenapi.VMRecord
+	found := false
+	// vTPM is not supported for a BIOS-mode VM, only a UEFI one (HVM_boot_params["firmware"] ==
+	// "uefi"), so pick one of those rather than any halted VM.
 	for ref, v := range vms {
 		if !v.IsATemplate && !v.IsControlDomain && !v.IsASnapshot &&
-			v.PowerState == xenapi.VMPowerStateHalted && len(v.VTPMs) == 0 {
-			vm, record = ref, v
+			v.PowerState == xenapi.VMPowerStateHalted && len(v.VTPMs) == 0 &&
+			v.HVMBootParams["firmware"] == "uefi" {
+			vm, record, found = ref, v, true
 			break
 		}
+	}
+	if !found {
+		panic("no halted UEFI VM without a vTPM already attached was found")
 	}
 	fmt.Printf("Attaching a vTPM to %s\n", record.NameLabel)
 

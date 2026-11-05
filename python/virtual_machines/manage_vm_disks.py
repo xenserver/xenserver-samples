@@ -14,8 +14,7 @@ def manage_vm_disks(url, username, password, source_vm, sr_name, new_vm_name="sd
     Not the VM's root/boot disk: a real VM's system disk is unpluggable=false (only a template's
     non-system disks default to unpluggable), so VBD.unplug on it fails on a real host with
     VBD_NOT_UNPLUGGABLE - and the VM has to be running in the first place, or unplug fails with
-    VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead,
-    matching XenCenter's own "deactivate" action, which only ever targets additional disks, and
+    VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead, and
     tidy up afterwards so the example is repeatable. No shrink: real SR backends refuse one
     outright (SR_BACKEND_FAILURE_79), so this only ever grows.
 

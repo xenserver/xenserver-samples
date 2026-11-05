@@ -39,8 +39,8 @@ def server_status_report(url, username, password):
               % (capability.get("key"), capability.get("max-size"),
                  capability.get("default-checked"), capability.get("pii")))
 
-    # Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-    # section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+    # Take the sections the host marks default-checked: asking for every section can mean gigabytes (VM
+    # memory dumps, every log) and a long wait while the host builds it.
     whole = fetch_status_report(url, session, ctx, defaults)
     print("default sections (%d of %d): %d bytes" % (len(defaults), len(keys), whole))
 

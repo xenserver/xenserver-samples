@@ -22,10 +22,10 @@ function Invoke-VmBootConfig {
     $ref = $vm.opaque_ref
 
     # Set the vCPU topology and switch the VM to UEFI boot: firmware ("bios"/"uefi") lives in
-    # HVM_boot_params, Secure Boot in platform["secureboot"]. "auto" (not a hard-coded "true") is the
-    # real xe/XenCenter convention: xapi resolves it against whether the pool actually holds Secure Boot
-    # certificates, at VM.start time - a hard "true" would claim Secure Boot is on even on a template
-    # that was never set up for it, since Set-XenVM does no validation of its own.
+    # HVM_boot_params, Secure Boot in platform["secureboot"]. "auto" (not a hard-coded "true") is the xe
+    # convention: xapi resolves it against whether the pool actually holds Secure Boot certificates, at
+    # VM.start time - a hard "true" would claim Secure Boot is on even on a template that was never set up for
+    # it, since Set-XenVM does no validation of its own.
     $vm | Set-XenVM -VCPUsMax 4 -VCPUsAtStartup 2 -HVMBootParams @{ order = "cdn"; firmware = "uefi" }
     $platform = (Get-XenVM -Ref $ref).platform
     $platform["secureboot"] = "auto"

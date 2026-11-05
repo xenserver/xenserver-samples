@@ -40,7 +40,7 @@ internal static partial class Workflows
         VM_appliance.shutdown(session, vapp.opaque_ref);
         Console.WriteLine($"Shut down:      {VM.get_power_state(session, vm.opaque_ref)}");
 
-        VM.set_appliance(session, vm.opaque_ref, null);
+        VM.set_appliance(session, vm.opaque_ref, "OpaqueRef:NULL"); // the null reference, spelled out: null would send ""
         VM_appliance.destroy(session, vapp.opaque_ref);
         Console.WriteLine("OK: manage-vapp");
         session.logout();

@@ -29,10 +29,10 @@ function Invoke-ConfigureHa {
         -not $_.is_a_template -and -not $_.is_control_domain -and -not $_.is_a_snapshot
     } | Select-Object -First 1
 
-    # How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those
-    # (as XenCenter's HA wizard does): a target computed with none protected can be too high, and
-    # protecting a VM afterwards then fails HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN. The configuration
-    # maps VM references (XenRef objects - a ref string fails to cast) to restart priorities.
+    # How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those: a target
+    # computed with none protected can be too high, and protecting a VM afterwards then fails
+    # HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN. The configuration maps VM references (XenRef objects - a ref
+    # string fails to cast) to restart priorities.
     $guestRef = [XenAPI.XenRef[XenAPI.VM]]::Create($guest.opaque_ref)
     $ntol = $pool | Invoke-XenPool -XenAction HaComputeHypotheticalMaxHostFailuresToTolerate `
         -Configuration @{ $guestRef = "restart" } -PassThru

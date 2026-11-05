@@ -14,9 +14,10 @@ configure_dynamic_memory() {
     dyn_max=$(xe vm-param-get uuid=$vm param-name=memory-dynamic-max)
     echo "$(xe vm-param-get uuid=$vm param-name=name-label): static $(gib $static_min)-$(gib $static_max), dynamic $(gib $dyn_min)-$(gib $dyn_max)"
 
-    # Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never below the
-    # static floor, which is the least the guest can boot in.
-    floor=$((static_max / 4))
+    # Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+    # static maximum for every supported guest (lower can make it unstable), and never below the static
+    # floor, which is the least the guest can boot in.
+    floor=$((static_max * 3 / 4))
     [ "$floor" -lt "$static_min" ] && floor=$static_min
     xe vm-memory-dynamic-range-set uuid=$vm min=$floor max=$static_max
     echo "  dynamic range now $(gib $(xe vm-param-get uuid=$vm param-name=memory-dynamic-min))-$(gib $(xe vm-param-get uuid=$vm param-name=memory-dynamic-max))"

@@ -45,8 +45,13 @@ public final class BackupHostConfig {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         try {
-            java.util.List<Host> hosts = new java.util.ArrayList<Host>(Host.getAll(conn));
-            Host host = hosts.get(0);
+            // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+            // getAll is a set, in no particular order, so put the coordinator first.
+            Host host = com.xensource.xenapi.Pool.getAll(conn).iterator().next().getMaster(conn);
+            java.util.List<Host> hosts = new java.util.ArrayList<Host>();
+            hosts.add(host);
+            for (Host h : Host.getAll(conn))
+                if (!h.toWireString().equals(host.toWireString())) hosts.add(h);
             String session = conn.getSessionReference();
             String hostUrl = hostUrl(url, host.getAddress(conn));
             System.out.println("Backing up " + host.getNameLabel(conn));

@@ -28,9 +28,10 @@ internal static partial class Workflows
                           + $"{Gib(before.memory_static_max)}, dynamic {Gib(before.memory_dynamic_min)}-"
                           + $"{Gib(before.memory_dynamic_max)}");
 
-        // Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never below
-        // the static floor, which is the least the guest can boot in.
-        var floor = Math.Max(before.memory_static_min, before.memory_static_max / 4);
+        // Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+        // static maximum for every supported guest (lower can make it unstable), and never below the static
+        // floor, which is the least the guest can boot in.
+        var floor = Math.Max(before.memory_static_min, before.memory_static_max * 3 / 4);
         var ceiling = before.memory_static_max;
         VM.set_memory_dynamic_range(session, vm.Key.opaque_ref, floor, ceiling);
         Console.WriteLine($"  dynamic range now {Gib(VM.get_memory_dynamic_min(session, vm.Key.opaque_ref))}-"

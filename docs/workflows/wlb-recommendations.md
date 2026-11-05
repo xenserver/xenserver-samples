@@ -70,9 +70,9 @@ public static void WlbRecommendations(string url, string user, string password, 
 
         // A VM's own recommendations are keyed by host and star-rate each as a destination:
         // [0] "wlb", [1] the rating - higher is better (a real appliance rated hosts 6.1 here, so not
-        // capped at XenCenter's five stars). Right after connecting, the appliance is still
-        // discovering the pool: WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025
-        // ("... has not been completed"), then 4016 ("WLB does not have current metrics") - keep asking.
+        // capped at five). Right after connecting, the appliance is still discovering the pool:
+        // WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025 ("... has not been
+        // completed"), then 4016 ("WLB does not have current metrics") - keep asking.
         var vm = VM.get_by_name_label(session, vmName)[0];
         var deadline = DateTime.UtcNow.AddMinutes(10);
         Dictionary<XenRef<Host>, string[]> vmRecs;
@@ -117,8 +117,8 @@ public static void WlbRecommendations(string url, string user, string password, 
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5100-000000000000 (Optimizing pool CPU load)
-  move web-01 -> host 00000001-0000-0000-5100-000000000000 (Optimizing pool CPU load)
+  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
+  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
   sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
@@ -188,10 +188,10 @@ def wlb_recommendations(url, username, password, vm_name, wlb_host_port="wlb.exa
             print(f"  move {x.VM.get_name_label(vm_ref)} -> host {fields[1]} ({fields[4]})")
 
         # A VM's own recommendations are keyed by host and star-rate each as a destination:
-        # [0] "wlb", [1] the rating - higher is better (a real appliance rated hosts 6.1 here, so not
-        # capped at XenCenter's five stars). Right after connecting, the appliance is still
-        # discovering the pool: WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025
-        # ("... has not been completed"), then 4016 ("WLB does not have current metrics") - keep asking.
+        # [0] "wlb", [1] the rating - higher is better (a real appliance rated hosts 6.1 here, so not capped
+        # at five). Right after connecting, the appliance is still discovering the pool: WLB_INTERNAL_ERROR
+        # 4024 ("Pool discovery has not been started"), 4025 ("... has not been completed"), then 4016 ("WLB
+        # does not have current metrics") - keep asking.
         vm = x.VM.get_by_name_label(vm_name)[0]
         deadline = time.time() + 600
         while True:
@@ -225,8 +225,8 @@ def wlb_recommendations(url, username, password, vm_name, wlb_host_port="wlb.exa
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5100-000000000000 (Optimizing pool CPU load)
-  move web-01 -> host 00000001-0000-0000-5100-000000000000 (Optimizing pool CPU load)
+  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
+  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
   sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
@@ -321,11 +321,11 @@ public final class WlbRecommendations {
 
                 // Same caveat for a VM's own recommendations, which are keyed by host and rate each as a
                 // destination - higher is better (a real appliance rated hosts 6.1 here, so not capped
-                // at XenCenter's five stars). Right after connecting, the appliance is still discovering
-                // the pool and answers WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started") -
-                // keep asking for a while. The generated binding drops WLB_INTERNAL_ERROR's parameters
-                // (its no-arg constructor discards errorDescription), so unlike the other bindings this
-                // cannot check for 4024 specifically and retries on any WlbInternalError instead.
+                // at five). Right after connecting, the appliance is still discovering the pool and
+                // answers WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started") - keep asking
+                // for a while. The generated binding drops WLB_INTERNAL_ERROR's parameters (its no-arg
+                // constructor discards errorDescription), so unlike the other bindings this cannot check
+                // for 4024 specifically and retries on any WlbInternalError instead.
                 VM vm = VM.getByNameLabel(conn, vmName).iterator().next();
                 long deadline = System.currentTimeMillis() + 10 * 60 * 1000;
                 Map<Host, Set<String>> vmRecs;
@@ -372,8 +372,8 @@ public final class WlbRecommendations {
 
 ```text
 WLB: wlb.example:8012
-  move cache-01: rec-1 Optimizing pool CPU load opt-1 00000001-0000-0000-5100-000000000000 wlb
-  move web-01: rec-2 Optimizing pool CPU load opt-2 00000001-0000-0000-5100-000000000000 wlb
+  move web-01: 00000001-0000-0000-5300-000000000000 rec-1 Optimizing pool CPU load opt-1 wlb
+  move cache-01: 00000001-0000-0000-5300-000000000000 rec-2 Optimizing pool CPU load opt-2 wlb
   sdk-host1: 1.0 wlb id-00000001
   sdk-host2: wlb 3.7 id-00000001
   appliance configuration: ReportingCronString=0 3 * * *
@@ -450,7 +450,7 @@ func wlbRecommendations(url, user, password, vmName, wlbHostPort, wlbUsername, w
 	}
 
 	// A VM's own are keyed by host and star-rate each destination: [0] "wlb", [1] the rating - higher
-	// is better (a real appliance rated hosts 6.1 here, so not capped at XenCenter's five stars).
+	// is better (a real appliance rated hosts 6.1 here, so not capped at five).
 	// Right after connecting, the appliance is still discovering the pool and answers
 	// WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025 ("... has not been
 	// completed"), then 4016 ("WLB does not have current metrics") - keep asking for a while.
@@ -512,8 +512,8 @@ func isWlbStillDiscovering(err error) bool {
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5100-000000000000 (Optimizing pool CPU load)
-  move web-01 -> host 00000001-0000-0000-5100-000000000000 (Optimizing pool CPU load)
+  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
+  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host2 rated 3.7
   sdk-host1 rated 1.0
   appliance configuration: ReportingCronString=0 3 * * *
@@ -586,8 +586,8 @@ function Invoke-WlbRecommendations {
         }
 
         # A VM's own are keyed by host and star-rate each destination: [0] "wlb", [1] the rating -
-        # higher is better (a real appliance rated hosts 6.1 here, so not capped at XenCenter's five
-        # stars). Right after connecting, the appliance is still discovering the pool and answers
+        # higher is better (a real appliance rated hosts 6.1 here, so not capped at five). Right
+        # after connecting, the appliance is still discovering the pool and answers
         # WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025 ("... has not been
         # completed"), then 4016 ("WLB does not have current metrics") - keep asking for a while.
         $vm = Get-XenVM -Name $VmName
@@ -630,8 +630,8 @@ function Invoke-WlbRecommendations {
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5100-000000000000 (Optimizing pool CPU load)
-  move web-01 -> host 00000001-0000-0000-5100-000000000000 (Optimizing pool CPU load)
+  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
+  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
   sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
@@ -707,11 +707,10 @@ wlb_recommendations() {
     xe pool-retrieve-wlb-recommendations
 
     # A VM's own recommendations are keyed by host and star-rate each as a destination - higher is better
-    # (a real appliance rated hosts 6.1 here, so not capped at XenCenter's five stars). Right after
-    # connecting, the appliance is still discovering the pool: WLB_INTERNAL_ERROR 4024 ("Pool discovery has
-    # not been started"), 4025 ("... has not been completed"), then 4016 ("WLB does not have current
-    # metrics") - keep asking for a while. xe prints the error's message, not its
-    # code, so match on the text.
+    # (a real appliance rated hosts 6.1 here, so not capped at five). Right after connecting, the appliance
+    # is still discovering the pool: WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started"), 4025
+    # ("... has not been completed"), then 4016 ("WLB does not have current metrics") - keep asking for a
+    # while. xe prints the error's message, not its code, so match on the text.
     vm=$(vm_uuid "$vm_name")
     deadline=$((SECONDS + 600))
     while true; do
@@ -738,8 +737,8 @@ wlb_recommendations() {
 
 ```text
 WLB: wlb.example:8012
-cache-01: wlb 00000001-0000-0000-5100-000000000000 opt-1 rec-1 Optimizing pool CPU load
-web-01: wlb 00000001-0000-0000-5100-000000000000 opt-2 rec-2 Optimizing pool CPU load
+web-01: wlb 00000001-0000-0000-5300-000000000000 opt-1 rec-1 Optimizing pool CPU load
+cache-01: wlb 00000001-0000-0000-5300-000000000000 opt-2 rec-2 Optimizing pool CPU load
 sdk-host1: wlb 1.0 id-00000001
 sdk-host2: wlb 3.7 id-00000001
   appliance configuration: ReportingCronString: 0 3 * * *

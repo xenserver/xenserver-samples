@@ -265,7 +265,7 @@ Source: [`cli/virtual-machines/convert-to-template.sh`](../../cli/virtual-machin
 
 convert_to_template() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-example-totemplate sr-uuid=$(shared_sr))
+    vm=$(xe vm-install template="$template" new-name-label=xe-example-totemplate)
     echo "is-a-template after install: $(xe vm-param-get uuid=$vm param-name=is-a-template)"
     xe vm-param-set uuid=$vm is-a-template=true   # one-way operation
     echo "is-a-template after convert: $(xe vm-param-get uuid=$vm param-name=is-a-template)"

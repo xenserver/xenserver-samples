@@ -34,21 +34,6 @@ func srUsage(url, user, password string) {
 	if haveScan {
 		check(xenapi.SR.Scan(session, scanMe))
 	}
-
-	// Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by setting
-	// o_direct, which asks the storage layer to bypass the cache entirely.
-	if haveScan {
-		check(xenapi.SR.RemoveFromOtherConfig(session, scanMe, "o_direct"))
-		check(xenapi.SR.AddToOtherConfig(session, scanMe, "o_direct", "true"))
-		oc, _ := xenapi.SR.GetOtherConfig(session, scanMe)
-		name, _ := xenapi.SR.GetNameLabel(session, scanMe)
-		readCaching := "on"
-		if oc["o_direct"] == "true" {
-			readCaching = "off"
-		}
-		fmt.Printf("  read caching on %s: %s\n", name, readCaching)
-		check(xenapi.SR.RemoveFromOtherConfig(session, scanMe, "o_direct"))
-	}
 	fmt.Println("OK: sr-usage")
 	session.Logout()
 }

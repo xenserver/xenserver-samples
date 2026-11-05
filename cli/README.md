@@ -16,8 +16,8 @@ cli/
 
 ## Run
 
-You need bash and an `xe` client. On Windows, use Git Bash and the `xe.exe` that ships with
-XenCenter. Point `XE_EXE` at `xe` if it is not on your `PATH`:
+You need bash and an `xe` client. On Windows, use Git Bash and the Windows `xe.exe` (installed with
+XenCenter). Point `XE_EXE` at `xe` if it is not on your `PATH`:
 
 ```
 export XE_EXE="/c/Program Files (x86)/XenServer/XenCenter/xe.exe"

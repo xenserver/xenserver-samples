@@ -57,12 +57,11 @@ public final class CreateVmWithVgpu {
         VM vm = templateByName(conn, templateName).createClone(conn, newVmName);
         provision(conn, vm);
 
-        // Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty. Same call
-        // as XenCenter's New VM wizard GPU page and the VM Properties GPU page.
+        // Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
         VGPU vgpu = VGPU.create(conn, vm, group, "0", new HashMap<String, String>(), vgpuType);
         System.out.println("Created vGPU: " + vgpu.getUuid(conn));
 
-        // Read the assignment back, as XenCenter's GPU tab does.
+        // Read the assignment back.
         Set<VGPU> vgpus = vm.getVGPUs(conn);
         String assigned = vgpus.iterator().next().getType(conn).getModelName(conn);
         System.out.println("VM now has " + vgpus.size() + " vGPU(s); type = " + assigned);

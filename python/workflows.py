@@ -2,9 +2,8 @@
 """
 XenServer Python SDK - real-world workflow examples.
 
-Each example is a self-contained function that mirrors a task you would perform in
-XenCenter, driven entirely through the XenServer Management API (XenAPI). The Python
-binding (XenAPI.py) speaks XML-RPC and is included with the SDK.
+Each example is a self-contained function for a common administration task, driven entirely through
+the XenServer Management API (XenAPI). The Python binding (XenAPI.py) speaks XML-RPC and is included with the SDK.
 
 Each workflow is a module of its own, in a package per area (getting_started/, virtual_machines/,
 storage/, ...). Its function takes the connection details (and any object it acts on, looked up by
@@ -224,7 +223,8 @@ WORKFLOWS = {
     "vm-ip-address": _wf(vm_ip_address),
     "manage-ad-users": _wf(manage_ad_users, domain="", admin_user="alice",
                             admin_password="Password1", new_user="alice"),
-    "create-iscsi-sr": _wf(create_iscsi_sr, target="192.0.2.30"),
+    "create-iscsi-sr": _wf(create_iscsi_sr, target="192.0.2.30",
+                           scsi_id="360a980004265656d5f4a2d63764e5734"),
     "create-smb-sr": _wf(create_smb_sr, server="192.0.2.40", share="/vmstore",
                           smb_username="Administrator", smb_password="Password1"),
     "create-hba-sr": _wf(create_hba_sr),

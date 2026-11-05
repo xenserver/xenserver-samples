@@ -16,14 +16,16 @@ def vm_ip_address(url, username, password, timeout=60, interval=2):
     session = connect(url, username, password)
     deadline = time.time() + timeout
     while True:
-        # A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip").
-        vm = next((v for v in session.xenapi.VM.get_all_records().values()
-                   if v["power_state"] == "Running" and not v["is_a_template"]
-                   and not v["is_control_domain"] and v["guest_metrics"] != "OpaqueRef:NULL"), None)
-        ip = None
-        if vm is not None:
-            networks = session.xenapi.VM_guest_metrics.get_record(vm["guest_metrics"])["networks"]
-            ip = networks.get("0/ip")
+        # A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip"). Not every
+        # running VM has one (no guest tools, no NIC, still booting), so look at each until one does.
+        vm, ip = None, None
+        for v in session.xenapi.VM.get_all_records().values():
+            if (v["power_state"] == "Running" and not v["is_a_template"] and not v["is_control_domain"]
+                    and v["guest_metrics"] != "OpaqueRef:NULL"):
+                ip = session.xenapi.VM_guest_metrics.get_record(v["guest_metrics"])["networks"].get("0/ip")
+                if ip:
+                    vm = v
+                    break
         if ip:
             print("  %s: %s" % (vm["name_label"], ip))
             break

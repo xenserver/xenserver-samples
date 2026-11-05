@@ -51,7 +51,7 @@ public static void WaitForTask(string url, string user, string password,
 <details><summary>Sample output</summary>
 
 ```text
-Started task: 00000001-0000-0000-e909-000000000000
+Started task: 00000001-0000-0000-ec09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task
@@ -106,7 +106,7 @@ def wait_for_task(url, username, password, template_name, new_vm_name="sdk-examp
 <details><summary>Sample output</summary>
 
 ```text
-Started task: 00000001-0000-0000-ea09-000000000000
+Started task: 00000001-0000-0000-ed09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task
@@ -177,7 +177,7 @@ public final class WaitForTask {
 <details><summary>Sample output</summary>
 
 ```text
-Started task: 00000001-0000-0000-eb09-000000000000
+Started task: 00000001-0000-0000-ee09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task
@@ -195,6 +195,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"go/xenapi"
 )
@@ -223,6 +224,7 @@ func waitForTask(url, user, password, templateName, newVMName string) {
 		}
 		progress, _ := xenapi.Task.GetProgress(session, task)
 		fmt.Printf("  progress: %.0f%%\n", progress*100)
+		time.Sleep(200 * time.Millisecond)
 	}
 	status, _ := xenapi.Task.GetStatus(session, task)
 	fmt.Printf("Task status: %s\n", status)
@@ -246,7 +248,7 @@ func waitForTask(url, user, password, templateName, newVMName string) {
 <details><summary>Sample output</summary>
 
 ```text
-Started task: 00000001-0000-0000-ea09-000000000000
+Started task: 00000001-0000-0000-ed09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task
@@ -307,7 +309,7 @@ function Invoke-WaitForTask {
 <details><summary>Sample output</summary>
 
 ```text
-Started task: 00000001-0000-0000-e909-000000000000
+Started task: 00000001-0000-0000-ec09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task

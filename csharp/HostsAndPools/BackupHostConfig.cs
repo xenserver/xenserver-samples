@@ -9,20 +9,29 @@ namespace XenServerWorkflows;
 
 internal static partial class Workflows
 {
-    /// <summary> Download a host's configuration backup and hand it back as a restore would — and watch
-    /// another host's backup be refused. </summary> <example> <code>
-    /// Workflows.BackupHostConfig("https://xenserver", "root", password); </code> </example> <remarks> Both
-    /// /host_backup and /host_restore are served only by whichever host physically accepted the HTTP
+    /// <summary>
+    /// Download a host's configuration backup and hand it back as a restore would — and watch another host's
+    /// backup be refused.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// Workflows.BackupHostConfig("https://xenserver", "root", password);
+    /// </code>
+    /// </example>
+    /// <remarks>
+    /// Both /host_backup and /host_restore are served only by whichever host physically accepted the HTTP
     /// connection - the handler is keyed off the connection's own address, not any ref= in the query string.
     /// So backing up/restoring a host means opening the connection to THAT host's own address, not the pool's
     /// (coordinator) url - a restore sent to the wrong host's connection silently restores the WRONG host.
-    /// ref= is kept in the query string for readability in the host's logs. </remarks>
+    /// ref= is kept in the query string for readability in the host's logs.
+    /// </remarks>
     public static void BackupHostConfig(string url, string user, string password)
     {
         var session = Connect(url, user, password);
 
-        var hosts = Host.get_all(session).Select(h => h.opaque_ref).ToList();
-        var host = hosts[0];
+        // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+        var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+        var hosts = Host.get_all(session).Select(h => h.opaque_ref).OrderBy(h => h != host).ToList();
         var hostUrl = HostUrl(url, Host.get_address(session, host));
         Console.WriteLine($"Backing up {Host.get_name_label(session, host)}");
 

@@ -32,9 +32,10 @@ public static void ConfigureDynamicMemory(string url, string user, string passwo
                       + $"{Gib(before.memory_static_max)}, dynamic {Gib(before.memory_dynamic_min)}-"
                       + $"{Gib(before.memory_dynamic_max)}");
 
-    // Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never below
-    // the static floor, which is the least the guest can boot in.
-    var floor = Math.Max(before.memory_static_min, before.memory_static_max / 4);
+    // Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+    // static maximum for every supported guest (lower can make it unstable), and never below the static
+    // floor, which is the least the guest can boot in.
+    var floor = Math.Max(before.memory_static_min, before.memory_static_max * 3 / 4);
     var ceiling = before.memory_static_max;
     VM.set_memory_dynamic_range(session, vm.Key.opaque_ref, floor, ceiling);
     Console.WriteLine($"  dynamic range now {Gib(VM.get_memory_dynamic_min(session, vm.Key.opaque_ref))}-"
@@ -65,7 +66,7 @@ private static string Gib(long bytes) => $"{bytes / (1024.0 * 1024 * 1024):F1} G
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
-  dynamic range now 1.0 GiB-4.0 GiB
+  dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER
 OK: configure-dynamic-memory
 ```
@@ -106,9 +107,10 @@ def configure_dynamic_memory(url, username, password):
           % (before["name_label"], gib(before["memory_static_min"]), gib(before["memory_static_max"]),
              gib(before["memory_dynamic_min"]), gib(before["memory_dynamic_max"])))
 
-    # Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never
-    # below the static floor, which is the least the guest can boot in.
-    floor = max(int(before["memory_static_min"]), int(before["memory_static_max"]) // 4)
+    # Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+    # static maximum for every supported guest (lower can make it unstable), and never below the static
+    # floor, which is the least the guest can boot in.
+    floor = max(int(before["memory_static_min"]), int(before["memory_static_max"]) * 3 // 4)
     ceiling = int(before["memory_static_max"])
     x.VM.set_memory_dynamic_range(vm, str(floor), str(ceiling))
     after = x.VM.get_record(vm)
@@ -137,7 +139,7 @@ def gib(value):
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
-  dynamic range now 1.0 GiB-4.0 GiB
+  dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER
 OK: configure-dynamic-memory
 ```
@@ -193,9 +195,10 @@ public final class ConfigureDynamicMemory {
                     gib(before.memoryStaticMin), gib(before.memoryStaticMax),
                     gib(before.memoryDynamicMin), gib(before.memoryDynamicMax));
 
-            // Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never
-            // below the static floor, which is the least the guest can boot in.
-            long floor = Math.max(before.memoryStaticMin, before.memoryStaticMax / 4);
+            // Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+            // static maximum for every supported guest (lower can make it unstable), and never below the static
+            // floor, which is the least the guest can boot in.
+            long floor = Math.max(before.memoryStaticMin, before.memoryStaticMax * 3 / 4);
             long ceiling = before.memoryStaticMax;
             vm.setMemoryDynamicRange(conn, floor, ceiling);
             System.out.printf("  dynamic range now %s-%s%n",
@@ -227,7 +230,7 @@ public final class ConfigureDynamicMemory {
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
-  dynamic range now 1.0 GiB-4.0 GiB
+  dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max: The dynamic memory range violates constraint static_min &lt;= dynamic_min &lt;= dynamic_max &lt;= static_max.
 OK: configure-dynamic-memory
 ```
@@ -270,9 +273,10 @@ func configureDynamicMemory(url, user, password string) {
 		gib(before.MemoryStaticMin), gib(before.MemoryStaticMax),
 		gib(before.MemoryDynamicMin), gib(before.MemoryDynamicMax))
 
-	// Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never below the
-	// static floor, which is the least the guest can boot in.
-	floor := before.MemoryStaticMax / 4
+	// Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+	// static maximum for every supported guest (lower can make it unstable), and never below the static
+	// floor, which is the least the guest can boot in.
+	floor := before.MemoryStaticMax * 3 / 4
 	if before.MemoryStaticMin > floor {
 		floor = before.MemoryStaticMin
 	}
@@ -304,8 +308,8 @@ func gib(size int64) string {
 <details><summary>Sample output</summary>
 
 ```text
-db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
-  dynamic range now 1.0 GiB-4.0 GiB
+secure-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
+  dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER
 OK: configure-dynamic-memory
 ```
@@ -342,9 +346,10 @@ function Invoke-ConfigureDynamicMemory {
         (Format-Gib $vm.memory_static_min), (Format-Gib $vm.memory_static_max),
         (Format-Gib $vm.memory_dynamic_min), (Format-Gib $vm.memory_dynamic_max))
 
-    # Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never below the
-    # static floor, which is the least the guest can boot in.
-    $floor = [Math]::Max($vm.memory_static_min, [long]($vm.memory_static_max / 4))
+    # Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+    # static maximum for every supported guest (lower can make it unstable), and never below the static
+    # floor, which is the least the guest can boot in.
+    $floor = [Math]::Max($vm.memory_static_min, [long]($vm.memory_static_max * 3 / 4))
     $ceiling = $vm.memory_static_max
     # MemoryDynamicRange takes the pair as one array argument, so the two bounds are set together and
     # cannot momentarily cross each other.
@@ -381,7 +386,7 @@ function Format-Gib {
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
-  dynamic range now 1.0 GiB-4.0 GiB
+  dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max: The dynamic memory range violates constraint static_min <= dynamic_min <= dynamic_max <= static_max.
 OK: configure-dynamic-memory
 ```
@@ -409,9 +414,10 @@ configure_dynamic_memory() {
     dyn_max=$(xe vm-param-get uuid=$vm param-name=memory-dynamic-max)
     echo "$(xe vm-param-get uuid=$vm param-name=name-label): static $(gib $static_min)-$(gib $static_max), dynamic $(gib $dyn_min)-$(gib $dyn_max)"
 
-    # Room to balloon: let the host squeeze the VM down to a quarter of its maximum, but never below the
-    # static floor, which is the least the guest can boot in.
-    floor=$((static_max / 4))
+    # Room to balloon - within the documented limit: the dynamic minimum must be at least 75% of the
+    # static maximum for every supported guest (lower can make it unstable), and never below the static
+    # floor, which is the least the guest can boot in.
+    floor=$((static_max * 3 / 4))
     [ "$floor" -lt "$static_min" ] && floor=$static_min
     xe vm-memory-dynamic-range-set uuid=$vm min=$floor max=$static_max
     echo "  dynamic range now $(gib $(xe vm-param-get uuid=$vm param-name=memory-dynamic-min))-$(gib $(xe vm-param-get uuid=$vm param-name=memory-dynamic-max))"
@@ -443,7 +449,7 @@ gib() {
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
-  dynamic range now 1.0 GiB-4.0 GiB
+  dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max
 OK: configure-dynamic-memory
 ```

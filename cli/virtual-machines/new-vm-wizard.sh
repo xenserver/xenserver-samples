@@ -12,10 +12,10 @@
 
 new_vm_wizard() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-wizard-vm sr-uuid=$(shared_sr))
+    vm=$(xe vm-install template="$template" new-name-label=xe-wizard-vm)
     xe vm-param-set uuid=$vm VCPUs-max=2 VCPUs-at-startup=2
     xe vm-memory-limits-set uuid=$vm static-min=512MiB static-max=2GiB dynamic-min=2GiB dynamic-max=2GiB
-    vdi=$(xe vdi-create sr-uuid=$(shared_sr) name-label="xe-wizard disk" virtual-size=24GiB type=user)
+    vdi=$(xe vdi-create sr-uuid=$(default_sr) name-label="xe-wizard disk" virtual-size=24GiB type=user)
     xe vbd-create vm-uuid=$vm vdi-uuid=$vdi device=1 type=Disk mode=RW >/dev/null
     xe vif-create vm-uuid=$vm network-uuid=$(first_csv "$(xe network-list --minimal)") device=0 >/dev/null
     xe vm-start uuid=$vm

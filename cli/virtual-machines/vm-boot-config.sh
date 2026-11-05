@@ -10,10 +10,10 @@
 
 vm_boot_config() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-example-boot sr-uuid=$(shared_sr))
+    vm=$(xe vm-install template="$template" new-name-label=xe-example-boot)
     xe vm-param-set uuid=$vm VCPUs-max=4 VCPUs-at-startup=2
     # Boot mode: firmware ("bios"/"uefi") lives in HVM-boot-params; Secure Boot in platform:secureboot.
-    # "auto" (not a hard-coded "true") is the real xe/XenCenter convention: xapi resolves it against
+    # "auto" (not a hard-coded "true") is the xe convention: xapi resolves it against
     # whether the pool actually holds Secure Boot certificates, at vm-start time - a hard "true" would
     # claim Secure Boot is on even on a template that was never set up for it, since platform:secureboot
     # does no validation of its own.

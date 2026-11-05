@@ -44,7 +44,7 @@ public static void ReclaimSpace(string url, string user, string password)
 <details><summary>Sample output</summary>
 
 ```text
-  reclaimed freed space on Local storage: True
+  reclaimed freed space on iSCSI storage: True
 OK: reclaim-space
 ```
 
@@ -69,7 +69,7 @@ def reclaim_space(url, username, password):
 
     A thin SR supports the trim/do_trim host plugin. Find one via its storage manager's
     SR_TRIM feature, pick a host with a live (currently-attached) connection to it, and run
-    the plugin — exactly what XenCenter's Reclaim-freed-space command does.
+    the plugin.
     """
     session = connect(url, username, password)
     # Storage-manager backends that advertise SR_TRIM in their features map are trim-capable.
@@ -92,7 +92,7 @@ def reclaim_space(url, username, password):
 <details><summary>Sample output</summary>
 
 ```text
-  reclaimed freed space on Local storage: True
+  reclaimed freed space on iSCSI storage: True
 OK: reclaim-space
 ```
 
@@ -164,7 +164,7 @@ public final class ReclaimSpace {
 <details><summary>Sample output</summary>
 
 ```text
-  reclaimed freed space on Local storage: True
+  reclaimed freed space on iSCSI storage: True
 OK: reclaim-space
 ```
 
@@ -242,7 +242,7 @@ func reclaimSpace(url, user, password string) {
 <details><summary>Sample output</summary>
 
 ```text
-  reclaimed freed space on Local storage: True
+  reclaimed freed space on iSCSI storage: True
 OK: reclaim-space
 ```
 
@@ -287,7 +287,7 @@ function Invoke-ReclaimSpace {
 <details><summary>Sample output</summary>
 
 ```text
-  reclaimed freed space on Local storage: True
+  reclaimed freed space on iSCSI storage: True
 OK: reclaim-space
 ```
 
@@ -307,14 +307,25 @@ Source: [`cli/storage/reclaim-space.sh`](../../cli/storage/reclaim-space.sh)
 #   ./workflows.sh reclaim-space https://xenserver root "$password"
 
 reclaim_space() {
-    # A thin-provisioned SR (local LVM here) can return space freed by deleted disks to the backend
-    # via the trim plugin - XenCenter's "Reclaim freed space".
-    sr=$(first_csv "$(xe sr-list type=lvm --minimal)")
+    local sr candidate type pbd h name result
+    # A thin-provisioned SR (local LVM here) can return space freed by deleted disks to the backend via
+    # the trim plugin. Find one via its storage manager's SR_TRIM feature, instead of hard-coding a
+    # type.
+    sr=""
+    for candidate in $(each_csv "$(xe sr-list --minimal)"); do
+        type=$(xe sr-param-get uuid=$candidate param-name=type)
+        [[ $(xe sm-list type=$type params=features --minimal) == *SR_TRIM* ]] || continue
+        [ "$(xe sr-param-get uuid=$candidate param-name=physical-size)" -gt 0 ] || continue
+        sr=$candidate; break
+    done
+    [ -n "$sr" ] || { echo "no trim-capable SR was found" >&2; exit 1; }
+
     # A host with a live (plugged) connection to the SR runs the plugin.
-    pbd=$(first_csv "$(set_to_csv "$(xe sr-param-get uuid=$sr param-name=PBDs)")")
+    pbd=$(first_csv "$(xe pbd-list sr-uuid=$sr currently-attached=true --minimal)")
     h=$(xe pbd-param-get uuid=$pbd param-name=host)
+    name=$(xe sr-param-get uuid=$sr param-name=name-label)
     result=$(xe host-call-plugin host-uuid=$h plugin=trim fn=do_trim args:sr_uuid=$sr)
-    echo "  reclaimed freed space on $sr: $result"
+    echo "  reclaimed freed space on $name: $result"
     # Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
     [ "${result,,}" = "true" ] || { echo "trim failed: $result" >&2; exit 1; }
     echo "OK: reclaim-space"
@@ -324,7 +335,7 @@ reclaim_space() {
 <details><summary>Sample output</summary>
 
 ```text
-  reclaimed freed space on 00000001-0000-0000-2900-000000000000: True
+  reclaimed freed space on iSCSI storage: True
 OK: reclaim-space
 ```
 

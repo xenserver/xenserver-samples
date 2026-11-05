@@ -43,9 +43,9 @@ func configureHa(url, user, password, heartbeatSRName string) {
 		}
 	}
 
-	// How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those
-	// (as XenCenter's HA wizard does): a target computed with none protected can be too high, and
-	// protecting a VM afterwards then fails HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
+	// How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those: a target
+	// computed with none protected can be too high, and protecting a VM afterwards then fails
+	// HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
 	ntol, err := xenapi.Pool.HaComputeHypotheticalMaxHostFailuresToTolerate(session,
 		map[xenapi.VMRef]string{guest: "restart"})
 	check(err)

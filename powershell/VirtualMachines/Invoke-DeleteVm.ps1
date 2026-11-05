@@ -17,7 +17,7 @@ function Invoke-DeleteVm {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     # Make a throwaway VM to delete. Remove-XenVM removes the VM but leaves its disks, so the owned
-    # VDIs are destroyed explicitly afterward - exactly what XenCenter's Delete VM does.
+    # VDIs are destroyed explicitly afterward.
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru

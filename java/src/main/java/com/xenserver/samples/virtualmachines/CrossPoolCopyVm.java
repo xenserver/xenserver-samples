@@ -39,33 +39,52 @@ public final class CrossPoolCopyVm {
      * <p>Run it:
      *
      * <pre>{@code
-     * CrossPoolCopyVm.run("https://poolA", "root", password, "https://poolB", "db-01", null, null);
+     * CrossPoolCopyVm.run("https://poolA", "root", password, "https://poolB", "db-01", null, null, null);
      * }</pre>
      */
     public static void run(String url, String user, String password, String destUrl,
             String vmName, String destUser, String destPassword) throws Exception {
+        run(url, user, password, destUrl, vmName, destUser, destPassword, null);
+    }
+
+    /**
+     * As {@link #run(String, String, String, String, String, String, String)}, but carrying the
+     * migration traffic over the named destination network instead of its management network.
+     */
+    public static void run(String url, String user, String password, String destUrl,
+            String vmName, String destUser, String destPassword, String transferNetwork) throws Exception {
         Connection source = connect(url, user, password);
         Connection dest = connect(destUrl, destUser != null ? destUser : user,
                 destPassword != null ? destPassword : password);
         // Destination: choose a host, network and SR, then ask for a receiver token. The disks go to
-        // the destination pool's default SR and the data travels over the host's management network -
-        // one both pools can certainly reach (the first network listed may well not be).
+        // the destination pool's default SR.
         Pool destPool = Pool.getAll(dest).iterator().next();
         Host destHost = destPool.getMaster(dest);
         SR destSr = destPool.getDefaultSR(dest);
-        Network destNetwork = null;
+        Network destManagementNetwork = null;
         for (PIF pif : destHost.getPIFs(dest))
-            if (pif.getManagement(dest)) destNetwork = pif.getNetwork(dest);
-        Map<String, String> receiver = destHost.migrateReceive(dest, destNetwork, new HashMap<>());
+            if (pif.getManagement(dest)) destManagementNetwork = pif.getNetwork(dest);
+        Network migrationNetwork;
+        if (transferNetwork != null) {
+            migrationNetwork = null;
+            for (Network net : Network.getAll(dest))
+                if (net.getNameLabel(dest).equals(transferNetwork)) migrationNetwork = net;
+        } else {
+            // For performance, production use should carry migration traffic over a dedicated network
+            // rather than the management network - pass transferNetwork with the name of one.
+            migrationNetwork = destManagementNetwork;
+        }
+        Map<String, String> receiver = destHost.migrateReceive(dest, migrationNetwork, new HashMap<>());
 
-        // Source: map every disk to the destination SR and every NIC to the destination network,
+        // Source: map every disk to the destination SR and every NIC to the destination pool's
+        // management network (the VM's guest-visible NICs, independent of the migration transfer),
         // then send with copy=true (the source VM is left intact).
         VM vm = vmByName(source, vmName);
         Map<VDI, SR> vdiMap = new HashMap<>();
         for (VBD vbd : vm.getVBDs(source))
             if (vbd.getType(source) == Types.VbdType.DISK) vdiMap.put(vbd.getVDI(source), destSr);
         Map<VIF, Network> vifMap = new HashMap<>();
-        for (VIF vif : vm.getVIFs(source)) vifMap.put(vif, destNetwork);
+        for (VIF vif : vm.getVIFs(source)) vifMap.put(vif, destManagementNetwork);
 
         Map<String, String> options = new HashMap<>();
         options.put("copy", "true");

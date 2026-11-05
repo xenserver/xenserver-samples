@@ -4,6 +4,8 @@
 
 Sync the pool's update metadata from the CDN and apply it to every host, then read each host's post-update reboot guidance.
 
+**Requires:** High Availability and Workload Balancing turned off first, as the update documentation describes (turn them back on afterwards).
+
 **Caution:** updates the hosts.
 
 Workflow `apply-update`. [All workflows](README.md) · [Connecting](connecting.md)
@@ -14,8 +16,8 @@ Source: [`csharp/Updates/ApplyUpdate.cs`](../../csharp/Updates/ApplyUpdate.cs)
 
 ```csharp
 /// <summary>
-/// Sync the pool's update metadata from the CDN and apply it to every host, then read each host's
-/// post-update reboot guidance.
+/// Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+/// coordinator, then read each host's post-update reboot guidance.
 /// </summary>
 /// <example>
 /// <code>
@@ -26,10 +28,16 @@ Source: [`csharp/Updates/ApplyUpdate.cs`](../../csharp/Updates/ApplyUpdate.cs)
 public static void ApplyUpdate(string url, string user, string password, string repoUrl, string sourceUrl)
 {
     var session = Connect(url, user, password);
+    var pool = Pool.get_all(session)[0].opaque_ref;
+    // Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
+    // for Workload Balancing to be switched off before you start updating - so check both up front
+    // and stop rather than disabling either for you; turn them back on again once the update is done.
+    if (Pool.get_ha_enabled(session, pool) || Pool.get_wlb_enabled(session, pool))
+        throw new Exception("HA and Workload Balancing must both be off before updating the pool; " +
+                             "disable them, run this again, then re-enable them once it finishes");
     // pool.sync_updates needs at least one repository with update=true enabled
     // (NO_REPOSITORY_ENABLED otherwise) - introduce and attach a throwaway one, and forget it again
     // afterwards.
-    var pool = Pool.get_all(session)[0].opaque_ref;
     var repos = IntroduceUpdateRepositories(session, repoUrl, sourceUrl);
     // Remember the pool's own repositories, to put them back afterwards.
     var previous = Pool.get_repositories(session, pool);
@@ -40,12 +48,18 @@ public static void ApplyUpdate(string url, string user, string password, string 
         var hash = Pool.sync_updates(session, pool, false, "", "");
         Console.WriteLine($"Synced updates; hash length {hash.Length}");
 
-        // Apply the synced updates to each host. XenCenter then reads the reboot guidance to decide
-        // whether a Rolling Pool Upgrade reboot is needed. Applying a batch whose mandatory guidance
-        // needs an evacuation fails with HOST_EVACUATION_IS_REQUIRED unless the host's resident VMs
-        // are moved off first - handle that rather than assuming an update batch never needs one.
-        foreach (var (hostRef, host) in Host.get_all_records(session))
+        // Apply the synced updates to each host, coordinator first as the documentation requires.
+        // Then read the reboot guidance to decide whether a host needs a reboot. Applying a batch
+        // whose mandatory guidance needs an evacuation fails with HOST_EVACUATION_IS_REQUIRED
+        // unless the host's resident VMs are moved off first - handle that rather than assuming
+        // an update batch never needs one. (Guidance that targets VMs instead of hosts, for
+        // example restarting a VM, is not handled here.)
+        var hosts = Host.get_all_records(session);
+        var master = Pool.get_master(session, pool);
+        var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => r.opaque_ref != master.opaque_ref));
+        foreach (var hostRef in orderedRefs)
         {
+            var host = hosts[hostRef];
             try
             {
                 Host.apply_updates(session, hostRef.opaque_ref, hash);
@@ -108,8 +122,8 @@ Source: [`python/updates/apply_update.py`](../../python/updates/apply_update.py)
 ```python
 """Apply updates from the CDN.
 
-Sync the pool's update metadata from the CDN and apply it to every host, then read each host's post-
-update reboot guidance.
+Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+coordinator, then read each host's post-update reboot guidance.
 
 Run it::
 
@@ -124,17 +138,25 @@ from helpers import enable_when_booted, introduce_update_repositories, wait_for_
 
 
 def apply_update(url, username, password, repo_url, source_url):
-    """Sync the pool's update metadata from the CDN, then apply the synced updates to each host.
+    """Sync the pool's update metadata from the CDN, then apply the synced updates to each host,
+    coordinator first, as the documentation requires.
 
+    Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
+    for Workload Balancing to be switched off before you start updating - so check both up front and
+    stop rather than disabling either for you; turn them back on again once the update is done.
     pool.sync_updates needs at least one repository with update=True enabled
     (NO_REPOSITORY_ENABLED otherwise) - introduce and attach a throwaway one, and forget it again
     afterwards. Applying a batch whose mandatory guidance needs an evacuation fails with
     HOST_EVACUATION_IS_REQUIRED unless the host's resident VMs are moved off first; handle that
-    rather than assuming an update batch never asks for one, and resolve any pending mandatory
+    rather than assuming an update batch never asks for one, and resolve any pending mandatory host
     guidance before finishing (it would otherwise block the next apply_updates on that host with
-    HOST_PENDING_MANDATORY_GUIDANCES_NOT_EMPTY)."""
+    HOST_PENDING_MANDATORY_GUIDANCES_NOT_EMPTY). Guidance that targets VMs instead of hosts (for
+    example restarting a VM) is not handled here."""
     session = connect(url, username, password)
     pool = session.xenapi.pool.get_all()[0]
+    if session.xenapi.pool.get_ha_enabled(pool) or session.xenapi.pool.get_wlb_enabled(pool):
+        raise RuntimeError("HA and Workload Balancing must both be off before updating the pool; "
+                            "disable them, run this again, then re-enable them once it finishes")
     repos = introduce_update_repositories(session, repo_url, source_url)
     # Remember the pool's own repositories, to put them back afterwards.
     previous = session.xenapi.pool.get_repositories(pool)
@@ -144,9 +166,13 @@ def apply_update(url, username, password, repo_url, source_url):
         hash_ = session.xenapi.pool.sync_updates(pool, False, "", "")
         print("Synced updates; hash length %d" % len(hash_))
 
-        # Apply the synced updates to each host. XenCenter then reads the reboot guidance to decide
-        # whether a Rolling Pool Upgrade reboot is needed.
-        for host_ref, host in session.xenapi.host.get_all_records().items():
+        # Apply the synced updates to each host, coordinator first as the documentation requires.
+        # Then read the reboot guidance to decide whether a host needs a reboot.
+        hosts = session.xenapi.host.get_all_records()
+        master = session.xenapi.pool.get_master(pool)
+        ordered_refs = [master] + [ref for ref in hosts if ref != master]
+        for host_ref in ordered_refs:
+            host = hosts[host_ref]
             try:
                 session.xenapi.host.apply_updates(host_ref, hash_)
             except XenAPI.Failure as e:
@@ -205,6 +231,8 @@ import com.xensource.xenapi.Repository;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -220,8 +248,13 @@ public final class ApplyUpdate {
     /**
      * Apply updates from the CDN.
      *
-     * <p>Sync the pool's update metadata from the CDN and apply it to every host, then read each host's
-     * post-update reboot guidance.
+     * <p>Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+     * coordinator, then read each host's post-update reboot guidance.
+     *
+     * <p>Host.applyUpdates refuses with HOST_EVACUATION_IS_REQUIRED (handled below) or HA_IS_ENABLED
+     * while HA is on, and the documentation also asks for Workload Balancing to be switched off before
+     * you start updating - so check both up front and stop rather than disabling either for you; turn
+     * them back on again once the update is done.
      *
      * <p>pool.syncUpdates needs at least one repository with update=True enabled (NO_REPOSITORY_ENABLED
      * otherwise) - introduce and attach a throwaway one, and forget it again afterwards. Applying a batch
@@ -229,7 +262,8 @@ public final class ApplyUpdate {
      * host's resident VMs are moved off first; handle that rather than assuming an update batch never asks
      * for one. Only call host.reboot/host.restart_agent when the RETURNED pending guidance actually
      * contains REBOOT_HOST/RESTART_TOOLSTACK (modern xapi, &gt;=23.18.0, never auto-reboots - it only
-     * records guidance) - not unconditionally after every apply.
+     * records guidance) - not unconditionally after every apply. Guidance that targets VMs instead of
+     * hosts (for example restarting a VM) is not handled here.
      *
      * <p>Run it:
      *
@@ -242,6 +276,10 @@ public final class ApplyUpdate {
             String sourceUrl) throws Exception {
         Connection conn = connect(url, user, password);
         Pool pool = Pool.getAll(conn).iterator().next();
+        if (pool.getHaEnabled(conn) || pool.getWlbEnabled(conn)) {
+            throw new RuntimeException("HA and Workload Balancing must both be off before updating the "
+                    + "pool; disable them, run this again, then re-enable them once it finishes");
+        }
         Set<Repository> repos = introduceUpdateRepositories(conn, repoUrl, sourceUrl);
         // Remember the pool's own repositories, to put them back afterwards.
         Set<Repository> previous = pool.getRepositories(conn);
@@ -251,14 +289,21 @@ public final class ApplyUpdate {
             String hash = pool.syncUpdates(conn, false, "", "");
             System.out.println("Synced updates; hash length " + hash.length());
 
-            // Apply the synced updates to each host. XenCenter then reads the reboot guidance to decide
-            // whether a Rolling Pool Upgrade reboot is needed.
-            for (Map.Entry<Host, Host.Record> e : Host.getAllRecords(conn).entrySet()) {
-                Host host = e.getKey();
+            // Apply the synced updates to each host, coordinator first as the documentation requires.
+            // Then read the reboot guidance to decide whether a host needs a reboot.
+            Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
+            Host master = pool.getMaster(conn);
+            List<Host> ordered = new ArrayList<>();
+            ordered.add(master);
+            for (Host h : hosts.keySet()) {
+                if (!h.equals(master)) ordered.add(h);
+            }
+            for (Host host : ordered) {
+                Host.Record rec = hosts.get(host);
                 try {
                     host.applyUpdates(conn, hash);
                 } catch (Types.HostEvacuationIsRequired ex) {
-                    System.out.println("  " + e.getValue().nameLabel + ": needs evacuating first; "
+                    System.out.println("  " + rec.nameLabel + ": needs evacuating first; "
                             + "evacuating and retrying");
                     host.disable(conn);
                     host.evacuate(conn);
@@ -266,7 +311,7 @@ public final class ApplyUpdate {
                     host.enable(conn);
                 }
                 Set<Types.UpdateGuidances> guidance = host.getPendingGuidances(conn);
-                System.out.println("  " + e.getValue().nameLabel + ": applied; pending guidance = " + guidance);
+                System.out.println("  " + rec.nameLabel + ": applied; pending guidance = " + guidance);
                 boolean rebooting = guidance.contains(Types.UpdateGuidances.REBOOT_HOST);
                 if (rebooting || guidance.contains(Types.UpdateGuidances.RESTART_TOOLSTACK)) {
                     // As in rolling-pool-update: either restart returns before it has happened, and the
@@ -275,7 +320,7 @@ public final class ApplyUpdate {
                     String before = host.getOtherConfig(conn).get(key);
                     if (rebooting) host.reboot(conn);
                     else host.restartAgent(conn);
-                    conn = waitForRestart(url, user, password, e.getValue().uuid, key, before);
+                    conn = waitForRestart(url, user, password, rec.uuid, key, before);
                 }
                 // apply_updates disables the host while it works (auto_enable: a restart puts it back) -
                 // with no restart to do, nothing re-enables it. Return it to service either way.
@@ -317,14 +362,19 @@ import (
 
 // applyUpdate - Apply updates from the CDN.
 //
-// Sync the pool's update metadata from the CDN and apply it to every host, then read each host's
-// post-update reboot guidance.
+// Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+// coordinator, then read each host's post-update reboot guidance.
+//
+// Host.ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+// Workload Balancing to be switched off before you start updating - so check both up front and stop
+// rather than disabling either for you; turn them back on again once the update is done.
 //
 // pool.sync_updates needs at least one repository with update=true enabled
 // (NO_REPOSITORY_ENABLED otherwise) - introduce and attach a throwaway one, and forget it again
 // afterwards. Applying a batch whose mandatory guidance needs an evacuation fails with
 // HOST_EVACUATION_IS_REQUIRED unless the host's resident VMs are moved off first; handle that
-// rather than assuming an update batch never asks for one.
+// rather than assuming an update batch never asks for one. Guidance that targets VMs instead of
+// hosts (for example restarting a VM) is not handled here.
 func applyUpdate(url, user, password, repoURL, sourceURL string) {
 	session := connect(url, user, password)
 	// Deferred first, so it runs LAST: after the deferred repository restore below, which needs
@@ -333,6 +383,14 @@ func applyUpdate(url, user, password, repoURL, sourceURL string) {
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
 	pool := pools[0]
+	haEnabled, err := xenapi.Pool.GetHaEnabled(session, pool)
+	check(err)
+	wlbEnabled, err := xenapi.Pool.GetWlbEnabled(session, pool)
+	check(err)
+	if haEnabled || wlbEnabled {
+		panic("HA and Workload Balancing must both be off before updating the pool; disable them, " +
+			"run this again, then re-enable them once it finishes")
+	}
 	repos := introduceUpdateRepositories(session, repoURL, sourceURL)
 	// Remember the pool's own repositories, to put them back afterwards.
 	previous, perr := xenapi.Pool.GetRepositories(session, pool)
@@ -350,17 +408,26 @@ func applyUpdate(url, user, password, repoURL, sourceURL string) {
 	check(err)
 	fmt.Printf("Synced updates; hash length %d\n", len(hash))
 
-	// Apply the synced updates to each host. XenCenter then reads the reboot guidance to decide
-	// whether a Rolling Pool Upgrade reboot is needed.
+	// Apply the synced updates to each host, coordinator first as the documentation requires.
+	// Then read the reboot guidance to decide whether a host needs a reboot.
 	hosts, err := xenapi.Host.GetAllRecords(session)
 	check(err)
-	for hostRef, host := range hosts {
+	master, err := xenapi.Pool.GetMaster(session, pool)
+	check(err)
+	orderedRefs := []xenapi.HostRef{master}
+	for hostRef := range hosts {
+		if hostRef != master {
+			orderedRefs = append(orderedRefs, hostRef)
+		}
+	}
+	for _, hostRef := range orderedRefs {
+		host := hosts[hostRef]
 		if _, err := xenapi.Host.ApplyUpdates(session, hostRef, hash); err != nil {
 			if failureCode(err) != xenapi.ErrorHostEvacuationIsRequired {
 				panic(err)
 			}
 			fmt.Printf("  %s: needs evacuating first; evacuating and retrying\n", host.NameLabel)
-			check(xenapi.Host.Disable(session, hostRef, false))
+			check(xenapi.Host.Disable(session, hostRef, true))
 			check(xenapi.Host.Evacuate2(session, hostRef))
 			_, err := xenapi.Host.ApplyUpdates(session, hostRef, hash)
 			check(err)
@@ -417,8 +484,8 @@ function Invoke-ApplyUpdate {
     .SYNOPSIS
         Apply updates from the CDN.
     .DESCRIPTION
-        Sync the pool's update metadata from the CDN and apply it to every host, then read each host's
-        post-update reboot guidance.
+        Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+        coordinator, then read each host's post-update reboot guidance.
     .EXAMPLE
         Invoke-ApplyUpdate -Url https://xenserver -UserName root -Password $password `
     .EXAMPLE
@@ -431,15 +498,24 @@ function Invoke-ApplyUpdate {
         [Parameter(Mandatory = $true)][string]$RepoUrl,
         [Parameter(Mandatory = $true)][string]$SourceUrl
     )
+    # ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+    # Workload Balancing to be switched off before you start updating - so check both up front and stop
+    # rather than disabling either for you; turn them back on again once the update is done.
+    #
     # pool.sync_updates needs at least one repository with Update enabled (NO_REPOSITORY_ENABLED
     # otherwise) - introduce and attach a throwaway one, and forget it again afterwards. Applying a
     # batch whose mandatory guidance needs an evacuation fails with HOST_EVACUATION_IS_REQUIRED unless
     # the host's resident VMs are moved off first; handle that rather than assuming an update batch
     # never asks for one. Only call Reboot/RestartAgent when the *returned* pending guidance actually
     # contains "reboot_host"/"restart_toolstack" (modern xapi, >=23.18.0, never auto-reboots - it only
-    # records guidance) - not unconditionally after every apply.
+    # records guidance) - not unconditionally after every apply. Guidance that targets VMs instead of
+    # hosts (for example restarting a VM) is not handled here.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
+    if ($pool.ha_enabled -or $pool.wlb_enabled) {
+        throw "HA and Workload Balancing must both be off before updating the pool; disable them, " +
+            "run this again, then re-enable them once it finishes"
+    }
     $repos = @(New-UpdateRepositories -Session $session -RepoUrl $RepoUrl -SourceUrl $SourceUrl)
     # Remember the pool's own repositories, to put them back afterwards.
     $previous = @((Get-XenPool -Ref $pool.opaque_ref).repositories | ForEach-Object { $_.opaque_ref })
@@ -449,9 +525,12 @@ function Invoke-ApplyUpdate {
         $hash = $pool | Invoke-XenPool -XenAction SyncUpdates -PassThru
         Write-Host "Synced updates; hash length $($hash.Length)"
 
-        # Apply the synced updates to each host (the hash is the action's -Hash parameter). XenCenter
-        # then reads the reboot guidance to decide whether a Rolling Pool Upgrade reboot is needed.
-        foreach ($xenHost in Get-XenHost) {
+        # Apply the synced updates to each host, coordinator first as the documentation requires (the
+        # hash is the action's -Hash parameter). Then read the reboot guidance to decide whether a
+        # host needs a reboot.
+        $orderedHosts = @($pool.master.opaque_ref) + @(Get-XenHost |
+            Where-Object { $_.opaque_ref -ne $pool.master.opaque_ref } | ForEach-Object { $_.opaque_ref })
+        foreach ($xenHost in $orderedHosts | ForEach-Object { Get-XenHost -Ref $_ }) {
             try {
                 $xenHost | Invoke-XenHost -XenAction ApplyUpdates -Hash $hash
             }
@@ -515,8 +594,8 @@ Source: [`cli/updates/apply-update.sh`](../../cli/updates/apply-update.sh)
 ```bash
 # Apply updates from the CDN.
 #
-# Sync the pool's update metadata from the CDN and apply it to every host, then read each host's post-update
-# reboot guidance.
+# Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+# coordinator, then read each host's post-update reboot guidance.
 #
 # Run it:
 #   ./workflows.sh apply-update https://xenserver root "$password"
@@ -525,27 +604,44 @@ Source: [`cli/updates/apply-update.sh`](../../cli/updates/apply-update.sh)
 #   repo_url (https://repo.ops.xenserver.com/xs9)
 #   source_url (https://repo-src.ops.xenserver.com/xs9)
 
+# host-apply-updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+# Workload Balancing to be switched off before you start updating - so check both up front and stop
+# rather than disabling either for you; turn them back on again once the update is done.
+#
 # pool-sync-updates needs at least one repository with update=true enabled (NO_REPOSITORY_ENABLED
 # otherwise) - introduce the base and update repositories and attach both, remembering what was there to
 # put it back afterwards (the "repositories" field is DynamicRO at the API level, but xe's generic
 # pool-param-set still writes it - a set reads back "a; b" and is set as "a,b"), forgetting the throwaway
 # ones again afterwards. Applying a batch whose mandatory guidance needs an evacuation fails with
 # HOST_EVACUATION_IS_REQUIRED unless the host's resident VMs are moved off first; handle that rather than
-# assuming an update batch never asks for one.
+# assuming an update batch never asks for one. Guidance that targets VMs instead of hosts (for example
+# restarting a VM) is not handled here.
 apply_update() {
-    local repo_url source_url repos repo_list pool before hash err guidance
+    local repo_url source_url repos repo_list pool master h ordered before hash err guidance
+    pool=$(xe pool-list --minimal)
+    if [ "$(xe pool-param-get uuid=$pool param-name=ha-enabled)" = "true" ] ||
+       [ "$(xe pool-param-get uuid=$pool param-name=wlb-enabled)" = "true" ]; then
+        echo "HA and Workload Balancing must both be off before updating the pool; disable them," \
+             "run this again, then re-enable them once it finishes" >&2
+        exit 1
+    fi
     repo_url=$(param repo_url "https://repo.ops.xenserver.com/xs9")
     source_url=$(param source_url "https://repo-src.ops.xenserver.com/xs9")
     repos=$(introduce_update_repositories "$repo_url" "$source_url")
     repo_list=""
     for r in $repos; do repo_list="${repo_list:+$repo_list,}$r"; done
-    pool=$(xe pool-list --minimal)
     before=$(xe pool-param-get uuid=$pool param-name=repositories)
     xe pool-param-set uuid=$pool repositories=$repo_list
 
     hash=$(xe pool-sync-updates)
     echo "Synced updates (hash length ${#hash})"
+    # Coordinator first, as the documentation requires.
+    master=$(xe pool-param-get uuid=$pool param-name=master)
+    ordered=$master
     for h in $(each_csv "$(xe host-list --minimal)"); do
+        [ "$h" = "$master" ] || ordered="$ordered $h"
+    done
+    for h in $ordered; do
         if ! err=$(xe host-apply-updates uuid=$h hash=$hash 2>&1); then
             case "$err" in
                 *[Ee]vacuat*)

@@ -10,6 +10,8 @@ configure_host_storage() {
     host_uuid=$(xe pool-param-get uuid=$pool param-name=master)
     hname=$(xe host-param-get uuid=$host_uuid param-name=name-label)
 
+    # Existing iSCSI SRs must be detached first: changing the IQN underneath them can make the host
+    # unable to reconnect to new or existing SRs until the storage target is updated to match.
     before_iqn=$(xe host-param-get uuid=$host_uuid param-name=iscsi_iqn)
     before_multipathing=$(xe host-param-get uuid=$host_uuid param-name=multipathing)
     echo "$hname: iSCSI IQN '$before_iqn', multipathing $before_multipathing"

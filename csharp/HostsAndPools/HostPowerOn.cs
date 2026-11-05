@@ -17,8 +17,8 @@ internal static partial class Workflows
 
         // Mode and config travel together: the config carries the credentials the mode needs.
         // "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"
-        // modes were removed from the real power-on plugin (REQ-811) and fail the moment host.power_on
-        // is actually called ("{mode} script has been removed").
+        // modes were removed from the real power-on plugin and fail the moment host.power_on is actually
+        // called ("{mode} script has been removed").
         Host.set_power_on_mode(session, hostRef, "wake-on-lan", new Dictionary<string, string>());
         Console.WriteLine($"Power-on mode:  {Host.get_power_on_mode(session, hostRef)}");
         foreach (var kv in Host.get_power_on_config(session, hostRef))

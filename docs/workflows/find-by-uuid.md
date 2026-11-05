@@ -37,7 +37,7 @@ public static void FindByUuid(string url, string user, string password, string v
 <details><summary>Sample output</summary>
 
 ```text
-UUID 00000001-0000-0000-8a00-000000000000 resolves to web-01
+UUID 00000001-0000-0000-8d00-000000000000 resolves to web-01
 Same object: True
 OK: find-by-uuid
 ```
@@ -78,7 +78,7 @@ def find_by_uuid(url, username, password, vm_name):
 <details><summary>Sample output</summary>
 
 ```text
-UUID 00000001-0000-0000-8a00-000000000000 resolves to web-01
+UUID 00000001-0000-0000-8d00-000000000000 resolves to web-01
 Same object: True
 OK: find-by-uuid
 ```
@@ -132,7 +132,7 @@ public final class FindByUuid {
 <details><summary>Sample output</summary>
 
 ```text
-UUID 00000001-0000-0000-8a00-000000000000 resolves to web-01
+UUID 00000001-0000-0000-8d00-000000000000 resolves to web-01
 Same object: true
 OK: find-by-uuid
 ```
@@ -174,7 +174,7 @@ func findByUUID(url, user, password, vmName string) {
 <details><summary>Sample output</summary>
 
 ```text
-UUID 00000001-0000-0000-8a00-000000000000 resolves to web-01
+UUID 00000001-0000-0000-8d00-000000000000 resolves to web-01
 Same object: true
 OK: find-by-uuid
 ```
@@ -221,7 +221,7 @@ function Invoke-FindByUuid {
 <details><summary>Sample output</summary>
 
 ```text
-UUID 00000001-0000-0000-8a00-000000000000 resolves to web-01
+UUID 00000001-0000-0000-8d00-000000000000 resolves to web-01
 Same object: True
 OK: find-by-uuid
 ```
@@ -251,7 +251,7 @@ find_by_uuid() {
 <details><summary>Sample output</summary>
 
 ```text
-UUID 00000001-0000-0000-8a00-000000000000 resolves to web-01
+UUID 00000001-0000-0000-8d00-000000000000 resolves to web-01
 OK: find-by-uuid
 ```
 

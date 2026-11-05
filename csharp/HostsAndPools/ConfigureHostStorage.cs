@@ -19,8 +19,10 @@ internal static partial class Workflows
         var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
 
         // The IQN identifies this host to iSCSI targets, so a target's access list is written against
-        // it — changing it on a host with live iSCSI storage cuts it off. Multipathing uses every path
-        // to the storage rather than one, and on real hardware you put the host into maintenance mode
+        // it — changing it on a host with live iSCSI storage cuts it off. Existing iSCSI SRs must be
+        // detached first: changing the IQN underneath them can make the host unable to reconnect to new
+        // or existing SRs until the storage target is updated to match. Multipathing uses every path to
+        // the storage rather than one, and on real hardware you put the host into maintenance mode
         // before changing it, because the paths are rebuilt.
         var beforeIqn = Host.get_iscsi_iqn(session, host);
         var beforeMultipathing = Host.get_multipathing(session, host);

@@ -12,8 +12,7 @@ def create_smb_sr(url, username, password, server, share, smb_username, smb_pass
                    sr_name="sdk-example-smb"):
     """Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share).
 
-    The password travels as a Secret, not plaintext device-config - the way XenCenter does
-    it."""
+    The password travels as a Secret, not plaintext device-config."""
     GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
     host = session.xenapi.host.get_all()[0]

@@ -31,9 +31,9 @@ internal static partial class Workflows
         var guest = VM.get_all_records(session).First(kv =>
             !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot).Key.opaque_ref;
 
-        // How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those
-        // (as XenCenter's HA wizard does): a target computed with none protected can be too high, and
-        // protecting a VM afterwards then fails HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
+        // How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those: a
+        // target computed with none protected can be too high, and protecting a VM afterwards then fails
+        // HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
         var ntol = Pool.ha_compute_hypothetical_max_host_failures_to_tolerate(
             session, new Dictionary<XenRef<VM>, string> { { new XenRef<VM>(guest), "restart" } });
         Console.WriteLine($"Max failures:  {ntol}");

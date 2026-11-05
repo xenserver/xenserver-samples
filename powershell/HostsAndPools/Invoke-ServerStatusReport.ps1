@@ -35,9 +35,9 @@ function Invoke-ServerStatusReport {
     }
 
     # The download is an HTTP transfer alongside the API, so the session id travels in the query string.
-    # Still pure PowerShell: Connect-Example has already trusted the server's certificate.
-    # Take the sections the host marks default-checked, as XenCenter's dialog does: asking for every
-    # section can mean gigabytes (VM memory dumps, every log) and a long wait while the host builds it.
+    # Still pure PowerShell: Connect-Example has already trusted the server's certificate. Take the
+    # sections the host marks default-checked: asking for every section can mean gigabytes (VM memory
+    # dumps, every log) and a long wait while the host builds it.
     $whole = Get-StatusReportSize -Url $Url -Session $session -Entries $defaults
     Write-Host ("default sections ({0} of {1}): {2} bytes" -f $defaults.Count, $keys.Count, $whole)
 

@@ -24,7 +24,11 @@ def manage_secureboot_certificates(url, username, password):
     certificates are already due to refresh (secureboot_certificates_state == update_available).
     That's a deliberately-provisioned state, not one a normally-provisioned Secure Boot guest is
     ever in - so report and stop cleanly when no VM needs it, rather than failing with a bare
-    lookup error."""
+    lookup error.
+
+    Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
+    BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
+    suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window."""
     session = connect(url, username, password)
     x = session.xenapi
     pool = x.pool.get_all()[0]

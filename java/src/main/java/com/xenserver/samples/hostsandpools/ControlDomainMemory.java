@@ -37,8 +37,8 @@ public final class ControlDomainMemory {
                 original / (double) (1024L * 1024 * 1024));
 
             // One setter, not a range: dom0 does not balloon, so setMemory pins the static and dynamic
-            // bounds and the target together. The new size takes effect at the next reboot, which is why
-            // XenCenter offers this only in maintenance mode — the API itself does not stop you.
+            // bounds and the target together. The new size takes effect at the next reboot, so change
+            // it with the host in maintenance mode — the API itself does not stop you.
             dom0.setMemory(conn, original + 1024L * 1024 * 1024);
             VM.Record record = dom0.getRecord(conn);
             System.out.printf("  now %.1f GiB (static %d-%d, dynamic %d-%d)%n",

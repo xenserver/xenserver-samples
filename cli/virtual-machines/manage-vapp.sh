@@ -23,9 +23,11 @@ manage_vapp() {
     xe appliance-start uuid="$vapp_uuid"
     echo "Started:        $(xe vm-list uuid="$vm_uuid" params=power-state --minimal)"
 
-    # A plain appliance-shutdown is clean only, and fails OPERATION_PARTIALLY_FAILED if any member can't
-    # shut down cleanly (no guest OS or PV drivers); force=true shuts the members down hard.
-    xe appliance-shutdown uuid="$vapp_uuid" force=true
+    # A plain appliance-shutdown tries a clean shutdown of every member and fails
+    # OPERATION_PARTIALLY_FAILED if any member can't shut down cleanly (no guest OS or PV drivers);
+    # force=true is not a per-member fallback - it hard-shuts-down every member directly - so only
+    # reach for it if the clean attempt failed.
+    xe appliance-shutdown uuid="$vapp_uuid" || xe appliance-shutdown uuid="$vapp_uuid" force=true
     echo "Shut down:      $(xe vm-list uuid="$vm_uuid" params=power-state --minimal)"
 
     xe vm-param-set uuid="$vm_uuid" appliance=

@@ -59,9 +59,9 @@ func srByName(session *xenapi.Session, name string, shared bool) xenapi.SRRef {
 	panic(fmt.Sprintf("no SR named %q was found", name))
 }
 
-// detachAndForgetSR detaches an SR from every host, then forgets it: XenCenter's Detach followed by
-// Forget. SR.Forget refuses an SR that is still attached (SR_HAS_PBD), so unplug its PBDs first.
-// Forgetting drops the pool's record of the SR but leaves the data on the storage itself.
+// detachAndForgetSR detaches an SR from every host, then forgets it. SR.Forget refuses an SR that is still
+// attached (SR_HAS_PBD), so unplug its PBDs first. Forgetting drops the pool's record of the SR but leaves
+// the data on the storage itself.
 func detachAndForgetSR(session *xenapi.Session, sr xenapi.SRRef) {
 	pbds, err := xenapi.SR.GetPBDs(session, sr)
 	check(err)
@@ -257,11 +257,10 @@ func moveDisksToSR(session *xenapi.Session, vm xenapi.VMRef, sr xenapi.SRRef) {
 	}
 }
 
-// introduceUpdateRepositories introduces the pool's update repositories the way XenCenter does: the
-// release's base packages (update=false) and its update stream (update=true, which
-// Pool.SyncUpdates needs - otherwise NO_REPOSITORY_ENABLED). A real host checks the URLs
-// (INVALID_BASE_URL for an unknown domain), so these are the XenServer CDN's, e.g.
-// https://repo.ops.xenserver.com/xs9/{base,normal}.
+// introduceUpdateRepositories introduces the pool's update repositories: the release's base packages
+// (update=false) and its update stream (update=true, which Pool.SyncUpdates needs - otherwise
+// NO_REPOSITORY_ENABLED). A real host checks the URLs (INVALID_BASE_URL for an unknown domain), so these are
+// the XenServer CDN's, e.g. https://repo.ops.xenserver.com/xs9/{base,normal}.
 func introduceUpdateRepositories(session *xenapi.Session, repoURL, sourceURL string) []xenapi.RepositoryRef {
 	var repos []xenapi.RepositoryRef
 	for _, stage := range []string{"base", "normal"} {

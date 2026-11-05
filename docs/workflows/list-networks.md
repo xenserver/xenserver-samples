@@ -36,7 +36,7 @@ public static void ListNetworks(string url, string user, string password)
 ```text
 Networks (4):
   - Host internal management network: 0 PIF(s), 0 VIF(s)
-  - Pool-wide network associated with eth0: 2 PIF(s), 4 VIF(s)
+  - Pool-wide network associated with eth0: 2 PIF(s), 5 VIF(s)
   - Pool-wide network associated with eth1: 2 PIF(s), 0 VIF(s)
   - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
 OK: list-networks
@@ -78,7 +78,7 @@ def list_networks(url, username, password):
 ```text
 Networks (4):
   - Host internal management network: 0 PIF(s), 0 VIF(s)
-  - Pool-wide network associated with eth0: 2 PIF(s), 5 VIF(s)
+  - Pool-wide network associated with eth0: 2 PIF(s), 4 VIF(s)
   - Pool-wide network associated with eth1: 2 PIF(s), 0 VIF(s)
   - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
 OK: list-networks
@@ -132,7 +132,7 @@ public final class ListNetworks {
 ```text
 Networks (4):
   - Host internal management network: 0 PIF(s), 0 VIF(s)
-  - Pool-wide network associated with eth0: 2 PIF(s), 4 VIF(s)
+  - Pool-wide network associated with eth0: 2 PIF(s), 5 VIF(s)
   - Pool-wide network associated with eth1: 2 PIF(s), 0 VIF(s)
   - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
 OK: list-networks
@@ -177,10 +177,10 @@ func listNetworks(url, user, password string) {
 
 ```text
 Networks (4):
-  - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
-  - Host internal management network: 0 PIF(s), 0 VIF(s)
   - Pool-wide network associated with eth0: 2 PIF(s), 5 VIF(s)
   - Pool-wide network associated with eth1: 2 PIF(s), 0 VIF(s)
+  - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
+  - Host internal management network: 0 PIF(s), 0 VIF(s)
 OK: list-networks
 ```
 

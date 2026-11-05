@@ -1,7 +1,7 @@
 # Apply updates from the CDN.
 #
-# Sync the pool's update metadata from the CDN and apply it to every host, then read each host's post-update
-# reboot guidance.
+# Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+# coordinator, then read each host's post-update reboot guidance.
 #
 # Run it:
 #   ./workflows.sh apply-update https://xenserver root "$password"
@@ -10,27 +10,44 @@
 #   repo_url (https://repo.ops.xenserver.com/xs9)
 #   source_url (https://repo-src.ops.xenserver.com/xs9)
 
+# host-apply-updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+# Workload Balancing to be switched off before you start updating - so check both up front and stop
+# rather than disabling either for you; turn them back on again once the update is done.
+#
 # pool-sync-updates needs at least one repository with update=true enabled (NO_REPOSITORY_ENABLED
 # otherwise) - introduce the base and update repositories and attach both, remembering what was there to
 # put it back afterwards (the "repositories" field is DynamicRO at the API level, but xe's generic
 # pool-param-set still writes it - a set reads back "a; b" and is set as "a,b"), forgetting the throwaway
 # ones again afterwards. Applying a batch whose mandatory guidance needs an evacuation fails with
 # HOST_EVACUATION_IS_REQUIRED unless the host's resident VMs are moved off first; handle that rather than
-# assuming an update batch never asks for one.
+# assuming an update batch never asks for one. Guidance that targets VMs instead of hosts (for example
+# restarting a VM) is not handled here.
 apply_update() {
-    local repo_url source_url repos repo_list pool before hash err guidance
+    local repo_url source_url repos repo_list pool master h ordered before hash err guidance
+    pool=$(xe pool-list --minimal)
+    if [ "$(xe pool-param-get uuid=$pool param-name=ha-enabled)" = "true" ] ||
+       [ "$(xe pool-param-get uuid=$pool param-name=wlb-enabled)" = "true" ]; then
+        echo "HA and Workload Balancing must both be off before updating the pool; disable them," \
+             "run this again, then re-enable them once it finishes" >&2
+        exit 1
+    fi
     repo_url=$(param repo_url "https://repo.ops.xenserver.com/xs9")
     source_url=$(param source_url "https://repo-src.ops.xenserver.com/xs9")
     repos=$(introduce_update_repositories "$repo_url" "$source_url")
     repo_list=""
     for r in $repos; do repo_list="${repo_list:+$repo_list,}$r"; done
-    pool=$(xe pool-list --minimal)
     before=$(xe pool-param-get uuid=$pool param-name=repositories)
     xe pool-param-set uuid=$pool repositories=$repo_list
 
     hash=$(xe pool-sync-updates)
     echo "Synced updates (hash length ${#hash})"
+    # Coordinator first, as the documentation requires.
+    master=$(xe pool-param-get uuid=$pool param-name=master)
+    ordered=$master
     for h in $(each_csv "$(xe host-list --minimal)"); do
+        [ "$h" = "$master" ] || ordered="$ordered $h"
+    done
+    for h in $ordered; do
         if ! err=$(xe host-apply-updates uuid=$h hash=$hash 2>&1); then
             case "$err" in
                 *[Ee]vacuat*)

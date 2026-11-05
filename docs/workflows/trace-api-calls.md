@@ -46,7 +46,7 @@ public static void TraceApiCalls(string url, string user, string password)
 <details><summary>Sample output</summary>
 
 ```text
-Trace ddab3a194e6bd424084d4b639027d53a: each call sends traceparent: 00-ddab3a194e6bd424084d4b639027d53a-aef9b328e6a85c5a-01
+Trace c7d6c8c4757591d3b39ca0204ab6e628: each call sends traceparent: 00-c7d6c8c4757591d3b39ca0204ab6e628-0fb930a535e012b3-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -114,7 +114,7 @@ def trace_api_calls(url, username, password):
 <details><summary>Sample output</summary>
 
 ```text
-Trace 9310344291e2434653ed629222c7a7d7: each call sends traceparent: 00-9310344291e2434653ed629222c7a7d7-94e497b0d9528326-01
+Trace 213b2deac2907d2abfdc181389a532d6: each call sends traceparent: 00-213b2deac2907d2abfdc181389a532d6-ee4b958a607e54aa-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -182,7 +182,7 @@ func traceAPICalls(url, user, password string) {
 <details><summary>Sample output</summary>
 
 ```text
-Trace 61a6b943c0b2e6c003869d43551a2d12: each call sends traceparent: 00-61a6b943c0b2e6c003869d43551a2d12-103c0241953039c8-01
+Trace d24631276129d78059e091797492351f: each call sends traceparent: 00-d24631276129d78059e091797492351f-104ebffa847b6f01-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -234,7 +234,7 @@ function Invoke-TraceApiCalls {
 <details><summary>Sample output</summary>
 
 ```text
-Trace 6d88ec29a21fdae47fa90bdd4f63295f: each call sends traceparent: 00-6d88ec29a21fdae47fa90bdd4f63295f-75be70d628489aae-01
+Trace 7761d093613966b82fa8a8239108d292: each call sends traceparent: 00-7761d093613966b82fa8a8239108d292-854317b408969807-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -256,8 +256,8 @@ Source: [`cli/getting-started/trace-api-calls.sh`](../../cli/getting-started/tra
 
 # Send a W3C trace context with every command, so the work the pool does for them is recorded as part of
 # your application's distributed trace. xe sends $TRACEPARENT to the server as a traceparent header (or
-# take --traceparent <value>); in a traced script, export the caller's own. The Windows xe.exe that
-# ships with XenCenter does not send one.
+# take --traceparent <value>); in a traced script, export the caller's own. The Windows xe.exe does not
+# send one.
 trace_api_calls() {
     # version 00, a 16-byte trace id, the 8-byte id of the calling span, and flags 01 (sampled)
     local trace_id span_id
@@ -275,7 +275,7 @@ trace_api_calls() {
 <details><summary>Sample output</summary>
 
 ```text
-Trace 5f2cf3fdd709a2642981e9947e86dd5b: each command sends traceparent: 00-5f2cf3fdd709a2642981e9947e86dd5b-15fccaf8a4013bf6-01
+Trace de205208637d0267ebfae7cfffc6f470: each command sends traceparent: 00-de205208637d0267ebfae7cfffc6f470-c3e12413edaafc5c-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```

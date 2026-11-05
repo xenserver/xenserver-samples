@@ -22,9 +22,8 @@ Source: [`csharp/SecurityAndAccess/ListRoles.cs`](../../csharp/SecurityAndAccess
 public static void ListRoles(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    // Role is the one class XenCenter still bulk-downloads; RBAC subjects map to these roles. Role records
-    // include every permission too; the roles a user can be granted are the ones made of permissions
-    // (non-empty subroles), as xe role-list shows.
+    // RBAC subjects map to these roles. Role records include every permission too; the roles a user
+    // can be granted are the ones made of permissions (non-empty subroles), as xe role-list shows.
     var roles = Role.get_all_records(session).Values.Where(r => r.subroles.Count > 0)
         .Select(r => r.name_label).Distinct().OrderBy(n => n).ToList();
     Console.WriteLine($"Roles ({roles.Count}): {string.Join(", ", roles.Take(8))}");
@@ -61,7 +60,7 @@ from connection import connect
 
 
 def list_roles(url, username, password):
-    """List the RBAC roles (the one class XenCenter still bulk-downloads)."""
+    """List the RBAC roles."""
     session = connect(url, username, password)
     # Note the class is lowercase 'role' in the binding. Role records include every permission too; the
     # roles a user can be granted are the ones made of permissions (non-empty subroles), as xe role-list shows.
@@ -113,9 +112,8 @@ public final class ListRoles {
      */
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
-        // Role is the one class XenCenter still bulk-downloads; RBAC subjects map to these roles. Role records
-        // include every permission too; the roles a user can be granted are the ones made of permissions
-        // (non-empty subroles), as xe role-list shows.
+        // RBAC subjects map to these roles. Role records include every permission too; the roles a user
+        // can be granted are the ones made of permissions (non-empty subroles), as xe role-list shows.
         Set<String> roles = new java.util.TreeSet<>(); // distinct + sorted by name
         for (Role.Record r : Role.getAllRecords(conn).values()) if (!r.subroles.isEmpty()) roles.add(r.nameLabel);
         StringBuilder first = new StringBuilder();
@@ -165,9 +163,8 @@ import (
 //	listRoles("https://xenserver", "root", password)
 func listRoles(url, user, password string) {
 	session := connect(url, user, password)
-	// Role is the one class XenCenter still bulk-downloads; RBAC subjects map to these roles. Role records
-	// include every permission too; the roles a user can be granted are the ones made of permissions
-	// (non-empty subroles), as xe role-list shows.
+	// RBAC subjects map to these roles. Role records include every permission too; the roles a user
+	// can be granted are the ones made of permissions (non-empty subroles), as xe role-list shows.
 	roles, err := xenapi.Role.GetAllRecords(session)
 	check(err)
 	seen := map[string]bool{}
@@ -191,7 +188,7 @@ func listRoles(url, user, password string) {
 <details><summary>Sample output</summary>
 
 ```text
-Roles (7): read-only, pool-operator, client-cert, pool-admin, vm-operator, vm-power-admin, vm-admin
+Roles (7): pool-operator, vm-operator, read-only, pool-admin, vm-power-admin, client-cert, vm-admin
 OK: list-roles
 ```
 
@@ -218,9 +215,8 @@ function Invoke-ListRoles {
         [Parameter(Mandatory = $true)][string]$Password
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    # Role is the one class XenCenter still bulk-downloads; RBAC subjects map to these roles. Role records
-    # include every permission too; the roles a user can be granted are the ones made of permissions
-    # (non-empty subroles), as xe role-list shows.
+    # RBAC subjects map to these roles. Role records include every permission too; the roles a user
+    # can be granted are the ones made of permissions (non-empty subroles), as xe role-list shows.
     $roles = Get-XenRole | Where-Object { $_.subroles.Count -gt 0 } |
         Select-Object -ExpandProperty name_label -Unique | Sort-Object
     Write-Host "Roles ($(@($roles).Count)): $(($roles | Select-Object -First 8) -join ', ')"

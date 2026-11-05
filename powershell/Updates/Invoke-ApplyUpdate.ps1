@@ -3,8 +3,8 @@ function Invoke-ApplyUpdate {
     .SYNOPSIS
         Apply updates from the CDN.
     .DESCRIPTION
-        Sync the pool's update metadata from the CDN and apply it to every host, then read each host's
-        post-update reboot guidance.
+        Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+        coordinator, then read each host's post-update reboot guidance.
     .EXAMPLE
         Invoke-ApplyUpdate -Url https://xenserver -UserName root -Password $password `
     .EXAMPLE
@@ -17,15 +17,24 @@ function Invoke-ApplyUpdate {
         [Parameter(Mandatory = $true)][string]$RepoUrl,
         [Parameter(Mandatory = $true)][string]$SourceUrl
     )
+    # ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+    # Workload Balancing to be switched off before you start updating - so check both up front and stop
+    # rather than disabling either for you; turn them back on again once the update is done.
+    #
     # pool.sync_updates needs at least one repository with Update enabled (NO_REPOSITORY_ENABLED
     # otherwise) - introduce and attach a throwaway one, and forget it again afterwards. Applying a
     # batch whose mandatory guidance needs an evacuation fails with HOST_EVACUATION_IS_REQUIRED unless
     # the host's resident VMs are moved off first; handle that rather than assuming an update batch
     # never asks for one. Only call Reboot/RestartAgent when the *returned* pending guidance actually
     # contains "reboot_host"/"restart_toolstack" (modern xapi, >=23.18.0, never auto-reboots - it only
-    # records guidance) - not unconditionally after every apply.
+    # records guidance) - not unconditionally after every apply. Guidance that targets VMs instead of
+    # hosts (for example restarting a VM) is not handled here.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
+    if ($pool.ha_enabled -or $pool.wlb_enabled) {
+        throw "HA and Workload Balancing must both be off before updating the pool; disable them, " +
+            "run this again, then re-enable them once it finishes"
+    }
     $repos = @(New-UpdateRepositories -Session $session -RepoUrl $RepoUrl -SourceUrl $SourceUrl)
     # Remember the pool's own repositories, to put them back afterwards.
     $previous = @((Get-XenPool -Ref $pool.opaque_ref).repositories | ForEach-Object { $_.opaque_ref })
@@ -35,9 +44,12 @@ function Invoke-ApplyUpdate {
         $hash = $pool | Invoke-XenPool -XenAction SyncUpdates -PassThru
         Write-Host "Synced updates; hash length $($hash.Length)"
 
-        # Apply the synced updates to each host (the hash is the action's -Hash parameter). XenCenter
-        # then reads the reboot guidance to decide whether a Rolling Pool Upgrade reboot is needed.
-        foreach ($xenHost in Get-XenHost) {
+        # Apply the synced updates to each host, coordinator first as the documentation requires (the
+        # hash is the action's -Hash parameter). Then read the reboot guidance to decide whether a
+        # host needs a reboot.
+        $orderedHosts = @($pool.master.opaque_ref) + @(Get-XenHost |
+            Where-Object { $_.opaque_ref -ne $pool.master.opaque_ref } | ForEach-Object { $_.opaque_ref })
+        foreach ($xenHost in $orderedHosts | ForEach-Object { Get-XenHost -Ref $_ }) {
             try {
                 $xenHost | Invoke-XenHost -XenAction ApplyUpdates -Hash $hash
             }

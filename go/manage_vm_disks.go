@@ -14,8 +14,7 @@ import (
 // A real VM's root/boot disk is unpluggable=false (only non-system disks from VM.Provision default
 // to unpluggable), and the VM has to be Running for VBD.Unplug to be legal at all
 // (VM_BAD_POWER_STATE otherwise on a halted VM). So this works on a NEW data disk added to a
-// throwaway VM of its own, matching XenCenter's own "deactivate" action, which only ever targets
-// additional disks. No shrink demonstration: real SR backends refuse one outright
+// throwaway VM of its own. No shrink demonstration: real SR backends refuse one outright
 // (SR_BACKEND_FAILURE_79).
 //
 // Plugging and unplugging a disk on a running VM needs the guest's PV drivers

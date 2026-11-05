@@ -31,15 +31,6 @@ public static void SrUsage(string url, string user, string password)
     // A rescan refreshes an SR's utilisation from its backend.
     var scanMe = SR.get_all_records(session).First(kv => kv.Value.physical_size > 0).Key.opaque_ref;
     SR.scan(session, scanMe);
-
-    // Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by
-    // setting o_direct, which asks the storage layer to bypass the cache entirely.
-    SR.remove_from_other_config(session, scanMe, "o_direct");
-    SR.add_to_other_config(session, scanMe, "o_direct", "true");
-    var offOn = SR.get_other_config(session, scanMe).TryGetValue("o_direct", out var oDirect)
-        && oDirect == "true" ? "off" : "on";
-    Console.WriteLine($"  read caching on {SR.get_name_label(session, scanMe)}: {offOn}");
-    SR.remove_from_other_config(session, scanMe, "o_direct");
     Console.WriteLine("OK: sr-usage");
     session.logout();
 }
@@ -48,11 +39,11 @@ public static void SrUsage(string url, string user, string password)
 <details><summary>Sample output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 58 / 512 GiB used
-  read caching on Shared NFS: off
+  Shared NFS: 29 / 512 GiB used
 OK: sr-usage
 ```
 
@@ -91,15 +82,6 @@ def sr_usage(url, username, password):
     scan_me = next(ref for ref, r in session.xenapi.SR.get_all_records().items()
                    if int(r["physical_size"]) > 0)
     session.xenapi.SR.scan(scan_me)
-
-    # Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by
-    # setting o_direct, which asks the storage layer to bypass the cache entirely.
-    session.xenapi.SR.remove_from_other_config(scan_me, "o_direct")
-    session.xenapi.SR.add_to_other_config(scan_me, "o_direct", "true")
-    print("  read caching on %s: %s"
-          % (session.xenapi.SR.get_name_label(scan_me),
-             "off" if session.xenapi.SR.get_other_config(scan_me).get("o_direct") == "true" else "on"))
-    session.xenapi.SR.remove_from_other_config(scan_me, "o_direct")
     print("OK: sr-usage")
     session.xenapi.session.logout()
 ```
@@ -110,8 +92,8 @@ def sr_usage(url, username, password):
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 54 / 512 GiB used
-  read caching on Shared NFS: off
+  Shared NFS: 50 / 512 GiB used
+  iSCSI storage: 25 / 200 GiB used
 OK: sr-usage
 ```
 
@@ -162,14 +144,6 @@ public final class SrUsage {
         for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet())
             if (e.getValue().physicalSize > 0) { scanMe = e.getKey(); break; }
         scanMe.scan(conn);
-
-        // Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by
-        // setting o_direct, which asks the storage layer to bypass the cache entirely.
-        scanMe.removeFromOtherConfig(conn, "o_direct");
-        scanMe.addToOtherConfig(conn, "o_direct", "true");
-        System.out.println("  read caching on " + scanMe.getNameLabel(conn) + ": "
-                + ("true".equals(scanMe.getOtherConfig(conn).get("o_direct")) ? "off" : "on"));
-        scanMe.removeFromOtherConfig(conn, "o_direct");
         System.out.println("OK: sr-usage");
         Session.logout(conn);
     }
@@ -182,8 +156,8 @@ public final class SrUsage {
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 50 / 512 GiB used
-  read caching on Shared NFS: off
+  Shared NFS: 54 / 512 GiB used
+  iSCSI storage: 25 / 200 GiB used
 OK: sr-usage
 ```
 
@@ -230,21 +204,6 @@ func srUsage(url, user, password string) {
 	if haveScan {
 		check(xenapi.SR.Scan(session, scanMe))
 	}
-
-	// Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by setting
-	// o_direct, which asks the storage layer to bypass the cache entirely.
-	if haveScan {
-		check(xenapi.SR.RemoveFromOtherConfig(session, scanMe, "o_direct"))
-		check(xenapi.SR.AddToOtherConfig(session, scanMe, "o_direct", "true"))
-		oc, _ := xenapi.SR.GetOtherConfig(session, scanMe)
-		name, _ := xenapi.SR.GetNameLabel(session, scanMe)
-		readCaching := "on"
-		if oc["o_direct"] == "true" {
-			readCaching = "off"
-		}
-		fmt.Printf("  read caching on %s: %s\n", name, readCaching)
-		check(xenapi.SR.RemoveFromOtherConfig(session, scanMe, "o_direct"))
-	}
 	fmt.Println("OK: sr-usage")
 	session.Logout()
 }
@@ -253,11 +212,11 @@ func srUsage(url, user, password string) {
 <details><summary>Sample output</summary>
 
 ```text
-  Shared NFS: 54 / 512 GiB used
+  Shared NFS: 50 / 512 GiB used
+  iSCSI storage: 25 / 200 GiB used
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  read caching on Shared NFS: off
 OK: sr-usage
 ```
 
@@ -291,15 +250,6 @@ function Invoke-SrUsage {
     # A rescan refreshes an SR's utilisation from its backend.
     $scanMe = Get-XenSR | Where-Object { $_.physical_size -gt 0 } | Select-Object -First 1
     $scanMe | Invoke-XenSR -XenAction Scan
-
-    # Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by
-    # setting o_direct, which asks the storage layer to bypass the cache entirely. Add-XenSR appends
-    # one other_config entry as a KeyValuePair; Remove-XenSRProperty drops it again by key.
-    $scanMe | Remove-XenSRProperty -OtherConfig "o_direct"
-    $scanMe | Add-XenSR -OtherConfig ([System.Collections.Generic.KeyValuePair[string, string]]::new("o_direct", "true"))
-    $cachingOff = (Get-XenSR -Ref $scanMe.opaque_ref).other_config["o_direct"] -eq "true"
-    Write-Host "  read caching on $($scanMe.name_label): $(if ($cachingOff) { 'off' } else { 'on' })"
-    $scanMe | Remove-XenSRProperty -OtherConfig "o_direct"
     Write-Host "OK: sr-usage"
     $session | Disconnect-XenServer
 }
@@ -308,11 +258,11 @@ function Invoke-SrUsage {
 <details><summary>Sample output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   ISO library: 4 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
   Shared NFS: 54 / 512 GiB used
-  read caching on Shared NFS: off
 OK: sr-usage
 ```
 
@@ -338,16 +288,6 @@ sr_usage() {
         [ "$(xe sr-param-get uuid=$sr param-name=physical-size)" -gt 0 ] && break
     done
     xe sr-scan uuid=$sr
-
-    # Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by
-    # setting o_direct, which asks the storage layer to bypass the cache entirely.
-    # Clear any earlier setting first: adding a key the map already holds is an error, and so is removing
-    # one it doesn't, hence the || true.
-    xe sr-param-remove uuid=$sr param-name=other-config param-key=o_direct >/dev/null 2>&1 || true
-    xe sr-param-add uuid=$sr param-name=other-config o_direct=true
-    o_direct=$(xe sr-param-get uuid=$sr param-name=other-config param-key=o_direct)
-    echo "  read caching on $(xe sr-param-get uuid=$sr param-name=name-label): $([ "$o_direct" = "true" ] && echo off || echo on)"
-    xe sr-param-remove uuid=$sr param-name=other-config param-key=o_direct
     echo "OK: sr-usage"
 }
 ```
@@ -358,7 +298,11 @@ sr_usage() {
 Storage:
 name-label ( RW)          : Shared NFS
        physical-size ( RO): 549755813888
-physical-utilisation ( RO): 62277025792
+physical-utilisation ( RO): 31138512896
+
+name-label ( RW)          : iSCSI storage
+       physical-size ( RO): 214748364800
+physical-utilisation ( RO): 26843545600
 
 name-label ( RW)          : ISO library
        physical-size ( RO): 107374182400
@@ -371,7 +315,6 @@ physical-utilisation ( RO): 26843545600
 name-label ( RW)          : Local storage
        physical-size ( RO): 549755813888
 physical-utilisation ( RO): 26843545600
-  read caching on Shared NFS: off
 OK: sr-usage
 ```
 

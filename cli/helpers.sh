@@ -11,13 +11,21 @@ nth_csv()    { local n=$2 IFS=,; set -- $1; shift $((n - 1)); echo "$1"; }  # Nt
 # helpers above work on both.
 set_to_csv() { echo "${1//; /,}"; }
 
-shared_sr() { first_csv "$(xe sr-list name-label="Shared NFS" --minimal)"; }
+# The pool's default SR: where xe vm-install puts a template's disks when no SR is named.
+default_sr() { xe pool-param-get uuid=$(xe pool-list --minimal) param-name=default-SR; }
+# The (first) SR with this name, or a message saying there is none.
+sr_by_name() {
+    local sr
+    sr=$(first_csv "$(xe sr-list name-label="$1" --minimal)")
+    if [ -z "$sr" ]; then echo "no SR named '$1'" >&2; return 1; fi
+    echo "$sr"
+}
 first_host() { first_csv "$(xe host-list --minimal)"; }
 vm_uuid()  { first_csv "$(xe vm-list name-label="$1" --minimal)"; }
 
-# Detach an SR from every host, then forget it: XenCenter's Detach followed by Forget. sr-forget refuses an
-# SR that is still attached (SR_HAS_PBD), so unplug its PBDs first. Forgetting drops the pool's record of the
-# SR but leaves the data on the storage itself.
+# Detach an SR from every host, then forget it. sr-forget refuses an SR that is still attached (SR_HAS_PBD),
+# so unplug its PBDs first. Forgetting drops the pool's record of the SR but leaves the data on the storage
+# itself.
 detach_and_forget_sr() {
     local pbd
     for pbd in $(each_csv "$(xe pbd-list sr-uuid=$1 currently-attached=true --minimal)"); do
@@ -51,10 +59,9 @@ probe_for_failure() {
              "check the target address" >&2
         return 1
     fi
-    # xe prints a known error as "Error code: ..." then "Error parameters: a, b, ..." (the Windows xe.exe
-    # that ships with XenCenter says "Error params:"): the XML fragment is always the last parameter xapi
-    # sends back, so it runs from the first '<' on that line to the end of the output (a real host
-    # pretty-prints it over many lines).
+    # xe prints a known error as "Error code: ..." then "Error parameters: a, b, ..." (the Windows xe.exe says
+    # "Error params:"): the XML fragment is always the last parameter xapi sends back, so it runs from the
+    # first '<' on that line to the end of the output (a real host pretty-prints it over many lines).
     local in_params=""
     while IFS= read -r line; do
         if [ -n "$in_params" ]; then
@@ -168,11 +175,10 @@ move_disks_to_sr() {
     done
 }
 
-# Introduce the pool's update repositories the way XenCenter does: the release's base packages
-# (update=false) and its update stream (update=true, which pool-sync-updates needs - otherwise
-# NO_REPOSITORY_ENABLED). A real host checks the URLs (INVALID_BASE_URL for an unknown domain), so these
-# are the XenServer CDN's, e.g. https://repo.ops.xenserver.com/xs9/{base,normal}. Echoes both repository
-# uuids, one per line.
+# Introduce the pool's update repositories: the release's base packages (update=false) and its update
+# stream (update=true, which pool-sync-updates needs - otherwise NO_REPOSITORY_ENABLED). A real host
+# checks the URLs (INVALID_BASE_URL for an unknown domain), so these are the XenServer CDN's, e.g.
+# https://repo.ops.xenserver.com/xs9/{base,normal}. Echoes both repository uuids, one per line.
 introduce_update_repositories() {
     local repo_url=$1 source_url=$2 stage
     for stage in base normal; do

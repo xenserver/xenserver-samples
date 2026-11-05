@@ -26,14 +26,5 @@ def sr_usage(url, username, password):
     scan_me = next(ref for ref, r in session.xenapi.SR.get_all_records().items()
                    if int(r["physical_size"]) > 0)
     session.xenapi.SR.scan(scan_me)
-
-    # Read caching keeps recently-read blocks in the host's memory. It is switched off per SR by
-    # setting o_direct, which asks the storage layer to bypass the cache entirely.
-    session.xenapi.SR.remove_from_other_config(scan_me, "o_direct")
-    session.xenapi.SR.add_to_other_config(scan_me, "o_direct", "true")
-    print("  read caching on %s: %s"
-          % (session.xenapi.SR.get_name_label(scan_me),
-             "off" if session.xenapi.SR.get_other_config(scan_me).get("o_direct") == "true" else "on"))
-    session.xenapi.SR.remove_from_other_config(scan_me, "o_direct")
     print("OK: sr-usage")
     session.xenapi.session.logout()

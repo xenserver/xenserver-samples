@@ -2,7 +2,7 @@
 
 # Configure disaster recovery
 
-Replicate the pool's metadata (the configuration of its VMs and vApps) to an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does, so that a pool at a disaster recovery site can recover the VMs from the storage array's replica of that SR.
+Replicate the pool's metadata (the configuration of its VMs and vApps) to an iSCSI or Fibre Channel SR, so that a pool at a disaster recovery site can recover the VMs from the storage array's replica of that SR.
 
 **Requires:** an iSCSI or Fibre Channel SR attached to every host.
 
@@ -15,9 +15,9 @@ Source: [`csharp/DisasterRecovery/ConfigureDisasterRecovery.cs`](../../csharp/Di
 ```csharp
 /// <summary>
 /// Turn on pool metadata replication: the pool writes its database - the configuration of its VMs and
-/// vApps - to a disk on an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does. Have your
-/// storage array replicate that SR, and the VMs' SRs, to the disaster recovery site; a pool there can
-/// then recover the VMs from the replica (see <see cref="DisasterRecoveryFailover"/>).
+/// vApps - to a disk on an iSCSI or Fibre Channel SR. Have your storage array replicate that SR, and
+/// the VMs' SRs, to the disaster recovery site; a pool there can then recover the VMs from the
+/// replica (see <see cref="DisasterRecoveryFailover"/>).
 /// </summary>
 /// <example>
 /// <code>
@@ -94,7 +94,7 @@ public static void ConfigureDisasterRecovery(string url, string user, string pas
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-e909-000000000000), 3804 MiB, up to date: True
+  metadata disk: Metadata for DR (00000001-0000-0000-060b-000000000000), 3804 MiB, up to date: True
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -109,9 +109,9 @@ Source: [`python/disaster_recovery/configure_disaster_recovery.py`](../../python
 """Configure disaster recovery.
 
 Turn on pool metadata replication: the pool writes its database - the configuration of its VMs and
-vApps - to a disk on an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does. Have your
-storage array replicate that SR, and the VMs' SRs, to the disaster recovery site; a pool there can then
-recover the VMs from the replica (see disaster_recovery_failover).
+vApps - to a disk on an iSCSI or Fibre Channel SR. Have your storage array replicate that SR, and the
+VMs' SRs, to the disaster recovery site; a pool there can then recover the VMs from the replica (see
+disaster_recovery_failover).
 
 Run it::
 
@@ -188,7 +188,7 @@ def configure_disaster_recovery(url, username, password, sr_name=None):
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-e909-000000000000), 3804 MiB, up to date: True
+  metadata disk: Metadata for DR (00000001-0000-0000-b80a-000000000000), 3804 MiB, up to date: True
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -224,9 +224,9 @@ public final class ConfigureDisasterRecovery {
      * Configure disaster recovery.
      *
      * <p>Turn on pool metadata replication: the pool writes its database - the configuration of its VMs
-     * and vApps - to a disk on an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does. Have
-     * your storage array replicate that SR, and the VMs' SRs, to the disaster recovery site; a pool there
-     * can then recover the VMs from the replica (see {@link DisasterRecoveryFailover}).
+     * and vApps - to a disk on an iSCSI or Fibre Channel SR. Have your storage array replicate that SR,
+     * and the VMs' SRs, to the disaster recovery site; a pool there can then recover the VMs from the
+     * replica (see {@link DisasterRecoveryFailover}).
      *
      * <p>Only SRs on a LUN - iSCSI or Fibre Channel/SAS (HBA) - can hold the pool's database, and every host
      * must have the SR attached. The server says which qualify: SR.assert_supports_database_replication
@@ -314,7 +314,7 @@ public final class ConfigureDisasterRecovery {
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-e909-000000000000), 3804 MiB, up to date: true
+  metadata disk: Metadata for DR (00000001-0000-0000-a30b-000000000000), 3804 MiB, up to date: true
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -338,9 +338,9 @@ import (
 // configureDisasterRecovery - Configure disaster recovery.
 //
 // Turn on pool metadata replication: the pool writes its database - the configuration of its VMs and
-// vApps - to a disk on an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does. Have your
-// storage array replicate that SR, and the VMs' SRs, to the disaster recovery site; a pool there can then
-// recover the VMs from the replica (see disasterRecoveryFailover).
+// vApps - to a disk on an iSCSI or Fibre Channel SR. Have your storage array replicate that SR, and
+// the VMs' SRs, to the disaster recovery site; a pool there can then recover the VMs from the
+// replica (see disasterRecoveryFailover).
 //
 // Only SRs on a LUN - iSCSI or Fibre Channel/SAS (HBA) - can hold the pool's database, and every host
 // must have the SR attached. The server says which qualify: SR.assert_supports_database_replication fails
@@ -437,7 +437,7 @@ func configureDisasterRecovery(url, user, password, srName string) {
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-e909-000000000000), 3804 MiB, up to date: true
+  metadata disk: Metadata for DR (00000001-0000-0000-0a0b-000000000000), 3804 MiB, up to date: true
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -455,9 +455,9 @@ function Invoke-ConfigureDisasterRecovery {
         Configure disaster recovery.
     .DESCRIPTION
         Turn on pool metadata replication: the pool writes its database - the configuration of its VMs and
-        vApps - to a disk on an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does. Have your
-        storage array replicate that SR, and the VMs' SRs, to the disaster recovery site; a pool there can
-        then recover the VMs from the replica (see Invoke-DisasterRecoveryFailover).
+        vApps - to a disk on an iSCSI or Fibre Channel SR. Have your storage array replicate that SR, and
+        the VMs' SRs, to the disaster recovery site; a pool there can then recover the VMs from the replica
+        (see Invoke-DisasterRecoveryFailover).
     .EXAMPLE
         Invoke-ConfigureDisasterRecovery -Url https://xenserver -UserName root -Password $password
     #>
@@ -530,7 +530,7 @@ function Invoke-ConfigureDisasterRecovery {
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-e909-000000000000), 3804 MiB, up to date: True
+  metadata disk: Metadata for DR (00000001-0000-0000-530b-000000000000), 3804 MiB, up to date: True
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -545,9 +545,9 @@ Source: [`cli/disaster-recovery/configure-disaster-recovery.sh`](../../cli/disas
 # Configure disaster recovery.
 #
 # Turn on pool metadata replication: the pool writes its database - the configuration of its VMs and vApps
-# - to a disk on an iSCSI or Fibre Channel SR, as XenCenter's Configure DR dialog does. Have your storage
-# array replicate that SR, and the VMs' SRs, to the disaster recovery site; a pool there can then recover
-# the VMs from the replica (see disaster-recovery-failover).
+# - to a disk on an iSCSI or Fibre Channel SR. Have your storage array replicate that SR, and the VMs'
+# SRs, to the disaster recovery site; a pool there can then recover the VMs from the replica (see
+# disaster-recovery-failover).
 #
 # Run it:
 #   ./workflows.sh configure-disaster-recovery https://xenserver root "$password"
@@ -629,7 +629,7 @@ configure_disaster_recovery() {
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-e809-000000000000), 3804 MiB, up to date: true
+  metadata disk: Metadata for DR (00000001-0000-0000-470b-000000000000), 3804 MiB, up to date: true
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```

@@ -228,9 +228,9 @@ Source: [`cli/organization/pool-tags.sh`](../../cli/organization/pool-tags.sh)
 
 pool_tags() {
     pool=$(xe pool-list --minimal)
-    xe pool-param-add uuid=$pool param-name=tags param-key=xe-managed
+    xe pool-param-add uuid=$pool param-name=tags param-key=sdk-managed
     echo "Pool tags: $(xe pool-param-get uuid=$pool param-name=tags)"
-    xe pool-param-remove uuid=$pool param-name=tags param-key=xe-managed
+    xe pool-param-remove uuid=$pool param-name=tags param-key=sdk-managed
     echo "OK: pool-tags"
 }
 ```
@@ -238,7 +238,7 @@ pool_tags() {
 <details><summary>Sample output</summary>
 
 ```text
-Pool tags: xe-managed
+Pool tags: sdk-managed
 OK: pool-tags
 ```
 

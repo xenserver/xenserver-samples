@@ -29,9 +29,8 @@ function Invoke-DetachAndForgetSr {
     .SYNOPSIS
         Detach an SR from every host, then forget it.
     .DESCRIPTION
-        XenCenter's Detach followed by Forget. Forget refuses an SR that is still attached (SR_HAS_PBD), so
-        unplug its PBDs first. Forgetting drops the pool's record of the SR but leaves the data on the
-        storage itself.
+        Forget refuses an SR that is still attached (SR_HAS_PBD), so unplug its PBDs first. Forgetting
+        drops the pool's record of the SR but leaves the data on the storage itself.
     #>
     param([Parameter(Mandatory = $true)][string]$Ref)
     (Get-XenSR -Ref $Ref).PBDs | ForEach-Object { Get-XenPBD -Ref $_.opaque_ref } |
@@ -283,7 +282,7 @@ function Move-DisksToSr {
 function New-UpdateRepositories {
     <#
     .SYNOPSIS
-        Introduce the pool's update repositories the way XenCenter does.
+        Introduce the pool's update repositories.
     .DESCRIPTION
         The release's base packages (Update=$false) and its update stream (Update=$true, which
         pool.sync_updates needs - otherwise NO_REPOSITORY_ENABLED). A real host checks the URLs

@@ -20,7 +20,7 @@ function Invoke-CreateSmbSr {
     )
     # Connect a shared SR to an SMB/CIFS file share (create validates + sizes from the share).
     #
-    # The password travels as a Secret, not plaintext device-config - the way XenCenter does it.
+    # The password travels as a Secret, not plaintext device-config.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $xenHost = Get-XenHost | Select-Object -First 1
 

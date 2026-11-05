@@ -7,6 +7,8 @@ import com.xensource.xenapi.Repository;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Types;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,8 +24,13 @@ public final class ApplyUpdate {
     /**
      * Apply updates from the CDN.
      *
-     * <p>Sync the pool's update metadata from the CDN and apply it to every host, then read each host's
-     * post-update reboot guidance.
+     * <p>Sync the pool's update metadata from the CDN and apply it to every host, starting with the pool
+     * coordinator, then read each host's post-update reboot guidance.
+     *
+     * <p>Host.applyUpdates refuses with HOST_EVACUATION_IS_REQUIRED (handled below) or HA_IS_ENABLED
+     * while HA is on, and the documentation also asks for Workload Balancing to be switched off before
+     * you start updating - so check both up front and stop rather than disabling either for you; turn
+     * them back on again once the update is done.
      *
      * <p>pool.syncUpdates needs at least one repository with update=True enabled (NO_REPOSITORY_ENABLED
      * otherwise) - introduce and attach a throwaway one, and forget it again afterwards. Applying a batch
@@ -31,7 +38,8 @@ public final class ApplyUpdate {
      * host's resident VMs are moved off first; handle that rather than assuming an update batch never asks
      * for one. Only call host.reboot/host.restart_agent when the RETURNED pending guidance actually
      * contains REBOOT_HOST/RESTART_TOOLSTACK (modern xapi, &gt;=23.18.0, never auto-reboots - it only
-     * records guidance) - not unconditionally after every apply.
+     * records guidance) - not unconditionally after every apply. Guidance that targets VMs instead of
+     * hosts (for example restarting a VM) is not handled here.
      *
      * <p>Run it:
      *
@@ -44,6 +52,10 @@ public final class ApplyUpdate {
             String sourceUrl) throws Exception {
         Connection conn = connect(url, user, password);
         Pool pool = Pool.getAll(conn).iterator().next();
+        if (pool.getHaEnabled(conn) || pool.getWlbEnabled(conn)) {
+            throw new RuntimeException("HA and Workload Balancing must both be off before updating the "
+                    + "pool; disable them, run this again, then re-enable them once it finishes");
+        }
         Set<Repository> repos = introduceUpdateRepositories(conn, repoUrl, sourceUrl);
         // Remember the pool's own repositories, to put them back afterwards.
         Set<Repository> previous = pool.getRepositories(conn);
@@ -53,14 +65,21 @@ public final class ApplyUpdate {
             String hash = pool.syncUpdates(conn, false, "", "");
             System.out.println("Synced updates; hash length " + hash.length());
 
-            // Apply the synced updates to each host. XenCenter then reads the reboot guidance to decide
-            // whether a Rolling Pool Upgrade reboot is needed.
-            for (Map.Entry<Host, Host.Record> e : Host.getAllRecords(conn).entrySet()) {
-                Host host = e.getKey();
+            // Apply the synced updates to each host, coordinator first as the documentation requires.
+            // Then read the reboot guidance to decide whether a host needs a reboot.
+            Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
+            Host master = pool.getMaster(conn);
+            List<Host> ordered = new ArrayList<>();
+            ordered.add(master);
+            for (Host h : hosts.keySet()) {
+                if (!h.equals(master)) ordered.add(h);
+            }
+            for (Host host : ordered) {
+                Host.Record rec = hosts.get(host);
                 try {
                     host.applyUpdates(conn, hash);
                 } catch (Types.HostEvacuationIsRequired ex) {
-                    System.out.println("  " + e.getValue().nameLabel + ": needs evacuating first; "
+                    System.out.println("  " + rec.nameLabel + ": needs evacuating first; "
                             + "evacuating and retrying");
                     host.disable(conn);
                     host.evacuate(conn);
@@ -68,7 +87,7 @@ public final class ApplyUpdate {
                     host.enable(conn);
                 }
                 Set<Types.UpdateGuidances> guidance = host.getPendingGuidances(conn);
-                System.out.println("  " + e.getValue().nameLabel + ": applied; pending guidance = " + guidance);
+                System.out.println("  " + rec.nameLabel + ": applied; pending guidance = " + guidance);
                 boolean rebooting = guidance.contains(Types.UpdateGuidances.REBOOT_HOST);
                 if (rebooting || guidance.contains(Types.UpdateGuidances.RESTART_TOOLSTACK)) {
                     // As in rolling-pool-update: either restart returns before it has happened, and the
@@ -77,7 +96,7 @@ public final class ApplyUpdate {
                     String before = host.getOtherConfig(conn).get(key);
                     if (rebooting) host.reboot(conn);
                     else host.restartAgent(conn);
-                    conn = waitForRestart(url, user, password, e.getValue().uuid, key, before);
+                    conn = waitForRestart(url, user, password, rec.uuid, key, before);
                 }
                 // apply_updates disables the host while it works (auto_enable: a restart puts it back) -
                 // with no restart to do, nothing re-enables it. Return it to service either way.

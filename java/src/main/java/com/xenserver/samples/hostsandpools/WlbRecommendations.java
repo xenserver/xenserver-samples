@@ -79,11 +79,11 @@ public final class WlbRecommendations {
 
                 // Same caveat for a VM's own recommendations, which are keyed by host and rate each as a
                 // destination - higher is better (a real appliance rated hosts 6.1 here, so not capped
-                // at XenCenter's five stars). Right after connecting, the appliance is still discovering
-                // the pool and answers WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started") -
-                // keep asking for a while. The generated binding drops WLB_INTERNAL_ERROR's parameters
-                // (its no-arg constructor discards errorDescription), so unlike the other bindings this
-                // cannot check for 4024 specifically and retries on any WlbInternalError instead.
+                // at five). Right after connecting, the appliance is still discovering the pool and
+                // answers WLB_INTERNAL_ERROR 4024 ("Pool discovery has not been started") - keep asking
+                // for a while. The generated binding drops WLB_INTERNAL_ERROR's parameters (its no-arg
+                // constructor discards errorDescription), so unlike the other bindings this cannot check
+                // for 4024 specifically and retries on any WlbInternalError instead.
                 VM vm = VM.getByNameLabel(conn, vmName).iterator().next();
                 long deadline = System.currentTimeMillis() + 10 * 60 * 1000;
                 Map<Host, Set<String>> vmRecs;

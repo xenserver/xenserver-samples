@@ -33,9 +33,9 @@ public static void SnapshotRevert(string url, string user, string password,
 
     // A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the
     // VM's console at that moment. It is an HTTP transfer alongside the API, not an API call, so the
-    // session id travels in the query string. ref names the VM's VNC (rfb) console, as XenCenter does
-    // (the VM itself works too). Only a running VM has a console to capture, and a host that can't reach
-    // it answers 404 or 500 instead of an image: the picture is incidental, so carry on.
+    // session id travels in the query string. ref names the VM's VNC (rfb) console (the VM itself
+    // works too). Only a running VM has a console to capture, and a host that can't reach it answers
+    // 404 or 500 instead of an image: the picture is incidental, so carry on.
     if (VM.get_power_state(session, vmRef) == vm_power_state.Running)
     {
         var console = VM.get_consoles(session, vmRef)
@@ -74,7 +74,7 @@ public static void SnapshotRevert(string url, string user, string password,
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-270a-000000000000
+Created snapshot: 00000001-0000-0000-3e0a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -122,9 +122,9 @@ def snapshot_revert(url, username, password, vm_name, snapshot_name="sdk-example
 
     # A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the
     # VM's console at that moment. It is an HTTP transfer alongside the API, not an API call, so the
-    # session id travels in the query string. ref names the VM's VNC (rfb) console, as XenCenter does
-    # (the VM itself works too). Only a running VM has a console to capture, and a host that can't
-    # reach it answers 404 or 500 instead of an image: the picture is incidental, so carry on.
+    # session id travels in the query string. ref names the VM's VNC (rfb) console (the VM itself
+    # works too). Only a running VM has a console to capture, and a host that can't reach it answers
+    # 404 or 500 instead of an image: the picture is incidental, so carry on.
     if session.xenapi.VM.get_power_state(vm_ref) == "Running":
         console = next(c for c in session.xenapi.VM.get_consoles(vm_ref)
                        if session.xenapi.console.get_protocol(c) == "rfb")
@@ -156,7 +156,7 @@ def snapshot_revert(url, username, password, vm_name, snapshot_name="sdk-example
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-430a-000000000000
+Created snapshot: 00000001-0000-0000-740a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -214,9 +214,9 @@ public final class SnapshotRevert {
 
         // A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the
         // VM's console at that moment. It is an HTTP transfer alongside the API, not an API call, so the
-        // session id travels in the query string. ref names the VM's VNC (rfb) console, as XenCenter does
-        // (the VM itself works too). Only a running VM has a console to capture, and a host that can't reach
-        // it answers 404 or 500 instead of an image: the picture is incidental, so carry on.
+        // session id travels in the query string. ref names the VM's VNC (rfb) console (the VM itself
+        // works too). Only a running VM has a console to capture, and a host that can't reach it answers
+        // 404 or 500 instead of an image: the picture is incidental, so carry on.
         if (vm.getPowerState(conn) == Types.VmPowerState.RUNNING) {
             com.xensource.xenapi.Console console = null;
             for (com.xensource.xenapi.Console c : vm.getConsoles(conn)) {
@@ -258,7 +258,7 @@ public final class SnapshotRevert {
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-530a-000000000000
+Created snapshot: 00000001-0000-0000-160a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -307,10 +307,10 @@ func snapshotRevert(url, user, password, vmName, snapshotName string) {
 
 	// A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the VM's
 	// console at that moment. It is an HTTP transfer alongside the API, not an API call, so the session id
-	// travels in the query string. ref names the VM's VNC (rfb) console, as XenCenter does (the VM itself
-	// works too). Only a running VM has a console to capture, and a host that can't reach it answers 404 or
-	// 500 instead of an image: the picture is incidental, so carry on. The Go binding keeps its own session
-	// private, so obtain one of our own the same way the RRD/export examples do.
+	// travels in the query string. ref names the VM's VNC (rfb) console (the VM itself works too). Only a
+	// running VM has a console to capture, and a host that can't reach it answers 404 or 500 instead of an
+	// image: the picture is incidental, so carry on. The Go binding keeps its own session private, so
+	// obtain one of our own the same way the RRD/export examples do.
 	if state, _ := xenapi.VM.GetPowerState(session, vmRef); state == xenapi.VMPowerStateRunning {
 		consoles, err := xenapi.VM.GetConsoles(session, vmRef)
 		check(err)
@@ -359,7 +359,7 @@ func snapshotRevert(url, user, password, vmName, snapshotName string) {
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-2e0a-000000000000
+Created snapshot: 00000001-0000-0000-460a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -403,10 +403,10 @@ function Invoke-SnapshotRevert {
 
     # A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the
     # VM's console at that moment. It is an HTTP transfer alongside the API, not an API call, so the
-    # session id travels in the query string. ref names the VM's VNC (rfb) console, as XenCenter does
-    # (the VM itself works too). Only a running VM has a console to capture, and a host that can't reach
-    # it answers 404 or 500 instead of an image: the picture is incidental, so carry on. Still pure
-    # PowerShell: Connect-Example has already trusted the server's certificate.
+    # session id travels in the query string. ref names the VM's VNC (rfb) console (the VM itself
+    # works too). Only a running VM has a console to capture, and a host that can't reach it answers
+    # 404 or 500 instead of an image: the picture is incidental, so carry on. Still pure PowerShell:
+    # Connect-Example has already trusted the server's certificate.
     if ((Get-XenVM -Ref $vm.opaque_ref).power_state -eq 'Running') {
         $console = (Get-XenVM -Ref $vm.opaque_ref).consoles |
             ForEach-Object { Get-XenConsole -Ref $_.opaque_ref } | Where-Object { $_.protocol -eq 'rfb' } |
@@ -444,7 +444,7 @@ function Invoke-SnapshotRevert {
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-530a-000000000000
+Created snapshot: 00000001-0000-0000-560a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -490,7 +490,7 @@ snapshot_revert() {
 <details><summary>Sample output</summary>
 
 ```text
-Created snapshot: 00000001-0000-0000-1d0a-000000000000
+Created snapshot: 00000001-0000-0000-570a-000000000000
 Reverted to the snapshot.
 OK: snapshot-revert
 ```

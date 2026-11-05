@@ -24,27 +24,40 @@ Source: [`csharp/VirtualMachines/CrossPoolCopyVm.cs`](../../csharp/VirtualMachin
 /// </code>
 /// </example>
 /// <remarks>
-/// Copy a VM from one pool to another (Storage XenMotion copy) — the API behind XenCenter's cross-pool
-/// Copy. Open a session to each pool, get a receiver token from the destination with
-/// host.migrate_receive, then VM.migrate_send with copy=true on the source (which is left intact).
+/// Copy a VM from one pool to another (Storage XenMotion copy). Open a session to each pool, get a
+/// receiver token from the destination with host.migrate_receive, then VM.migrate_send with
+/// copy=true on the source (which is left intact).
 /// </remarks>
 public static void CrossPoolCopyVm(string url, string user, string password, string destUrl,
-    string vmName = "db-01", string destUser = null, string destPassword = null)
+    string vmName = "db-01", string destUser = null, string destPassword = null,
+    string transferNetwork = null)
 {
     var source = Connect(url, user, password);
     var dest = Connect(destUrl, destUser ?? user, destPassword ?? password);
     // Destination: choose a host, a network and an SR, then ask for a receiver token. The disks go to
-    // the destination pool's default SR and the data travels over the host's management network -
-    // one both pools can certainly reach (the first network listed may well not be).
+    // the destination pool's default SR.
     var destPool = Pool.get_all(dest)[0];
     var destHost = Pool.get_master(dest, destPool).opaque_ref;
     var destSr = Pool.get_default_SR(dest, destPool).opaque_ref;
     var managementPif = Host.get_PIFs(dest, destHost).First(pif => PIF.get_management(dest, pif.opaque_ref));
-    var destNetwork = PIF.get_network(dest, managementPif.opaque_ref).opaque_ref;
-    var receiver = Host.migrate_receive(dest, destHost, destNetwork, new Dictionary<string, string>());
+    var destManagementNetwork = PIF.get_network(dest, managementPif.opaque_ref).opaque_ref;
+    string migrationNetwork;
+    if (transferNetwork != null)
+    {
+        migrationNetwork = Network.get_all_records(dest)
+            .First(kv => kv.Value.name_label == transferNetwork).Key.opaque_ref;
+    }
+    else
+    {
+        // For performance, production use should carry migration traffic over a dedicated network
+        // rather than the management network - pass transferNetwork with the name of one.
+        migrationNetwork = destManagementNetwork;
+    }
+    var receiver = Host.migrate_receive(dest, destHost, migrationNetwork, new Dictionary<string, string>());
 
-    // Source: map every disk to the destination SR and every NIC to the destination network
-    // (a cross-pool copy needs a complete mapping), then send with copy=true.
+    // Source: map every disk to the destination SR and every NIC to the destination pool's
+    // management network (the VM's guest-visible NICs, independent of the migration transfer),
+    // then send with copy=true.
     var vm = VmByName(source, vmName);
     var vdiMap = new Dictionary<XenRef<VDI>, XenRef<SR>>();
     foreach (var vbdRef in VM.get_VBDs(source, vm))
@@ -54,7 +67,7 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
         if (vdi.opaque_ref != "OpaqueRef:NULL") vdiMap[vdi] = new XenRef<SR>(destSr);
     }
     var vifMap = new Dictionary<XenRef<VIF>, XenRef<Network>>();
-    foreach (var vifRef in VM.get_VIFs(source, vm)) vifMap[vifRef] = new XenRef<Network>(destNetwork);
+    foreach (var vifRef in VM.get_VIFs(source, vm)) vifMap[vifRef] = new XenRef<Network>(destManagementNetwork);
 
     var options = new Dictionary<string, string> { ["copy"] = "true" };
     var copy = VM.migrate_send(source, vm, receiver, false, vdiMap, vifMap, options,
@@ -78,7 +91,7 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-ec09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-080a-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -105,22 +118,33 @@ from helpers import destroy_vm_and_disks, vm_by_name
 
 
 def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
-                       dest_username=None, dest_password=None):
+                       dest_username=None, dest_password=None, transfer_network=None):
     """Copy a VM from one pool to another (Storage XenMotion copy): get a receiver token from the
-    destination with host.migrate_receive, then VM.migrate_send with copy=true on the source."""
+    destination with host.migrate_receive, then VM.migrate_send with copy=true on the source.
+
+    transfer_network, if given, is the name of a network on the destination pool to carry the
+    migration traffic (the VM's disks and memory) - pass the name of a dedicated migration network."""
     source = connect(url, username, password)
     dest = connect(dest_url, dest_username or username, dest_password or password)
     # Destination: choose a host, network and SR, then ask for a receiver token. The disks go to
-    # the destination pool's default SR and the data travels over the host's management network -
-    # one both pools can certainly reach (the first network listed may well not be).
+    # the destination pool's default SR.
     dest_pool = dest.xenapi.pool.get_all()[0]
     dest_host = dest.xenapi.pool.get_master(dest_pool)
     dest_sr = dest.xenapi.pool.get_default_SR(dest_pool)
-    dest_network = next(dest.xenapi.PIF.get_network(pif) for pif in dest.xenapi.host.get_PIFs(dest_host)
-                        if dest.xenapi.PIF.get_management(pif))
-    receiver = dest.xenapi.host.migrate_receive(dest_host, dest_network, {})
+    dest_management_network = next(dest.xenapi.PIF.get_network(pif)
+                                   for pif in dest.xenapi.host.get_PIFs(dest_host)
+                                   if dest.xenapi.PIF.get_management(pif))
+    if transfer_network:
+        migration_network = next(net for net in dest.xenapi.network.get_all()
+                                 if dest.xenapi.network.get_name_label(net) == transfer_network)
+    else:
+        # For performance, production use should carry migration traffic over a dedicated network
+        # rather than the management network - pass transfer_network with the name of one.
+        migration_network = dest_management_network
+    receiver = dest.xenapi.host.migrate_receive(dest_host, migration_network, {})
 
-    # Source: map every disk to the destination SR and every NIC to the destination network,
+    # Source: map every disk to the destination SR and every NIC to the destination pool's
+    # management network (the VM's guest-visible NICs, independent of the migration transfer),
     # then send with copy=true (source VM is left intact).
     vm = vm_by_name(source, vm_name)
     vdi_map = {}
@@ -130,7 +154,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
         vdi = source.xenapi.VBD.get_VDI(vbd)
         if vdi != "OpaqueRef:NULL":
             vdi_map[vdi] = dest_sr
-    vif_map = {vif: dest_network for vif in source.xenapi.VM.get_VIFs(vm)}
+    vif_map = {vif: dest_management_network for vif in source.xenapi.VM.get_VIFs(vm)}
 
     copy = source.xenapi.VM.migrate_send(vm, receiver, False, vdi_map, vif_map, {"copy": "true"}, {})
     print("Sent '%s' to the destination pool (copy); source still present: %s"
@@ -150,7 +174,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-e809-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-ea09-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -202,33 +226,52 @@ public final class CrossPoolCopyVm {
      * <p>Run it:
      *
      * <pre>{@code
-     * CrossPoolCopyVm.run("https://poolA", "root", password, "https://poolB", "db-01", null, null);
+     * CrossPoolCopyVm.run("https://poolA", "root", password, "https://poolB", "db-01", null, null, null);
      * }</pre>
      */
     public static void run(String url, String user, String password, String destUrl,
             String vmName, String destUser, String destPassword) throws Exception {
+        run(url, user, password, destUrl, vmName, destUser, destPassword, null);
+    }
+
+    /**
+     * As {@link #run(String, String, String, String, String, String, String)}, but carrying the
+     * migration traffic over the named destination network instead of its management network.
+     */
+    public static void run(String url, String user, String password, String destUrl,
+            String vmName, String destUser, String destPassword, String transferNetwork) throws Exception {
         Connection source = connect(url, user, password);
         Connection dest = connect(destUrl, destUser != null ? destUser : user,
                 destPassword != null ? destPassword : password);
         // Destination: choose a host, network and SR, then ask for a receiver token. The disks go to
-        // the destination pool's default SR and the data travels over the host's management network -
-        // one both pools can certainly reach (the first network listed may well not be).
+        // the destination pool's default SR.
         Pool destPool = Pool.getAll(dest).iterator().next();
         Host destHost = destPool.getMaster(dest);
         SR destSr = destPool.getDefaultSR(dest);
-        Network destNetwork = null;
+        Network destManagementNetwork = null;
         for (PIF pif : destHost.getPIFs(dest))
-            if (pif.getManagement(dest)) destNetwork = pif.getNetwork(dest);
-        Map<String, String> receiver = destHost.migrateReceive(dest, destNetwork, new HashMap<>());
+            if (pif.getManagement(dest)) destManagementNetwork = pif.getNetwork(dest);
+        Network migrationNetwork;
+        if (transferNetwork != null) {
+            migrationNetwork = null;
+            for (Network net : Network.getAll(dest))
+                if (net.getNameLabel(dest).equals(transferNetwork)) migrationNetwork = net;
+        } else {
+            // For performance, production use should carry migration traffic over a dedicated network
+            // rather than the management network - pass transferNetwork with the name of one.
+            migrationNetwork = destManagementNetwork;
+        }
+        Map<String, String> receiver = destHost.migrateReceive(dest, migrationNetwork, new HashMap<>());
 
-        // Source: map every disk to the destination SR and every NIC to the destination network,
+        // Source: map every disk to the destination SR and every NIC to the destination pool's
+        // management network (the VM's guest-visible NICs, independent of the migration transfer),
         // then send with copy=true (the source VM is left intact).
         VM vm = vmByName(source, vmName);
         Map<VDI, SR> vdiMap = new HashMap<>();
         for (VBD vbd : vm.getVBDs(source))
             if (vbd.getType(source) == Types.VbdType.DISK) vdiMap.put(vbd.getVDI(source), destSr);
         Map<VIF, Network> vifMap = new HashMap<>();
-        for (VIF vif : vm.getVIFs(source)) vifMap.put(vif, destNetwork);
+        for (VIF vif : vm.getVIFs(source)) vifMap.put(vif, destManagementNetwork);
 
         Map<String, String> options = new HashMap<>();
         options.put("copy", "true");
@@ -253,7 +296,7 @@ public final class CrossPoolCopyVm {
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-040a-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-110a-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -285,14 +328,20 @@ import (
 //
 //	crossPoolCopyVM("https://poolA", "root", password, "https://poolB", "db-01", "", "")
 func crossPoolCopyVM(url, user, password, destURL, vmName, destUser, destPassword string) {
+	crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, destPassword, "")
+}
+
+// crossPoolCopyVMOverNetwork is crossPoolCopyVM, but carrying the migration traffic over the
+// destination network named by transferNetwork instead of the destination's management network;
+// an empty transferNetwork falls back to the management network.
+func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, destPassword, transferNetwork string) {
 	source := connect(url, user, password)
 	if destUser == "" {
 		destUser, destPassword = user, password
 	}
 	dest := connect(destURL, destUser, destPassword)
 	// Destination: choose a host, network and SR, then ask for a receiver token. The disks go to
-	// the destination pool's default SR and the data travels over the host's management network -
-	// one both pools can certainly reach (the first network listed may well not be).
+	// the destination pool's default SR.
 	destPools, err := xenapi.Pool.GetAll(dest)
 	check(err)
 	destHost, err := xenapi.Pool.GetMaster(dest, destPools[0])
@@ -301,17 +350,30 @@ func crossPoolCopyVM(url, user, password, destURL, vmName, destUser, destPasswor
 	check(err)
 	pifs, err := xenapi.Host.GetPIFs(dest, destHost)
 	check(err)
-	var destNetwork xenapi.NetworkRef
+	var destManagementNetwork xenapi.NetworkRef
 	for _, pif := range pifs {
 		if management, _ := xenapi.PIF.GetManagement(dest, pif); management {
-			destNetwork, err = xenapi.PIF.GetNetwork(dest, pif)
+			destManagementNetwork, err = xenapi.PIF.GetNetwork(dest, pif)
 			check(err)
 		}
 	}
-	receiver, err := xenapi.Host.MigrateReceive(dest, destHost, destNetwork, map[string]string{})
+	migrationNetwork := destManagementNetwork
+	if transferNetwork != "" {
+		nets, err := xenapi.Network.GetAllRecords(dest)
+		check(err)
+		for ref, net := range nets {
+			if net.NameLabel == transferNetwork {
+				migrationNetwork = ref
+			}
+		}
+	}
+	// For performance, production use should carry migration traffic over a dedicated network
+	// rather than the management network - pass transferNetwork with the name of one.
+	receiver, err := xenapi.Host.MigrateReceive(dest, destHost, migrationNetwork, map[string]string{})
 	check(err)
 
-	// Source: map every disk to the destination SR and every NIC to the destination network,
+	// Source: map every disk to the destination SR and every NIC to the destination pool's
+	// management network (the VM's guest-visible NICs, independent of the migration transfer),
 	// then send with copy=true (the source VM is left intact).
 	vm := vmByName(source, vmName)
 	vbds, _ := xenapi.VM.GetVBDs(source, vm)
@@ -326,7 +388,7 @@ func crossPoolCopyVM(url, user, password, destURL, vmName, destUser, destPasswor
 	vifs, _ := xenapi.VM.GetVIFs(source, vm)
 	vifMap := map[xenapi.VIFRef]xenapi.NetworkRef{}
 	for _, vif := range vifs {
-		vifMap[vif] = destNetwork
+		vifMap[vif] = destManagementNetwork
 	}
 
 	// MigrateSend8 is the 8-argument form every pool version accepts; MigrateSend itself takes newer
@@ -355,7 +417,7 @@ func crossPoolCopyVM(url, user, password, destURL, vmName, destUser, destPasswor
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-fb09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-fe09-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -387,7 +449,10 @@ function Invoke-CrossPoolCopyVm {
         [string]$VmName = "db-01",
         # The destination pool's credentials, if they differ from the source's.
         [string]$DestUserName = $UserName,
-        [string]$DestPassword = $Password
+        [string]$DestPassword = $Password,
+        # A network on the destination pool to carry the migration traffic - pass the name of a
+        # dedicated migration network. Defaults to the destination's management network.
+        [string]$TransferNetwork
     )
     # Two pools, so two sessions. Every cmdlet takes -SessionOpaqueRef, so we drive each pool explicitly
     # (Connect-Example sets a default session too, but being explicit keeps the two pools apart).
@@ -397,21 +462,30 @@ function Invoke-CrossPoolCopyVm {
     $dstRef = $dest.opaque_ref
 
     # Destination: choose a host, network and SR, then ask for a receiver token (a string->string map).
-    # The disks go to the destination pool's default SR and the data travels over the host's management
-    # network - one both pools can certainly reach (the first network listed may well not be).
+    # The disks go to the destination pool's default SR.
     $destPool = Get-XenPool -SessionOpaqueRef $dstRef | Select-Object -First 1
     $destHost = Get-XenHost -SessionOpaqueRef $dstRef -Ref $destPool.master.opaque_ref
     $destSr = Get-XenSR -SessionOpaqueRef $dstRef -Ref $destPool.default_SR.opaque_ref
     $managementPif = Get-XenPIF -SessionOpaqueRef $dstRef |
         Where-Object { $_.management -and $_.host.opaque_ref -eq $destHost.opaque_ref } | Select-Object -First 1
-    $destNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Ref $managementPif.network.opaque_ref
+    $destManagementNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Ref $managementPif.network.opaque_ref
+    if ($TransferNetwork) {
+        $migrationNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Name $TransferNetwork | Select-Object -First 1
+        if (-not $migrationNet) { throw "No network named '$TransferNetwork' was found on the destination pool." }
+    }
+    else {
+        # For performance, production use should carry migration traffic over a dedicated network
+        # rather than the management network - pass -TransferNetwork with the name of one.
+        $migrationNet = $destManagementNet
+    }
     $receiver = $destHost | Invoke-XenHost -SessionOpaqueRef $dstRef -XenAction MigrateReceive `
-        -Network $destNet -Options @{} -PassThru
+        -Network $migrationNet -Options @{} -PassThru
 
     # Source: find the VM, then map every disk to the destination SR and every NIC to the destination
-    # network. migrate_send's maps are strongly-typed (source XenRef -> destination XenRef) dictionaries,
-    # so build them as such; ConvertTo-XenRef turns each destination object into the typed ref the values
-    # need (the source refs come straight off the VM's .VBDs/.VIFs).
+    # pool's management network (the VM's guest-visible NICs, independent of the migration transfer).
+    # migrate_send's maps are strongly-typed (source XenRef -> destination XenRef) dictionaries, so build
+    # them as such; ConvertTo-XenRef turns each destination object into the typed ref the values need
+    # (the source refs come straight off the VM's .VBDs/.VIFs).
     $vm = Get-XenVM -SessionOpaqueRef $srcRef -Name $VmName |
         Where-Object { -not $_.is_a_template -and -not $_.is_control_domain } | Select-Object -First 1
 
@@ -423,7 +497,7 @@ function Invoke-CrossPoolCopyVm {
         }
     }
     $vifMap = New-Object 'System.Collections.Generic.Dictionary[XenAPI.XenRef[XenAPI.VIF], XenAPI.XenRef[XenAPI.Network]]'
-    foreach ($vifRef in $vm.VIFs) { $vifMap[$vifRef] = ConvertTo-XenRef -XenObject $destNet }
+    foreach ($vifRef in $vm.VIFs) { $vifMap[$vifRef] = ConvertTo-XenRef -XenObject $destManagementNet }
 
     # Send with copy=true (the source VM is left intact). Dest/VdiMap/VifMap/VgpuMap are the migrate_send
     # action's parameters.
@@ -461,7 +535,7 @@ function Invoke-CrossPoolCopyVm {
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-0e0a-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-080a-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -480,12 +554,15 @@ Source: [`cli/virtual-machines/cross-pool-copy-vm.sh`](../../cli/virtual-machine
 #
 # Run it:
 #   ./workflows.sh cross-pool-copy-vm https://xenserver root "$password" https://other-pool
+#
+# Optional key=value arguments (default):
+#   transfer_network ("" - falls back to the destination's management network)
 
 cross_pool_copy_vm() {
     # Copy a VM to another pool (Storage XenMotion copy). Real xe does the whole cross-pool dance
     # itself given the destination master's address + credentials; copy=true leaves the source intact.
-    local dest_hp dest_master dest_net v
-    local -a dest_opts vif_map
+    local dest_hp dest_master dest_net transfer_network v
+    local -a dest_opts vif_map migrate_opts
     dest_hp=${desturl#*://}; dest_hp=${dest_hp%%/*}
     dest_host=${dest_hp%%:*}
     dest_opts=()
@@ -515,11 +592,18 @@ cross_pool_copy_vm() {
         vdi=$(xe vbd-param-get uuid=$vbd param-name=vdi-uuid)
         [[ $vdi == *-* ]] && vdi_map+=("vdi:$vdi=$dest_sr")
     done
+    # The migration traffic itself travels over remote-network if given, or (as here, left unset) xe
+    # falls back to the destination's management network. For performance, production use should use a
+    # dedicated migration network instead - pass transfer_network=<name|uuid> to set remote-network.
+    transfer_network=$(param transfer_network "")
+    migrate_opts=()
+    [ -n "$transfer_network" ] && migrate_opts+=(remote-network="$transfer_network")
+
     # The VMs the destination already has, to tell the copy apart afterwards (never by name alone).
     local before copy
     before=",$(xe_dest vm-list is-control-domain=false --minimal),"
     xe vm-migrate uuid=$vm remote-master=$dest_host remote-username=$destuser remote-password=$destpass copy=true \
-        "${vif_map[@]}" "${vdi_map[@]}"
+        "${migrate_opts[@]}" "${vif_map[@]}" "${vdi_map[@]}"
     still=$([ -n "$(vm_uuid "$copy_vm")" ] && echo True || echo False)
     echo "Sent '$copy_vm' to $dest_host (copy); source still present: $still"
 

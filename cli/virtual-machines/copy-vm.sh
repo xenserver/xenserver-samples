@@ -5,6 +5,9 @@
 #
 # Run it:
 #   ./workflows.sh copy-vm https://xenserver root "$password"
+#
+# Optional key=value arguments (default):
+#   sr_name (Shared NFS)
 
 copy_vm() {
     local vm was_running
@@ -13,7 +16,7 @@ copy_vm() {
     # so shut it down first if it's running, and start it back up again after the copy.
     was_running=$([ "$(xe vm-param-get uuid=$vm param-name=power-state)" = "running" ] && echo true || echo false)
     [ "$was_running" = true ] && xe vm-shutdown uuid=$vm
-    copy=$(xe vm-copy uuid=$vm new-name-label=xe-example-copy sr-uuid=$(shared_sr))
+    copy=$(xe vm-copy uuid=$vm new-name-label=xe-example-copy sr-uuid=$(sr_by_name "$(param sr_name "Shared NFS")"))
     echo "Copied VM: $copy"
     [ "$was_running" = true ] && xe vm-start uuid=$vm
     # Tidy up: vm-uninstall destroys the copy and its disks, leaving the source VM intact.

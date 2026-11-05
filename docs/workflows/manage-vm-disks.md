@@ -23,8 +23,7 @@ public static void ManageVmDisks(string url, string user, string password,
     // Not the VM's root/boot disk: a real VM's system disk is unpluggable=false (only a template's
     // non-system disks default to unpluggable), so VBD.unplug on it fails on a real host with
     // VBD_NOT_UNPLUGGABLE - and the VM has to be running in the first place, or unplug fails with
-    // VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead,
-    // matching XenCenter's own "deactivate" action, which only ever targets additional disks.
+    // VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead.
     //
     // Plugging and unplugging a disk on a running VM needs the guest's PV drivers
     // (VM_MISSING_PV_DRIVERS otherwise), so the VM is a throwaway copy of sourceVm, a VM with a
@@ -130,8 +129,7 @@ def manage_vm_disks(url, username, password, source_vm, sr_name, new_vm_name="sd
     Not the VM's root/boot disk: a real VM's system disk is unpluggable=false (only a template's
     non-system disks default to unpluggable), so VBD.unplug on it fails on a real host with
     VBD_NOT_UNPLUGGABLE - and the VM has to be running in the first place, or unplug fails with
-    VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead,
-    matching XenCenter's own "deactivate" action, which only ever targets additional disks, and
+    VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead, and
     tidy up afterwards so the example is repeatable. No shrink: real SR backends refuse one
     outright (SR_BACKEND_FAILURE_79), so this only ever grows.
 
@@ -241,10 +239,9 @@ public final class ManageVmDisks {
      * <p>Not the VM's root/boot disk: a real VM's system disk is unpluggable=false (only a template's
      * non-system disks default to unpluggable), so VBD.unplug on it fails on a real host with
      * VBD_NOT_UNPLUGGABLE - and the VM has to be running in the first place, or unplug fails with
-     * VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead, matching
-     * XenCenter's own "deactivate" action, which only ever targets additional disks, and tidy up
-     * afterwards so the example is repeatable. No shrink: real SR backends refuse one outright
-     * (SR_BACKEND_FAILURE_79), so this only ever grows.
+     * VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead, and
+     * tidy up afterwards so the example is repeatable. No shrink: real SR backends refuse one
+     * outright (SR_BACKEND_FAILURE_79), so this only ever grows.
      *
      * <p>Plugging and unplugging a disk on a running VM needs the guest's PV drivers
      * (VM_MISSING_PV_DRIVERS otherwise), so the VM is a throwaway copy of sourceVm, a VM with a guest OS
@@ -359,8 +356,7 @@ import (
 // A real VM's root/boot disk is unpluggable=false (only non-system disks from VM.Provision default
 // to unpluggable), and the VM has to be Running for VBD.Unplug to be legal at all
 // (VM_BAD_POWER_STATE otherwise on a halted VM). So this works on a NEW data disk added to a
-// throwaway VM of its own, matching XenCenter's own "deactivate" action, which only ever targets
-// additional disks. No shrink demonstration: real SR backends refuse one outright
+// throwaway VM of its own. No shrink demonstration: real SR backends refuse one outright
 // (SR_BACKEND_FAILURE_79).
 //
 // Plugging and unplugging a disk on a running VM needs the guest's PV drivers
@@ -485,9 +481,8 @@ function Invoke-ManageVmDisks {
     # non-system disks default to unpluggable), so Unplug on it fails on a real host with
     # VBD_NOT_UNPLUGGABLE - and the VM has to be running in the first place, or unplug fails with
     # VM_BAD_POWER_STATE. Work on a data disk this example adds to its own throwaway VM instead,
-    # matching XenCenter's own "deactivate" action, which only ever targets additional disks, and tidy
-    # up afterwards so the example is repeatable. No shrink: real SR backends refuse one outright
-    # (SR_BACKEND_FAILURE_79), so this only ever grows.
+    # and tidy up afterwards so the example is repeatable. No shrink: real SR backends refuse one
+    # outright (SR_BACKEND_FAILURE_79), so this only ever grows.
     #
     # Plugging and unplugging a disk on a running VM needs the guest's PV drivers
     # (VM_MISSING_PV_DRIVERS otherwise), so the VM is a throwaway copy of SourceVm, a VM with a guest OS
@@ -574,9 +569,9 @@ Source: [`cli/virtual-machines/manage-vm-disks.sh`](../../cli/virtual-machines/m
 # Not the VM's root/boot disk: a real VM's system disk is unpluggable=false (only a template's non-system
 # disks default to unpluggable), so vbd-unplug on it fails on a real host with VBD_NOT_UNPLUGGABLE - and
 # the VM has to be running in the first place, or unplug fails with VM_BAD_POWER_STATE. Work on a data
-# disk this example adds to its own throwaway VM instead, matching XenCenter's own "deactivate" action,
-# which only ever targets additional disks, and tidy up afterwards so the example is repeatable. No
-# shrink: real SR backends refuse one outright (SR_BACKEND_FAILURE_79), so this only ever grows.
+# disk this example adds to its own throwaway VM instead, and tidy up afterwards so the example is
+# repeatable. No shrink: real SR backends refuse one outright (SR_BACKEND_FAILURE_79), so this only ever
+# grows.
 #
 # Plugging and unplugging a disk on a running VM needs the guest's PV drivers (VM_MISSING_PV_DRIVERS
 # otherwise), so the VM is a throwaway copy of source_vm, a VM with a guest OS and PV drivers.

@@ -13,8 +13,8 @@ import (
 // its status and configuration, enable it and permit a monitoring host, then read it back.
 //
 // host.call_plugin is per-host - there is no pool-wide fan-out for plugin calls the way there is
-// for pool.enable_ssh - so configure every host in the pool, and restore each one to disabled
-// again afterwards.
+// for pool.enable_ssh - so configure every host in the pool, and restore each one to exactly the
+// state (enabled or not, and its configuration) it was found in afterwards.
 func configureNrpe(url, user, password string) {
 	session := connect(url, user, password)
 	hosts, err := xenapi.Host.GetAll(session)
@@ -26,7 +26,23 @@ func configureNrpe(url, user, password string) {
 			return r
 		}
 		label, _ := xenapi.Host.GetNameLabel(session, host)
-		fmt.Printf("%s: NRPE status before: %s\n", label, strings.TrimSpace(nrpe("status", map[string]string{})))
+
+		// Capture what we're about to change, to put back afterwards.
+		statusBefore := strings.TrimSpace(nrpe("status", map[string]string{}))
+		statusWords := strings.Fields(statusBefore)
+		wasEnabled := statusWords[len(statusWords)-1] == "enabled"
+		beforeConfig := map[string]string{}
+		for _, line := range strings.Split(nrpe("get-config", map[string]string{}), "\n") {
+			parts := strings.SplitN(line, ":", 2)
+			if len(parts) == 2 {
+				key := strings.TrimSpace(parts[0])
+				if key == "allowed_hosts" || key == "debug" || key == "ssl_logging" {
+					beforeConfig[key] = strings.TrimSpace(parts[1])
+				}
+			}
+		}
+
+		fmt.Printf("%s: NRPE status before: %s\n", label, statusBefore)
 		nrpe("enable", map[string]string{})
 		nrpe("set-config", map[string]string{"allowed_hosts": "127.0.0.1,::1,192.0.2.60", "debug": "0", "ssl_logging": "0x00"})
 		nrpe("restart", map[string]string{})
@@ -36,7 +52,15 @@ func configureNrpe(url, user, password string) {
 				fmt.Printf("  allowed hosts: %s\n", strings.TrimSpace(strings.SplitN(line, ":", 2)[1]))
 			}
 		}
-		nrpe("disable", map[string]string{}) // restore: leave it as we found it
+
+		// Restore exactly what was found, rather than always disabling: a host that already had NRPE
+		// enabled and configured should not be left changed.
+		nrpe("set-config", beforeConfig)
+		if wasEnabled {
+			nrpe("restart", map[string]string{})
+		} else {
+			nrpe("disable", map[string]string{})
+		}
 	}
 	fmt.Println("OK: configure-nrpe")
 	session.Logout()
