@@ -56,7 +56,7 @@ public static void ManageCrashDumps(string url, string user, string password)
 private static string Mib(long size) => $"{size / (1024 * 1024)} MiB";
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 3 crash dump(s)
@@ -124,7 +124,7 @@ def mib(size):
     return "%d MiB" % (int(size) // (1024 * 1024))
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 3 crash dump(s)
@@ -209,7 +209,7 @@ public final class ManageCrashDumps {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host2 has 3 crash dump(s)
@@ -290,7 +290,7 @@ func manageCrashDumps(url, user, password string) {
 func mib(size int64) string { return fmt.Sprintf("%d MiB", size/(1024*1024)) }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host2 has 3 crash dump(s)
@@ -359,7 +359,7 @@ function Format-Mib {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 3 crash dump(s)
@@ -417,7 +417,7 @@ manage_crash_dumps() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 3 crash dump(s)

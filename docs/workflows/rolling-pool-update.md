@@ -102,7 +102,7 @@ public static void RollingPoolUpdate(string url, string user, string password, s
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -203,7 +203,7 @@ def rolling_pool_update(url, username, password, repo_url, source_url):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -335,7 +335,7 @@ public final class RollingPoolUpdate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -460,7 +460,7 @@ func rollingPoolUpdate(url, user, password, repoURL, sourceURL string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -572,7 +572,7 @@ function Invoke-RollingPoolUpdate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -678,7 +678,7 @@ rolling_pool_update() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates (hash length 64)

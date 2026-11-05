@@ -80,7 +80,7 @@ private static bool HasSuspendSr(Session session, string vm)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Initial power state: Halted
@@ -166,7 +166,7 @@ def _has_suspend_sr(session, vm):
     return x.host.get_suspend_image_sr(host) != "OpaqueRef:NULL"
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Initial power state: Halted
@@ -264,7 +264,7 @@ public final class VmLifecycle {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Initial power state: Halted
@@ -358,7 +358,7 @@ func hasSuspendSR(session *xenapi.Session, vm xenapi.VMRef) bool {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Initial power state: Halted
@@ -457,7 +457,7 @@ function Test-HasSuspendSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Initial power state: Halted
@@ -529,7 +529,7 @@ has_suspend_sr() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Initial: halted

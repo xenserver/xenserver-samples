@@ -70,7 +70,7 @@ private static (string CertPem, string KeyPem) SelfSignedCertPem()
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Certificates:   5
@@ -197,7 +197,7 @@ def _self_signed_cert_pem():
             os.remove(certpath)
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Certificates:   5
@@ -316,7 +316,7 @@ public final class ManageCertificates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Certificates:   5
@@ -434,7 +434,7 @@ func selfSignedCertPEM() (certPEM, keyPEM string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Certificates:   5
@@ -527,7 +527,7 @@ function Get-SelfSignedCertPem {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Certificates:   5
@@ -609,7 +609,7 @@ self_signed_cert() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Certificates:   5

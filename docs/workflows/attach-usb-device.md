@@ -48,7 +48,7 @@ public static void AttachUsbDevice(string url, string user, string password, str
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Device:         Kingston Technology DataTraveler 3.0
@@ -104,7 +104,7 @@ def attach_usb_device(url, username, password, vm_name):
     x.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Device:         Kingston Technology DataTraveler 3.0
@@ -179,7 +179,7 @@ public final class AttachUsbDevice {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Device:         Kingston Technology DataTraveler 3.0
@@ -245,7 +245,7 @@ func attachUsbDevice(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Device:         Kingston Technology DataTraveler 3.0
@@ -299,7 +299,7 @@ function Invoke-AttachUsbDevice {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Device:         Kingston Technology DataTraveler 3.0
@@ -346,7 +346,7 @@ attach_usb_device() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Device:         DataTraveler 3.0

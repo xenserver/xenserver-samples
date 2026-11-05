@@ -44,7 +44,7 @@ public static void TagsAndFolders(string url, string user, string password, stri
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM tags:   web
@@ -98,7 +98,7 @@ def tags_and_folders(url, username, password, vm_name):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM tags:   ['web']
@@ -164,7 +164,7 @@ public final class TagsAndFolders {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM tags:   [web]
@@ -224,7 +224,7 @@ func tagsAndFolders(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM tags:   [web]
@@ -286,7 +286,7 @@ function Invoke-TagsAndFolders {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM tags:   web
@@ -325,7 +325,7 @@ tags_and_folders() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM tags:   web

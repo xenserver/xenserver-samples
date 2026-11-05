@@ -89,7 +89,7 @@ public static void ConfigureDisasterRecovery(string url, string user, string pas
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 SRs that can hold the pool metadata: iSCSI storage
@@ -183,7 +183,7 @@ def configure_disaster_recovery(url, username, password, sr_name=None):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 SRs that can hold the pool metadata: iSCSI storage
@@ -309,7 +309,7 @@ public final class ConfigureDisasterRecovery {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 SRs that can hold the pool metadata: iSCSI storage
@@ -432,7 +432,7 @@ func configureDisasterRecovery(url, user, password, srName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 SRs that can hold the pool metadata: iSCSI storage
@@ -525,7 +525,7 @@ function Invoke-ConfigureDisasterRecovery {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 SRs that can hold the pool metadata: iSCSI storage
@@ -624,7 +624,7 @@ configure_disaster_recovery() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 SRs that can hold the pool metadata: iSCSI storage

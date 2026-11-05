@@ -37,7 +37,7 @@ public static void EditVmProperties(string url, string user, string password, st
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 New description: Edited by the SDK example
@@ -84,7 +84,7 @@ def edit_vm_properties(url, username, password, vm_name):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 New description: Edited by the SDK example
@@ -142,7 +142,7 @@ public final class EditVmProperties {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 New description: Edited by the SDK example
@@ -191,7 +191,7 @@ func editVMProperties(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 New description: Edited by the SDK example
@@ -248,7 +248,7 @@ function Invoke-EditVmProperties {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 New description: Edited by the SDK example
@@ -283,7 +283,7 @@ edit_vm_properties() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 New description: Edited by the xe example

@@ -46,7 +46,7 @@ public static void ControlDomainMemory(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 dom0: 2.0 GiB
@@ -101,7 +101,7 @@ def control_domain_memory(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 dom0: 2.0 GiB
@@ -173,7 +173,7 @@ public final class ControlDomainMemory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host2 dom0: 2.0 GiB
@@ -245,7 +245,7 @@ func controlDomainOf(session *xenapi.Session, host xenapi.HostRef) (xenapi.VMRef
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 dom0: 2.0 GiB
@@ -299,7 +299,7 @@ function Invoke-ControlDomainMemory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 dom0: 2.0 GiB
@@ -340,7 +340,7 @@ control_domain_memory() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 dom0: 2 GiB

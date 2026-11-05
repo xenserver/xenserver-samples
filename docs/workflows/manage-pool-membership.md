@@ -99,7 +99,7 @@ private static Session ReconnectAfterMasterChange(string url, string user, strin
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Coordinator: sdk-host1
@@ -206,7 +206,7 @@ def _reconnect_after_master_change(url, username, password, new_master_uuid, tim
     raise RuntimeError("the pool did not come back after the master change: %s" % last_error)
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Coordinator: sdk-host1
@@ -273,7 +273,7 @@ public final class ManagePoolMembership {
         Host other = hostByName(conn, otherName);
         String otherUuid = other.getUuid(conn);
         // Each new coordinator's own address, to reconnect to if following HOST_IS_SLAVE from the old one
-        // fails: SDKs before CA-432633 read HostIsSlave.masterIPAddress as "" under JSON-RPC.
+        // fails: Java SDKs up to 26.22 read HostIsSlave.masterIPAddress as "" under JSON-RPC.
         String otherUrl = hostUrl(url, other.getAddress(conn));
         String originalUrl = hostUrl(url, original.getAddress(conn));
 
@@ -356,7 +356,7 @@ public final class ManagePoolMembership {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Coordinator: sdk-host1
@@ -502,7 +502,7 @@ func reconnectAfterMasterChange(url, user, password, newMasterUUID string) (sess
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Coordinator: sdk-host1
@@ -614,7 +614,7 @@ function Reconnect-AfterMasterChange {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Coordinator: sdk-host1
@@ -716,7 +716,7 @@ pool_settled_under() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Coordinator: sdk-host1

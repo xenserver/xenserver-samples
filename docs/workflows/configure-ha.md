@@ -72,7 +72,7 @@ public static void ConfigureHa(string url, string user, string password, string 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Heartbeat SR:  Shared NFS
@@ -150,7 +150,7 @@ def configure_ha(url, username, password, heartbeat_sr_name):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Heartbeat SR:  Shared NFS
@@ -254,7 +254,7 @@ public final class ConfigureHa {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Heartbeat SR:  Shared NFS
@@ -360,7 +360,7 @@ func configureHa(url, user, password, heartbeatSRName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Heartbeat SR:  Shared NFS
@@ -446,7 +446,7 @@ function Invoke-ConfigureHa {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Heartbeat SR:  Shared NFS
@@ -510,7 +510,7 @@ configure_ha() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Max failures: 1

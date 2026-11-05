@@ -94,7 +94,7 @@ public static void ConfigureOfflineUpdates(string url, string user, string passw
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool repositories: sdk-example-offline
@@ -187,7 +187,7 @@ def configure_offline_updates(url, username, password, bundle_path=None):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool repositories: sdk-example-offline
@@ -306,7 +306,7 @@ public final class ConfigureOfflineUpdates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool repositories: sdk-example-offline
@@ -443,7 +443,7 @@ func configureOfflineUpdates(url, user, password, bundlePath string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool repositories: sdk-example-offline
@@ -535,7 +535,7 @@ function Invoke-ConfigureOfflineUpdates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool repositories: sdk-example-offline
@@ -598,7 +598,7 @@ configure_offline_updates() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool repositories: sdk-example-offline

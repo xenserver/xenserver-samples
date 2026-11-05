@@ -50,7 +50,7 @@ public static void VmBootConfig(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 vCPUs: 2/4
@@ -110,7 +110,7 @@ def vm_boot_config(url, username, password, template_name, new_vm_name="sdk-exam
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 vCPUs: 2/4
@@ -188,7 +188,7 @@ public final class VmBootConfig {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 vCPUs: 2/4
@@ -252,7 +252,7 @@ func vmBootConfig(url, user, password, templateName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 vCPUs: 2/4
@@ -312,7 +312,7 @@ function Invoke-VmBootConfig {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 vCPUs: 2/4
@@ -359,7 +359,7 @@ vm_boot_config() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 vCPUs: 2/4

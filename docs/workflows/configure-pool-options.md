@@ -55,7 +55,7 @@ public static void ConfigurePoolOptions(string url, string user, string password
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   live patching disabled False
@@ -126,7 +126,7 @@ def configure_pool_options(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   live patching disabled False
@@ -209,7 +209,7 @@ public final class ConfigurePoolOptions {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   live patching disabled false
@@ -289,7 +289,7 @@ func configurePoolOptions(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   live patching disabled false
@@ -359,7 +359,7 @@ function Invoke-ConfigurePoolOptions {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   live patching disabled False
@@ -420,7 +420,7 @@ configure_pool_options() {
 negate() { [ "$1" = "true" ] && echo false || echo true; }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   live patching disabled false

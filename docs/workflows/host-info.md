@@ -43,7 +43,7 @@ public static void HostInfo(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host:     sdk-host1
@@ -99,7 +99,7 @@ def host_info(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host:     sdk-host1
@@ -167,7 +167,7 @@ public final class HostInfo {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host:     sdk-host1
@@ -236,7 +236,7 @@ func hostInfo(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host:     sdk-host1
@@ -292,7 +292,7 @@ function Invoke-HostInfo {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host:     sdk-host1
@@ -333,7 +333,7 @@ host_info() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host:    sdk-host1

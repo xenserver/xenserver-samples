@@ -26,11 +26,10 @@ public final class ErrorHandling {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         // XenAPI errors surface as a XenAPIException. Specific errors are typed subclasses (e.g.
-        // UuidInvalid): the class name identifies the error. getMessage() is NOT the readable text here -
-        // CA-432675: the generated XenAPIException never calls super(message), so Throwable.getMessage()
-        // is null for every typed XenAPI exception in the current Java SDK (confirmed against a real
-        // host; the SDK fix isn't released yet). shortDescription/errorDescription carry the real text,
-        // and work against any SDK build.
+        // UuidInvalid): the class name identifies the error. getMessage() is NOT the readable text here:
+        // in Java SDKs up to 26.22 the generated XenAPIException never calls super(message), so
+        // Throwable.getMessage() is null for every typed XenAPI exception. shortDescription and
+        // errorDescription carry the real text, and work with every SDK version.
         try {
             Host.getByUuid(conn, "this-uuid-does-not-exist");
             System.out.println("unexpected: no error");

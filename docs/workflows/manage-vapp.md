@@ -53,7 +53,7 @@ public static void ManageVapp(string url, string user, string password, string v
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started:        Running
@@ -112,7 +112,7 @@ def manage_vapp(url, username, password, vm_name):
     x.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started:        Running
@@ -189,7 +189,7 @@ public final class ManageVapp {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started:        Running
@@ -251,7 +251,7 @@ func manageVapp(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started:        Running
@@ -306,7 +306,7 @@ function Invoke-ManageVapp {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started:        Running
@@ -359,7 +359,7 @@ manage_vapp() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started:        running

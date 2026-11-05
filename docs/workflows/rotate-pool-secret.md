@@ -47,7 +47,7 @@ public static void RotatePoolSecret(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:           sdk-pool
@@ -100,7 +100,7 @@ def rotate_pool_secret(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:           sdk-pool
@@ -165,7 +165,7 @@ public final class RotatePoolSecret {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:           sdk-pool
@@ -225,7 +225,7 @@ func rotatePoolSecret(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:           sdk-pool
@@ -283,7 +283,7 @@ function Invoke-RotatePoolSecret {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:           sdk-pool
@@ -320,7 +320,7 @@ rotate_pool_secret() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:           sdk-pool

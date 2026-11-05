@@ -75,7 +75,7 @@ private static string AttachVdi(Session session, string vm, string vdi) => VBD.c
 }).opaque_ref;
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk sdk-example-portable-disk created on Shared NFS
@@ -153,7 +153,7 @@ def attach_vdi(x, vm, vdi):
     })
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk sdk-example-portable-disk created on Shared NFS
@@ -268,7 +268,7 @@ public final class AttachExistingDisk {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk sdk-example-portable-disk created on Shared NFS
@@ -371,7 +371,7 @@ func attachVdi(session *xenapi.Session, vm xenapi.VMRef, vdi xenapi.VDIRef) xena
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk sdk-example-portable-disk created on Shared NFS
@@ -446,7 +446,7 @@ function Add-ExampleDisk {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk sdk-example-portable-disk created on Shared NFS
@@ -501,7 +501,7 @@ attach_existing_disk() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk xe-example-portable-disk created on Shared NFS

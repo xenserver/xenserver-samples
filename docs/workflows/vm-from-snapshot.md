@@ -47,7 +47,7 @@ public static void VmFromSnapshot(string url, string user, string password, stri
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshot of db-01 taken
@@ -109,7 +109,7 @@ def vm_from_snapshot(url, username, password, vm_name="db-01"):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshot of db-01 taken
@@ -185,7 +185,7 @@ public final class VmFromSnapshot {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshot of db-01 taken
@@ -251,7 +251,7 @@ func vmFromSnapshot(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshot of db-01 taken
@@ -309,7 +309,7 @@ function Invoke-VmFromSnapshot {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshot of db-01 taken
@@ -356,7 +356,7 @@ vm_from_snapshot() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshot of db-01 taken

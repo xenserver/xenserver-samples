@@ -26,7 +26,7 @@ function Invoke-ChangeRootPassword {
         # script can carry on without reconnecting.
         Write-Host "Session still usable: $(@(Get-XenPool).Count -eq 1)"
 
-        # change_password on a ROOT session ignores the old password entirely (CA-13567, confirmed in
+        # change_password on a ROOT session ignores the old password entirely (see xapi's
         # xapi_session.ml) - the call succeeds regardless of what is passed as the old password, so there is
         # no wrong-old-password failure to demonstrate here. The real gate is who may call this at all: only
         # a session with is_local_superuser may.

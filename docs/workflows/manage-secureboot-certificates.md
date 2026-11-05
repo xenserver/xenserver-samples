@@ -74,7 +74,7 @@ public static void ManageSecurebootCertificates(string url, string user, string 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool Secure Boot readiness: ready_no_dbx
@@ -156,7 +156,7 @@ def manage_secureboot_certificates(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool Secure Boot readiness: ready_no_dbx
@@ -261,7 +261,7 @@ public final class ManageSecurebootCertificates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool Secure Boot readiness: ready_no_dbx
@@ -359,7 +359,7 @@ func manageSecurebootCertificates(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool Secure Boot readiness: ready_no_dbx
@@ -440,7 +440,7 @@ function Invoke-ManageSecurebootCertificates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool Secure Boot readiness: ready_no_dbx
@@ -503,7 +503,7 @@ manage_secureboot_certificates() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool Secure Boot readiness: ready_no_dbx

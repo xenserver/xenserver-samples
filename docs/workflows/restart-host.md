@@ -96,7 +96,7 @@ private static int GuestCount(Session session, string host) =>
     Host.get_resident_VMs(session, host).Count(v => !VM.get_is_control_domain(session, v.opaque_ref));
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Restarting sdk-host2
@@ -204,7 +204,7 @@ def guest_count(x, host):
                 if not x.VM.get_is_control_domain(v)])
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Restarting sdk-host2
@@ -333,7 +333,7 @@ public final class RestartHost {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Restarting sdk-host2
@@ -466,7 +466,7 @@ func guestCount(session *xenapi.Session, host xenapi.HostRef) int {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Restarting sdk-host2
@@ -578,7 +578,7 @@ function Wait-HostLive {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Restarting sdk-host2
@@ -683,7 +683,7 @@ count_host_guest() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Restarting sdk-host2

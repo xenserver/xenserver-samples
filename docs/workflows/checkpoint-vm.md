@@ -55,7 +55,7 @@ public static void CheckpointVm(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created checkpoint: 00000001-0000-0000-6f0a-000000000000
@@ -119,7 +119,7 @@ def checkpoint_vm(url, username, password, source_vm, new_vm_name="sdk-example-c
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created checkpoint: 00000001-0000-0000-460a-000000000000
@@ -197,7 +197,7 @@ public final class CheckpointVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created checkpoint: 00000001-0000-0000-560a-000000000000
@@ -262,7 +262,7 @@ func checkpointVM(url, user, password, sourceVM, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created checkpoint: 00000001-0000-0000-890a-000000000000
@@ -327,7 +327,7 @@ function Invoke-CheckpointVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created checkpoint: 00000001-0000-0000-6e0a-000000000000
@@ -380,7 +380,7 @@ checkpoint_vm() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created checkpoint: 00000001-0000-0000-600a-000000000000

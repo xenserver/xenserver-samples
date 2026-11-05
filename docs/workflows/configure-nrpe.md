@@ -70,7 +70,7 @@ public static void ConfigureNrpe(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: NRPE status before: inactive disabled
@@ -140,7 +140,7 @@ def configure_nrpe(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: NRPE status before: inactive disabled
@@ -239,7 +239,7 @@ public final class ConfigureNrpe {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host2: NRPE status before: inactive disabled
@@ -327,7 +327,7 @@ func configureNrpe(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: NRPE status before: inactive disabled
@@ -406,7 +406,7 @@ function Invoke-ConfigureNrpe {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: NRPE status before: inactive disabled
@@ -468,7 +468,7 @@ configure_nrpe() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: NRPE status before: active disabled

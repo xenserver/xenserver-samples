@@ -32,7 +32,7 @@ public static void ListRoles(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Roles (7): client-cert, pool-admin, pool-operator, read-only, vm-admin, vm-operator, vm-power-admin
@@ -70,7 +70,7 @@ def list_roles(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Roles (7): client-cert, pool-admin, pool-operator, read-only, vm-admin, vm-operator, vm-power-admin
@@ -130,7 +130,7 @@ public final class ListRoles {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Roles (7): client-cert, pool-admin, pool-operator, read-only, vm-admin, vm-operator, vm-power-admin
@@ -185,7 +185,7 @@ func listRoles(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Roles (7): pool-operator, vm-operator, read-only, pool-admin, vm-power-admin, client-cert, vm-admin
@@ -225,7 +225,7 @@ function Invoke-ListRoles {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Roles (7): client-cert, pool-admin, pool-operator, read-only, vm-admin, vm-operator, vm-power-admin
@@ -254,7 +254,7 @@ list_roles() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Roles: pool-admin,pool-operator,vm-power-admin,vm-admin,vm-operator,read-only,client-cert

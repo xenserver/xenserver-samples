@@ -41,7 +41,7 @@ public static void ReadMetrics(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host sdk-host1: 65536 MiB total, 57344 MiB free, live = True
@@ -92,7 +92,7 @@ def read_metrics(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host sdk-host1: 65536 MiB total, 57344 MiB free, live = True
@@ -164,7 +164,7 @@ public final class ReadMetrics {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host sdk-host1: 65536 MiB total, 57344 MiB free, live = true
@@ -234,7 +234,7 @@ func readMetrics(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host sdk-host1: 65536 MiB total, 57344 MiB free, live = true
@@ -282,7 +282,7 @@ function Invoke-ReadMetrics {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host sdk-host1: 65536 MiB total, 57344 MiB free, live = True
@@ -314,7 +314,7 @@ read_metrics() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Host sdk-host1: free memory , live=true

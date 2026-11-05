@@ -58,7 +58,7 @@ public static void StorageMigrate(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk is on SR: Shared NFS
@@ -122,7 +122,7 @@ def storage_migrate(url, username, password, source_vm, new_vm_name="sdk-example
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk is on SR: Shared NFS
@@ -215,7 +215,7 @@ public final class StorageMigrate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk is on SR: Shared NFS
@@ -305,7 +305,7 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk is on SR: Shared NFS
@@ -379,7 +379,7 @@ function Invoke-StorageMigrate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk is on SR: Shared NFS
@@ -441,7 +441,7 @@ storage_migrate() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk is on SR: Shared NFS

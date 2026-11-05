@@ -46,7 +46,7 @@ private static string LoggingLabel(Session session, string host)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 logging: (local only)
@@ -99,7 +99,7 @@ def configure_syslog(url, username, password, syslog_server="192.0.2.50"):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 logging: (local only)
@@ -172,7 +172,7 @@ public final class ConfigureSyslog {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 logging: (local only)
@@ -241,7 +241,7 @@ func loggingOrLocal(logging map[string]string) string {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 logging: (local only)
@@ -303,7 +303,7 @@ function Format-Logging {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 logging: (local only)
@@ -351,7 +351,7 @@ configure_syslog() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 logging: (local only)

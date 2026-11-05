@@ -66,7 +66,7 @@ private static string SrLabel(Session session, string sr) =>
     string.IsNullOrEmpty(sr) || sr == "OpaqueRef:NULL" ? "(none)" : SR.get_name_label(session, sr);
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 default storage:  Shared NFS
@@ -145,7 +145,7 @@ def sr_label(x, sr):
     return x.SR.get_name_label(sr) if sr and sr != "OpaqueRef:NULL" else "(none)"
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 default storage:  Shared NFS
@@ -244,7 +244,7 @@ public final class SetDefaultSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 default storage:  Shared NFS
@@ -332,7 +332,7 @@ func setDefaultSr(url, user, password, nfsServer, nfsPath string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 default storage:  Shared NFS
@@ -413,7 +413,7 @@ function Get-SrLabel {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 default storage:  Shared NFS
@@ -490,7 +490,7 @@ pool_sr_setting() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 default storage:  Shared NFS

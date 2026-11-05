@@ -93,7 +93,7 @@ public static void ManageAdUsers(string url, string user, string password, strin
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Joined domain: (none given)
@@ -174,7 +174,7 @@ def manage_ad_users(url, username, password, domain="", admin_user="alice",
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Joined domain: (none given)
@@ -295,7 +295,7 @@ public final class ManageAdUsers {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Joined domain: (none given)
@@ -404,7 +404,7 @@ func manageAdUsers(url, user, password, domain, adminUser, adminPassword, newUse
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Joined domain: (none given)
@@ -505,7 +505,7 @@ function Invoke-ManageAdUsers {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Joined domain: (none given)
@@ -589,7 +589,7 @@ manage_ad_users() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Joined domain: (none given)

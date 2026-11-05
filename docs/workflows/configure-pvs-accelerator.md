@@ -94,7 +94,7 @@ private static string LocalSr(Session session, XenRef<Host> host)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
@@ -188,7 +188,7 @@ def local_sr(x, host):
     return None
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
@@ -319,7 +319,7 @@ public final class ConfigurePvsAccelerator {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
@@ -449,7 +449,7 @@ func vifDevice(session *xenapi.Session, vif xenapi.VIFRef) int {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
@@ -547,7 +547,7 @@ function Invoke-ConfigurePvsAccelerator {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
@@ -648,7 +648,7 @@ lowest_device_vif() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)

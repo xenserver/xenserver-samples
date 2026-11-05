@@ -36,7 +36,7 @@ public static void PoolProperties(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:       'sdk-pool'
@@ -82,7 +82,7 @@ def pool_properties(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:       'sdk-pool'
@@ -140,7 +140,7 @@ public final class PoolProperties {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:       'sdk-pool'
@@ -194,7 +194,7 @@ func poolProperties(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:       'sdk-pool'
@@ -241,7 +241,7 @@ function Invoke-PoolProperties {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool:       'sdk-pool'
@@ -275,7 +275,7 @@ pool_properties() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool: 'sdk-pool'

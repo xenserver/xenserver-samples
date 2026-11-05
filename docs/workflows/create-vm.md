@@ -40,7 +40,7 @@ public static void CreateVm(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using template: Rocky Linux 8
@@ -91,7 +91,7 @@ def create_vm(url, username, password, template_name, new_vm_name="sdk-example-v
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using template: Rocky Linux 8
@@ -155,7 +155,7 @@ public final class CreateVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using template: Rocky Linux 8
@@ -210,7 +210,7 @@ func createVM(url, user, password, templateName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using template: Rocky Linux 8
@@ -263,7 +263,7 @@ function Invoke-CreateVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using template: Rocky Linux 8
@@ -302,7 +302,7 @@ create_vm() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created VM: 00000001-0000-0000-f209-000000000000

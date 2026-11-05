@@ -106,7 +106,7 @@ public static void ExportImportVm(string url, string user, string password, stri
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Exporting db-01
@@ -225,7 +225,7 @@ def export_import_vm(url, username, password, vm_name):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Exporting db-01
@@ -381,7 +381,7 @@ public final class ExportImportVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Exporting db-01
@@ -540,7 +540,7 @@ func tarNames(path string) []string {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Exporting db-01
@@ -661,7 +661,7 @@ function Get-TarEntryName {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Exporting db-01
@@ -725,7 +725,7 @@ export_import_vm() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Exporting db-01

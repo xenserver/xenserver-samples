@@ -33,7 +33,7 @@ public final class ChangeRootPassword {
             System.out.println("Session still usable: " + (Pool.getAll(conn).size() == 1));
 
             // Not demonstrated: a "wrong old password is rejected" check. session.change_password on a
-            // ROOT session ignores old_pwd entirely (CA-13567, confirmed in xapi_session.ml) - the call
+            // ROOT session ignores old_pwd entirely (see xapi's xapi_session.ml) - the call
             // succeeds regardless of what's passed as the old password. The real gate is that only a
             // session with is_local_superuser may call this at all.
         } finally {

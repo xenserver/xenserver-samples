@@ -21,8 +21,7 @@ create_smb_sr() {
     smb_password=$(param smb_password "Password1")
     sr_name=$(param sr_name "xe-example-smb")
 
-    # The password travels as a Secret, not plaintext device-config (0/3 real captured sr-create calls for
-    # this type use plaintext).
+    # The password travels as a Secret, not plaintext device-config.
     secret=$(xe secret-create value="$smb_password")
     sr=$(xe sr-create host-uuid=$(first_host) type=smb name-label="$sr_name" shared=true \
         device-config:server="//$server$share" \

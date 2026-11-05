@@ -76,7 +76,7 @@ private static string FirstDisk(Session session, string vmRef)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up web-01
@@ -165,7 +165,7 @@ def first_disk(x, vm):
     raise Exception("no disk found")
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up web-01
@@ -278,7 +278,7 @@ public final class ChangedBlockTracking {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up web-01
@@ -393,7 +393,7 @@ func firstDisk(session *xenapi.Session, vm xenapi.VMRef) xenapi.VDIRef {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up db-01
@@ -496,7 +496,7 @@ function Get-FirstDisk {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up web-01
@@ -564,7 +564,7 @@ changed_block_tracking() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up web-01

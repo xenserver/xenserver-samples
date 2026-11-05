@@ -36,7 +36,7 @@ public static void SrUsage(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   iSCSI storage: 25 / 200 GiB used
@@ -86,7 +86,7 @@ def sr_usage(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   ISO library: 3 / 100 GiB used
@@ -150,7 +150,7 @@ public final class SrUsage {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   ISO library: 3 / 100 GiB used
@@ -209,7 +209,7 @@ func srUsage(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   Shared NFS: 50 / 512 GiB used
@@ -255,7 +255,7 @@ function Invoke-SrUsage {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   iSCSI storage: 25 / 200 GiB used
@@ -292,7 +292,7 @@ sr_usage() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Storage:

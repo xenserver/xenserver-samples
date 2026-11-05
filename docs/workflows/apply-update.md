@@ -104,7 +104,7 @@ public static void ApplyUpdate(string url, string user, string password, string 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -206,7 +206,7 @@ def apply_update(url, username, password, repo_url, source_url):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -336,7 +336,7 @@ public final class ApplyUpdate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -463,7 +463,7 @@ func applyUpdate(url, user, password, repoURL, sourceURL string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -576,7 +576,7 @@ function Invoke-ApplyUpdate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates; hash length 64
@@ -680,7 +680,7 @@ apply_update() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Synced updates (hash length 64)

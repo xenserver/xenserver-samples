@@ -37,7 +37,7 @@ public static void CreateIsoSr(string url, string user, string password, string 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created ISO SR: 00000001-0000-0000-d20a-000000000000
@@ -75,7 +75,7 @@ def create_iso_sr(url, username, password, location):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created ISO SR: 00000001-0000-0000-dd0a-000000000000
@@ -139,7 +139,7 @@ public final class CreateIsoSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created ISO SR: 00000001-0000-0000-540a-000000000000
@@ -184,7 +184,7 @@ func createIsoSr(url, user, password, location string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created ISO SR: 00000001-0000-0000-030b-000000000000
@@ -230,7 +230,7 @@ function Invoke-CreateIsoSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created ISO SR: 00000001-0000-0000-e50a-000000000000
@@ -268,7 +268,7 @@ create_iso_sr() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created ISO SR: 00000001-0000-0000-e00a-000000000000

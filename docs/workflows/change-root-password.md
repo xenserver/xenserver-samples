@@ -37,7 +37,7 @@ public static void ChangeRootPassword(string url, string user, string password)
         // script can carry on without reconnecting.
         Console.WriteLine($"Session still usable: {Pool.get_all(session).Count == 1}");
 
-        // session.change_password on a ROOT session ignores the old password entirely (CA-13567): the
+        // session.change_password on a ROOT session ignores the old password entirely: the
         // call succeeds regardless of what old_pwd is, so there is no wrong-old-password failure to
         // demonstrate here. The real gate is who may call this at all.
         Console.WriteLine($"Is local superuser (may call change_password): {session.IsLocalSuperuser}");
@@ -54,7 +54,7 @@ public static void ChangeRootPassword(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Password changed.
@@ -98,7 +98,7 @@ def change_root_password(url, username, password):
         # The existing session stays valid afterwards - only NEW connections need the new password.
         print("Session still usable: %s" % (len(session.xenapi.pool.get_all()) == 1))
 
-        # change_password on a ROOT session ignores the old password entirely (CA-13567): the call
+        # change_password on a ROOT session ignores the old password entirely: the call
         # succeeds whatever old_pwd is, so there is no wrong-old-password failure to demonstrate here.
         # The real gate is who may call this at all: only a local superuser session.
         print("Is local superuser (may call change_password): %s"
@@ -112,7 +112,7 @@ def change_root_password(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Password changed.
@@ -164,7 +164,7 @@ public final class ChangeRootPassword {
             System.out.println("Session still usable: " + (Pool.getAll(conn).size() == 1));
 
             // Not demonstrated: a "wrong old password is rejected" check. session.change_password on a
-            // ROOT session ignores old_pwd entirely (CA-13567, confirmed in xapi_session.ml) - the call
+            // ROOT session ignores old_pwd entirely (see xapi's xapi_session.ml) - the call
             // succeeds regardless of what's passed as the old password. The real gate is that only a
             // session with is_local_superuser may call this at all.
         } finally {
@@ -179,7 +179,7 @@ public final class ChangeRootPassword {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Password changed.
@@ -233,7 +233,7 @@ func changeRootPassword(url, user, password string) {
 	check(err)
 	fmt.Printf("Session still usable: %t\n", len(pools) == 1)
 
-	// session.change_password on a ROOT session ignores old_pwd entirely (CA-13567, confirmed in
+	// session.change_password on a ROOT session ignores old_pwd entirely (see xapi's
 	// xapi_session.ml) - any string would also be accepted, so there is no "wrong old password is
 	// rejected" failure to demonstrate here. The real gate is upstream of that: only a session
 	// authenticated as the local superuser may call this at all. The Go binding keeps its session
@@ -252,7 +252,7 @@ func changeRootPassword(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Password changed.
@@ -297,7 +297,7 @@ function Invoke-ChangeRootPassword {
         # script can carry on without reconnecting.
         Write-Host "Session still usable: $(@(Get-XenPool).Count -eq 1)"
 
-        # change_password on a ROOT session ignores the old password entirely (CA-13567, confirmed in
+        # change_password on a ROOT session ignores the old password entirely (see xapi's
         # xapi_session.ml) - the call succeeds regardless of what is passed as the old password, so there is
         # no wrong-old-password failure to demonstrate here. The real gate is who may call this at all: only
         # a session with is_local_superuser may.
@@ -313,7 +313,7 @@ function Invoke-ChangeRootPassword {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Password changed.
@@ -339,8 +339,8 @@ Source: [`cli/hosts-and-pools/change-root-password.sh`](../../cli/hosts-and-pool
 
 change_root_password() {
     # xe exposes this as user-password-change. It takes the OLD password as well as the new one, even
-    # though you are already authenticated - but a root session's old_pwd is never actually checked
-    # (CA-13567): the only real gate is that the SESSION itself has to be a local superuser's, which this
+    # though you are already authenticated - but a root session's old_pwd is never actually checked:
+    # the only real gate is that the SESSION itself has to be a local superuser's, which this
     # one necessarily is. There is no wrong-old-password failure to demonstrate here.
     original=$pass temporary=$(head -c 18 /dev/urandom | base64 | tr -d '/+=')
     xe user-password-change old="$original" new=$temporary
@@ -361,7 +361,7 @@ change_root_password() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Password changed.

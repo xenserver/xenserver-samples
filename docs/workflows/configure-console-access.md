@@ -75,7 +75,7 @@ public static void ConfigureConsoleAccess(string url, string user, string passwo
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   VM console idle timeout    0s
@@ -161,7 +161,7 @@ def configure_console_access(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   VM console idle timeout    0s
@@ -261,7 +261,7 @@ public final class ConfigureConsoleAccess {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   VM console idle timeout    0s
@@ -360,7 +360,7 @@ func configureConsoleAccess(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   VM console idle timeout    0s
@@ -441,7 +441,7 @@ function Invoke-ConfigureConsoleAccess {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   VM console idle timeout    0s
@@ -514,7 +514,7 @@ configure_console_access() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   VM console idle timeout    0s

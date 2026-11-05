@@ -95,7 +95,7 @@ public static void ManageVmDisks(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk attached:  True
@@ -188,7 +188,7 @@ def manage_vm_disks(url, username, password, source_vm, sr_name, new_vm_name="sd
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk attached:  True
@@ -322,7 +322,7 @@ public final class ManageVmDisks {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk attached:  true
@@ -443,7 +443,7 @@ func manageVMDisks(url, user, password, sourceVM, srName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk attached:  true
@@ -536,7 +536,7 @@ function Invoke-ManageVmDisks {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk attached:  True
@@ -625,7 +625,7 @@ manage_vm_disks() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disk attached:  true

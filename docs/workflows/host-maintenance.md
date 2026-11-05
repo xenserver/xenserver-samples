@@ -64,7 +64,7 @@ public static void HostMaintenance(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Maintenance host: sdk-host2
@@ -140,7 +140,7 @@ def host_maintenance(url, username, password, source_vm, sr_name, new_vm_name="s
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Maintenance host: sdk-host2
@@ -237,7 +237,7 @@ public final class HostMaintenance {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Maintenance host: sdk-host2
@@ -329,7 +329,7 @@ func hostMaintenance(url, user, password, sourceVM, srName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Maintenance host: sdk-host2
@@ -406,7 +406,7 @@ function Invoke-HostMaintenance {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Maintenance host: sdk-host2
@@ -478,7 +478,7 @@ host_maintenance() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Maintenance host: sdk-host2

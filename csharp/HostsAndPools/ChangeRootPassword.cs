@@ -31,7 +31,7 @@ internal static partial class Workflows
             // script can carry on without reconnecting.
             Console.WriteLine($"Session still usable: {Pool.get_all(session).Count == 1}");
 
-            // session.change_password on a ROOT session ignores the old password entirely (CA-13567): the
+            // session.change_password on a ROOT session ignores the old password entirely: the
             // call succeeds regardless of what old_pwd is, so there is no wrong-old-password failure to
             // demonstrate here. The real gate is who may call this at all.
             Console.WriteLine($"Is local superuser (may call change_password): {session.IsLocalSuperuser}");

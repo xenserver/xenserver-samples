@@ -41,7 +41,7 @@ public static void ReclaimSpace(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   reclaimed freed space on iSCSI storage: True
@@ -89,7 +89,7 @@ def reclaim_space(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   reclaimed freed space on iSCSI storage: True
@@ -161,7 +161,7 @@ public final class ReclaimSpace {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   reclaimed freed space on iSCSI storage: True
@@ -239,7 +239,7 @@ func reclaimSpace(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   reclaimed freed space on iSCSI storage: True
@@ -284,7 +284,7 @@ function Invoke-ReclaimSpace {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   reclaimed freed space on iSCSI storage: True
@@ -332,7 +332,7 @@ reclaim_space() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   reclaimed freed space on iSCSI storage: True

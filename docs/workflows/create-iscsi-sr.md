@@ -143,7 +143,7 @@ private static XElement ChooseLun(List<XElement> luns, string scsiId)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
@@ -268,7 +268,7 @@ def _choose_lun(luns, scsi_id):
     raise RuntimeError("target offers %d LUNs; name one with scsi_id: %s" % (len(luns), offered))
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
@@ -437,7 +437,7 @@ public final class CreateIscsiSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
@@ -657,7 +657,7 @@ func chooseLUN(luns []map[string]string, scsiID string) map[string]string {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
@@ -810,7 +810,7 @@ function Select-Lun {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
@@ -962,7 +962,7 @@ choose_lun() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0

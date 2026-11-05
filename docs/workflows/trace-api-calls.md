@@ -43,7 +43,7 @@ public static void TraceApiCalls(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Trace c7d6c8c4757591d3b39ca0204ab6e628: each call sends traceparent: 00-c7d6c8c4757591d3b39ca0204ab6e628-0fb930a535e012b3-01
@@ -111,7 +111,7 @@ def trace_api_calls(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Trace 213b2deac2907d2abfdc181389a532d6: each call sends traceparent: 00-213b2deac2907d2abfdc181389a532d6-ee4b958a607e54aa-01
@@ -179,7 +179,7 @@ func traceAPICalls(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Trace d24631276129d78059e091797492351f: each call sends traceparent: 00-d24631276129d78059e091797492351f-104ebffa847b6f01-01
@@ -231,7 +231,7 @@ function Invoke-TraceApiCalls {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Trace 7761d093613966b82fa8a8239108d292: each call sends traceparent: 00-7761d093613966b82fa8a8239108d292-854317b408969807-01
@@ -272,7 +272,7 @@ trace_api_calls() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Trace de205208637d0267ebfae7cfffc6f470: each command sends traceparent: 00-de205208637d0267ebfae7cfffc6f470-c3e12413edaafc5c-01

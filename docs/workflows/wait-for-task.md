@@ -48,7 +48,7 @@ public static void WaitForTask(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started task: 00000001-0000-0000-ec09-000000000000
@@ -103,7 +103,7 @@ def wait_for_task(url, username, password, template_name, new_vm_name="sdk-examp
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started task: 00000001-0000-0000-ed09-000000000000
@@ -174,7 +174,7 @@ public final class WaitForTask {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started task: 00000001-0000-0000-ee09-000000000000
@@ -245,7 +245,7 @@ func waitForTask(url, user, password, templateName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started task: 00000001-0000-0000-ed09-000000000000
@@ -306,7 +306,7 @@ function Invoke-WaitForTask {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Started task: 00000001-0000-0000-ec09-000000000000
@@ -339,7 +339,7 @@ wait_for_task() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Current tasks: 0

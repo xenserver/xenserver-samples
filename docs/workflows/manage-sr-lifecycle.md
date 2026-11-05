@@ -61,7 +61,7 @@ private static int AttachedPbds(Session session, IEnumerable<string> pbds) =>
     pbds.Count(pbd => PBD.get_currently_attached(session, pbd));
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-example-lifecycle: connected on 2 of 2 host(s)
@@ -134,7 +134,7 @@ def attached_pbds(x, pbds):
     return sum(1 for pbd in pbds if x.PBD.get_currently_attached(pbd))
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-example-lifecycle: connected on 2 of 2 host(s)
@@ -228,7 +228,7 @@ public final class ManageSrLifecycle {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-example-lifecycle: connected on 2 of 2 host(s)
@@ -321,7 +321,7 @@ func attachedPbds(session *xenapi.Session, pbds []xenapi.PBDRef) int {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-example-lifecycle: connected on 2 of 2 host(s)
@@ -401,7 +401,7 @@ function Measure-AttachedPbd {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-example-lifecycle: connected on 2 of 2 host(s)
@@ -469,7 +469,7 @@ count_attached_pbd() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 xe-example-lifecycle: connected on 2 of 2 host(s)

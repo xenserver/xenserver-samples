@@ -52,7 +52,7 @@ public static void ManageVmGroups(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created group:  00000001-0000-0000-050a-000000000000
@@ -111,7 +111,7 @@ def manage_vm_groups(url, username, password, vm_name, group_name="sdk-example-g
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created group:  00000001-0000-0000-150a-000000000000
@@ -185,7 +185,7 @@ public final class ManageVmGroups {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created group:  00000001-0000-0000-120a-000000000000
@@ -247,7 +247,7 @@ func manageVMGroups(url, user, password, vmName, groupName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created group:  00000001-0000-0000-1a0a-000000000000
@@ -306,7 +306,7 @@ function Invoke-ManageVmGroups {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created group:  00000001-0000-0000-180a-000000000000
@@ -347,7 +347,7 @@ manage_vm_groups() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created group:  00000001-0000-0000-160a-000000000000

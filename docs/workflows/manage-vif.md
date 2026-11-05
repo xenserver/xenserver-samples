@@ -48,7 +48,7 @@ public static void ManageVif(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
@@ -97,7 +97,7 @@ def manage_vif(url, username, password, template_name, new_vm_name="sdk-example-
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
@@ -174,7 +174,7 @@ public final class ManageVif {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
@@ -236,7 +236,7 @@ func manageVif(url, user, password, templateName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
@@ -286,7 +286,7 @@ function Invoke-ManageVif {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
@@ -325,7 +325,7 @@ manage_vif() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached a VIF; VM now has 0 NIC(s)

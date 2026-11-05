@@ -25,7 +25,7 @@ def change_root_password(url, username, password):
         # The existing session stays valid afterwards - only NEW connections need the new password.
         print("Session still usable: %s" % (len(session.xenapi.pool.get_all()) == 1))
 
-        # change_password on a ROOT session ignores the old password entirely (CA-13567): the call
+        # change_password on a ROOT session ignores the old password entirely: the call
         # succeeds whatever old_pwd is, so there is no wrong-old-password failure to demonstrate here.
         # The real gate is who may call this at all: only a local superuser session.
         print("Is local superuser (may call change_password): %s"

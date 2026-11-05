@@ -63,7 +63,7 @@ public static void CreateBond(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Bonding:      eth1, eth2
@@ -131,7 +131,7 @@ def create_bond(url, username, password):
     x.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Bonding:      eth1, eth2
@@ -229,7 +229,7 @@ public final class CreateBond {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Bonding:      eth1, eth2
@@ -314,7 +314,7 @@ func createBond(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Bonding:      eth1, eth2
@@ -377,7 +377,7 @@ function Invoke-CreateBond {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Bonding:      eth1, eth2
@@ -436,7 +436,7 @@ create_bond() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Bonding:      00000001-0000-0000-2700-000000000000,00000001-0000-0000-2900-000000000000

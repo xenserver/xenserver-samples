@@ -48,7 +48,7 @@ public static void CopyVm(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Copying 'db-01' to SR: Shared NFS
@@ -111,7 +111,7 @@ def copy_vm(url, username, password, vm_name, sr_name, copy_name="sdk-example-co
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Copying 'db-01' to SR: Shared NFS
@@ -185,7 +185,7 @@ public final class CopyVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Copying 'db-01' to SR: Shared NFS
@@ -256,7 +256,7 @@ func copyVM(url, user, password, vmName, srName, copyName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Copying 'db-01' to SR: Shared NFS
@@ -320,7 +320,7 @@ function Invoke-CopyVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Copying 'db-01' to SR: Shared NFS
@@ -364,7 +364,7 @@ copy_vm() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Copied VM: 00000001-0000-0000-020a-000000000000

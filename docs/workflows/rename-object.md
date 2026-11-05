@@ -32,7 +32,7 @@ public static void RenameObject(string url, string user, string password, string
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Renamed 'web-01'  'sdk-renamed'
@@ -71,7 +71,7 @@ def rename_object(url, username, password, vm_name):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Renamed 'web-01' -> 'sdk-renamed'
@@ -122,7 +122,7 @@ public final class RenameObject {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Renamed 'web-01' ? 'sdk-renamed'
@@ -164,7 +164,7 @@ func renameObject(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Renamed 'web-01' -> 'sdk-renamed'
@@ -209,7 +209,7 @@ function Invoke-RenameObject {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Renamed 'web-01' -> 'sdk-renamed'
@@ -240,7 +240,7 @@ rename_object() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Renamed 'web-01' -> 'xe-renamed'

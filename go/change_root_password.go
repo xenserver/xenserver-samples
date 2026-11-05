@@ -36,7 +36,7 @@ func changeRootPassword(url, user, password string) {
 	check(err)
 	fmt.Printf("Session still usable: %t\n", len(pools) == 1)
 
-	// session.change_password on a ROOT session ignores old_pwd entirely (CA-13567, confirmed in
+	// session.change_password on a ROOT session ignores old_pwd entirely (see xapi's
 	// xapi_session.ml) - any string would also be accepted, so there is no "wrong old password is
 	// rejected" failure to demonstrate here. The real gate is upstream of that: only a session
 	// authenticated as the local superuser may call this at all. The Go binding keeps its session

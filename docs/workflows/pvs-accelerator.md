@@ -59,7 +59,7 @@ public static void PvsAccelerator(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site: Provisioning Services
@@ -121,7 +121,7 @@ def pvs_accelerator(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site: Provisioning Services
@@ -205,7 +205,7 @@ public final class PvsAccelerator {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site: Provisioning Services
@@ -292,7 +292,7 @@ func pvsAccelerator(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site: Provisioning Services
@@ -358,7 +358,7 @@ function Invoke-PvsAccelerator {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site: Provisioning Services
@@ -410,7 +410,7 @@ pvs_accelerator() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Site: Provisioning Services

@@ -89,7 +89,7 @@ private static long FetchStatusReport(Session session, string url, IEnumerable<s
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Status report for sdk-host1
@@ -224,7 +224,7 @@ def fetch_status_report(url, session, ctx, entries):
         os.remove(path)
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Status report for sdk-host1
@@ -390,7 +390,7 @@ public final class ServerStatusReport {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Status report for sdk-host1
@@ -553,7 +553,7 @@ func fetchStatusReport(url, sid string, entries []string) int {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Status report for sdk-host1
@@ -695,7 +695,7 @@ function Get-StatusReportSize {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Status report for sdk-host1
@@ -835,7 +835,7 @@ xml_attr() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Status report for sdk-host1

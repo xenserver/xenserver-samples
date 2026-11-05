@@ -45,7 +45,7 @@ public static void ConfigureUpdates(string url, string user, string password, st
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Introduced repositories: sdk-example-base, sdk-example-normal
@@ -100,7 +100,7 @@ def configure_updates(url, username, password, repo_url, source_url):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Introduced repositories: sdk-example-base, sdk-example-normal
@@ -173,7 +173,7 @@ public final class ConfigureUpdates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Introduced repositories: sdk-example-base, sdk-example-normal
@@ -239,7 +239,7 @@ func configureUpdates(url, user, password, repoURL, sourceURL string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Introduced repositories: sdk-example-base, sdk-example-normal
@@ -294,7 +294,7 @@ function Invoke-ConfigureUpdates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Introduced repositories: sdk-example-base, sdk-example-normal
@@ -350,7 +350,7 @@ configure_updates() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Introduced repositories: sdk-example-base, sdk-example-normal

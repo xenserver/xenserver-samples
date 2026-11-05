@@ -64,7 +64,7 @@ public static void AttachDisk(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached an 8 GiB disk on Shared NFS as device 1
@@ -127,7 +127,7 @@ def attach_disk(url, username, password, template_name, sr_name, new_vm_name="sd
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached an 8 GiB disk on Shared NFS as device 1
@@ -216,7 +216,7 @@ public final class AttachDisk {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached an 8 GiB disk on Shared NFS as device 11
@@ -289,7 +289,7 @@ func attachDisk(url, user, password, templateName, srName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached an 8 GiB disk on Shared NFS as device 1
@@ -347,7 +347,7 @@ function Invoke-AttachDisk {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached an 8 GiB disk on Shared NFS as device 1
@@ -389,7 +389,7 @@ attach_disk() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attached an 8 GiB disk; VM now has 2 VBD(s)

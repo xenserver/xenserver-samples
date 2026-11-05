@@ -68,7 +68,7 @@ private static (string, string) GpuGroupWithVgpuType(Session session)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
@@ -141,7 +141,7 @@ def gpu_group_with_vgpu_type(session):
     raise RuntimeError("no GPU group offers a vGPU type")
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
@@ -237,7 +237,7 @@ public final class CreateVmWithVgpu {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
@@ -323,7 +323,7 @@ func gpuGroupWithVgpuType(session *xenapi.Session) (xenapi.GPUGroupRef, xenapi.V
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
@@ -396,7 +396,7 @@ function Invoke-CreateVmWithVgpu {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
@@ -449,7 +449,7 @@ create_vm_with_vgpu() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created vGPU: 00000001-0000-0000-890a-000000000000 of type GRID K100

@@ -31,7 +31,7 @@ public static void ListNetworks(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Networks (4):
@@ -73,7 +73,7 @@ def list_networks(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Networks (4):
@@ -127,7 +127,7 @@ public final class ListNetworks {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Networks (4):
@@ -173,7 +173,7 @@ func listNetworks(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Networks (4):
@@ -216,7 +216,7 @@ function Invoke-ListNetworks {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Networks (4):
@@ -248,7 +248,7 @@ list_networks() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Networks:

@@ -70,7 +70,7 @@ public static void SnapshotRevert(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshotting VM: web-01
@@ -152,7 +152,7 @@ def snapshot_revert(url, username, password, vm_name, snapshot_name="sdk-example
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshotting VM: web-01
@@ -254,7 +254,7 @@ public final class SnapshotRevert {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshotting VM: web-01
@@ -355,7 +355,7 @@ func snapshotRevert(url, user, password, vmName, snapshotName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshotting VM: web-01
@@ -440,7 +440,7 @@ function Invoke-SnapshotRevert {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Snapshotting VM: web-01
@@ -487,7 +487,7 @@ snapshot_revert() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created snapshot: 00000001-0000-0000-570a-000000000000

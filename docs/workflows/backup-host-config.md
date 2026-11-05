@@ -130,7 +130,7 @@ private static string RestoreHostConfig(Session session, string hostUrl, string 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up sdk-host1
@@ -257,7 +257,7 @@ def restore_host_config(session, ctx, host_url, host, path):
         x.task.destroy(task)
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up sdk-host1
@@ -442,7 +442,7 @@ public final class BackupHostConfig {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up sdk-host1
@@ -627,7 +627,7 @@ func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.Hos
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up sdk-host1
@@ -750,7 +750,7 @@ function Restore-ExampleHostConfig {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up sdk-host1
@@ -816,7 +816,7 @@ backup_host_config() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Backing up sdk-host1

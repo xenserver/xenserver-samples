@@ -68,7 +68,7 @@ public static void CustomFields(string url, string user, string password, string
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Field defined: True
@@ -140,7 +140,7 @@ def custom_fields(url, username, password, vm_name):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Field defined: True
@@ -262,7 +262,7 @@ public final class CustomFields {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Field defined: true
@@ -364,7 +364,7 @@ func customFields(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Field defined: true
@@ -453,7 +453,7 @@ function Invoke-CustomFields {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Field defined: True
@@ -516,7 +516,7 @@ custom_fields() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Field defined: true

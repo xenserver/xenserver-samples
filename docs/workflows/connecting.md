@@ -61,7 +61,7 @@ public static Connection connect(String url, String user, String password) throw
         return login(http, url, user, password);
     } catch (Types.HostIsSlave e) {
         // A pool member names the coordinator's address; reconnect there (assuming the coordinator
-        // is up). SDKs before CA-432633 read that address as "" under JSON-RPC: say so rather than
+        // is up). Java SDKs up to 26.22 read that address as "" under JSON-RPC: say so rather than
         // connecting to "https://".
         if (e.masterIPAddress == null || e.masterIPAddress.isEmpty())
             throw new CoordinatorUnknown(url);

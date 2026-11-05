@@ -62,7 +62,7 @@ public static void ConfigureDynamicMemory(string url, string user, string passwo
 private static string Gib(long bytes) => $"{bytes / (1024.0 * 1024 * 1024):F1} GiB";
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
@@ -135,7 +135,7 @@ def gib(value):
     return "%.1f GiB" % (int(value) / float(1024 ** 3))
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
@@ -226,7 +226,7 @@ public final class ConfigureDynamicMemory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
@@ -305,7 +305,7 @@ func gib(size int64) string {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 secure-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
@@ -382,7 +382,7 @@ function Format-Gib {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
@@ -445,7 +445,7 @@ gib() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB

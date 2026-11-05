@@ -37,7 +37,7 @@ public static void ConvertToTemplate(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 is_a_template after provision: False
@@ -81,7 +81,7 @@ def convert_to_template(url, username, password, template_name, new_vm_name="sdk
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 is_a_template after provision: False
@@ -140,7 +140,7 @@ public final class ConvertToTemplate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 is_a_template after provision: false
@@ -189,7 +189,7 @@ func convertToTemplate(url, user, password, templateName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 is_a_template after provision: false
@@ -238,7 +238,7 @@ function Invoke-ConvertToTemplate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 is_a_template after provision: False
@@ -275,7 +275,7 @@ convert_to_template() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 is-a-template after install: false

@@ -63,7 +63,7 @@ public static void ConfigureSnmp(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: SNMP enabled: enabled / active
@@ -129,7 +129,7 @@ def configure_snmp(url, username, password, trap_destination="192.0.2.50"):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: SNMP enabled: enabled / active
@@ -226,7 +226,7 @@ public final class ConfigureSnmp {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host2: SNMP enabled: enabled / active
@@ -316,7 +316,7 @@ func newUUID() string {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: SNMP enabled: enabled / active
@@ -387,7 +387,7 @@ function Invoke-ConfigureSnmp {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: SNMP enabled: enabled / active
@@ -437,7 +437,7 @@ configure_snmp() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: SNMP status: {"code":0,"result":{"enabled":"enabled","active":"active"},"message":null}

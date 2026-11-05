@@ -51,7 +51,7 @@ public static void ConfigureHostStorage(string url, string user, string password
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing False
@@ -114,7 +114,7 @@ def configure_host_storage(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing False
@@ -190,7 +190,7 @@ public final class ConfigureHostStorage {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing false
@@ -264,7 +264,7 @@ func configureHostStorage(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: iSCSI IQN "iqn.2026-10.com.example:00000001", multipathing false
@@ -325,7 +325,7 @@ function Invoke-ConfigureHostStorage {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing False
@@ -374,7 +374,7 @@ configure_host_storage() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing false

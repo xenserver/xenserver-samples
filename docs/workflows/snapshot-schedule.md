@@ -59,7 +59,7 @@ public static void SnapshotSchedule(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created schedule: 00000001-0000-0000-060a-000000000000
@@ -127,7 +127,7 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created schedule: 00000001-0000-0000-120a-000000000000
@@ -214,7 +214,7 @@ public final class SnapshotSchedule {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created schedule: 00000001-0000-0000-1b0a-000000000000
@@ -298,7 +298,7 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created schedule: 00000001-0000-0000-130a-000000000000
@@ -363,7 +363,7 @@ function Invoke-SnapshotSchedule {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created schedule: 00000001-0000-0000-190a-000000000000
@@ -407,7 +407,7 @@ snapshot_schedule() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created schedule: 00000001-0000-0000-1c0a-000000000000

@@ -68,7 +68,7 @@ public static void ManageVmMedia(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Adding a DVD drive to db-01
@@ -136,7 +136,7 @@ def manage_vm_media(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Adding a DVD drive to db-01
@@ -246,7 +246,7 @@ public final class ManageVmMedia {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Adding a DVD drive to db-01
@@ -353,7 +353,7 @@ func manageVmMedia(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Adding a DVD drive to db-01
@@ -422,7 +422,7 @@ function Invoke-ManageVmMedia {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Adding a DVD drive to db-01
@@ -474,7 +474,7 @@ manage_vm_media() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Adding a DVD drive to db-01

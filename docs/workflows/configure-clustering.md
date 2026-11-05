@@ -77,7 +77,7 @@ public static void ConfigureClustering(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Stack:      corosync
@@ -158,7 +158,7 @@ def configure_clustering(url, username, password):
     x.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Stack:      corosync
@@ -265,7 +265,7 @@ public final class ConfigureClustering {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Stack:      corosync
@@ -367,7 +367,7 @@ func configureClustering(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Stack:      corosync
@@ -445,7 +445,7 @@ function Invoke-ConfigureClustering {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Stack:      corosync
@@ -510,7 +510,7 @@ configure_clustering() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Stack:      corosync

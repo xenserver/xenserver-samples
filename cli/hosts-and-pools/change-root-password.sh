@@ -7,8 +7,8 @@
 
 change_root_password() {
     # xe exposes this as user-password-change. It takes the OLD password as well as the new one, even
-    # though you are already authenticated - but a root session's old_pwd is never actually checked
-    # (CA-13567): the only real gate is that the SESSION itself has to be a local superuser's, which this
+    # though you are already authenticated - but a root session's old_pwd is never actually checked:
+    # the only real gate is that the SESSION itself has to be a local superuser's, which this
     # one necessarily is. There is no wrong-old-password failure to demonstrate here.
     original=$pass temporary=$(head -c 18 /dev/urandom | base64 | tr -d '/+=')
     xe user-password-change old="$original" new=$temporary

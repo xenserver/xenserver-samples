@@ -179,7 +179,7 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata
@@ -336,7 +336,7 @@ def disaster_recovery_failover(url, username, password, target=None, target_iqn=
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata
@@ -592,7 +592,7 @@ public final class DisasterRecoveryFailover {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata
@@ -854,7 +854,7 @@ func rawFailureCode(failure json.RawMessage) string {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata
@@ -1047,7 +1047,7 @@ function Get-FailureCode {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata
@@ -1207,7 +1207,7 @@ disaster_recovery_failover() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata

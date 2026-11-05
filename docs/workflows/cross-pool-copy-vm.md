@@ -87,7 +87,7 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
@@ -170,7 +170,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
     dest.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
@@ -292,7 +292,7 @@ public final class CrossPoolCopyVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
@@ -413,7 +413,7 @@ func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
@@ -531,7 +531,7 @@ function Invoke-CrossPoolCopyVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
@@ -623,7 +623,7 @@ cross_pool_copy_vm() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Sent 'db-01' to localhost (copy); source still present: True

@@ -45,7 +45,7 @@ public static void CreateNetwork(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created network: 00000001-0000-0000-c30a-000000000000
@@ -94,7 +94,7 @@ def create_network(url, username, password, network_name="sdk-example-net"):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created network: 00000001-0000-0000-6e0a-000000000000
@@ -160,7 +160,7 @@ public final class CreateNetwork {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created network: 00000001-0000-0000-150b-000000000000
@@ -218,7 +218,7 @@ func createNetwork(url, user, password, networkName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created network: 00000001-0000-0000-cb0a-000000000000
@@ -265,7 +265,7 @@ function Invoke-CreateNetwork {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created network: 00000001-0000-0000-1a0b-000000000000
@@ -301,7 +301,7 @@ create_network() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created network: 00000001-0000-0000-6f0a-000000000000

@@ -46,7 +46,7 @@ public static void CloneVm(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Cloned 'db-01'  sdk-example-clone
@@ -103,7 +103,7 @@ def clone_vm(url, username, password, vm_name, clone_name="sdk-example-clone"):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Cloned 'db-01' -> sdk-example-clone
@@ -170,7 +170,7 @@ public final class CloneVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Cloned 'db-01' ? sdk-example-clone
@@ -235,7 +235,7 @@ func cloneVM(url, user, password, vmName, cloneName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Cloned 'db-01' -> sdk-example-clone
@@ -294,7 +294,7 @@ function Invoke-CloneVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Cloned 'db-01' -> sdk-example-clone
@@ -333,7 +333,7 @@ clone_vm() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Cloned VM: 00000001-0000-0000-f909-000000000000

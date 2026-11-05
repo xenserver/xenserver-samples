@@ -56,7 +56,7 @@ public static void LiveMigrate(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM is running on: sdk-host1
@@ -122,7 +122,7 @@ def live_migrate(url, username, password, source_vm, sr_name, new_vm_name="sdk-e
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM is running on: sdk-host1
@@ -207,7 +207,7 @@ public final class LiveMigrate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM is running on: sdk-host1
@@ -281,7 +281,7 @@ func liveMigrate(url, user, password, sourceVM, srName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM is running on: sdk-host1
@@ -352,7 +352,7 @@ function Invoke-LiveMigrate {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM is running on: sdk-host1
@@ -409,7 +409,7 @@ live_migrate() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Running on: sdk-host1

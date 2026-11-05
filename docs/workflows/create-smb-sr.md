@@ -55,7 +55,7 @@ public static void CreateSmbSr(string url, string user, string password, string 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-700a-000000000000 (512 GiB)
@@ -102,7 +102,7 @@ def create_smb_sr(url, username, password, server, share, smb_username, smb_pass
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-0c0b-000000000000 (512 GiB)
@@ -178,7 +178,7 @@ public final class CreateSmbSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-740a-000000000000 (512 GiB)
@@ -238,7 +238,7 @@ func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, s
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-100b-000000000000 (512 GiB)
@@ -296,7 +296,7 @@ function Invoke-CreateSmbSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-df0a-000000000000 (512 GiB)
@@ -333,8 +333,7 @@ create_smb_sr() {
     smb_password=$(param smb_password "Password1")
     sr_name=$(param sr_name "xe-example-smb")
 
-    # The password travels as a Secret, not plaintext device-config (0/3 real captured sr-create calls for
-    # this type use plaintext).
+    # The password travels as a Secret, not plaintext device-config.
     secret=$(xe secret-create value="$smb_password")
     sr=$(xe sr-create host-uuid=$(first_host) type=smb name-label="$sr_name" shared=true \
         device-config:server="//$server$share" \
@@ -346,10 +345,10 @@ create_smb_sr() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
-Created SMB SR: 00000001-0000-0000-140b-000000000000 (512 GiB)
+Created SMB SR: 00000001-0000-0000-be0a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 

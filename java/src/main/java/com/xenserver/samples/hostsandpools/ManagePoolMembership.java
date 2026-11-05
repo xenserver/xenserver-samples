@@ -45,7 +45,7 @@ public final class ManagePoolMembership {
         Host other = hostByName(conn, otherName);
         String otherUuid = other.getUuid(conn);
         // Each new coordinator's own address, to reconnect to if following HOST_IS_SLAVE from the old one
-        // fails: SDKs before CA-432633 read HostIsSlave.masterIPAddress as "" under JSON-RPC.
+        // fails: Java SDKs up to 26.22 read HostIsSlave.masterIPAddress as "" under JSON-RPC.
         String otherUrl = hostUrl(url, other.getAddress(conn));
         String originalUrl = hostUrl(url, original.getAddress(conn));
 

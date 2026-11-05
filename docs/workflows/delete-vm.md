@@ -42,7 +42,7 @@ public static void DeleteVm(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Deleting VM 00000001-0000-0000-160a-000000000000 with 1 disk(s)
@@ -91,7 +91,7 @@ def delete_vm(url, username, password, template_name, new_vm_name="sdk-example-d
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Deleting VM 00000001-0000-0000-f809-000000000000 with 1 disk(s)
@@ -160,7 +160,7 @@ public final class DeleteVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Deleting VM 00000001-0000-0000-120a-000000000000 with 1 disk(s)
@@ -222,7 +222,7 @@ func deleteVM(url, user, password, templateName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Deleting VM 00000001-0000-0000-1e0a-000000000000 with 1 disk(s)
@@ -279,7 +279,7 @@ function Invoke-DeleteVm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Deleting VM 00000001-0000-0000-110a-000000000000 with 1 disk(s)
@@ -316,7 +316,7 @@ delete_vm() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 VM still present: false

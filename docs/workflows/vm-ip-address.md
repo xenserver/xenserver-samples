@@ -59,7 +59,7 @@ public static void VmIpAddress(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   web-01: 198.51.100.51
@@ -111,7 +111,7 @@ def vm_ip_address(url, username, password, timeout=60, interval=2):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   web-01: 198.51.100.51
@@ -189,7 +189,7 @@ public final class VmIpAddress {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   web-01: 198.51.100.51
@@ -262,7 +262,7 @@ func vmIpAddress(url, user, password, timeoutStr, intervalStr string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   web-01: 198.51.100.51
@@ -326,7 +326,7 @@ function Invoke-VmIpAddress {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   web-01: 198.51.100.51
@@ -378,7 +378,7 @@ vm_ip_address() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   web-01: 198.51.100.51

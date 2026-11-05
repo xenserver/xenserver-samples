@@ -60,7 +60,7 @@ private static string VariantName(Session session, string variantRef) =>
         ? Driver_variant.get_name(session, variantRef) : "(none)";
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 5 driver(s)
@@ -130,7 +130,7 @@ def variant_name(x, ref):
     return x.Driver_variant.get_name(ref) if ref and ref != "OpaqueRef:NULL" else "(none)"
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 5 driver(s)
@@ -234,7 +234,7 @@ public final class ManageDriverVariants {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 5 driver(s)
@@ -347,7 +347,7 @@ func variantName(session *xenapi.Session, ref xenapi.DriverVariantRef) string {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 5 driver(s)
@@ -424,7 +424,7 @@ function Get-DriverVariantName {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 5 driver(s)
@@ -505,7 +505,7 @@ manage_driver_variants() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1 has 5 driver(s)

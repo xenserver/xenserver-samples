@@ -53,7 +53,7 @@ public static void ManageVtpm(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attaching a vTPM to secure-01
@@ -117,7 +117,7 @@ def manage_vtpm(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attaching a vTPM to secure-01
@@ -204,7 +204,7 @@ public final class ManageVtpm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attaching a vTPM to secure-01
@@ -290,7 +290,7 @@ func manageVtpm(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attaching a vTPM to secure-01
@@ -353,7 +353,7 @@ function Invoke-ManageVtpm {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attaching a vTPM to secure-01
@@ -410,7 +410,7 @@ manage_vtpm() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Attaching a vTPM to secure-01

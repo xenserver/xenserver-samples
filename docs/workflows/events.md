@@ -43,7 +43,7 @@ public static void Events(string url, string user, string password, string vmNam
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Established event token after initial snapshot.
@@ -98,7 +98,7 @@ def events(url, username, password, vm_name):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Established event token after initial snapshot.
@@ -172,7 +172,7 @@ public final class Events {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Established event token after initial snapshot.
@@ -233,7 +233,7 @@ func events(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Established event token after initial snapshot.
@@ -313,7 +313,7 @@ function Get-XenEventBatch {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Established event token after initial snapshot.
@@ -353,7 +353,7 @@ events() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Observed web-01's name-description change via event-wait

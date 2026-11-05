@@ -170,7 +170,7 @@ public final class Helpers {
     }
 
     /**
-     * Is e the XenAPI error `code`? Check the text as well as the type: SDKs before CA-432633 throw an
+     * Is e the XenAPI error `code`? Check the text as well as the type: Java SDKs up to 26.22 throw an
      * error that has no parameters (HOST_STILL_BOOTING, HA_IS_ENABLED...) as BadServerResponse, whose text
      * is the JSON-RPC error, rather than as its typed exception.
      */

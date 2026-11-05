@@ -113,7 +113,7 @@ public static void WlbRecommendations(string url, string user, string password, 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 WLB: wlb.example:8012
@@ -221,7 +221,7 @@ def wlb_recommendations(url, username, password, vm_name, wlb_host_port="wlb.exa
     x.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 WLB: wlb.example:8012
@@ -368,7 +368,7 @@ public final class WlbRecommendations {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 WLB: wlb.example:8012
@@ -508,7 +508,7 @@ func isWlbStillDiscovering(err error) bool {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 WLB: wlb.example:8012
@@ -626,7 +626,7 @@ function Invoke-WlbRecommendations {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 WLB: wlb.example:8012
@@ -733,7 +733,7 @@ wlb_recommendations() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 WLB: wlb.example:8012

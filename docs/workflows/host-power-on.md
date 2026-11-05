@@ -36,7 +36,7 @@ public static void HostPowerOn(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Power-on mode:  wake-on-lan
@@ -77,7 +77,7 @@ def host_power_on(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Power-on mode:  wake-on-lan
@@ -134,7 +134,7 @@ public final class HostPowerOn {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Power-on mode:  wake-on-lan
@@ -183,7 +183,7 @@ func hostPowerOn(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Power-on mode:  wake-on-lan
@@ -234,7 +234,7 @@ function Invoke-HostPowerOn {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Power-on mode:  wake-on-lan
@@ -269,7 +269,7 @@ host_power_on() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Power-on mode:  wake-on-lan

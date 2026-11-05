@@ -37,7 +37,7 @@ public static void DismissAlerts(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Alerts:         0
@@ -77,7 +77,7 @@ def dismiss_alerts(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Alerts:         0
@@ -131,7 +131,7 @@ public final class DismissAlerts {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Alerts:         0
@@ -185,7 +185,7 @@ func dismissAlerts(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Alerts:         0
@@ -229,7 +229,7 @@ function Invoke-DismissAlerts {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Alerts:         0
@@ -266,7 +266,7 @@ dismiss_alerts() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Alerts:         0

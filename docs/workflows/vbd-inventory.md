@@ -38,7 +38,7 @@ public static void VbdInventory(string url, string user, string password, string
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disks of 'db-01':
@@ -82,7 +82,7 @@ def vbd_inventory(url, username, password, vm_name):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disks of 'db-01':
@@ -142,7 +142,7 @@ public final class VbdInventory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disks of 'db-01':
@@ -200,7 +200,7 @@ func vbdInventory(url, user, password, vmName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disks of 'db-01':
@@ -249,7 +249,7 @@ function Invoke-VbdInventory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disks of 'db-01':
@@ -285,7 +285,7 @@ vbd_inventory() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Disks of db-01:

@@ -36,7 +36,7 @@ public static void ListTemplates(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Templates (27):
@@ -85,7 +85,7 @@ def list_templates(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Templates (27):
@@ -150,7 +150,7 @@ public final class ListTemplates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Templates (27):
@@ -216,7 +216,7 @@ func listTemplates(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Templates (27):
@@ -265,7 +265,7 @@ function Invoke-ListTemplates {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Templates (27):
@@ -311,7 +311,7 @@ list_templates() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Templates (27):

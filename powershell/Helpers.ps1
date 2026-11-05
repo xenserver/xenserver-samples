@@ -116,7 +116,7 @@ function Invoke-Evacuate {
     .SYNOPSIS
         Evacuate a host over its management network.
     .DESCRIPTION
-        Name the network: before CA-431418 (SDK 26.21) the cmdlet always calls the newest host.evacuate, and
+        Name the network: before SDK 26.21 the cmdlet always calls the newest host.evacuate, and
         with no -Network it sends an empty network, which a real host refuses (PIF_NOT_PRESENT) as soon as
         there is a VM to move.
     #>

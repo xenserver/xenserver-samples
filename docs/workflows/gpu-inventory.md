@@ -43,7 +43,7 @@ public static void GpuInventory(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 GPU groups (2):
@@ -93,7 +93,7 @@ def gpu_inventory(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 GPU groups (2):
@@ -163,7 +163,7 @@ public final class GpuInventory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 GPU groups (2):
@@ -230,7 +230,7 @@ func gpuInventory(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 GPU groups (2):
@@ -281,7 +281,7 @@ function Invoke-GpuInventory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 GPU groups (2):
@@ -326,7 +326,7 @@ gpu_inventory() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 GPU groups:

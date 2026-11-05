@@ -40,7 +40,7 @@ public static void ErrorHandling(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Caught expected failure: UUID_INVALID
@@ -83,7 +83,7 @@ def error_handling(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Caught expected failure: UUID_INVALID
@@ -126,11 +126,10 @@ public final class ErrorHandling {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         // XenAPI errors surface as a XenAPIException. Specific errors are typed subclasses (e.g.
-        // UuidInvalid): the class name identifies the error. getMessage() is NOT the readable text here -
-        // CA-432675: the generated XenAPIException never calls super(message), so Throwable.getMessage()
-        // is null for every typed XenAPI exception in the current Java SDK (confirmed against a real
-        // host; the SDK fix isn't released yet). shortDescription/errorDescription carry the real text,
-        // and work against any SDK build.
+        // UuidInvalid): the class name identifies the error. getMessage() is NOT the readable text here:
+        // in Java SDKs up to 26.22 the generated XenAPIException never calls super(message), so
+        // Throwable.getMessage() is null for every typed XenAPI exception. shortDescription and
+        // errorDescription carry the real text, and work with every SDK version.
         try {
             Host.getByUuid(conn, "this-uuid-does-not-exist");
             System.out.println("unexpected: no error");
@@ -146,7 +145,7 @@ public final class ErrorHandling {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Caught expected failure: UuidInvalid
@@ -191,7 +190,7 @@ func errorHandling(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Caught expected failure: API error: code 1, message UUID_INVALID, data [host this-uuid-does-not-exist]
@@ -239,7 +238,7 @@ function Invoke-ErrorHandling {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Caught expected failure: UUID_INVALID
@@ -274,7 +273,7 @@ error_handling() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Caught expected failure:

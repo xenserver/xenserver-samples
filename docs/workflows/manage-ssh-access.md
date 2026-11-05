@@ -53,7 +53,7 @@ public static void ManageSshAccess(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: ssh enabled=True, expires 2026-01-01 09:00:00Z
@@ -117,7 +117,7 @@ def manage_ssh_access(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: ssh enabled=True, expires 20260101T09:00:00Z
@@ -199,7 +199,7 @@ public final class ManageSshAccess {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: ssh enabled=true, expires 2026-01-01T09:00:00Z
@@ -274,7 +274,7 @@ func manageSSHAccess(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: ssh enabled=true, expires 20260101T09:00:00Z
@@ -335,7 +335,7 @@ function Invoke-ManageSshAccess {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: ssh enabled=True, expires 20260101T09:00:00Z
@@ -396,7 +396,7 @@ manage_ssh_access() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: ssh enabled=true, expires 20260101T10:00:00Z

@@ -31,7 +31,7 @@ public static void PoolTags(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool tags: sdk-managed
@@ -69,7 +69,7 @@ def pool_tags(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool tags: sdk-managed
@@ -119,7 +119,7 @@ public final class PoolTags {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool tags: sdk-managed
@@ -164,7 +164,7 @@ func poolTags(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool tags: sdk-managed
@@ -205,7 +205,7 @@ function Invoke-PoolTags {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool tags: sdk-managed
@@ -235,7 +235,7 @@ pool_tags() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Pool tags: sdk-managed

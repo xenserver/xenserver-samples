@@ -76,7 +76,7 @@ public static void ReconnectSrStorage(string url, string user, string password, 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: now reaches 192.0.2.10:/export/spare
@@ -147,7 +147,7 @@ def reconnect_sr_storage(url, username, password, nfs_server="192.0.2.10", nfs_p
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: now reaches 192.0.2.10:/export/spare
@@ -241,7 +241,7 @@ public final class ReconnectSrStorage {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host2: now reaches 192.0.2.10:/export/spare
@@ -328,7 +328,7 @@ func reconnectSrStorage(url, user, password, nfsServer, nfsPath, newNfsServer st
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: now reaches 192.0.2.10:/export/spare
@@ -400,7 +400,7 @@ function Invoke-ReconnectSrStorage {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: now reaches 192.0.2.10:/export/spare
@@ -464,7 +464,7 @@ reconnect_sr_storage() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 sdk-host1: now reaches 192.0.2.10:/export/spare

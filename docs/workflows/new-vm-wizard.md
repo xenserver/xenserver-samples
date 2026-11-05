@@ -117,7 +117,7 @@ public static void NewVmWizard(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Template:      Rocky Linux 8
@@ -244,7 +244,7 @@ def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Template:      Rocky Linux 8
@@ -409,7 +409,7 @@ public final class NewVmWizard {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Template:      Rocky Linux 8
@@ -571,7 +571,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Template:      Rocky Linux 8
@@ -679,7 +679,7 @@ function Invoke-NewVmWizard {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Template:      Rocky Linux 8
@@ -736,7 +736,7 @@ new_vm_wizard() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 power-state: running

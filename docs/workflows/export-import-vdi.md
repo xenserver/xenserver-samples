@@ -99,7 +99,7 @@ public static void ExportImportVdi(string url, string user, string password, str
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Uploaded 8 MiB into sdk-example-raw-source
@@ -197,7 +197,7 @@ def export_import_vdi(url, username, password, sr_name):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Uploaded 8 MiB into sdk-example-raw-source
@@ -337,7 +337,7 @@ public final class ExportImportVdi {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Uploaded 8 MiB into sdk-example-raw-source
@@ -470,7 +470,7 @@ func exportImportVdi(url, user, password, srName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Uploaded 8 MiB into sdk-example-raw-source
@@ -588,7 +588,7 @@ function Invoke-RawVdiTransfer {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Uploaded 8 MiB into sdk-example-raw-source

@@ -42,7 +42,7 @@ public static void ConnectInventory(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Connected to pool: sdk-pool
@@ -98,7 +98,7 @@ def connect_inventory(url, username, password):
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Connected to pool: sdk-pool
@@ -174,7 +174,7 @@ public final class ConnectInventory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Connected to pool: sdk-pool
@@ -245,7 +245,7 @@ func connectInventory(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Connected to pool: sdk-pool
@@ -299,7 +299,7 @@ function Invoke-ConnectInventory {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Connected to pool: sdk-pool
@@ -338,7 +338,7 @@ connect_inventory() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Connected to pool: sdk-pool

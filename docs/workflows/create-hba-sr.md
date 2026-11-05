@@ -76,7 +76,7 @@ public static void CreateHbaSr(string url, string user, string password, string 
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
@@ -151,7 +151,7 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
@@ -257,7 +257,7 @@ public final class CreateHbaSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
@@ -340,7 +340,7 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
@@ -418,7 +418,7 @@ function Invoke-CreateHbaSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
@@ -494,7 +494,7 @@ create_hba_sr() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]

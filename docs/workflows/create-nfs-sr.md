@@ -43,7 +43,7 @@ public static void CreateNfsSr(string url, string user, string password,
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-a90a-000000000000
@@ -88,7 +88,7 @@ def create_nfs_sr(url, username, password, nfs_server, nfs_path, sr_name="sdk-ex
     session.xenapi.session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-bb0a-000000000000
@@ -151,7 +151,7 @@ public final class CreateNfsSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-ac0a-000000000000
@@ -209,7 +209,7 @@ func createNfsSR(url, user, password, nfsServer, nfsPath, srName string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-4b0a-000000000000
@@ -256,7 +256,7 @@ function Invoke-CreateNfsSr {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-d80a-000000000000
@@ -293,7 +293,7 @@ create_nfs_sr() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
 Created SR: 00000001-0000-0000-8a0a-000000000000

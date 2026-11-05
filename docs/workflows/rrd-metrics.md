@@ -59,7 +59,7 @@ public static void RrdMetrics(string url, string user, string password)
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
@@ -116,7 +116,7 @@ def rrd_metrics(url, username, password):
     session.logout()
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
@@ -197,7 +197,7 @@ public final class RrdMetrics {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
@@ -294,7 +294,7 @@ func rrdMetrics(url, user, password string) {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
@@ -354,7 +354,7 @@ function Invoke-RrdMetrics {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
@@ -388,7 +388,7 @@ rrd_metrics() {
 }
 ```
 
-<details><summary>Sample output</summary>
+<details><summary>Example output</summary>
 
 ```text
   sdk-host1: current PVS cache utilisation 94%
