@@ -27,14 +27,14 @@ internal static partial class Workflows
             other_config = new Dictionary<string, string>(),
         };
         var netRef = Network.create(session, record);
-        Console.WriteLine($"Created network: {Network.get_uuid(session, netRef.opaque_ref)}");
+        Console.WriteLine($"Created network: {Network.get_uuid(session, netRef)}");
 
         // Raise the MTU to use jumbo frames. Every NIC and switch along the path has to agree, so this is
         // a property of the network rather than of any one interface on it.
-        Network.set_MTU(session, netRef.opaque_ref, 9000);
-        Console.WriteLine($"MTU now:         {Network.get_MTU(session, netRef.opaque_ref)}");
+        Network.set_MTU(session, netRef, 9000);
+        Console.WriteLine($"MTU now:         {Network.get_MTU(session, netRef)}");
 
-        Network.destroy(session, netRef.opaque_ref);
+        Network.destroy(session, netRef);
         Console.WriteLine("OK: create-network");
         session.logout();
     }

@@ -26,7 +26,7 @@ function Invoke-ConfigureSyslog {
         [string]$SyslogServer = "192.0.2.50"
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master.opaque_ref
+    $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master
 
     Write-Host "$($xenHost.name_label) logging: $(Format-Logging $xenHost.logging)"
 
@@ -37,11 +37,11 @@ function Invoke-ConfigureSyslog {
     $xenHost | Remove-XenHostProperty -Logging "syslog_destination"
     $xenHost | Add-XenHost -Logging ([System.Collections.Generic.KeyValuePair[string, string]]::new("syslog_destination", $SyslogServer))
     $xenHost | Invoke-XenHost -XenAction SyslogReconfigure
-    Write-Host "  now logging to: $((Get-XenHost -Ref $xenHost.opaque_ref).logging['syslog_destination'])"
+    Write-Host "  now logging to: $((Get-XenHost -Ref $xenHost).logging['syslog_destination'])"
 
     $xenHost | Remove-XenHostProperty -Logging "syslog_destination"
     $xenHost | Invoke-XenHost -XenAction SyslogReconfigure
-    Write-Host "  restored: $(Format-Logging (Get-XenHost -Ref $xenHost.opaque_ref).logging)"
+    Write-Host "  restored: $(Format-Logging (Get-XenHost -Ref $xenHost).logging)"
     Write-Host "OK: configure-syslog"
     $session | Disconnect-XenServer
 }
@@ -182,7 +182,7 @@ public static void ConfigureSyslog(string url, string user, string password,
     string syslogServer = "192.0.2.50")
 {
     var session = Connect(url, user, password);
-    var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+    var host = Pool.get_master(session, Pool.get_all(session)[0]);
 
     Console.WriteLine($"{Host.get_name_label(session, host)} logging: {LoggingLabel(session, host)}");
 
@@ -202,7 +202,7 @@ public static void ConfigureSyslog(string url, string user, string password,
 }
 
 /// <summary>The host's logging config, or "(local only)" when nothing is configured.</summary>
-private static string LoggingLabel(Session session, string host)
+private static string LoggingLabel(Session session, XenRef<Host> host)
 {
     var logging = Host.get_logging(session, host);
     return logging.Count == 0 ? "(local only)" : string.Join(", ", logging.Select(kv => $"{kv.Key}={kv.Value}"));

@@ -26,7 +26,7 @@ function Invoke-RotatePoolSecret {
     }
     try {
         # A pool-wide operation; existing sessions survive it.
-        Invoke-XenPool -Ref $pool.opaque_ref -XenAction RotateSecret
+        Invoke-XenPool -Ref $pool -XenAction RotateSecret
         Write-Host "Rotated. Still connected: $(@(Get-XenPool).Count -eq 1)"
     }
     catch {

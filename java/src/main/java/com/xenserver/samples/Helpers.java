@@ -28,6 +28,11 @@ import static com.xenserver.samples.PoolConnection.connect;
  * up what an example created.
  */
 public final class Helpers {
+    /**
+     * What a reference field holds when it points at nothing: set a field to it to clear it. (To test a
+     * reference, use its isNull().)
+     */
+    public static final String NULL_REF = "OpaqueRef:NULL";
     private Helpers() {
     }
 
@@ -81,7 +86,7 @@ public final class Helpers {
         // A checkpoint (or a suspended VM) also owns a suspend image holding its memory, which no VBD
         // points at: destroy that as well.
         VDI suspendVdi = vm.getSuspendVDI(conn);
-        if (!suspendVdi.toWireString().equals("OpaqueRef:NULL")) vdis.add(suspendVdi);
+        if (!suspendVdi.isNull()) vdis.add(suspendVdi);
         vm.destroy(conn);
         for (VDI vdi : vdis) vdi.destroy(conn);
     }
@@ -287,7 +292,7 @@ public final class Helpers {
     private static boolean guestAgentReady(Connection conn, VM vm) throws Exception {
         if (!vm.getAllowedOperations(conn).contains(Types.VmOperations.CLEAN_SHUTDOWN)) return false;
         VMGuestMetrics metrics = vm.getGuestMetrics(conn);
-        return !metrics.toWireString().equals("OpaqueRef:NULL") && metrics.getPVDriversDetected(conn);
+        return !metrics.isNull() && metrics.getPVDriversDetected(conn);
     }
 
     public static void waitForGuestAgent(Connection conn, VM vm) throws Exception {

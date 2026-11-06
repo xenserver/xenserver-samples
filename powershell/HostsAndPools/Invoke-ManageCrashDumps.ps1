@@ -25,7 +25,7 @@ function Invoke-ManageCrashDumps {
         return
     }
 
-    $dumps = @($xenHost.crashdumps | ForEach-Object { Get-XenHostCrashdump -Ref $_.opaque_ref })
+    $dumps = @($xenHost.crashdumps | ForEach-Object { Get-XenHostCrashdump -Ref $_ })
     Write-Host "$($xenHost.name_label) has $($dumps.Count) crash dump(s)"
     $total = 0
     foreach ($dump in $dumps) {
@@ -36,7 +36,7 @@ function Invoke-ManageCrashDumps {
 
     # Deleting a dump frees the space on the host; the host itself is untouched.
     $dumps | Remove-XenHostCrashdump
-    Write-Host "  cleared:  $($xenHost.name_label) now has $((Get-XenHost -Ref $xenHost.opaque_ref).crashdumps.Count)"
+    Write-Host "  cleared:  $($xenHost.name_label) now has $((Get-XenHost -Ref $xenHost).crashdumps.Count)"
 
     Write-Host "OK: manage-crash-dumps"
     $session | Disconnect-XenServer

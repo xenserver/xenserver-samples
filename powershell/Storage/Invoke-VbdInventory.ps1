@@ -19,11 +19,11 @@ function Invoke-VbdInventory {
         Select-Object -First 1
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     Write-Host "Disks of '$($vm.name_label)':"
-    (Get-XenVM -Ref $vm.opaque_ref).VBDs |
-        ForEach-Object { Get-XenVBD -Ref $_.opaque_ref } |
+    (Get-XenVM -Ref $vm).VBDs |
+        ForEach-Object { Get-XenVBD -Ref $_ } |
         Where-Object { $_.type -eq 'Disk' } |
         ForEach-Object {
-            $vdiRef = $_.VDI.opaque_ref
+            $vdiRef = $_.VDI
             $size = if ($vdiRef -eq 'OpaqueRef:NULL') { 0 } else { [long]((Get-XenVDI -Ref $vdiRef).virtual_size / 1GB) }
             Write-Host "  - device $($_.userdevice): $size GiB"
         }

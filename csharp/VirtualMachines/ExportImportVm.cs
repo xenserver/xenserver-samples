@@ -65,7 +65,7 @@ internal static partial class Workflows
             // first, append &task_id=<task> to the /import URL, poll the task, and parse the ref out
             // of task.get_result() (same <value>...</value> string-strip wait-for-task already uses).
             var task = Task.create(session, "vm_import", $"importing {vmName} back").opaque_ref;
-            string imported;
+            XenRef<VM> imported;
             try
             {
                 using (var client = InsecureHttpClient())
@@ -83,8 +83,8 @@ internal static partial class Workflows
                     throw new Exception($"import failed: {string.Join(", ", Task.get_error_info(session, task))}");
                 // The result lists the imported VMs (<value><array><data>OpaqueRef:...</data></array></value>
                 // on a real host), so take the first reference in it.
-                imported = System.Text.RegularExpressions.Regex.Match(
-                    Task.get_result(session, task), "OpaqueRef:[^<]+").Value;
+                imported = new XenRef<VM>(System.Text.RegularExpressions.Regex.Match(
+                    Task.get_result(session, task), "OpaqueRef:[^<]+").Value);
             }
             finally
             {

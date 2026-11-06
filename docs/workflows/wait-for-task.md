@@ -34,7 +34,7 @@ function Invoke-WaitForTask {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $task = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -Async -PassThru
-    $taskRef = $task.opaque_ref
+    $taskRef = $task
     Write-Host "Started task: $((Get-XenTask -Ref $taskRef).uuid)"
 
     while ((Get-XenTask -Ref $taskRef).status -eq 'Pending') {
@@ -173,7 +173,7 @@ public static void WaitForTask(string url, string user, string password,
 {
     var session = Connect(url, user, password);
     // Every message has an Async.* twin that returns a Task ref immediately; poll it to completion.
-    var task = VM.async_clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+    var task = VM.async_clone(session, TemplateByName(session, templateName), newVmName);
     Console.WriteLine($"Started task: {Task.get_uuid(session, task)}");
 
     while (Task.get_status(session, task) == task_status_type.pending)
@@ -199,7 +199,7 @@ public static void WaitForTask(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Started task: 00000001-0000-0000-ec09-000000000000
+Started task: 00000001-0000-0000-ed09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task

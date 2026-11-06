@@ -25,13 +25,13 @@ function Invoke-ConfigurePvsAccelerator {
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     # A proxy may only sit on the VM's LOWEST-numbered NIC, so sort by device rather than taking the
     # first VIF — the list comes back in creation order, which is the same thing only by luck.
-    $vif = $vm.VIFs | ForEach-Object { Get-XenVIF -Ref $_.opaque_ref } |
+    $vif = $vm.VIFs | ForEach-Object { Get-XenVIF -Ref $_ } |
         Sort-Object { [int]$_.device } | Select-Object -First 1
     if (-not $vif) { throw "$VmName has no network interface to accelerate" }
     # ... and one that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT).
-    $existing = Get-XenPVSProxy | Where-Object { $_.VIF.opaque_ref -eq $vif.opaque_ref } | Select-Object -First 1
+    $existing = Get-XenPVSProxy | Where-Object { $_.VIF -eq $vif } | Select-Object -First 1
     if ($existing) {
-        throw "$VmName is already accelerated by site '$((Get-XenPVSSite -Ref $existing.site.opaque_ref).name_label)'"
+        throw "$VmName is already accelerated by site '$((Get-XenPVSSite -Ref $existing.site).name_label)'"
     }
 
     # PVS_site.introduce and PVS_server.introduce are CONSTRUCTORS, and every parameter set of
@@ -50,16 +50,16 @@ function Invoke-ConfigurePvsAccelerator {
     # server does not enforce that, but a cache on shared storage rarely makes sense and can't be
     # shared between hosts anyway. New-XenPVSCacheStorage is a real cmdlet.
     foreach ($xenHost in Get-XenHost) {
-        $local = Get-XenPBD | Where-Object { $_.host.opaque_ref -eq $xenHost.opaque_ref } |
-            ForEach-Object { Get-XenSR -Ref $_.SR.opaque_ref } |
+        $local = Get-XenPBD | Where-Object { $_.host -eq $xenHost } |
+            ForEach-Object { Get-XenSR -Ref $_.SR } |
             Where-Object { -not $_.shared -and $_.content_type -ne 'iso' -and $_.type -ne 'udev' } |
             Select-Object -First 1
         if (-not $local) { continue }
-        New-XenPVSCacheStorage -XenHost $xenHost.opaque_ref -SR $local.opaque_ref -Site $site `
+        New-XenPVSCacheStorage -XenHost $xenHost -SR $local -Site $site `
             -Size 10GB | Out-Null
     }
 
-    $proxy = New-XenPVSProxy -Site $site -VIF $vif.opaque_ref -PassThru
+    $proxy = New-XenPVSProxy -Site $site -VIF $vif -PassThru
 
     $record = Get-XenPVSSite -Ref $site
     Write-Host "Site '$($record.name_label)' with $($record.cache_storage.Count) cache(s) and $($record.servers.Count) server(s)"
@@ -71,9 +71,9 @@ function Invoke-ConfigurePvsAccelerator {
     # makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down ourselves
     # first, in the same order every real PVS teardown uses. (Cache storage doesn't need a separate
     # call - forget cascades it correctly.)
-    Remove-XenPVSProxy -Ref $proxy.opaque_ref
+    Remove-XenPVSProxy -Ref $proxy
     foreach ($serverRef in (Get-XenPVSSite -Ref $site).servers) {
-        Invoke-XenPVSServer -Ref $serverRef.opaque_ref -XenAction Forget
+        Invoke-XenPVSServer -Ref $serverRef -XenAction Forget
     }
     Invoke-XenPVSSite -Ref $site -XenAction Forget
     Write-Host "OK: configure-pvs-accelerator"

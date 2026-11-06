@@ -41,7 +41,7 @@ function Invoke-CopyVm {
     # VM.copy (like VM.clone) only works on a Halted VM - a running source fails with
     # VM_BAD_POWER_STATE - so shut it down first if it's running, and start it back up again after the
     # copy, rather than assuming the VM is already halted.
-    $wasRunning = (Get-XenVM -Ref $source.opaque_ref).power_state -eq 'Running'
+    $wasRunning = (Get-XenVM -Ref $source).power_state -eq 'Running'
     if ($wasRunning) { $source | Invoke-XenVM -XenAction CleanShutdown }
 
     $copy = $source | Invoke-XenVM -XenAction Copy -NewName $CopyName -SR $sr -PassThru
@@ -51,7 +51,7 @@ function Invoke-CopyVm {
     if ($wasRunning) { $source | Invoke-XenVM -XenAction Start }
 
     # Tidy up: destroy the copy and its disks, leaving the source VM intact.
-    Remove-VmAndDisks -Ref $copy.opaque_ref
+    Remove-VmAndDisks -Ref $copy
     Write-Host "Cleaned up the copied VM (left the source intact)."
     Write-Host "OK: copy-vm"
     $session | Disconnect-XenServer
@@ -202,7 +202,7 @@ public static void CopyVm(string url, string user, string password,
     var wasRunning = VM.get_power_state(session, source) == vm_power_state.Running;
     if (wasRunning) VM.clean_shutdown(session, source);
 
-    var copy = VM.copy(session, source, copyName, srRef).opaque_ref;
+    var copy = VM.copy(session, source, copyName, srRef);
     Console.WriteLine($"Copied VM:     {VM.get_uuid(session, copy)}");
     Console.WriteLine($"Copy has {VM.get_VBDs(session, copy).Count} VBD(s), is_a_template = {VM.get_is_a_template(session, copy)}");
 
@@ -220,7 +220,7 @@ public static void CopyVm(string url, string user, string password,
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-000a-000000000000
+Copied VM:     00000001-0000-0000-060a-000000000000
 Copy has 1 VBD(s), is_a_template = False
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm

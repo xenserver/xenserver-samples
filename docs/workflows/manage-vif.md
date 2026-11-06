@@ -31,8 +31,8 @@ function Invoke-ManageVif {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    $ref = $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm
+    $ref = $vm
 
     $net = Get-XenNetwork | Select-Object -First 1
     $device = (Get-XenVMProperty -Ref $ref -XenProperty AllowedVIFDevices)[0]
@@ -41,7 +41,7 @@ function Invoke-ManageVif {
     Write-Host "Attached a VIF on device $device; VM now has $(@((Get-XenVM -Ref $ref).VIFs).Count) NIC(s)"
 
     $vif | Remove-XenVIF
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "OK: manage-vif"
     $session | Disconnect-XenServer
 }
@@ -161,22 +161,22 @@ public static void ManageVif(string url, string user, string password,
     string templateName, string newVmName = "sdk-example-vif")
 {
     var session = Connect(url, user, password);
-    var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+    var vm = VM.clone(session, TemplateByName(session, templateName), newVmName);
     Provision(session, vm);
-    var netRef = Network.get_all(session)[0].opaque_ref;
+    var netRef = Network.get_all(session)[0];
     var device = VM.get_allowed_VIF_devices(session, vm)[0];
 
     var vif = VIF.create(session, new VIF
     {
-        VM = new XenRef<VM>(vm),
-        network = new XenRef<Network>(netRef),
+        VM = vm,
+        network = netRef,
         device = device,
         MAC = "",
         MTU = 1500,
         other_config = new Dictionary<string, string>(),
         qos_algorithm_type = "",
         qos_algorithm_params = new Dictionary<string, string>(),
-    }).opaque_ref;
+    });
     Console.WriteLine($"Attached a VIF on device {device}; VM now has {VM.get_VIFs(session, vm).Count} NIC(s)");
 
     VIF.destroy(session, vif);

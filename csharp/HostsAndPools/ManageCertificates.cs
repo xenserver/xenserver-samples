@@ -16,8 +16,8 @@ internal static partial class Workflows
     public static void ManageCertificates(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var hostRef = Host.get_all(session).First().opaque_ref;
-        var poolRef = Pool.get_all(session).First().opaque_ref;
+        var hostRef = Host.get_all(session).First();
+        var poolRef = Pool.get_all(session).First();
         var (certPem, keyPem) = SelfSignedCertPem();
 
         Console.WriteLine($"Certificates:   {Certificate.get_all(session).Count}");
@@ -28,7 +28,7 @@ internal static partial class Workflows
         // current API; install_ca_certificate/uninstall_ca_certificate are its deprecated predecessors.
         var before = Certificate.get_all(session).ToHashSet();
         Pool.install_trusted_certificate(session, poolRef, true, certPem, new List<certificate_purpose>());
-        var certRef = Certificate.get_all(session).Except(before).First().opaque_ref;
+        var certRef = Certificate.get_all(session).Except(before).First();
         Console.WriteLine($"After CA add:   {Certificate.get_all(session).Count}");
 
         // Actually replace the host's own TLS identity with a real certificate (what this workflow's
@@ -45,7 +45,7 @@ internal static partial class Workflows
         // present to each other. Turning it on is a one-way door from here — there is no matching disable,
         // because a pool that could be talked out of verifying would not be verifying — so the call is
         // idempotent and safe to repeat.
-        var pool = Pool.get_all(session).First().opaque_ref;
+        var pool = Pool.get_all(session).First();
         Console.WriteLine($"TLS verification: {Pool.get_tls_verification_enabled(session, pool)}");
         Pool.enable_tls_verification(session);
         Console.WriteLine($"  after enabling: {Pool.get_tls_verification_enabled(session, pool)}");

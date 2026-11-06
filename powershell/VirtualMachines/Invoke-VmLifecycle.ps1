@@ -21,7 +21,7 @@ function Invoke-VmLifecycle {
     # guest to report in after starting. Suspend also needs a suspend-image SR (the VM's own, else the
     # pool's, else the host's); check one is actually configured before trying.
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
+    $ref = $vm
 
     function State { (Get-XenVM -Ref $ref).power_state }
 
@@ -71,8 +71,8 @@ function Test-HasSuspendSr {
         choose_suspend_sr uses.
     #>
     param($Vm)
-    if ($Vm.suspend_SR.opaque_ref -ne 'OpaqueRef:NULL') { return $true }
+    if ($Vm.suspend_SR -ne 'OpaqueRef:NULL') { return $true }
     $pool = Get-XenPool | Select-Object -First 1
-    if ($pool.suspend_image_SR.opaque_ref -ne 'OpaqueRef:NULL') { return $true }
-    return (Get-XenHost -Ref $pool.master.opaque_ref).suspend_image_sr.opaque_ref -ne 'OpaqueRef:NULL'
+    if ($pool.suspend_image_SR -ne 'OpaqueRef:NULL') { return $true }
+    return (Get-XenHost -Ref $pool.master).suspend_image_sr -ne 'OpaqueRef:NULL'
 }

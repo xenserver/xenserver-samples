@@ -21,7 +21,7 @@ function Invoke-CreateBond {
 
     # Spare NICs only. A bond that includes the management interface moves the management address onto
     # the bond master — on a real host that is how you lose the connection you are working over.
-    $spares = Get-XenPIF | Where-Object { $_.host -eq $xenHost.opaque_ref -and -not $_.management -and $_.physical } |
+    $spares = Get-XenPIF | Where-Object { $_.host -eq $xenHost -and -not $_.management -and $_.physical } |
         Select-Object -First 2
     if (@($spares).Count -lt 2) {
         throw "$($xenHost.name_label) has $(@($spares).Count) spare NIC(s); a bond needs two that aren't the management interface"
@@ -31,13 +31,13 @@ function Invoke-CreateBond {
     # The bond needs a network to sit on.
     $network = New-XenNetwork -NameLabel 'sdk-example-bond' -NameDescription 'Created by the SDK example' -PassThru
 
-    $bond = New-XenBond -Network $network.opaque_ref -Members $spares.opaque_ref -MAC '' -Mode balance_slb -PassThru
+    $bond = New-XenBond -Network $network -Members $spares -MAC '' -Mode balance_slb -PassThru
     $master = Get-XenPIF -Ref $bond.master
     Write-Host "Bond master:  $($master.device)"
     Write-Host "Mode:         $($bond.mode)"
 
-    Remove-XenBond -Ref $bond.opaque_ref
-    Remove-XenNetwork -Ref $network.opaque_ref
+    Remove-XenBond -Ref $bond
+    Remove-XenNetwork -Ref $network
     Write-Host "Bonds left:   $(@(Get-XenBond).Count)"
     Write-Host "OK: create-bond"
     $session | Disconnect-XenServer

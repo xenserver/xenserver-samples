@@ -26,16 +26,16 @@ function Invoke-LiveMigrate {
     $sr = Get-XenSR -Name $SrName | Where-Object { $_.shared } | Select-Object -First 1
     if (-not $sr) { throw "No shared SR named '$SrName' was found." }
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
-    Move-DisksToSr -VmRef $ref -SrRef $sr.opaque_ref
+    $ref = $vm
+    Move-DisksToSr -VmRef $ref -SrRef $sr
     $vm | Invoke-XenVM -XenAction Start
     Wait-GuestAgent -Ref $ref
 
-    $sourceHostRef = (Get-XenVM -Ref $ref).resident_on.opaque_ref
+    $sourceHostRef = (Get-XenVM -Ref $ref).resident_on
     Write-Host "VM is running on: $((Get-XenHost -Ref $sourceHostRef).name_label)"
 
     # Pick a different host in the pool to receive the VM.
-    $destHost = Get-XenHost | Where-Object { $_.opaque_ref -ne $sourceHostRef } | Select-Object -First 1
+    $destHost = Get-XenHost | Where-Object { $sourceHostRef -ne $_ } | Select-Object -First 1
 
     # Check the destination can boot it, then live-migrate. Both are native cmdlet actions: the
     # destination host is passed as -XenHost and the (empty) options map as -Options.
@@ -47,7 +47,7 @@ function Invoke-LiveMigrate {
 
     # Tidy up so the example is repeatable.
     $vm | Invoke-XenVM -XenAction HardShutdown
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "OK: live-migrate"
     $session | Disconnect-XenServer
 }

@@ -34,32 +34,32 @@ function Invoke-StorageMigrate {
     # moves too, without the guest; what VDI PoolMigrate always needs is a VM to move the disk for - a VDI
     # no VBD points at fails VDI_NEEDS_VM_FOR_MIGRATE.)
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
+    $ref = $vm
     $vm | Invoke-XenVM -XenAction Start
     Wait-GuestAgent -Ref $ref
 
     $vdiRef = (Get-XenVM -Ref $ref).VBDs |
-        ForEach-Object { Get-XenVBD -Ref $_.opaque_ref } |
+        ForEach-Object { Get-XenVBD -Ref $_ } |
         Where-Object { $_.type -eq 'Disk' } |
-        ForEach-Object { $_.VDI.opaque_ref } |
+        ForEach-Object { $_.VDI } |
         Select-Object -First 1
-    $sourceSr = (Get-XenVDI -Ref $vdiRef).SR.opaque_ref
+    $sourceSr = (Get-XenVDI -Ref $vdiRef).SR
     Write-Host "Disk is on SR: $((Get-XenSR -Ref $sourceSr).name_label)"
 
     # Pick a different SR that holds disks and that the VM's host can reach (a currently-attached PBD
     # there).
-    $vmHost = (Get-XenVM -Ref $ref).resident_on.opaque_ref
-    $reachableSrs = @(Get-XenPBD | Where-Object { $_.host.opaque_ref -eq $vmHost -and $_.currently_attached } |
-        ForEach-Object { $_.SR.opaque_ref })
+    $vmHost = (Get-XenVM -Ref $ref).resident_on
+    $reachableSrs = @(Get-XenPBD | Where-Object { $_.host -eq $vmHost -and $_.currently_attached } |
+        ForEach-Object { $_.SR })
     $destSr = Get-XenSR | Where-Object {
-        $_.opaque_ref -ne $sourceSr -and $_.content_type -ne 'iso' -and $_.type -notin @('iso', 'udev') -and
-        $reachableSrs -contains $_.opaque_ref
+        $sourceSr -ne $_ -and $_.content_type -ne 'iso' -and $_.type -notin @('iso', 'udev') -and
+        $reachableSrs -contains $_
     } | Select-Object -First 1
 
     # PoolMigrate returns the disk's new VDI: the copy on the destination SR replaces the original.
-    $vdiRef = (Get-XenVDI -Ref $vdiRef | Invoke-XenVDI -XenAction PoolMigrate -SR $destSr -Options @{} -PassThru).opaque_ref
+    $vdiRef = Get-XenVDI -Ref $vdiRef | Invoke-XenVDI -XenAction PoolMigrate -SR $destSr -Options @{} -PassThru
 
-    $nowOn = (Get-XenVDI -Ref $vdiRef).SR.opaque_ref
+    $nowOn = (Get-XenVDI -Ref $vdiRef).SR
     Write-Host "Disk moved to:  $((Get-XenSR -Ref $nowOn).name_label)"
 
     # Tidy up: the VM and the disks it now owns.
@@ -232,22 +232,23 @@ public static void StorageMigrate(string url, string user, string password,
     VM.start(session, vm, false, true);
     WaitForGuestAgent(session, vm);
     var vdi = DiskVdis(session, vm).First();
-    var sourceSr = VDI.get_SR(session, vdi).opaque_ref;
+    var sourceSr = VDI.get_SR(session, vdi);
     Console.WriteLine($"Disk is on SR: {SR.get_name_label(session, sourceSr)}");
 
     // Pick a different SR that holds disks and that the VM's host can reach (an attached PBD
     // there).
-    var host = VM.get_resident_on(session, vm).opaque_ref;
+    var host = VM.get_resident_on(session, vm);
     var destSr = SR.get_all_records(session)
-        .First(kv => kv.Key.opaque_ref != sourceSr && kv.Value.content_type != "iso"
+        .First(kv => !kv.Key.Equals(sourceSr) && kv.Value.content_type != "iso"
             && kv.Value.type != "iso" && kv.Value.type != "udev"
-            && kv.Value.PBDs.Any(pbd => PBD.get_host(session, pbd.opaque_ref).opaque_ref == host
-                && PBD.get_currently_attached(session, pbd.opaque_ref))).Key.opaque_ref;
+            && kv.Value.PBDs.Any(pbd => PBD.get_host(session, pbd).Equals(host)
+                && PBD.get_currently_attached(session, pbd))).Key;
     // pool_migrate returns the disk's new VDI: the copy on the destination SR replaces the
     // original. Copying a disk takes minutes, so run it as a task (see AwaitTask).
-    vdi = AwaitTask(session, VDI.async_pool_migrate(session, vdi, destSr, new Dictionary<string, string>()));
+    vdi = new XenRef<VDI>(AwaitTask(session,
+        VDI.async_pool_migrate(session, vdi, destSr, new Dictionary<string, string>())));
 
-    var nowOn = VDI.get_SR(session, vdi).opaque_ref;
+    var nowOn = VDI.get_SR(session, vdi);
     Console.WriteLine($"Disk moved to:  {SR.get_name_label(session, nowOn)}");
 
     // Tidy up: the VM and the disks it now owns.

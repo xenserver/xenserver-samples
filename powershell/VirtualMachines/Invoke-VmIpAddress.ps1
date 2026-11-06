@@ -25,9 +25,9 @@ function Invoke-VmIpAddress {
         $ip = $null
         foreach ($candidate in Get-XenVM | Where-Object {
                 $_.power_state -eq 'Running' -and -not $_.is_a_template -and -not $_.is_control_domain -and
-                $_.guest_metrics.opaque_ref -ne 'OpaqueRef:NULL'
+                $_.guest_metrics -ne 'OpaqueRef:NULL'
             }) {
-            $networks = (Get-XenVMGuestMetrics -Ref $candidate.guest_metrics.opaque_ref).networks
+            $networks = (Get-XenVMGuestMetrics -Ref $candidate.guest_metrics).networks
             if ($networks.ContainsKey("0/ip") -and $networks["0/ip"]) {
                 $vm = $candidate
                 $ip = $networks["0/ip"]

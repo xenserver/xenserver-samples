@@ -17,15 +17,15 @@ function Invoke-ConfigureClustering {
     # every host is on - the management network - since corosync is latency-sensitive and a cluster that
     # loses quorum takes its GFS2 storage offline with it.
     $pifs = @(Get-XenPIF)
-    $network = Get-XenNetwork -Ref ($pifs | Where-Object { $_.management } | Select-Object -First 1).network.opaque_ref
-    $networkPifs = @($pifs | Where-Object { $_.network.opaque_ref -eq $network.opaque_ref })
+    $network = Get-XenNetwork -Ref ($pifs | Where-Object { $_.management } | Select-Object -First 1).network
+    $networkPifs = @($pifs | Where-Object { $_.network -eq $network })
 
     $cluster = Get-XenCluster | Select-Object -First 1
     $created = -not $cluster
     if ($created) {
         # Corosync must not lose its network, so each host's PIF on it has to refuse unplugging first:
         # Cluster.pool_create fails PIF_ALLOWS_UNPLUG otherwise. $networkPifs keeps the old settings.
-        $networkPifs | ForEach-Object { Set-XenPIF -Ref $_.opaque_ref -DisallowUnplug $true }
+        $networkPifs | ForEach-Object { Set-XenPIF -Ref $_ -DisallowUnplug $true }
         # Invoke-XenCluster's parameter sets are XenObject / Ref / Uuid -- every one of them identifies an
         # EXISTING cluster -- so the module cannot express pool_create, which is a constructor. Same
         # situation as the event API: call it over JSON-RPC (see Invoke-XenMethod in Helpers.ps1).
@@ -39,17 +39,17 @@ function Invoke-ConfigureClustering {
 
     # Taking a host out is what a management-interface change does; it can cost quorum.
     $member = Get-XenClusterHost | Select-Object -First 1
-    Invoke-XenClusterHost -Ref $member.opaque_ref -XenAction Disable
+    Invoke-XenClusterHost -Ref $member -XenAction Disable
     Write-Host "One member out, quorate: $((Get-XenCluster | Select-Object -First 1).is_quorate)"
 
-    Invoke-XenClusterHost -Ref $member.opaque_ref -XenAction Enable
-    Invoke-XenCluster -Ref $cluster.opaque_ref -XenAction PoolResync
+    Invoke-XenClusterHost -Ref $member -XenAction Enable
+    Invoke-XenCluster -Ref $cluster -XenAction PoolResync
     Write-Host "Resynced,   quorate: $((Get-XenCluster | Select-Object -First 1).is_quorate)"
 
     # Tidy up a cluster this example created (one that was already there stays), and the PIF settings.
     if ($created) {
-        Invoke-XenCluster -Ref $cluster.opaque_ref -XenAction PoolDestroy
-        $networkPifs | ForEach-Object { Set-XenPIF -Ref $_.opaque_ref -DisallowUnplug $_.disallow_unplug }
+        Invoke-XenCluster -Ref $cluster -XenAction PoolDestroy
+        $networkPifs | ForEach-Object { Set-XenPIF -Ref $_ -DisallowUnplug $_.disallow_unplug }
         Write-Host "Cluster removed again."
     }
 

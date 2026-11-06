@@ -27,7 +27,7 @@ internal static partial class Workflows
         VM.start(session, vm, false, true);
         WaitForGuestAgent(session, vm);
 
-        var checkpoint = VM.checkpoint(session, vm, "sdk-example-checkpoint-1").opaque_ref;
+        var checkpoint = VM.checkpoint(session, vm, "sdk-example-checkpoint-1");
         Console.WriteLine($"Created checkpoint: {VM.get_uuid(session, checkpoint)}");
         Console.WriteLine($"is_a_snapshot = {VM.get_is_a_snapshot(session, checkpoint)}");
 

@@ -39,16 +39,16 @@ function Invoke-ManageVmGroups {
     Write-Host "Created group:  $($group.uuid)"
 
     # Membership is written from the VM side...
-    Set-XenVM -VM $vm -Groups @($group.opaque_ref)
+    Set-XenVM -VM $vm -Groups @($group)
 
     # ...and read back from the group side, which is the half that is easy to get wrong.
-    $members = (Get-XenVMGroup -Ref $group.opaque_ref).VMs
+    $members = (Get-XenVMGroup -Ref $group).VMs
     Write-Host "Group members:  $($members.Count)"
     foreach ($m in $members) { Write-Host "  $((Get-XenVM -Ref $m).name_label)" }
 
     # VM_group.destroy already clears the group from every member VM's groups field - no need to remove
     # membership ourselves first.
-    Remove-XenVMGroup -Ref $group.opaque_ref
+    Remove-XenVMGroup -Ref $group
     Write-Host "OK: manage-vm-groups"
     Disconnect-XenServer -Session $session
 }
@@ -190,17 +190,17 @@ public static void ManageVmGroups(string url, string user, string password,
         name_label = groupName,
         name_description = "Anti-affinity group created by the SDK example",
         placement = placement_policy.anti_affinity,
-    }).opaque_ref;
+    });
     Console.WriteLine($"Created group:  {VM_group.get_uuid(session, groupRef)}");
 
     // Membership is written from the VM side...
-    VM.set_groups(session, vmRef, new List<XenRef<VM_group>> { new(groupRef) });
+    VM.set_groups(session, vmRef, new List<XenRef<VM_group>> { groupRef });
 
     // ...and read back from the group side, which is the half that is easy to get wrong.
     var members = VM_group.get_VMs(session, groupRef);
     Console.WriteLine($"Group members:  {members.Count}");
     foreach (var m in members)
-        Console.WriteLine($"  {VM.get_name_label(session, m.opaque_ref)}");
+        Console.WriteLine($"  {VM.get_name_label(session, m)}");
 
     // VM_group.destroy already clears the group from every member VM's groups field - no need to
     // remove membership ourselves first.
@@ -213,7 +213,7 @@ public static void ManageVmGroups(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created group:  00000001-0000-0000-050a-000000000000
+Created group:  00000001-0000-0000-180a-000000000000
 Group members:  1
   web-01
 OK: manage-vm-groups

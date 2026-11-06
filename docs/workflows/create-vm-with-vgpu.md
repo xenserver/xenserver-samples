@@ -48,20 +48,20 @@ function Invoke-CreateVmWithVgpu {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm
 
     # Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
-    $vgpu = New-XenVGPU -VM $vm.opaque_ref -GPUGroup $group.opaque_ref -Device "0" -OtherConfig @{} -Type $vgpuType.opaque_ref -PassThru
+    $vgpu = New-XenVGPU -VM $vm -GPUGroup $group -Device "0" -OtherConfig @{} -Type $vgpuType -PassThru
     Write-Host "Created vGPU: $($vgpu.uuid)"
 
     # Read the assignment back.
-    $assignedVm = Get-XenVM -Ref $vm.opaque_ref
+    $assignedVm = Get-XenVM -Ref $vm
     $assigned = (Get-XenVGPUType -Ref (Get-XenVGPU -Ref $assignedVm.VGPUs[0]).type).model_name
     Write-Host "VM now has $($assignedVm.VGPUs.Count) vGPU(s); type = $assigned"
 
     # Tidy up so the example is repeatable.
     $vgpu | Remove-XenVGPU
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "Cleaned up the example VM and its vGPU."
 
     Write-Host "OK: create-vm-with-vgpu"
@@ -229,16 +229,16 @@ public static void CreateVmWithVgpu(string url, string user, string password,
 
     // Provision a fresh VM from the template to attach the vGPU to.
     var templateRef = TemplateByName(session, templateName);
-    var vmRef = VM.clone(session, templateRef, newVmName).opaque_ref;
+    var vmRef = VM.clone(session, templateRef, newVmName);
     Provision(session, vmRef);
 
     // Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
-    var vgpuRef = VGPU.create(session, vmRef, groupRef, "0", new Dictionary<string, string>(), typeRef).opaque_ref;
+    var vgpuRef = VGPU.create(session, vmRef, groupRef, "0", new Dictionary<string, string>(), typeRef);
     Console.WriteLine($"Created vGPU: {VGPU.get_uuid(session, vgpuRef)}");
 
     // Read the assignment back.
     var vgpus = VM.get_VGPUs(session, vmRef);
-    var assigned = VGPU_type.get_model_name(session, VGPU.get_type(session, vgpus[0].opaque_ref).opaque_ref);
+    var assigned = VGPU_type.get_model_name(session, VGPU.get_type(session, vgpus[0]));
     Console.WriteLine($"VM now has {vgpus.Count} vGPU(s); type = {assigned}");
 
     // Tidy up so the example is repeatable.
@@ -251,14 +251,14 @@ public static void CreateVmWithVgpu(string url, string user, string password,
 
 /// <summary>Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU
 /// type.</summary>
-private static (string, string) GpuGroupWithVgpuType(Session session)
+private static (XenRef<GPU_group>, XenRef<VGPU_type>) GpuGroupWithVgpuType(Session session)
 {
     foreach (var (groupRef, group) in GPU_group.get_all_records(session))
     {
         if (group.PGPUs.Count == 0) continue;
         foreach (var typeRef in group.supported_VGPU_types)
-            if (VGPU_type.get_model_name(session, typeRef.opaque_ref) != "passthrough")
-                return (groupRef.opaque_ref, typeRef.opaque_ref);
+            if (VGPU_type.get_model_name(session, typeRef) != "passthrough")
+                return (groupRef, typeRef);
     }
     throw new Exception("no GPU group offers a vGPU type");
 }
@@ -268,7 +268,7 @@ private static (string, string) GpuGroupWithVgpuType(Session session)
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-540a-000000000000
+Created vGPU: 00000001-0000-0000-6b0a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu

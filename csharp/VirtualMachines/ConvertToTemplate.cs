@@ -17,7 +17,7 @@ internal static partial class Workflows
         string templateName, string newVmName = "sdk-example-totemplate")
     {
         var session = Connect(url, user, password);
-        var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+        var vm = VM.clone(session, TemplateByName(session, templateName), newVmName);
         Provision(session, vm); // now a real (halted) VM
         Console.WriteLine($"is_a_template after provision: {VM.get_is_a_template(session, vm)}");
 

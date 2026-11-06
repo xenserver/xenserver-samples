@@ -24,7 +24,7 @@ internal static partial class Workflows
             Console.WriteLine($"  {sr.name_label}: {sr.physical_utilisation / GiB} / {sr.physical_size / GiB} GiB used");
         }
         // A rescan refreshes an SR's utilisation from its backend.
-        var scanMe = SR.get_all_records(session).First(kv => kv.Value.physical_size > 0).Key.opaque_ref;
+        var scanMe = SR.get_all_records(session).First(kv => kv.Value.physical_size > 0).Key;
         SR.scan(session, scanMe);
         Console.WriteLine("OK: sr-usage");
         session.logout();

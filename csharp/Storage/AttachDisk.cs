@@ -19,7 +19,7 @@ internal static partial class Workflows
     {
         const long GiB = 1024L * 1024 * 1024;
         var session = Connect(url, user, password);
-        var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+        var vm = VM.clone(session, TemplateByName(session, templateName), newVmName);
         Provision(session, vm);
         var srRef = SrByName(session, srName);
 
@@ -27,18 +27,18 @@ internal static partial class Workflows
         var vdi = VDI.create(session, new VDI
         {
             name_label = "sdk-example-data-disk",
-            SR = new XenRef<SR>(srRef),
+            SR = srRef,
             virtual_size = 8 * GiB,
             type = vdi_type.user,
             sharable = false,
             read_only = false,
             other_config = new Dictionary<string, string>(),
-        }).opaque_ref;
+        });
         var device = VM.get_allowed_VBD_devices(session, vm)[0];
         VBD.create(session, new VBD
         {
-            VM = new XenRef<VM>(vm),
-            VDI = new XenRef<VDI>(vdi),
+            VM = vm,
+            VDI = vdi,
             userdevice = device,
             bootable = false,
             mode = vbd_mode.RW,

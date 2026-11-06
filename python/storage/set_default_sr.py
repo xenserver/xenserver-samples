@@ -5,6 +5,7 @@ then put the original choice back.
 """
 
 from connection import connect
+from helpers import is_set
 
 
 def set_default_sr(url, username, password, nfs_server="192.0.2.10", nfs_path="/export/spare"):
@@ -56,4 +57,4 @@ def host_first(x):
 
 def sr_label(x, sr):
     """An SR's name, tolerating the null reference an unset pool field holds."""
-    return x.SR.get_name_label(sr) if sr and sr != "OpaqueRef:NULL" else "(none)"
+    return x.SR.get_name_label(sr) if is_set(sr) else "(none)"

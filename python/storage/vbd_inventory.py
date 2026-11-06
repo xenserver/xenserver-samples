@@ -8,7 +8,7 @@ Run it::
 """
 
 from connection import connect
-from helpers import vm_by_name
+from helpers import is_set, vm_by_name
 
 
 def vbd_inventory(url, username, password, vm_name):
@@ -21,7 +21,7 @@ def vbd_inventory(url, username, password, vm_name):
         if session.xenapi.VBD.get_type(vbd) != "Disk":
             continue
         vdi = session.xenapi.VBD.get_VDI(vbd)
-        size = 0 if vdi == "OpaqueRef:NULL" else int(session.xenapi.VDI.get_virtual_size(vdi)) // GIB
+        size = int(session.xenapi.VDI.get_virtual_size(vdi)) // GIB if is_set(vdi) else 0
         print("  - device %s: %d GiB" % (session.xenapi.VBD.get_userdevice(vbd), size))
     print("OK: vbd-inventory")
     session.xenapi.session.logout()

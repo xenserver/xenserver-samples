@@ -22,7 +22,7 @@ function Invoke-CreateNetwork {
     # Raise the MTU to use jumbo frames. Every NIC and switch along the path has to agree, so this is a
     # property of the network rather than of any one interface on it.
     $net | Set-XenNetwork -MTU 9000
-    Write-Host "MTU now:         $((Get-XenNetwork -Ref $net.opaque_ref).MTU)"
+    Write-Host "MTU now:         $((Get-XenNetwork -Ref $net).MTU)"
 
     $net | Remove-XenNetwork
     Write-Host "OK: create-network"

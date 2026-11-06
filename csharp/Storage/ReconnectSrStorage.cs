@@ -32,17 +32,17 @@ internal static partial class Workflows
         var session = Connect(url, user, password);
         newNfsServer ??= nfsServer;
 
-        var host = Host.get_all(session).First().opaque_ref;
+        var host = Host.get_all(session).First();
         var sr = SR.create(session, host, new Dictionary<string, string>
         {
             ["server"] = nfsServer,
             ["serverpath"] = nfsPath,
             ["nfsversion"] = "3",
         }, 0, "sdk-example-moved-storage", "SR used by the SDK reconnect example",
-            "nfs", "user", true, new Dictionary<string, string>()).opaque_ref;
+            "nfs", "user", true, new Dictionary<string, string>());
         try
         {
-            var pbds = SR.get_PBDs(session, sr).Select(p => p.opaque_ref).ToList();
+            var pbds = SR.get_PBDs(session, sr);
             foreach (var pbd in pbds) PBD.unplug(session, pbd);
 
             foreach (var pbd in pbds)
@@ -53,12 +53,12 @@ internal static partial class Workflows
                 var replacement = PBD.create(session, new PBD
                 {
                     host = record.host,
-                    SR = new XenRef<SR>(sr),
+                    SR = sr,
                     device_config = deviceConfig,
                     other_config = new Dictionary<string, string>(),
-                }).opaque_ref;
+                });
                 PBD.plug(session, replacement);
-                Console.WriteLine($"{Host.get_name_label(session, record.host.opaque_ref)}: now reaches "
+                Console.WriteLine($"{Host.get_name_label(session, record.host)}: now reaches "
                                   + $"{deviceConfig["server"]}:{deviceConfig["serverpath"]}");
             }
         }

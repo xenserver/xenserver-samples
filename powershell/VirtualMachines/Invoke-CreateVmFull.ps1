@@ -24,7 +24,7 @@ function Invoke-CreateVmFull {
 
     # Step 2 - Name and description.
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    $ref = $vm.opaque_ref
+    $ref = $vm
     $vm | Set-XenVM -NameDescription "Created by the create-vm-full example"
     $vm | Set-XenVM -IsATemplate $false
     Write-Host "Created VM:    $((Get-XenVM -Ref $ref).uuid)"

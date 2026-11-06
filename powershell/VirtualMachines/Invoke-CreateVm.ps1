@@ -23,10 +23,10 @@ function Invoke-CreateVm {
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
     Write-Host "Cloned new VM: $($vm.uuid)"
 
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    Write-Host "Provisioned. is_a_template = $((Get-XenVM -Ref $vm.opaque_ref).is_a_template)"
+    Invoke-VmProvision -Ref $vm
+    Write-Host "Provisioned. is_a_template = $((Get-XenVM -Ref $vm).is_a_template)"
 
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "Cleaned up the example VM."
 
     Write-Host "OK: create-vm"

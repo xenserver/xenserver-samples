@@ -28,20 +28,20 @@ internal static partial class Workflows
         // `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
         // reason to use a vApp at all rather than selecting several VMs — the database comes up first and
         // goes down last.
-        VM.set_appliance(session, vm.opaque_ref, vapp.opaque_ref);
-        VM.set_order(session, vm.opaque_ref, 0);
-        VM.set_start_delay(session, vm.opaque_ref, 5);
+        VM.set_appliance(session, vm, vapp);
+        VM.set_order(session, vm, 0);
+        VM.set_start_delay(session, vm, 5);
 
-        VM_appliance.start(session, vapp.opaque_ref, false);
-        Console.WriteLine($"Started:        {VM.get_power_state(session, vm.opaque_ref)}");
+        VM_appliance.start(session, vapp, false);
+        Console.WriteLine($"Started:        {VM.get_power_state(session, vm)}");
 
         // shutdown tries each VM's clean shutdown and falls back to a hard one. clean_shutdown alone fails
         // OPERATION_PARTIALLY_FAILED if any member can't shut down cleanly (no guest OS or PV drivers).
-        VM_appliance.shutdown(session, vapp.opaque_ref);
-        Console.WriteLine($"Shut down:      {VM.get_power_state(session, vm.opaque_ref)}");
+        VM_appliance.shutdown(session, vapp);
+        Console.WriteLine($"Shut down:      {VM.get_power_state(session, vm)}");
 
-        VM.set_appliance(session, vm.opaque_ref, "OpaqueRef:NULL"); // the null reference, spelled out: null would send ""
-        VM_appliance.destroy(session, vapp.opaque_ref);
+        VM.set_appliance(session, vm, Helper.NullOpaqueRef); // the null reference, spelled out: null would send ""
+        VM_appliance.destroy(session, vapp);
         Console.WriteLine("OK: manage-vapp");
         session.logout();
     }

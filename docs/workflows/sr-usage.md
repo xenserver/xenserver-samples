@@ -177,7 +177,7 @@ public static void SrUsage(string url, string user, string password)
         Console.WriteLine($"  {sr.name_label}: {sr.physical_utilisation / GiB} / {sr.physical_size / GiB} GiB used");
     }
     // A rescan refreshes an SR's utilisation from its backend.
-    var scanMe = SR.get_all_records(session).First(kv => kv.Value.physical_size > 0).Key.opaque_ref;
+    var scanMe = SR.get_all_records(session).First(kv => kv.Value.physical_size > 0).Key;
     SR.scan(session, scanMe);
     Console.WriteLine("OK: sr-usage");
     session.logout();
@@ -191,7 +191,7 @@ public static void SrUsage(string url, string user, string password)
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 29 / 512 GiB used
+  Shared NFS: 50 / 512 GiB used
 OK: sr-usage
 ```
 

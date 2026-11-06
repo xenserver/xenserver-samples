@@ -24,8 +24,8 @@ function Invoke-TagsAndFolders {
     # Remove-Xen*Property drops it.
     $vm | Add-XenVM -Tags "web"
     $vmHost | Add-XenHost -Tags "gold"
-    Write-Host "VM tags:   $((Get-XenVM -Ref $vm.opaque_ref).tags -join ', ')"
-    Write-Host "Host tags: $((Get-XenHost -Ref $vmHost.opaque_ref).tags -join ', ')"
+    Write-Host "VM tags:   $((Get-XenVM -Ref $vm).tags -join ', ')"
+    Write-Host "Host tags: $((Get-XenHost -Ref $vmHost).tags -join ', ')"
 
     # Folder placement lives in other_config["folder"] as a leading-slash path; merge it into the map.
     $current = $vm.other_config
@@ -33,7 +33,7 @@ function Invoke-TagsAndFolders {
     foreach ($k in $current.Keys) { $oc[$k] = $current[$k] }
     $oc["folder"] = "/Production/Web"
     $vm | Set-XenVM -OtherConfig $oc
-    Write-Host "VM folder: $((Get-XenVM -Ref $vm.opaque_ref).other_config['folder'])"
+    Write-Host "VM folder: $((Get-XenVM -Ref $vm).other_config['folder'])"
 
     # Tidy up.
     $vm | Remove-XenVMProperty -Tags "web"

@@ -22,8 +22,8 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
         // Choose a host that is not the pool coordinator, so the coordinator can receive its guests.
-        var master = Pool.get_all_records(session).Values.First().master.opaque_ref;
-        var hostRef = Host.get_all_records(session).Keys.First(h => h.opaque_ref != master).opaque_ref;
+        var master = Pool.get_all_records(session).Values.First().master;
+        var hostRef = Host.get_all_records(session).Keys.First(h => !h.Equals(master));
         Console.WriteLine($"Maintenance host: {Host.get_name_label(session, hostRef)}");
 
         // Pin a throwaway copy of sourceVm to that host so evacuation has something to move.
@@ -37,13 +37,13 @@ internal static partial class Workflows
         VM.set_affinity(session, vm, hostRef);
         VM.start(session, vm, false, true);
         WaitForGuestAgent(session, vm);
-        Console.WriteLine($"Guest resident on:{Host.get_name_label(session, VM.get_resident_on(session, vm).opaque_ref)}");
+        Console.WriteLine($"Guest resident on:{Host.get_name_label(session, VM.get_resident_on(session, vm))}");
 
         // Enter maintenance mode: disable the host, then evacuate its guests.
         Host.disable(session, hostRef);
         Console.WriteLine($"After disable:    host.enabled = {Host.get_enabled(session, hostRef)}");
         Host.evacuate(session, hostRef);
-        Console.WriteLine($"After evacuate:   guest now on {Host.get_name_label(session, VM.get_resident_on(session, vm).opaque_ref)}");
+        Console.WriteLine($"After evacuate:   guest now on {Host.get_name_label(session, VM.get_resident_on(session, vm))}");
 
         // Exit maintenance mode.
         Host.enable(session, hostRef);

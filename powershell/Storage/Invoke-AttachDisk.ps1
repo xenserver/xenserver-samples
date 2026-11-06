@@ -19,8 +19,8 @@ function Invoke-AttachDisk {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    $ref = $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm
+    $ref = $vm
     $sr = Get-XenSR -Name $SrName | Select-Object -First 1
     if (-not $sr) { throw "No SR named '$SrName' was found." }
 

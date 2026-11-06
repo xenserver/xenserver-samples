@@ -53,16 +53,15 @@ function Invoke-RollingPoolUpdate {
     }
     $repos = @(New-UpdateRepositories -Session $session -RepoUrl $RepoUrl -SourceUrl $SourceUrl)
     # Remember the pool's own repositories, to put them back afterwards.
-    $previous = @((Get-XenPool -Ref $pool.opaque_ref).repositories | ForEach-Object { $_.opaque_ref })
-    $pool | Set-XenPool -Repositories @($repos | ForEach-Object { $_.opaque_ref })
+    $previous = @((Get-XenPool -Ref $pool).repositories)
+    $pool | Set-XenPool -Repositories $repos
     try {
         $hash = $pool | Invoke-XenPool -XenAction SyncUpdates -PassThru
         Write-Host "Synced updates; hash length $($hash.Length)"
 
         # The rolling pattern: apply -> evacuate and retry only if that turns out to be needed ->
         # reboot (only if asked) -> re-enable, one host at a time, coordinator first.
-        $orderedHosts = @($pool.master.opaque_ref) + @(Get-XenHost |
-            Where-Object { $_.opaque_ref -ne $pool.master.opaque_ref } | ForEach-Object { $_.opaque_ref })
+        $orderedHosts = @($pool.master) + @(Get-XenHost | Where-Object { $pool.master -ne $_ })
         foreach ($xenHost in $orderedHosts | ForEach-Object { Get-XenHost -Ref $_ }) {
             Write-Host "Updating $($xenHost.name_label):"
             try {
@@ -80,7 +79,7 @@ function Invoke-RollingPoolUpdate {
                 $xenHost | Invoke-XenHost -XenAction ApplyUpdates -Hash $hash
                 $xenHost | Invoke-XenHost -XenAction Enable
             }
-            $guidance = @((Get-XenHost -Ref $xenHost.opaque_ref).pending_guidances)
+            $guidance = @((Get-XenHost -Ref $xenHost).pending_guidances)
             Write-Host "  applied; pending guidance = [$($guidance -join ', ')]"
             if ($guidance -contains "reboot_host" -or $guidance -contains "restart_toolstack") {
                 # Either restart returns before it has happened, and if this host is the coordinator it
@@ -348,7 +347,7 @@ Source: [`csharp/Updates/RollingPoolUpdate.cs`](../../csharp/Updates/RollingPool
 public static void RollingPoolUpdate(string url, string user, string password, string repoUrl, string sourceUrl)
 {
     var session = Connect(url, user, password);
-    var pool = Pool.get_all(session)[0].opaque_ref;
+    var pool = Pool.get_all(session)[0];
     // Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
     // for Workload Balancing to be switched off before you start updating - so check both up front
     // and stop rather than disabling either for you; turn them back on again once the update is done.
@@ -375,25 +374,24 @@ public static void RollingPoolUpdate(string url, string user, string password, s
         // hosts, for example restarting a VM, is not handled here.)
         var hosts = Host.get_all_records(session);
         var master = Pool.get_master(session, pool);
-        var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => r.opaque_ref != master.opaque_ref));
+        var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => !r.Equals(master)));
         foreach (var hostRef in orderedRefs)
         {
             var host = hosts[hostRef];
-            var h = hostRef.opaque_ref;
             Console.WriteLine($"Updating {host.name_label}:");
             try
             {
-                Host.apply_updates(session, h, hash);  // apply the synced updates
+                Host.apply_updates(session, hostRef, hash);  // apply the synced updates
             }
             catch (Failure f) when (f.ErrorDescription[0] == "HOST_EVACUATION_IS_REQUIRED")
             {
                 Console.WriteLine("  needs evacuating first; evacuating and retrying");
-                Host.disable(session, h);   // stop new VMs landing here
-                Host.evacuate(session, h);  // move running guests to the rest of the pool
-                Host.apply_updates(session, h, hash);
-                Host.enable(session, h);
+                Host.disable(session, hostRef);   // stop new VMs landing here
+                Host.evacuate(session, hostRef);  // move running guests to the rest of the pool
+                Host.apply_updates(session, hostRef, hash);
+                Host.enable(session, hostRef);
             }
-            var guidance = Host.get_pending_guidances(session, h);
+            var guidance = Host.get_pending_guidances(session, hostRef);
             Console.WriteLine($"  applied; pending guidance = [{string.Join(", ", guidance)}]");
             if (guidance.Contains(update_guidances.reboot_host) ||
                 guidance.Contains(update_guidances.restart_toolstack))
@@ -403,18 +401,18 @@ public static void RollingPoolUpdate(string url, string user, string password, s
                 // reconnect until it reports a newer start and is live again.
                 var rebooting = guidance.Contains(update_guidances.reboot_host);
                 var key = rebooting ? "boot_time" : "agent_start_time";
-                Host.get_other_config(session, h).TryGetValue(key, out var before);
-                if (rebooting) Host.reboot(session, h);           // reboot into the updated software
-                else Host.restart_agent(session, h);
+                Host.get_other_config(session, hostRef).TryGetValue(key, out var before);
+                if (rebooting) Host.reboot(session, hostRef);           // reboot into the updated software
+                else Host.restart_agent(session, hostRef);
                 session = WaitForRestart(url, user, password, host.uuid, key, before);
             }
-            EnableWhenBooted(session, h);          // return the host to service
+            EnableWhenBooted(session, hostRef);          // return the host to service
         }
     }
     finally
     {
         Pool.set_repositories(session, pool, previous);
-        foreach (var repo in repos) Repository.forget(session, repo.opaque_ref);
+        foreach (var repo in repos) Repository.forget(session, repo);
     }
     Console.WriteLine("OK: rolling-pool-update");
     session.logout();

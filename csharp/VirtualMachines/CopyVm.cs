@@ -29,7 +29,7 @@ internal static partial class Workflows
         var wasRunning = VM.get_power_state(session, source) == vm_power_state.Running;
         if (wasRunning) VM.clean_shutdown(session, source);
 
-        var copy = VM.copy(session, source, copyName, srRef).opaque_ref;
+        var copy = VM.copy(session, source, copyName, srRef);
         Console.WriteLine($"Copied VM:     {VM.get_uuid(session, copy)}");
         Console.WriteLine($"Copy has {VM.get_VBDs(session, copy).Count} VBD(s), is_a_template = {VM.get_is_a_template(session, copy)}");
 

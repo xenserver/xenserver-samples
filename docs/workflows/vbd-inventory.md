@@ -32,11 +32,11 @@ function Invoke-VbdInventory {
         Select-Object -First 1
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     Write-Host "Disks of '$($vm.name_label)':"
-    (Get-XenVM -Ref $vm.opaque_ref).VBDs |
-        ForEach-Object { Get-XenVBD -Ref $_.opaque_ref } |
+    (Get-XenVM -Ref $vm).VBDs |
+        ForEach-Object { Get-XenVBD -Ref $_ } |
         Where-Object { $_.type -eq 'Disk' } |
         ForEach-Object {
-            $vdiRef = $_.VDI.opaque_ref
+            $vdiRef = $_.VDI
             $size = if ($vdiRef -eq 'OpaqueRef:NULL') { 0 } else { [long]((Get-XenVDI -Ref $vdiRef).virtual_size / 1GB) }
             Write-Host "  - device $($_.userdevice): $size GiB"
         }
@@ -106,7 +106,7 @@ Run it::
 """
 
 from connection import connect
-from helpers import vm_by_name
+from helpers import is_set, vm_by_name
 
 
 def vbd_inventory(url, username, password, vm_name):
@@ -119,7 +119,7 @@ def vbd_inventory(url, username, password, vm_name):
         if session.xenapi.VBD.get_type(vbd) != "Disk":
             continue
         vdi = session.xenapi.VBD.get_VDI(vbd)
-        size = 0 if vdi == "OpaqueRef:NULL" else int(session.xenapi.VDI.get_virtual_size(vdi)) // GIB
+        size = int(session.xenapi.VDI.get_virtual_size(vdi)) // GIB if is_set(vdi) else 0
         print("  - device %s: %d GiB" % (session.xenapi.VBD.get_userdevice(vbd), size))
     print("OK: vbd-inventory")
     session.xenapi.session.logout()
@@ -156,10 +156,10 @@ public static void VbdInventory(string url, string user, string password, string
     Console.WriteLine($"Disks of '{VM.get_name_label(session, vm)}':");
     foreach (var vbdRef in VM.get_VBDs(session, vm))
     {
-        var vbd = VBD.get_record(session, vbdRef.opaque_ref);
+        var vbd = VBD.get_record(session, vbdRef);
         if (vbd.type != vbd_type.Disk) continue;
-        var vdi = VBD.get_VDI(session, vbdRef.opaque_ref).opaque_ref;
-        var size = vdi == "OpaqueRef:NULL" ? 0 : VDI.get_virtual_size(session, vdi) / GiB;
+        var vdi = VBD.get_VDI(session, vbdRef);
+        var size = Helper.IsNullOrEmptyOpaqueRef(vdi) ? 0 : VDI.get_virtual_size(session, vdi) / GiB;
         Console.WriteLine($"  - device {vbd.userdevice}: {size} GiB");
     }
     Console.WriteLine("OK: vbd-inventory");
@@ -214,7 +214,7 @@ func vbdInventory(url, user, password, vmName string) {
 		}
 		vdi, _ := xenapi.VBD.GetVDI(session, vbdRef)
 		var size int64
-		if vdi != xenapi.VDIRef("OpaqueRef:NULL") {
+		if isSet(vdi) {
 			virtualSize, _ := xenapi.VDI.GetVirtualSize(session, vdi)
 			size = virtualSize / GiB
 		}
@@ -276,7 +276,7 @@ public final class VbdInventory {
             VBD.Record rec = vbd.getRecord(conn);
             if (rec.type != Types.VbdType.DISK) continue;
             VDI vdi = vbd.getVDI(conn);
-            long size = vdi.toWireString().equals("OpaqueRef:NULL") ? 0 : vdi.getVirtualSize(conn) / GiB;
+            long size = vdi.isNull() ? 0 : vdi.getVirtualSize(conn) / GiB;
             System.out.println("  - device " + rec.userdevice + ": " + size + " GiB");
         }
         System.out.println("OK: vbd-inventory");

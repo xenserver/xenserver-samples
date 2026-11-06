@@ -36,10 +36,10 @@ function Invoke-CreateVm {
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
     Write-Host "Cloned new VM: $($vm.uuid)"
 
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    Write-Host "Provisioned. is_a_template = $((Get-XenVM -Ref $vm.opaque_ref).is_a_template)"
+    Invoke-VmProvision -Ref $vm
+    Write-Host "Provisioned. is_a_template = $((Get-XenVM -Ref $vm).is_a_template)"
 
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "Cleaned up the example VM."
 
     Write-Host "OK: create-vm"
@@ -168,12 +168,12 @@ public static void CreateVm(string url, string user, string password,
     Console.WriteLine($"Using template: {VM.get_name_label(session, templateRef)}");
 
     var vmRef = VM.clone(session, templateRef, newVmName);
-    Console.WriteLine($"Cloned new VM: {VM.get_uuid(session, vmRef.opaque_ref)}");
+    Console.WriteLine($"Cloned new VM: {VM.get_uuid(session, vmRef)}");
 
-    Provision(session, vmRef.opaque_ref);
-    Console.WriteLine($"Provisioned. is_a_template = {VM.get_is_a_template(session, vmRef.opaque_ref)}");
+    Provision(session, vmRef);
+    Console.WriteLine($"Provisioned. is_a_template = {VM.get_is_a_template(session, vmRef)}");
 
-    DestroyVmAndDisks(session, vmRef.opaque_ref);
+    DestroyVmAndDisks(session, vmRef);
     Console.WriteLine("Cleaned up the example VM.");
 
     Console.WriteLine("OK: create-vm");
@@ -185,7 +185,7 @@ public static void CreateVm(string url, string user, string password,
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-ee09-000000000000
+Cloned new VM: 00000001-0000-0000-eb09-000000000000
 Provisioned. is_a_template = False
 Cleaned up the example VM.
 OK: create-vm

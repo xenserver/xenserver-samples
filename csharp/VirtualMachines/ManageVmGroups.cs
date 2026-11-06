@@ -27,17 +27,17 @@ internal static partial class Workflows
             name_label = groupName,
             name_description = "Anti-affinity group created by the SDK example",
             placement = placement_policy.anti_affinity,
-        }).opaque_ref;
+        });
         Console.WriteLine($"Created group:  {VM_group.get_uuid(session, groupRef)}");
 
         // Membership is written from the VM side...
-        VM.set_groups(session, vmRef, new List<XenRef<VM_group>> { new(groupRef) });
+        VM.set_groups(session, vmRef, new List<XenRef<VM_group>> { groupRef });
 
         // ...and read back from the group side, which is the half that is easy to get wrong.
         var members = VM_group.get_VMs(session, groupRef);
         Console.WriteLine($"Group members:  {members.Count}");
         foreach (var m in members)
-            Console.WriteLine($"  {VM.get_name_label(session, m.opaque_ref)}");
+            Console.WriteLine($"  {VM.get_name_label(session, m)}");
 
         // VM_group.destroy already clears the group from every member VM's groups field - no need to
         // remove membership ourselves first.

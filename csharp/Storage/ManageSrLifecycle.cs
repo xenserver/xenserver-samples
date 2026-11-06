@@ -20,16 +20,16 @@ internal static partial class Workflows
         // block device — and detaching the SR means unplugging every one of them. That is why an SR can
         // be attached on some hosts and not others, and why a repair action exists at all: it plugs back
         // the PBDs that are missing.
-        var host = Host.get_all(session).First().opaque_ref;
+        var host = Host.get_all(session).First();
         var sr = SR.create(session, host, new Dictionary<string, string>
         {
             ["server"] = nfsServer,
             ["serverpath"] = nfsPath,
             ["nfsversion"] = "3",
         }, 0, "sdk-example-lifecycle", "SR used by the SDK lifecycle example",
-            "nfs", "user", true, new Dictionary<string, string>()).opaque_ref;
+            "nfs", "user", true, new Dictionary<string, string>());
 
-        var pbds = SR.get_PBDs(session, sr).Select(p => p.opaque_ref).ToList();
+        var pbds = SR.get_PBDs(session, sr);
         Console.WriteLine($"{SR.get_name_label(session, sr)}: connected on "
                           + $"{AttachedPbds(session, pbds)} of {pbds.Count} host(s)");
 
@@ -53,6 +53,6 @@ internal static partial class Workflows
     }
 
     /// <summary>How many of these connections are currently live.</summary>
-    private static int AttachedPbds(Session session, IEnumerable<string> pbds) =>
+    private static int AttachedPbds(Session session, IEnumerable<XenRef<PBD>> pbds) =>
         pbds.Count(pbd => PBD.get_currently_attached(session, pbd));
 }

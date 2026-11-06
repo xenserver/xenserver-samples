@@ -28,14 +28,14 @@ internal static partial class Workflows
 
         // CBT is switched on for the VM's own disk, and every snapshot taken from then on inherits it.
         // It can't be switched on for a snapshot's disk after the fact (OPERATION_NOT_ALLOWED).
-        var live = FirstDisk(session, vm.Key.opaque_ref);
+        var live = FirstDisk(session, vm.Key);
         var wasEnabled = VDI.get_cbt_enabled(session, live);
         if (!wasEnabled) VDI.enable_cbt(session, live);
 
-        var first = VM.snapshot(session, vm.Key.opaque_ref, "cbt-backup-1");
-        var second = VM.snapshot(session, vm.Key.opaque_ref, "cbt-backup-2");
-        var vdiFrom = FirstDisk(session, first.opaque_ref);
-        var vdiTo = FirstDisk(session, second.opaque_ref);
+        var first = VM.snapshot(session, vm.Key, "cbt-backup-1");
+        var second = VM.snapshot(session, vm.Key, "cbt-backup-2");
+        var vdiFrom = FirstDisk(session, first);
+        var vdiTo = FirstDisk(session, second);
 
         // One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
         // only those blocks, over NBD.
@@ -48,14 +48,14 @@ internal static partial class Workflows
         // Release the older snapshot's blocks but keep its change metadata, so the next incremental can
         // still diff against it. data_destroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the
         // older snapshot's VM record first, as a backup tool does. The VDI record stays; its type changes.
-        VM.destroy(session, first.opaque_ref);
+        VM.destroy(session, first);
         VDI.data_destroy(session, vdiFrom);
         Console.WriteLine($"  older snapshot is now type={VDI.get_type(session, vdiFrom)}, "
                           + $"still cbt_enabled={VDI.get_cbt_enabled(session, vdiFrom)}");
 
         // Tidy up: the newer snapshot and its disk, the metadata-only VDI, and CBT on the VM's own disk
         // if this example switched it on.
-        DestroyVmAndDisks(session, second.opaque_ref);
+        DestroyVmAndDisks(session, second);
         VDI.destroy(session, vdiFrom);
         if (!wasEnabled) VDI.disable_cbt(session, live);
         Console.WriteLine("OK: changed-block-tracking");
@@ -63,11 +63,11 @@ internal static partial class Workflows
     }
 
     /// <summary>The VDI behind a VM's first real disk (a CD drive is a VBD too).</summary>
-    private static string FirstDisk(Session session, string vmRef)
+    private static XenRef<VDI> FirstDisk(Session session, XenRef<VM> vmRef)
     {
         foreach (var vbdRef in VM.get_VBDs(session, vmRef))
-            if (VBD.get_type(session, vbdRef.opaque_ref) == vbd_type.Disk)
-                return VBD.get_VDI(session, vbdRef.opaque_ref).opaque_ref;
+            if (VBD.get_type(session, vbdRef) == vbd_type.Disk)
+                return VBD.get_VDI(session, vbdRef);
         throw new Exception("no disk found");
     }
 }

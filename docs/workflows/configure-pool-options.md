@@ -44,7 +44,7 @@ function Invoke-ConfigurePoolOptions {
     # Compression trades CPU for bandwidth when a VM's memory is moved between hosts.
     $pool | Set-XenPool -MigrationCompression (-not $before["migration compression"])
 
-    $after = Get-XenPool -Ref $pool.opaque_ref
+    $after = Get-XenPool -Ref $pool
     Write-Host "after changing:"
     Write-Host ("  {0,-22} {1}" -f "live patching disabled", $after.live_patching_disabled)
     Write-Host ("  {0,-22} {1}" -f "IGMP snooping", $after.igmp_snooping_enabled)
@@ -223,7 +223,7 @@ Source: [`csharp/HostsAndPools/ConfigurePoolOptions.cs`](../../csharp/HostsAndPo
 public static void ConfigurePoolOptions(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    var pool = Pool.get_all(session)[0].opaque_ref;
+    var pool = Pool.get_all(session)[0];
 
     // These are plain pool settings, each a single field. Read them, change them, put them back.
     var livePatchingDisabled = Pool.get_live_patching_disabled(session, pool);

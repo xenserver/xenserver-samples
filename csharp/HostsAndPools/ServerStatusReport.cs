@@ -21,7 +21,7 @@ internal static partial class Workflows
 
         // Report on the coordinator. Each host answers for itself, so which one you ask decides whose
         // logs you get — support normally wants every host, one download each.
-        var host = Pool.get_master(session, Pool.get_all(session).First().opaque_ref).opaque_ref;
+        var host = Pool.get_master(session, Pool.get_all(session).First());
         Console.WriteLine($"Status report for {Host.get_name_label(session, host)}");
 
         // The host publishes a catalogue of the sections it can report on, each with a size estimate and

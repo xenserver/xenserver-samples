@@ -32,8 +32,8 @@ function Invoke-ChangedBlockTracking {
     $second = Invoke-XenVM -VM $vm -XenAction Snapshot -NewName 'cbt-backup-2' -PassThru
     # Re-fetch the snapshots: the object -PassThru hands back is the VM as it was when created, and its
     # disks are attached a moment later, so its VBDs list is empty.
-    $vdiFrom = Get-FirstDisk -Snapshot (Get-XenVM -Ref $first.opaque_ref)
-    $vdiTo = Get-FirstDisk -Snapshot (Get-XenVM -Ref $second.opaque_ref)
+    $vdiFrom = Get-FirstDisk -Snapshot (Get-XenVM -Ref $first)
+    $vdiTo = Get-FirstDisk -Snapshot (Get-XenVM -Ref $second)
 
     # One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
     # only those blocks, over NBD.
@@ -57,14 +57,14 @@ function Invoke-ChangedBlockTracking {
     # Release the older snapshot's blocks but keep its change metadata, so the next incremental can
     # still diff against it. DataDestroy refuses a disk that a VM still uses (VDI_IN_USE), so remove the
     # older snapshot's VM record first, as a backup tool does. The VDI record stays; its type changes.
-    Remove-XenVM -Ref $first.opaque_ref
+    Remove-XenVM -Ref $first
     Invoke-XenVDI -Ref $vdiFrom -XenAction DataDestroy
     $after = Get-XenVDI -Ref $vdiFrom
     Write-Host "  older snapshot is now type=$($after.type), still cbt_enabled=$($after.cbt_enabled)"
 
     # Tidy up: the newer snapshot and its disk, the metadata-only VDI, and CBT on the VM's own disk if
     # this example switched it on.
-    Remove-VmAndDisks -Ref $second.opaque_ref
+    Remove-VmAndDisks -Ref $second
     Remove-XenVDI -Ref $vdiFrom
     if (-not $wasEnabled) { Invoke-XenVDI -Ref $live -XenAction DisableCbt }
     Write-Host "OK: changed-block-tracking"
@@ -78,8 +78,8 @@ function Get-FirstDisk {
     #>
     param([Parameter(Mandatory = $true)]$Snapshot)
     foreach ($vbdRef in $Snapshot.VBDs) {
-        $vbd = Get-XenVBD -Ref $vbdRef.opaque_ref
-        if ($vbd.type -eq 'Disk') { return $vbd.VDI.opaque_ref }
+        $vbd = Get-XenVBD -Ref $vbdRef
+        if ($vbd.type -eq 'Disk') { return $vbd.VDI }
     }
     throw "no disk found"
 }

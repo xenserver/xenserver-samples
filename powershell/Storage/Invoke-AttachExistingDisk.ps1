@@ -30,16 +30,16 @@ function Invoke-AttachExistingDisk {
     Write-Host "  attached to $($halted[0].name_label)"
 
     # Destroying the VBD detaches the disk; the disk itself is untouched and keeps its data.
-    Remove-XenVBD -Ref $vbd.opaque_ref
-    Write-Host "  detached:   the disk still exists ($((Get-XenVDI -Ref $vdi.opaque_ref).virtual_size) bytes)"
+    Remove-XenVBD -Ref $vbd
+    Write-Host "  detached:   the disk still exists ($((Get-XenVDI -Ref $vdi).virtual_size) bytes)"
 
     Add-ExampleDisk -VM $halted[1] -Vdi $vdi | Out-Null
     Write-Host "  attached to $($halted[1].name_label)"
-    $vbds = @((Get-XenVDI -Ref $vdi.opaque_ref).VBDs)
+    $vbds = @((Get-XenVDI -Ref $vdi).VBDs)
     Write-Host "  the disk is on $($vbds.Count) VM(s)"
 
-    foreach ($b in $vbds) { Remove-XenVBD -Ref $b.opaque_ref }
-    Remove-XenVDI -Ref $vdi.opaque_ref
+    foreach ($b in $vbds) { Remove-XenVBD -Ref $b }
+    Remove-XenVDI -Ref $vdi
     Write-Host "OK: attach-existing-disk"
     $session | Disconnect-XenServer
 }
@@ -50,6 +50,6 @@ function Add-ExampleDisk {
         Join an existing disk to a VM on its next free device slot.
     #>
     param($VM, $Vdi)
-    New-XenVBD -VM $VM -VDI $Vdi -Userdevice (Get-XenVMProperty -Ref $VM.opaque_ref -XenProperty AllowedVBDDevices)[0] `
+    New-XenVBD -VM $VM -VDI $Vdi -Userdevice (Get-XenVMProperty -Ref $VM -XenProperty AllowedVBDDevices)[0] `
         -Mode RW -Type Disk -Bootable $false -Empty $false -PassThru
 }

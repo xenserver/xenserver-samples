@@ -40,7 +40,7 @@ public final class VmIpAddress {
                 String ip = null;
                 for (VM.Record r : VM.getAllRecords(conn).values()) {
                     if (r.powerState != Types.VmPowerState.RUNNING || r.isATemplate || r.isControlDomain
-                            || r.guestMetrics.toWireString().equals("OpaqueRef:NULL")) continue;
+                            || r.guestMetrics.isNull()) continue;
                     Map<String, String> networks = r.guestMetrics.getRecord(conn).networks;
                     ip = networks.get("0/ip");
                     if (ip != null && !ip.isEmpty()) { vm = r; break; }

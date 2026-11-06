@@ -225,7 +225,7 @@ public static void ConfigureSnmp(string url, string user, string password,
     foreach (var host in Host.get_all(session))
     {
         string Snmp(string fn, Dictionary<string, string> args) =>
-            Host.call_plugin(session, host.opaque_ref, "snmp", fn, args);
+            Host.call_plugin(session, host, "snmp", fn, args);
         // The plugin reports a refused config in its answer, not as an API error: check it.
         using (var answer = JsonDocument.Parse(Snmp("set-config", new() { ["config"] = config })))
             if (answer.RootElement.GetProperty("code").GetInt32() != 0)
@@ -236,7 +236,7 @@ public static void ConfigureSnmp(string url, string user, string password,
         var result = status.RootElement.GetProperty("result");
         var agentCfg = cfg.RootElement.GetProperty("result");
         var nmss = agentCfg.GetProperty("nmss");
-        var label = Host.get_name_label(session, host.opaque_ref);
+        var label = Host.get_name_label(session, host);
         Console.WriteLine($"{label}: SNMP enabled: {result.GetProperty("enabled").GetString()} / " +
                           $"{result.GetProperty("active").GetString()}");
         Console.WriteLine($"  community: {agentCfg.GetProperty("agent").GetProperty("community").GetString()}, " +

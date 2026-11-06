@@ -25,7 +25,7 @@ function Invoke-CreateNfsSr {
         -Type "nfs" -ContentType "user" -Shared $true -PassThru
     Write-Host "Created SR: $($sr.uuid)"
 
-    Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
+    Invoke-DetachAndForgetSr -Ref $sr
     Write-Host "OK: create-nfs-sr"
     $session | Disconnect-XenServer
 }

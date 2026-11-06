@@ -37,8 +37,8 @@ function Invoke-ApplyUpdate {
     }
     $repos = @(New-UpdateRepositories -Session $session -RepoUrl $RepoUrl -SourceUrl $SourceUrl)
     # Remember the pool's own repositories, to put them back afterwards.
-    $previous = @((Get-XenPool -Ref $pool.opaque_ref).repositories | ForEach-Object { $_.opaque_ref })
-    $pool | Set-XenPool -Repositories @($repos | ForEach-Object { $_.opaque_ref })
+    $previous = @((Get-XenPool -Ref $pool).repositories)
+    $pool | Set-XenPool -Repositories $repos
     try {
         # Sync the pool's update metadata; -PassThru returns the hash identifying the synced set.
         $hash = $pool | Invoke-XenPool -XenAction SyncUpdates -PassThru
@@ -47,8 +47,7 @@ function Invoke-ApplyUpdate {
         # Apply the synced updates to each host, coordinator first as the documentation requires (the
         # hash is the action's -Hash parameter). Then read the reboot guidance to decide whether a
         # host needs a reboot.
-        $orderedHosts = @($pool.master.opaque_ref) + @(Get-XenHost |
-            Where-Object { $_.opaque_ref -ne $pool.master.opaque_ref } | ForEach-Object { $_.opaque_ref })
+        $orderedHosts = @($pool.master) + @(Get-XenHost | Where-Object { $pool.master -ne $_ })
         foreach ($xenHost in $orderedHosts | ForEach-Object { Get-XenHost -Ref $_ }) {
             try {
                 $xenHost | Invoke-XenHost -XenAction ApplyUpdates -Hash $hash
@@ -65,13 +64,13 @@ function Invoke-ApplyUpdate {
                 $xenHost | Invoke-XenHost -XenAction ApplyUpdates -Hash $hash
                 $xenHost | Invoke-XenHost -XenAction Enable
             }
-            $guidance = @((Get-XenHost -Ref $xenHost.opaque_ref).pending_guidances)
+            $guidance = @((Get-XenHost -Ref $xenHost).pending_guidances)
             Write-Host "  $($xenHost.name_label): applied; pending guidance = [$($guidance -join ', ')]"
             if ($guidance -contains "reboot_host" -or $guidance -contains "restart_toolstack") {
                 # As in rolling-pool-update: either restart returns before it has happened, and the
                 # coordinator's takes this session with it - so wait for it, reconnecting.
                 $key = if ($guidance -contains "reboot_host") { "boot_time" } else { "agent_start_time" }
-                $before = (Get-XenHost -Ref $xenHost.opaque_ref).other_config[$key]
+                $before = (Get-XenHost -Ref $xenHost).other_config[$key]
                 if ($key -eq "boot_time") {
                     $xenHost | Invoke-XenHost -XenAction Reboot
                 }

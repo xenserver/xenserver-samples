@@ -49,11 +49,11 @@ function Invoke-CrossPoolCopyVm {
     # Destination: choose a host, network and SR, then ask for a receiver token (a string->string map).
     # The disks go to the destination pool's default SR.
     $destPool = Get-XenPool -SessionOpaqueRef $dstRef | Select-Object -First 1
-    $destHost = Get-XenHost -SessionOpaqueRef $dstRef -Ref $destPool.master.opaque_ref
-    $destSr = Get-XenSR -SessionOpaqueRef $dstRef -Ref $destPool.default_SR.opaque_ref
+    $destHost = Get-XenHost -SessionOpaqueRef $dstRef -Ref $destPool.master
+    $destSr = Get-XenSR -SessionOpaqueRef $dstRef -Ref $destPool.default_SR
     $managementPif = Get-XenPIF -SessionOpaqueRef $dstRef |
-        Where-Object { $_.management -and $_.host.opaque_ref -eq $destHost.opaque_ref } | Select-Object -First 1
-    $destManagementNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Ref $managementPif.network.opaque_ref
+        Where-Object { $_.management -and $_.host -eq $destHost } | Select-Object -First 1
+    $destManagementNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Ref $managementPif.network
     if ($TransferNetwork) {
         $migrationNet = Get-XenNetwork -SessionOpaqueRef $dstRef -Name $TransferNetwork | Select-Object -First 1
         if (-not $migrationNet) { throw "No network named '$TransferNetwork' was found on the destination pool." }
@@ -76,8 +76,8 @@ function Invoke-CrossPoolCopyVm {
 
     $vdiMap = New-Object 'System.Collections.Generic.Dictionary[XenAPI.XenRef[XenAPI.VDI], XenAPI.XenRef[XenAPI.SR]]'
     foreach ($vbdRef in $vm.VBDs) {
-        $vbd = Get-XenVBD -SessionOpaqueRef $srcRef -Ref $vbdRef.opaque_ref
-        if ($vbd.type -eq 'Disk' -and $vbd.VDI.opaque_ref -ne 'OpaqueRef:NULL') {
+        $vbd = Get-XenVBD -SessionOpaqueRef $srcRef -Ref $vbdRef
+        if ($vbd.type -eq 'Disk' -and $vbd.VDI -ne 'OpaqueRef:NULL') {
             $vdiMap[$vbd.VDI] = ConvertTo-XenRef -XenObject $destSr
         }
     }
@@ -87,7 +87,7 @@ function Invoke-CrossPoolCopyVm {
     # Send with copy=true (the source VM is left intact). Dest/VdiMap/VifMap/VgpuMap are the migrate_send
     # action's parameters.
     # The VMs the destination already has, to tell the copy apart afterwards (never by name alone).
-    $before = @(Get-XenVM -SessionOpaqueRef $dstRef | ForEach-Object { $_.opaque_ref })
+    $before = @(Get-XenVM -SessionOpaqueRef $dstRef | ForEach-Object { $_.uuid })
     $vm | Invoke-XenVM -SessionOpaqueRef $srcRef -XenAction MigrateSend -Dest $receiver -Live $false `
         -VdiMap $vdiMap -VifMap $vifMap -Options @{ copy = "true" } -VgpuMap @{}
 
@@ -96,14 +96,14 @@ function Invoke-CrossPoolCopyVm {
     Write-Host "Sent '$VmName' to the destination pool (copy); source still present: $stillThere"
 
     # Tidy up so the example is repeatable: the copy and its disks, on the destination pool.
-    $copy = Get-XenVM -SessionOpaqueRef $dstRef | Where-Object { $_.opaque_ref -notin $before } |
+    $copy = Get-XenVM -SessionOpaqueRef $dstRef | Where-Object { $_.uuid -notin $before } |
         Select-Object -First 1
     if ($copy) {
         Write-Host "  the copy on the destination: $($copy.name_label) ($($copy.uuid))"
-        $copyVdis = @($copy.VBDs | ForEach-Object { Get-XenVBD -SessionOpaqueRef $dstRef -Ref $_.opaque_ref } |
-            Where-Object { $_.type -eq 'Disk' -and $_.VDI.opaque_ref -ne 'OpaqueRef:NULL' } |
-            ForEach-Object { $_.VDI.opaque_ref })
-        Remove-XenVM -SessionOpaqueRef $dstRef -Ref $copy.opaque_ref
+        $copyVdis = @($copy.VBDs | ForEach-Object { Get-XenVBD -SessionOpaqueRef $dstRef -Ref $_ } |
+            Where-Object { $_.type -eq 'Disk' -and $_.VDI -ne 'OpaqueRef:NULL' } |
+            ForEach-Object { $_.VDI })
+        Remove-XenVM -SessionOpaqueRef $dstRef -Ref $copy
         $copyVdis | ForEach-Object { Remove-XenVDI -SessionOpaqueRef $dstRef -Ref $_ }
     }
     else {
@@ -120,7 +120,7 @@ function Invoke-CrossPoolCopyVm {
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-080a-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-110a-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -235,7 +235,7 @@ Run it::
 """
 
 from connection import connect
-from helpers import destroy_vm_and_disks, vm_by_name
+from helpers import destroy_vm_and_disks, is_set, vm_by_name
 
 
 def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
@@ -273,7 +273,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
         if source.xenapi.VBD.get_type(vbd) != "Disk":
             continue
         vdi = source.xenapi.VBD.get_VDI(vbd)
-        if vdi != "OpaqueRef:NULL":
+        if is_set(vdi):
             vdi_map[vdi] = dest_sr
     vif_map = {vif: dest_management_network for vif in source.xenapi.VM.get_VIFs(vm)}
 
@@ -295,7 +295,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-ea09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-eb09-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -330,15 +330,15 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
     // Destination: choose a host, a network and an SR, then ask for a receiver token. The disks go to
     // the destination pool's default SR.
     var destPool = Pool.get_all(dest)[0];
-    var destHost = Pool.get_master(dest, destPool).opaque_ref;
-    var destSr = Pool.get_default_SR(dest, destPool).opaque_ref;
-    var managementPif = Host.get_PIFs(dest, destHost).First(pif => PIF.get_management(dest, pif.opaque_ref));
-    var destManagementNetwork = PIF.get_network(dest, managementPif.opaque_ref).opaque_ref;
-    string migrationNetwork;
+    var destHost = Pool.get_master(dest, destPool);
+    var destSr = Pool.get_default_SR(dest, destPool);
+    var managementPif = Host.get_PIFs(dest, destHost).First(pif => PIF.get_management(dest, pif));
+    var destManagementNetwork = PIF.get_network(dest, managementPif);
+    XenRef<Network> migrationNetwork;
     if (transferNetwork != null)
     {
         migrationNetwork = Network.get_all_records(dest)
-            .First(kv => kv.Value.name_label == transferNetwork).Key.opaque_ref;
+            .First(kv => kv.Value.name_label == transferNetwork).Key;
     }
     else
     {
@@ -355,12 +355,12 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
     var vdiMap = new Dictionary<XenRef<VDI>, XenRef<SR>>();
     foreach (var vbdRef in VM.get_VBDs(source, vm))
     {
-        if (VBD.get_type(source, vbdRef.opaque_ref) != vbd_type.Disk) continue;
-        var vdi = VBD.get_VDI(source, vbdRef.opaque_ref);
-        if (vdi.opaque_ref != "OpaqueRef:NULL") vdiMap[vdi] = new XenRef<SR>(destSr);
+        if (VBD.get_type(source, vbdRef) != vbd_type.Disk) continue;
+        var vdi = VBD.get_VDI(source, vbdRef);
+        if (!Helper.IsNullOrEmptyOpaqueRef(vdi)) vdiMap[vdi] = destSr;
     }
     var vifMap = new Dictionary<XenRef<VIF>, XenRef<Network>>();
-    foreach (var vifRef in VM.get_VIFs(source, vm)) vifMap[vifRef] = new XenRef<Network>(destManagementNetwork);
+    foreach (var vifRef in VM.get_VIFs(source, vm)) vifMap[vifRef] = destManagementNetwork;
 
     var options = new Dictionary<string, string> { ["copy"] = "true" };
     var copy = VM.migrate_send(source, vm, receiver, false, vdiMap, vifMap, options,
@@ -368,12 +368,12 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
 
     // Copy (not move): the source VM is still on the source pool.
     Console.WriteLine($"Sent '{vmName}' to the destination pool (copy); source still present: " +
-                      $"{VmByName(source, vmName) == vm}");
+                      $"{VmByName(source, vmName).Equals(vm)}");
     // The result is the new VM's ref on the DESTINATION pool - use the destination session to read it.
     Console.WriteLine($"  the copy on the destination: {VM.get_name_label(dest, copy)} ({VM.get_uuid(dest, copy)})");
 
     // Tidy up so the example is repeatable: the copy and its disks, on the destination pool.
-    DestroyVmAndDisks(dest, copy.opaque_ref);
+    DestroyVmAndDisks(dest, copy);
     Console.WriteLine("OK: cross-pool-copy-vm");
     source.logout();
     dest.logout();
@@ -384,7 +384,7 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-080a-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-fe09-000000000000)
 OK: cross-pool-copy-vm
 ```
 

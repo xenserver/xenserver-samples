@@ -48,7 +48,7 @@ function Invoke-ConfigureHa {
     # computed with none protected can be too high, and protecting a VM afterwards then fails
     # HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN. The configuration maps VM references (XenRef objects - a ref
     # string fails to cast) to restart priorities.
-    $guestRef = [XenAPI.XenRef[XenAPI.VM]]::Create($guest.opaque_ref)
+    $guestRef = [XenAPI.XenRef[XenAPI.VM]]::new($guest)
     $ntol = $pool | Invoke-XenPool -XenAction HaComputeHypotheticalMaxHostFailuresToTolerate `
         -Configuration @{ $guestRef = "restart" } -PassThru
     Write-Host "Max failures:  $ntol"
@@ -60,13 +60,13 @@ function Invoke-ConfigureHa {
 
         $was = $guest.ha_restart_priority
         $guest | Set-XenVM -HaRestartPriority "restart"
-        $nowPriority = (Get-XenVM -Ref $guest.opaque_ref).ha_restart_priority
+        $nowPriority = (Get-XenVM -Ref $guest).ha_restart_priority
         Write-Host "$($guest.name_label) priority: '$was' -> '$nowPriority'"
         $guest | Set-XenVM -HaRestartPriority $was
 
         # And a pool-wide judgement call: if a guest shuts itself down from the inside, is that a
         # failure HA should undo, or an administrator's intent it should respect?
-        $internal = (Get-XenPool -Ref $pool.opaque_ref).ha_reboot_vm_on_internal_shutdown
+        $internal = (Get-XenPool -Ref $pool).ha_reboot_vm_on_internal_shutdown
         Write-Host "Restart on internal shutdown: $internal"
     }
     finally {
@@ -252,7 +252,7 @@ Source: [`csharp/HostsAndPools/ConfigureHa.cs`](../../csharp/HostsAndPools/Confi
 public static void ConfigureHa(string url, string user, string password, string heartbeatSrName)
 {
     var session = Connect(url, user, password);
-    var poolRef = Pool.get_all_records(session).Keys.First().opaque_ref;
+    var poolRef = Pool.get_all_records(session).Keys.First();
 
     // The HA heartbeat statefile needs a shared SR; confirm the chosen one can host it.
     var srRef = SrByName(session, heartbeatSrName, shared: true);
@@ -262,16 +262,16 @@ public static void ConfigureHa(string url, string user, string password, string 
     // What HA does per VM. The restart priority decides which guests come back first after a host
     // failure, and whether a VM is protected at all; "restart" is protected, an empty string is not.
     var guest = VM.get_all_records(session).First(kv =>
-        !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot).Key.opaque_ref;
+        !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot).Key;
 
     // How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those: a
     // target computed with none protected can be too high, and protecting a VM afterwards then fails
     // HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
     var ntol = Pool.ha_compute_hypothetical_max_host_failures_to_tolerate(
-        session, new Dictionary<XenRef<VM>, string> { { new XenRef<VM>(guest), "restart" } });
+        session, new Dictionary<XenRef<VM>, string> { { guest, "restart" } });
     Console.WriteLine($"Max failures:  {ntol}");
     Pool.set_ha_host_failures_to_tolerate(session, poolRef, ntol);
-    Pool.enable_ha(session, new List<XenRef<SR>> { new(srRef) }, new Dictionary<string, string>());
+    Pool.enable_ha(session, new List<XenRef<SR>> { srRef }, new Dictionary<string, string>());
     try
     {
         Console.WriteLine($"HA enabled:    {Pool.get_ha_enabled(session, poolRef)}");

@@ -21,10 +21,10 @@ internal static partial class Workflows
         Console.WriteLine($"Disks of '{VM.get_name_label(session, vm)}':");
         foreach (var vbdRef in VM.get_VBDs(session, vm))
         {
-            var vbd = VBD.get_record(session, vbdRef.opaque_ref);
+            var vbd = VBD.get_record(session, vbdRef);
             if (vbd.type != vbd_type.Disk) continue;
-            var vdi = VBD.get_VDI(session, vbdRef.opaque_ref).opaque_ref;
-            var size = vdi == "OpaqueRef:NULL" ? 0 : VDI.get_virtual_size(session, vdi) / GiB;
+            var vdi = VBD.get_VDI(session, vbdRef);
+            var size = Helper.IsNullOrEmptyOpaqueRef(vdi) ? 0 : VDI.get_virtual_size(session, vdi) / GiB;
             Console.WriteLine($"  - device {vbd.userdevice}: {size} GiB");
         }
         Console.WriteLine("OK: vbd-inventory");

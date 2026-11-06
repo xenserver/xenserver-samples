@@ -26,21 +26,20 @@ function Invoke-SnapshotSchedule {
         -Schedule @{ hour = '2'; min = '0' } -PassThru
     Write-Host "Created schedule: $($vmss.uuid)"
 
-    Set-XenVM -VM $vm -SnapshotSchedule $vmss.opaque_ref
-    Write-Host "Members:          $((Get-XenVMSS -Ref $vmss.opaque_ref).VMs.Count)"
+    Set-XenVM -VM $vm -SnapshotSchedule $vmss
+    Write-Host "Members:          $((Get-XenVMSS -Ref $vmss).VMs.Count)"
 
     # Run it three times against a retention of two: the oldest is pruned away. Compare against the
     # snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
-    $before = @((Get-XenVM -Ref $vm.opaque_ref).snapshots | ForEach-Object { $_.opaque_ref })
-    1..3 | ForEach-Object { Invoke-XenVMSS -Ref $vmss.opaque_ref -XenAction SnapshotNow | Out-Null }
-    $kept = @((Get-XenVM -Ref $vm.opaque_ref).snapshots | ForEach-Object { $_.opaque_ref } |
-        Where-Object { $before -notcontains $_ })
+    $before = @((Get-XenVM -Ref $vm).snapshots)
+    1..3 | ForEach-Object { Invoke-XenVMSS -Ref $vmss -XenAction SnapshotNow | Out-Null }
+    $kept = @((Get-XenVM -Ref $vm).snapshots | Where-Object { $before -notcontains $_ })
     Write-Host "Snapshots kept:   $($kept.Count) (retention 2)"
 
     # Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     # first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
     Set-XenVM -VM $vm -SnapshotSchedule 'OpaqueRef:NULL'
-    Remove-XenVMSS -Ref $vmss.opaque_ref
+    Remove-XenVMSS -Ref $vmss
     $kept | ForEach-Object { Remove-VmAndDisks -Ref $_ }
     Write-Host "OK: snapshot-schedule"
     Disconnect-XenServer -Session $session

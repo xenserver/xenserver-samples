@@ -5,14 +5,30 @@
 A few concepts recur throughout the API; once they click, every class reads the same way. Each is shown
 end to end in an example you can run.
 
+## Names, UUIDs and references
+
+An object can be identified in three ways, and each has its own job:
+
+- **Its name** (`name_label`) is what people call it. Anyone can change it, and two objects can share
+  one, so a lookup by name can find none, one or several.
+- **Its UUID** (`uuid`) is permanent and unique. Use it for anything you store or log, and to let people
+  pick an object when a name might be ambiguous. `get_by_uuid` turns it back into the object (see
+  [Look up an object by UUID](workflows/find-by-uuid.md)).
+- **Its reference** is the handle the API passes around: every call takes and returns references (they
+  look like `OpaqueRef:…`). Treat them as plumbing between one call and the next. Don't show them to
+  people, store them or ask anyone to type one, and don't expect a reference to mean anything to another
+  pool. When you need one, get it from a name or a UUID (`get_by_name_label`, `get_by_uuid`).
+
+How much of this you see depends on the language. The PowerShell cmdlets take the objects themselves (or
+`-Uuid` and `-Name`), and `xe` works entirely with UUIDs and names. In Python, C#, Go and Java, references
+are simply the values you pass from one call to the next.
+
 ## Records and references
 
-Every object has an opaque **reference** and a **record** (its fields). Fields that point at other objects
-hold references (or lists or maps of them); a null reference is `OpaqueRef:NULL`. You navigate the model
-by following references. The quickest way to see the whole shape is `get_all_records` on any class, which
-returns a map of reference to record; that's what [Connect & inventory](workflows/connect-inventory.md)
-does. References are per-session: to keep a durable handle to an object, store its `uuid` and resolve it
-later with `get_by_uuid` (see [Look up an object by UUID](workflows/find-by-uuid.md)).
+Every object has a **record** (its fields). Fields that point at other objects hold references (or lists
+or maps of them); a null reference is `OpaqueRef:NULL`. You navigate the model by following references.
+The quickest way to see the whole shape is `get_all_records` on any class, which returns a map of
+reference to record; that's what [Connect & inventory](workflows/connect-inventory.md) does.
 
 ## Get and set accessors
 

@@ -34,7 +34,7 @@ function Invoke-VmLifecycle {
     # guest to report in after starting. Suspend also needs a suspend-image SR (the VM's own, else the
     # pool's, else the host's); check one is actually configured before trying.
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
+    $ref = $vm
 
     function State { (Get-XenVM -Ref $ref).power_state }
 
@@ -84,10 +84,10 @@ function Test-HasSuspendSr {
         choose_suspend_sr uses.
     #>
     param($Vm)
-    if ($Vm.suspend_SR.opaque_ref -ne 'OpaqueRef:NULL') { return $true }
+    if ($Vm.suspend_SR -ne 'OpaqueRef:NULL') { return $true }
     $pool = Get-XenPool | Select-Object -First 1
-    if ($pool.suspend_image_SR.opaque_ref -ne 'OpaqueRef:NULL') { return $true }
-    return (Get-XenHost -Ref $pool.master.opaque_ref).suspend_image_sr.opaque_ref -ne 'OpaqueRef:NULL'
+    if ($pool.suspend_image_SR -ne 'OpaqueRef:NULL') { return $true }
+    return (Get-XenHost -Ref $pool.master).suspend_image_sr -ne 'OpaqueRef:NULL'
 }
 ```
 
@@ -190,7 +190,7 @@ afterwards.
 """
 
 from connection import connect
-from helpers import copy_of_guest, destroy_vm_and_disks, wait_for_guest_agent
+from helpers import copy_of_guest, destroy_vm_and_disks, is_set, wait_for_guest_agent
 
 
 def vm_lifecycle(url, username, password, source_vm, new_vm_name="sdk-example-lifecycle"):
@@ -239,13 +239,13 @@ def _has_suspend_sr(session, vm):
     """Whether VM.suspend has a suspend-image SR to use: the VM's own, else the pool's, else the
     resident host's - the same fallback order xapi's choose_suspend_sr uses."""
     x = session.xenapi
-    if x.VM.get_suspend_SR(vm) != "OpaqueRef:NULL":
+    if is_set(x.VM.get_suspend_SR(vm)):
         return True
     pool = x.pool.get_all()[0]
-    if x.pool.get_suspend_image_SR(pool) != "OpaqueRef:NULL":
+    if is_set(x.pool.get_suspend_image_SR(pool)):
         return True
     host = x.pool.get_master(pool)
-    return x.host.get_suspend_image_sr(host) != "OpaqueRef:NULL"
+    return is_set(x.host.get_suspend_image_sr(host))
 ```
 
 <details><summary>Example output</summary>
@@ -326,13 +326,13 @@ public static void VmLifecycle(string url, string user, string password,
 /// Whether VM.suspend has a suspend-image SR to use: the VM's own, else the pool's, else the
 /// resident host's - the same fallback order xapi's choose_suspend_sr uses.
 /// </summary>
-private static bool HasSuspendSr(Session session, string vm)
+private static bool HasSuspendSr(Session session, XenRef<VM> vm)
 {
-    if (VM.get_suspend_SR(session, vm).opaque_ref != "OpaqueRef:NULL") return true;
-    var pool = Pool.get_all(session)[0].opaque_ref;
-    if (Pool.get_suspend_image_SR(session, pool).opaque_ref != "OpaqueRef:NULL") return true;
-    var host = Pool.get_master(session, pool).opaque_ref;
-    return Host.get_suspend_image_sr(session, host).opaque_ref != "OpaqueRef:NULL";
+    if (!Helper.IsNullOrEmptyOpaqueRef(VM.get_suspend_SR(session, vm))) return true;
+    var pool = Pool.get_all(session)[0];
+    if (!Helper.IsNullOrEmptyOpaqueRef(Pool.get_suspend_image_SR(session, pool))) return true;
+    var host = Pool.get_master(session, pool);
+    return !Helper.IsNullOrEmptyOpaqueRef(Host.get_suspend_image_sr(session, host));
 }
 ```
 
@@ -415,18 +415,18 @@ func vmLifecycle(url, user, password, sourceVM, newVMName string) {
 // hasSuspendSR reports whether VM.Suspend has a suspend-image SR to use: the VM's own, else the
 // pool's, else the resident host's - the same fallback order xapi's choose_suspend_sr uses.
 func hasSuspendSR(session *xenapi.Session, vm xenapi.VMRef) bool {
-	if sr, err := xenapi.VM.GetSuspendSR(session, vm); err == nil && sr != "" && sr != "OpaqueRef:NULL" {
+	if sr, err := xenapi.VM.GetSuspendSR(session, vm); err == nil && isSet(sr) {
 		return true
 	}
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
-	if sr, err := xenapi.Pool.GetSuspendImageSR(session, pools[0]); err == nil && sr != "" && sr != "OpaqueRef:NULL" {
+	if sr, err := xenapi.Pool.GetSuspendImageSR(session, pools[0]); err == nil && isSet(sr) {
 		return true
 	}
 	host, err := xenapi.Pool.GetMaster(session, pools[0])
 	check(err)
 	sr, err := xenapi.Host.GetSuspendImageSr(session, host)
-	return err == nil && sr != "" && sr != "OpaqueRef:NULL"
+	return err == nil && isSet(sr)
 }
 ```
 
@@ -519,11 +519,11 @@ public final class VmLifecycle {
      * host's - the same fallback order xapi's choose_suspend_sr uses.
      */
     private static boolean hasSuspendSr(Connection conn, VM vm) throws Exception {
-        if (!vm.getSuspendSR(conn).toWireString().equals("OpaqueRef:NULL")) return true;
+        if (!vm.getSuspendSR(conn).isNull()) return true;
         Pool pool = Pool.getAll(conn).iterator().next();
-        if (!pool.getSuspendImageSR(conn).toWireString().equals("OpaqueRef:NULL")) return true;
+        if (!pool.getSuspendImageSR(conn).isNull()) return true;
         Host host = pool.getMaster(conn);
-        return !host.getSuspendImageSr(conn).toWireString().equals("OpaqueRef:NULL");
+        return !host.getSuspendImageSr(conn).isNull();
     }
 }
 ```

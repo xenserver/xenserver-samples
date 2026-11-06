@@ -24,13 +24,13 @@ internal static partial class Workflows
     {
         const long GiB = 1024L * 1024 * 1024;
         var session = Connect(url, user, password);
-        var host = Host.get_all(session)[0].opaque_ref;
+        var host = Host.get_all(session)[0];
 
         var secret = Secret.create(session, new Secret
         {
             value = smbPassword,
             other_config = new Dictionary<string, string>(),
-        }).opaque_ref;
+        });
         var dc = new Dictionary<string, string>
         {
             // server is the share as one UNC path, //server/share: the SMB driver has no separate serverpath.

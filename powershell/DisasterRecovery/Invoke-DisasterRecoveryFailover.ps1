@@ -43,7 +43,7 @@ function Invoke-DisasterRecoveryFailover {
     # Which SRs are on the LUN, and which of them hold pool metadata. sm_config metadata=true asks for
     # their names and the pool_metadata_detected flag as well as their uuids. (SR.probe is a static call:
     # the host goes in -XenHost, and -Ref, which the cmdlet insists on, is ignored.)
-    $master = (Get-XenPool).master.opaque_ref
+    $master = (Get-XenPool).master
     $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $master -DeviceConfig $deviceConfig `
         -Type $SrType -SmConfig @{ metadata = 'true' } -PassThru
     $srs = @(([xml]$probe).SelectNodes('/SRlist/SR'))
@@ -55,7 +55,7 @@ function Invoke-DisasterRecoveryFailover {
 
     $task = New-XenDRTask -Type $SrType -DeviceConfig $deviceConfig `
         -Whitelist @($srs | ForEach-Object { "$($_.UUID)".Trim() }) -PassThru
-    $introduced = @($task.introduced_SRs | ForEach-Object { Get-XenSR -Ref $_.opaque_ref })
+    $introduced = @($task.introduced_SRs | ForEach-Object { Get-XenSR -Ref $_ })
     Write-Host "Attached $(($introduced | ForEach-Object { $_.name_label }) -join ', ')"
 
     # Recover from every replicated database on the attached SRs: vApps first (their VMs come with them),
@@ -68,7 +68,7 @@ function Invoke-DisasterRecoveryFailover {
     $recoveredVapps = @()
     foreach ($sr in $introduced) {
         $vdis = Get-XenVDI | Where-Object {
-            $_.SR.opaque_ref -eq $sr.opaque_ref -and $_.type -eq 'metadata' -and $_.metadata_latest
+            $_.SR -eq $sr -and $_.type -eq 'metadata' -and $_.metadata_latest
         }
         foreach ($vdi in $vdis) {
             $databaseRef = Invoke-XenMethod -Session $session -Method 'VDI.open_database' -Params @($vdi.opaque_ref)
@@ -148,7 +148,7 @@ function Invoke-DisasterRecoveryFailover {
         # The SRs the recovered VMs needed are no longer the task's: detach and forget those too.
         foreach ($sr in $introduced) {
             if (Get-XenSR -Uuid $sr.uuid -ErrorAction SilentlyContinue) {
-                Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
+                Invoke-DetachAndForgetSr -Ref $sr
             }
         }
         Write-Host "Test failover: removed the recovered VMs and detached the replica"

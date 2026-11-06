@@ -21,20 +21,20 @@ internal static partial class Workflows
         var pool = Pool.get_all(session)[0];
         // Each host's SSH as we found it, to put back at the end: disabling it is not the example's to keep.
         var before = Host.get_all_records(session)
-            .ToDictionary(kv => kv.Key.opaque_ref, kv => (kv.Value.ssh_enabled, kv.Value.ssh_enabled_timeout));
+            .ToDictionary(kv => kv.Key, kv => (kv.Value.ssh_enabled, kv.Value.ssh_enabled_timeout));
 
         // Timed access is the point: set the timeout first and the server stamps an ssh_expiry when SSH
         // is enabled, so a window opened for troubleshooting closes itself. set_ssh_enabled_timeout is
         // itself a pool-wide fan-out call, exactly like enable_ssh/disable_ssh - no need to loop hosts.
-        Pool.set_ssh_enabled_timeout(session, pool.opaque_ref, 3600);
+        Pool.set_ssh_enabled_timeout(session, pool, 3600);
 
         // The pool call fans out to every host, so there is no need to loop for the enable itself.
-        Pool.enable_ssh(session, pool.opaque_ref);
+        Pool.enable_ssh(session, pool);
         foreach (var record in Host.get_all_records(session).Values)
             Console.WriteLine($"{record.name_label}: ssh enabled={record.ssh_enabled}, "
                               + $"expires {record.ssh_expiry:u}");
 
-        Pool.disable_ssh(session, pool.opaque_ref);
+        Pool.disable_ssh(session, pool);
         Console.WriteLine("After disable: " + string.Join(", ",
             Host.get_all_records(session).Values.Select(h => $"{h.name_label}={h.ssh_enabled}")));
 

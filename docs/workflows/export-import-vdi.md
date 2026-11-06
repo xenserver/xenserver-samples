@@ -66,7 +66,7 @@ function Invoke-ExportImportVdi {
     }
     finally {
         Remove-Item $source, $exported -ErrorAction SilentlyContinue
-        $original, $copy | ForEach-Object { Remove-XenVDI -Ref $_.opaque_ref }
+        $original, $copy | ForEach-Object { Remove-XenVDI -Ref $_ }
     }
     Write-Host "OK: export-import-vdi"
     $session | Disconnect-XenServer
@@ -102,12 +102,12 @@ function Invoke-RawVdiTransfer {
             "&vdi=$($Vdi.opaque_ref)&format=raw"
         if ($Method -eq 'Put') { Invoke-WebRequest -Uri $uri -Method Put -InFile $Path -UseBasicParsing | Out-Null }
         else { Invoke-WebRequest -Uri $uri -OutFile $Path -UseBasicParsing }
-        while ((Get-XenTask -Ref $task.opaque_ref).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
-        $finished = Get-XenTask -Ref $task.opaque_ref
+        while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
+        $finished = Get-XenTask -Ref $task
         if ($finished.status -ne 'success') { throw "$Endpoint failed: $($finished.error_info -join ' ')" }
     }
     finally {
-        Remove-XenTask -Ref $task.opaque_ref
+        Remove-XenTask -Ref $task
     }
 }
 ```
@@ -307,16 +307,16 @@ public static void ExportImportVdi(string url, string user, string password, str
     var sr = SrByName(session, srName);
     const long size = 8 * 1024 * 1024;
 
-    string NewDisk(string name) => VDI.create(session, new VDI
+    XenRef<VDI> NewDisk(string name) => VDI.create(session, new VDI
     {
         name_label = name,
-        SR = new XenRef<SR>(sr),
+        SR = sr,
         virtual_size = size,
         type = vdi_type.user,
         sharable = false,
         read_only = false,
         other_config = new Dictionary<string, string>(),
-    }).opaque_ref;
+    });
 
     // One raw transfer of a disk's contents, waiting for its task to finish.
     byte[] Transfer(HttpMethod method, string path, string vdi, byte[] data = null)

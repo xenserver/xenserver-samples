@@ -19,38 +19,38 @@ internal static partial class Workflows
     public static void ManagePoolMembership(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var poolRef = Pool.get_all(session)[0].opaque_ref;
+        var poolRef = Pool.get_all(session)[0];
 
         var hosts = Host.get_all_records(session);
-        var original = Pool.get_master(session, poolRef).opaque_ref;
-        Console.WriteLine($"Coordinator: {hosts[new XenRef<Host>(original)].name_label}");
+        var original = Pool.get_master(session, poolRef);
+        Console.WriteLine($"Coordinator: {hosts[original].name_label}");
         foreach (var h in hosts)
-            Console.WriteLine($"  member: {h.Value.name_label}{(h.Key.opaque_ref == original ? " (coordinator)" : "")}");
+            Console.WriteLine($"  member: {h.Value.name_label}{(h.Key.Equals(original) ? " (coordinator)" : "")}");
 
         // Promote another member. The pool database moves with the role and clients are redirected, so
         // this briefly interrupts management traffic — it does not move any VM.
-        var other = hosts.Keys.First(k => k.opaque_ref != original).opaque_ref;
+        var other = hosts.Keys.First(k => !k.Equals(original));
         Pool.designate_new_master(session, other);
-        Console.WriteLine($"Promoting:   {hosts[new XenRef<Host>(other)].name_label} " +
+        Console.WriteLine($"Promoting:   {hosts[other].name_label} " +
                           "(xapi restarts pool-wide; reconnecting)");
 
         // designate_new_master runs a two-phase commit across every host and ends by restarting xapi
         // pool-wide - the session this call was made on, and the connection itself, do not survive it.
         // Reconnect (with a bounded wait) before touching the pool again, and re-resolve every ref from
         // the fresh session rather than assuming the old ones are still good.
-        session = ReconnectAfterMasterChange(url, user, password, hosts[new XenRef<Host>(other)].uuid);
-        poolRef = Pool.get_all(session)[0].opaque_ref;
-        Console.WriteLine($"Promoted:    {Host.get_name_label(session, Pool.get_master(session, poolRef).opaque_ref)}");
+        session = ReconnectAfterMasterChange(url, user, password, hosts[other].uuid);
+        poolRef = Pool.get_all(session)[0];
+        Console.WriteLine($"Promoted:    {Host.get_name_label(session, Pool.get_master(session, poolRef))}");
 
         // Put it back. Ejecting a member (Pool.eject) is the other half of this surface and is
         // deliberately not shown: it cannot be undone from the pool, because rejoining is initiated by
         // the ejected host.
         Pool.designate_new_master(session, original);
-        Console.WriteLine($"Restoring:   {hosts[new XenRef<Host>(original)].name_label} (reconnecting again)");
+        Console.WriteLine($"Restoring:   {hosts[original].name_label} (reconnecting again)");
 
-        session = ReconnectAfterMasterChange(url, user, password, hosts[new XenRef<Host>(original)].uuid);
-        poolRef = Pool.get_all(session)[0].opaque_ref;
-        Console.WriteLine($"Restored:    {Host.get_name_label(session, Pool.get_master(session, poolRef).opaque_ref)}");
+        session = ReconnectAfterMasterChange(url, user, password, hosts[original].uuid);
+        poolRef = Pool.get_all(session)[0];
+        Console.WriteLine($"Restored:    {Host.get_name_label(session, Pool.get_master(session, poolRef))}");
 
         Console.WriteLine("OK: manage-pool-membership");
         session.logout();
@@ -73,12 +73,12 @@ internal static partial class Workflows
             try
             {
                 var session = Connect(url, user, password);
-                var master = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+                var master = Pool.get_master(session, Pool.get_all(session)[0]);
                 // The new coordinator answers before the pool has settled - calls made too soon fail
                 // (HANDLE_INVALID on the operation's own task) - so also wait for every host to be back,
                 // live and enabled.
                 if (Host.get_uuid(session, master) == newMasterUuid && Host.get_all_records(session).Values.All(
-                        r => r.enabled && Host_metrics.get_live(session, r.metrics.opaque_ref)))
+                        r => r.enabled && Host_metrics.get_live(session, r.metrics)))
                     return session;
                 session.logout();
                 lastError = "the pool has not settled under the new coordinator";

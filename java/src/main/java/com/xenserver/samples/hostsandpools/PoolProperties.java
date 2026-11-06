@@ -28,7 +28,7 @@ public final class PoolProperties {
         String original = pool.getNameLabel(conn);
         SR defaultSr = pool.getDefaultSR(conn);
         System.out.println("Pool:       '" + original + "'");
-        System.out.println("Default SR: " + (defaultSr.toWireString().equals("OpaqueRef:NULL")
+        System.out.println("Default SR: " + (defaultSr.isNull()
                 ? "(none)" : defaultSr.getNameLabel(conn)));
 
         pool.setNameLabel(conn, "sdk-pool-renamed");

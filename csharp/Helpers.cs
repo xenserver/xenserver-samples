@@ -15,34 +15,32 @@ internal static partial class Workflows
     /// <summary>
     /// Look up a template VM by its exact name (rather than picking an arbitrary one).
     /// </summary>
-    internal static string TemplateByName(Session session, string name) =>
-        VM.get_all_records(session).First(kv => kv.Value.is_a_template && kv.Value.name_label == name)
-            .Key.opaque_ref;
+    internal static XenRef<VM> TemplateByName(Session session, string name) =>
+        VM.get_all_records(session).First(kv => kv.Value.is_a_template && kv.Value.name_label == name).Key;
 
     /// <summary>
     /// Look up a guest VM (not a template, control domain or snapshot) by its exact name.
     /// </summary>
-    internal static string VmByName(Session session, string name) =>
+    internal static XenRef<VM> VmByName(Session session, string name) =>
         VM.get_all_records(session).First(kv => !kv.Value.is_a_template && !kv.Value.is_control_domain
-            && !kv.Value.is_a_snapshot && kv.Value.name_label == name).Key.opaque_ref;
+            && !kv.Value.is_a_snapshot && kv.Value.name_label == name).Key;
 
     /// <summary>
     /// Look up an SR by its exact name (optionally requiring it to be shared).
     /// </summary>
-    internal static string SrByName(Session session, string name, bool shared = false) =>
-        SR.get_all_records(session).First(kv => kv.Value.name_label == name && (!shared || kv.Value.shared))
-            .Key.opaque_ref;
+    internal static XenRef<SR> SrByName(Session session, string name, bool shared = false) =>
+        SR.get_all_records(session).First(kv => kv.Value.name_label == name && (!shared || kv.Value.shared)).Key;
 
     /// <summary>
     /// Detach an SR from every host, then forget it. SR.forget refuses an SR that is still attached
     /// (SR_HAS_PBD), so unplug its PBDs first. Forgetting drops the pool's record of the SR but leaves
     /// the data on the storage itself.
     /// </summary>
-    internal static void DetachAndForgetSr(Session session, string sr)
+    internal static void DetachAndForgetSr(Session session, XenRef<SR> sr)
     {
         foreach (var pbd in SR.get_PBDs(session, sr))
-            if (PBD.get_currently_attached(session, pbd.opaque_ref))
-                PBD.unplug(session, pbd.opaque_ref);
+            if (PBD.get_currently_attached(session, pbd))
+                PBD.unplug(session, pbd);
         SR.forget(session, sr);
     }
 
@@ -52,11 +50,11 @@ internal static partial class Workflows
     /// VM.provision fails with UUID_INVALID, so the caller has to rewrite it to the pool's default SR
     /// first — exactly what `xe vm-install` does before calling VM.provision itself.
     /// </summary>
-    internal static void Provision(Session session, string vm)
+    internal static void Provision(Session session, XenRef<VM> vm)
     {
         if (VM.get_other_config(session, vm).TryGetValue("disks", out var disksXml))
         {
-            var defaultSr = Pool.get_default_SR(session, Pool.get_all(session).First().opaque_ref).opaque_ref;
+            var defaultSr = Pool.get_default_SR(session, Pool.get_all(session).First());
             var doc = XDocument.Parse(disksXml);
             foreach (var disk in doc.Root!.Elements("disk"))
                 disk.SetAttributeValue("sr", SR.get_uuid(session, defaultSr));
@@ -79,7 +77,7 @@ internal static partial class Workflows
     /// describing what it found. Never probe by attempting SR.create instead: on real storage a create that
     /// unexpectedly succeeds formats the LUN.
     /// </summary>
-    internal static string ProbeForFailure(Session session, string host,
+    internal static string ProbeForFailure(Session session, XenRef<Host> host,
         Dictionary<string, string> deviceConfig, string smType)
     {
         try
@@ -111,7 +109,7 @@ internal static partial class Workflows
             try
             {
                 var session = Connect(url, user, password);
-                var host = Host.get_by_uuid(session, hostUuid).opaque_ref;
+                var host = Host.get_by_uuid(session, hostUuid);
                 var otherConfig = Host.get_other_config(session, host);
                 var value = otherConfig.TryGetValue(key, out var v) ? v : null;
                 if (value != before && HostLive(session, host))
@@ -131,7 +129,7 @@ internal static partial class Workflows
     /// Re-enable a host that has just come back. It reports itself live before xapi on it has finished
     /// starting, and until then Host.enable fails HOST_STILL_BOOTING - so retry that.
     /// </summary>
-    internal static void EnableWhenBooted(Session session, string host, int timeoutSeconds = 600,
+    internal static void EnableWhenBooted(Session session, XenRef<Host> host, int timeoutSeconds = 600,
         int intervalSeconds = 10)
     {
         var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
@@ -154,10 +152,10 @@ internal static partial class Workflows
     /// Relocate every one of a (not-yet-started) VM's disks onto the given SR, the same VDI.pool_migrate
     /// storage-migrate already demonstrates.
     /// </summary>
-    internal static void MoveDisksToSr(Session session, string vm, string srRef)
+    internal static void MoveDisksToSr(Session session, XenRef<VM> vm, XenRef<SR> srRef)
     {
         foreach (var vdi in DiskVdis(session, vm))
-            if (VDI.get_SR(session, vdi).opaque_ref != srRef)
+            if (!VDI.get_SR(session, vdi).Equals(srRef))
                 AwaitTask(session, VDI.async_pool_migrate(session, vdi, srRef, new Dictionary<string, string>()));
     }
 
@@ -192,11 +190,11 @@ internal static partial class Workflows
     /// and provision that into an ordinary VM. The snapshot is only needed for the clone, so it goes
     /// again straight away.
     /// </summary>
-    internal static string CopyOfGuest(Session session, string sourceVmName, string newVmName)
+    internal static XenRef<VM> CopyOfGuest(Session session, string sourceVmName, string newVmName)
     {
         var source = VmByName(session, sourceVmName);
-        var snapshot = VM.snapshot(session, source, newVmName + "-source").opaque_ref;
-        var vm = VM.clone(session, snapshot, newVmName).opaque_ref;
+        var snapshot = VM.snapshot(session, source, newVmName + "-source");
+        var vm = VM.clone(session, snapshot, newVmName);
         Provision(session, vm);
         DestroyVmAndDisks(session, snapshot);
         return vm;
@@ -208,7 +206,7 @@ internal static partial class Workflows
     /// it says so: wait for clean_shutdown to appear there (the same check that refuses it with
     /// VM_LACKS_FEATURE beforehand). A booting OS takes a while.
     /// </summary>
-    internal static void WaitForGuestAgent(Session session, string vm, int timeoutSeconds = 300,
+    internal static void WaitForGuestAgent(Session session, XenRef<VM> vm, int timeoutSeconds = 300,
         int intervalSeconds = 2)
     {
         // clean_shutdown in allowed_operations says the guest can shut down; a Linux kernel offers that early
@@ -218,8 +216,8 @@ internal static partial class Workflows
         {
             if (!VM.get_allowed_operations(session, vm).Contains(vm_operations.clean_shutdown)) return false;
             var metrics = VM.get_guest_metrics(session, vm);
-            return metrics.opaque_ref != "OpaqueRef:NULL"
-                   && VM_guest_metrics.get_PV_drivers_detected(session, metrics.opaque_ref);
+            return !Helper.IsNullOrEmptyOpaqueRef(metrics)
+                   && VM_guest_metrics.get_PV_drivers_detected(session, metrics);
         }
 
         var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
@@ -234,14 +232,14 @@ internal static partial class Workflows
 
     /// <summary>The VDIs backing a VM's disk VBDs (used to clean up a full copy's independent
     /// disks).</summary>
-    internal static List<string> DiskVdis(Session session, string vmRef)
+    internal static List<XenRef<VDI>> DiskVdis(Session session, XenRef<VM> vmRef)
     {
-        var vdis = new List<string>();
+        var vdis = new List<XenRef<VDI>>();
         foreach (var vbdRef in VM.get_VBDs(session, vmRef))
         {
-            if (VBD.get_type(session, vbdRef.opaque_ref) != vbd_type.Disk) continue;
-            var vdi = VBD.get_VDI(session, vbdRef.opaque_ref).opaque_ref;
-            if (vdi != "OpaqueRef:NULL") vdis.Add(vdi);
+            if (VBD.get_type(session, vbdRef) != vbd_type.Disk) continue;
+            var vdi = VBD.get_VDI(session, vbdRef);
+            if (!Helper.IsNullOrEmptyOpaqueRef(vdi)) vdis.Add(vdi);
         }
         return vdis;
     }
@@ -250,13 +248,13 @@ internal static partial class Workflows
     /// VM.destroy leaves a VM's (or snapshot's/template's) disks behind; this collects them first and
     /// destroys them afterwards, the way delete-vm does for a VM it created.
     /// </summary>
-    internal static void DestroyVmAndDisks(Session session, string vm)
+    internal static void DestroyVmAndDisks(Session session, XenRef<VM> vm)
     {
         var vdis = DiskVdis(session, vm);
         // A checkpoint (or a suspended VM) also owns a suspend image holding its memory, which no VBD
         // points at: destroy that as well.
-        var suspendVdi = VM.get_suspend_VDI(session, vm).opaque_ref;
-        if (suspendVdi != "OpaqueRef:NULL") vdis.Add(suspendVdi);
+        var suspendVdi = VM.get_suspend_VDI(session, vm);
+        if (!Helper.IsNullOrEmptyOpaqueRef(suspendVdi)) vdis.Add(suspendVdi);
         VM.destroy(session, vm);
         foreach (var vdi in vdis) VDI.destroy(session, vdi);
     }
@@ -269,9 +267,9 @@ internal static partial class Workflows
     /// </summary>
     internal static List<XenRef<Repository>> IntroduceUpdateRepositories(Session session, string repoUrl,
         string sourceUrl) =>
-        new[] { "base", "normal" }.Select(stage => new XenRef<Repository>(Repository.introduce(session,
+        new[] { "base", "normal" }.Select(stage => Repository.introduce(session,
             $"sdk-example-{stage}", $"SDK example {stage} repository",
-            $"{repoUrl}/{stage}", $"{sourceUrl}/{stage}", stage != "base", "").opaque_ref)).ToList();
+            $"{repoUrl}/{stage}", $"{sourceUrl}/{stage}", stage != "base", "")).ToList();
 
     /// <summary>An HTTP client that accepts the host's self-signed certificate, as Connect does.</summary>
     internal static HttpClient InsecureHttpClient() =>
@@ -280,6 +278,6 @@ internal static partial class Workflows
             Timeout = TimeSpan.FromMinutes(5),
         };
 
-    internal static bool HostLive(Session session, string host) =>
-        Host_metrics.get_live(session, Host.get_metrics(session, host).opaque_ref);
+    internal static bool HostLive(Session session, XenRef<Host> host) =>
+        Host_metrics.get_live(session, Host.get_metrics(session, host));
 }

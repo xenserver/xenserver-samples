@@ -9,6 +9,7 @@ Run it::
 """
 
 from connection import connect
+from helpers import NULL_REF
 
 
 def manage_vapp(url, username, password, vm_name):
@@ -36,7 +37,7 @@ def manage_vapp(url, username, password, vm_name):
     x.VM_appliance.shutdown(vapp)
     print(f"Shut down:      {x.VM.get_power_state(vm)}")
 
-    x.VM.set_appliance(vm, "OpaqueRef:NULL")
+    x.VM.set_appliance(vm, NULL_REF)
     x.VM_appliance.destroy(vapp)
     print("OK: manage-vapp")
     x.session.logout()

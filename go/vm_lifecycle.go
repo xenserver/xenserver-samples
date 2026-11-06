@@ -58,16 +58,16 @@ func vmLifecycle(url, user, password, sourceVM, newVMName string) {
 // hasSuspendSR reports whether VM.Suspend has a suspend-image SR to use: the VM's own, else the
 // pool's, else the resident host's - the same fallback order xapi's choose_suspend_sr uses.
 func hasSuspendSR(session *xenapi.Session, vm xenapi.VMRef) bool {
-	if sr, err := xenapi.VM.GetSuspendSR(session, vm); err == nil && sr != "" && sr != "OpaqueRef:NULL" {
+	if sr, err := xenapi.VM.GetSuspendSR(session, vm); err == nil && isSet(sr) {
 		return true
 	}
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
-	if sr, err := xenapi.Pool.GetSuspendImageSR(session, pools[0]); err == nil && sr != "" && sr != "OpaqueRef:NULL" {
+	if sr, err := xenapi.Pool.GetSuspendImageSR(session, pools[0]); err == nil && isSet(sr) {
 		return true
 	}
 	host, err := xenapi.Pool.GetMaster(session, pools[0])
 	check(err)
 	sr, err := xenapi.Host.GetSuspendImageSr(session, host)
-	return err == nil && sr != "" && sr != "OpaqueRef:NULL"
+	return err == nil && isSet(sr)
 }

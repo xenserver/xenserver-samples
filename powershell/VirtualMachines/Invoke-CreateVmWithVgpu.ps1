@@ -33,20 +33,20 @@ function Invoke-CreateVmWithVgpu {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm
 
     # Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
-    $vgpu = New-XenVGPU -VM $vm.opaque_ref -GPUGroup $group.opaque_ref -Device "0" -OtherConfig @{} -Type $vgpuType.opaque_ref -PassThru
+    $vgpu = New-XenVGPU -VM $vm -GPUGroup $group -Device "0" -OtherConfig @{} -Type $vgpuType -PassThru
     Write-Host "Created vGPU: $($vgpu.uuid)"
 
     # Read the assignment back.
-    $assignedVm = Get-XenVM -Ref $vm.opaque_ref
+    $assignedVm = Get-XenVM -Ref $vm
     $assigned = (Get-XenVGPUType -Ref (Get-XenVGPU -Ref $assignedVm.VGPUs[0]).type).model_name
     Write-Host "VM now has $($assignedVm.VGPUs.Count) vGPU(s); type = $assigned"
 
     # Tidy up so the example is repeatable.
     $vgpu | Remove-XenVGPU
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "Cleaned up the example VM and its vGPU."
 
     Write-Host "OK: create-vm-with-vgpu"

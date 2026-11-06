@@ -19,7 +19,7 @@ internal static partial class Workflows
     public static void ConfigureHa(string url, string user, string password, string heartbeatSrName)
     {
         var session = Connect(url, user, password);
-        var poolRef = Pool.get_all_records(session).Keys.First().opaque_ref;
+        var poolRef = Pool.get_all_records(session).Keys.First();
 
         // The HA heartbeat statefile needs a shared SR; confirm the chosen one can host it.
         var srRef = SrByName(session, heartbeatSrName, shared: true);
@@ -29,16 +29,16 @@ internal static partial class Workflows
         // What HA does per VM. The restart priority decides which guests come back first after a host
         // failure, and whether a VM is protected at all; "restart" is protected, an empty string is not.
         var guest = VM.get_all_records(session).First(kv =>
-            !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot).Key.opaque_ref;
+            !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot).Key;
 
         // How many host failures can the pool tolerate WITH the VMs you mean to protect? Plan for those: a
         // target computed with none protected can be too high, and protecting a VM afterwards then fails
         // HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN.
         var ntol = Pool.ha_compute_hypothetical_max_host_failures_to_tolerate(
-            session, new Dictionary<XenRef<VM>, string> { { new XenRef<VM>(guest), "restart" } });
+            session, new Dictionary<XenRef<VM>, string> { { guest, "restart" } });
         Console.WriteLine($"Max failures:  {ntol}");
         Pool.set_ha_host_failures_to_tolerate(session, poolRef, ntol);
-        Pool.enable_ha(session, new List<XenRef<SR>> { new(srRef) }, new Dictionary<string, string>());
+        Pool.enable_ha(session, new List<XenRef<SR>> { srRef }, new Dictionary<string, string>());
         try
         {
             Console.WriteLine($"HA enabled:    {Pool.get_ha_enabled(session, poolRef)}");

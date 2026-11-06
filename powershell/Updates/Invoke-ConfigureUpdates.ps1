@@ -23,10 +23,10 @@ function Invoke-ConfigureUpdates {
 
     $pool = Get-XenPool | Select-Object -First 1
     # Remember the pool's own repositories, to put them back afterwards.
-    $previous = @((Get-XenPool -Ref $pool.opaque_ref).repositories | ForEach-Object { $_.opaque_ref })
-    $pool | Set-XenPool -Repositories @($repos | ForEach-Object { $_.opaque_ref })
+    $previous = @((Get-XenPool -Ref $pool).repositories)
+    $pool | Set-XenPool -Repositories $repos
     $pool | Set-XenPool -UpdateSyncEnabled $true
-    $p = Get-XenPool -Ref $pool.opaque_ref
+    $p = Get-XenPool -Ref $pool
     Write-Host "Pool repositories: $($p.repositories.Count); auto-sync enabled: $($p.update_sync_enabled)"
 
     # Tidy up so the example is repeatable.

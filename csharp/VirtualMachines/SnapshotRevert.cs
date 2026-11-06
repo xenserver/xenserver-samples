@@ -23,7 +23,7 @@ internal static partial class Workflows
         Console.WriteLine($"Snapshotting VM: {VM.get_name_label(session, vmRef)}");
         var wasRunning = VM.get_power_state(session, vmRef) == vm_power_state.Running;
 
-        var snapRef = VM.snapshot(session, vmRef, snapshotName).opaque_ref;
+        var snapRef = VM.snapshot(session, vmRef, snapshotName);
         Console.WriteLine($"Created snapshot: {VM.get_uuid(session, snapRef)}");
 
         // A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the
@@ -34,7 +34,7 @@ internal static partial class Workflows
         if (VM.get_power_state(session, vmRef) == vm_power_state.Running)
         {
             var console = VM.get_consoles(session, vmRef)
-                .First(c => XenAPI.Console.get_protocol(session, c.opaque_ref) == console_protocol.rfb);
+                .First(c => XenAPI.Console.get_protocol(session, c) == console_protocol.rfb);
             using var client = InsecureHttpClient();
             var response = client.GetAsync(
                 $"{url}/vncsnapshot?session_id={session.opaque_ref}&ref={console.opaque_ref}").Result;

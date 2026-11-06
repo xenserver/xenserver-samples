@@ -25,13 +25,13 @@ function Invoke-ManageDriverVariants {
         [Parameter(Mandatory = $true)][string]$Password
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master.opaque_ref
+    $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master
 
     # A driver can ship in several variants - a vendor build alongside the one in the distribution, say.
     # One is SELECTED (what the host will load) and one is ACTIVE (what it has loaded); they differ
     # until the host reboots, which is what makes selecting a variant a scheduled change rather than an
     # immediate one.
-    $drivers = @(Get-XenHostDriver | Where-Object { $_.host -eq $xenHost.opaque_ref })
+    $drivers = @(Get-XenHostDriver | Where-Object { $_.host -eq $xenHost })
     Write-Host "$($xenHost.name_label) has $($drivers.Count) driver(s)"
     $drivers | Sort-Object name | Select-Object -First 3 | ForEach-Object {
         Write-Host ("  {0,-14} {1,-10} {2} variant(s), active={3}" -f
@@ -45,14 +45,14 @@ function Invoke-ManageDriverVariants {
     # has, and one of its variants that is usable.
     $usable = @($drivers | Sort-Object name | ForEach-Object {
         $driver = $_
-        $driver.variants | Where-Object { (Get-XenDriverVariant -Ref $_.opaque_ref).hardware_present } |
+        $driver.variants | Where-Object { (Get-XenDriverVariant -Ref $_).hardware_present } |
             ForEach-Object { [pscustomobject]@{ Driver = $driver; Variant = $_ } }
     })
     if (-not $usable) { throw "no driver on $($xenHost.name_label) has a variant for hardware it has" }
     $target = $usable[0].Driver
     $variant = $usable[0].Variant
-    Invoke-XenHostDriver -Ref $target.opaque_ref -XenAction Select -Variant $variant
-    $after = Get-XenHostDriver -Ref $target.opaque_ref
+    Invoke-XenHostDriver -Ref $target -XenAction Select -Variant $variant
+    $after = Get-XenHostDriver -Ref $target
     Write-Host "  $($after.name): selected $(Get-DriverVariantName $after.selected_variant), active $(Get-DriverVariantName $after.active_variant)"
 
     Write-Host "OK: manage-driver-variants"
@@ -65,8 +65,8 @@ function Get-DriverVariantName {
         A driver variant's name, tolerating the null reference an unloaded driver has.
     #>
     param($VariantRef)
-    if (-not $VariantRef -or $VariantRef.opaque_ref -eq "OpaqueRef:NULL") { return "(none)" }
-    (Get-XenDriverVariant -Ref $VariantRef.opaque_ref).name
+    if (-not $VariantRef -or $VariantRef -eq "OpaqueRef:NULL") { return "(none)" }
+    (Get-XenDriverVariant -Ref $VariantRef).name
 }
 ```
 
@@ -176,6 +176,7 @@ between the variant that is selected and the one currently loaded.
 """
 
 from connection import connect
+from helpers import is_set
 
 
 def manage_driver_variants(url, username, password):
@@ -218,7 +219,7 @@ def manage_driver_variants(url, username, password):
 
 def variant_name(x, ref):
     """A driver variant's name, tolerating the null reference an unloaded driver has."""
-    return x.Driver_variant.get_name(ref) if ref and ref != "OpaqueRef:NULL" else "(none)"
+    return x.Driver_variant.get_name(ref) if is_set(ref) else "(none)"
 ```
 
 <details><summary>Example output</summary>
@@ -246,19 +247,19 @@ Source: [`csharp/HostsAndPools/ManageDriverVariants.cs`](../../csharp/HostsAndPo
 public static void ManageDriverVariants(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+    var host = Pool.get_master(session, Pool.get_all(session)[0]);
 
     // A driver can ship in several variants — a vendor build alongside the one in the
     // distribution, say. One is SELECTED (what the host will load) and one is ACTIVE (what it has
     // loaded); they differ until the host reboots, which is what makes selecting a variant a
     // scheduled change rather than an immediate one.
     var drivers = Host_driver.get_all_records(session)
-        .Where(kv => kv.Value.host.opaque_ref == host)
+        .Where(kv => kv.Value.host.Equals(host))
         .OrderBy(kv => kv.Value.name).ToList();
     Console.WriteLine($"{Host.get_name_label(session, host)} has {drivers.Count} driver(s)");
     foreach (var (_, driver) in drivers.Take(3))
         Console.WriteLine($"  {driver.name,-14} {driver.type,-10} {driver.variants.Count} variant(s), " +
-            $"active={VariantName(session, driver.active_variant.opaque_ref)}");
+            $"active={VariantName(session, driver.active_variant)}");
 
     // Select a variant explicitly. It becomes the selected one immediately; whether it is also
     // active depends on whether the hardware is present and the driver already loaded.
@@ -267,24 +268,23 @@ public static void ManageDriverVariants(string url, string user, string password
     // hardware this host actually has, and one of its variants that is usable.
     var usable = drivers
         .SelectMany(kv => kv.Value.variants.Select(v => (driverRef: kv.Key, variant: v)))
-        .Where(p => Driver_variant.get_hardware_present(session, p.variant.opaque_ref))
+        .Where(p => Driver_variant.get_hardware_present(session, p.variant))
         .ToList();
     if (usable.Count == 0)
         throw new Exception($"no driver on {Host.get_name_label(session, host)} has a variant for hardware it has");
     var (chosenRef, chosenVariant) = usable[0];
-    var variant = chosenVariant.opaque_ref;
-    Host_driver.select(session, chosenRef.opaque_ref, variant);
-    var after = Host_driver.get_record(session, chosenRef.opaque_ref);
-    Console.WriteLine($"  {after.name}: selected {VariantName(session, after.selected_variant.opaque_ref)}, " +
-        $"active {VariantName(session, after.active_variant.opaque_ref)}");
+    Host_driver.select(session, chosenRef, chosenVariant);
+    var after = Host_driver.get_record(session, chosenRef);
+    Console.WriteLine($"  {after.name}: selected {VariantName(session, after.selected_variant)}, " +
+        $"active {VariantName(session, after.active_variant)}");
 
     Console.WriteLine("OK: manage-driver-variants");
     session.logout();
 }
 
 /// <summary>A driver variant's name, tolerating the null reference an unloaded driver has.</summary>
-private static string VariantName(Session session, string variantRef) =>
-    !string.IsNullOrEmpty(variantRef) && variantRef != "OpaqueRef:NULL"
+private static string VariantName(Session session, XenRef<Driver_variant> variantRef) =>
+    !Helper.IsNullOrEmptyOpaqueRef(variantRef)
         ? Driver_variant.get_name(session, variantRef) : "(none)";
 ```
 
@@ -392,7 +392,7 @@ func manageDriverVariants(url, user, password string) {
 
 // variantName is a driver variant's name, tolerating the null reference an unloaded driver has.
 func variantName(session *xenapi.Session, ref xenapi.DriverVariantRef) string {
-	if ref == "" || ref == "OpaqueRef:NULL" {
+	if !isSet(ref) {
 		return "(none)"
 	}
 	name, err := xenapi.DriverVariant.GetName(session, ref)
@@ -498,7 +498,7 @@ public final class ManageDriverVariants {
      */
     private static String variantName(Connection conn, DriverVariant variant) throws Exception {
         if (variant == null || variant.toWireString() == null
-                || variant.toWireString().equals("OpaqueRef:NULL"))
+                || variant.isNull())
             return "(none)";
         return variant.getName(conn);
     }

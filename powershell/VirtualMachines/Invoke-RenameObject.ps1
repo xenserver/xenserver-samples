@@ -21,7 +21,7 @@ function Invoke-RenameObject {
     $original = $vm.name_label
 
     $vm | Set-XenVM -NameLabel "sdk-renamed"
-    Write-Host "Renamed '$original' -> '$((Get-XenVM -Ref $vm.opaque_ref).name_label)'"
+    Write-Host "Renamed '$original' -> '$((Get-XenVM -Ref $vm).name_label)'"
 
     $vm | Set-XenVM -NameLabel $original  # restore so the example is repeatable
     Write-Host "OK: rename-object"

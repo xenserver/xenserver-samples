@@ -32,8 +32,8 @@ function Invoke-AttachDisk {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    $ref = $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm
+    $ref = $vm
     $sr = Get-XenSR -Name $SrName | Select-Object -First 1
     if (-not $sr) { throw "No SR named '$SrName' was found." }
 
@@ -186,7 +186,7 @@ public static void AttachDisk(string url, string user, string password,
 {
     const long GiB = 1024L * 1024 * 1024;
     var session = Connect(url, user, password);
-    var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+    var vm = VM.clone(session, TemplateByName(session, templateName), newVmName);
     Provision(session, vm);
     var srRef = SrByName(session, srName);
 
@@ -194,18 +194,18 @@ public static void AttachDisk(string url, string user, string password,
     var vdi = VDI.create(session, new VDI
     {
         name_label = "sdk-example-data-disk",
-        SR = new XenRef<SR>(srRef),
+        SR = srRef,
         virtual_size = 8 * GiB,
         type = vdi_type.user,
         sharable = false,
         read_only = false,
         other_config = new Dictionary<string, string>(),
-    }).opaque_ref;
+    });
     var device = VM.get_allowed_VBD_devices(session, vm)[0];
     VBD.create(session, new VBD
     {
-        VM = new XenRef<VM>(vm),
-        VDI = new XenRef<VDI>(vdi),
+        VM = vm,
+        VDI = vdi,
         userdevice = device,
         bootable = false,
         mode = vbd_mode.RW,

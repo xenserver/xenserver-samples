@@ -40,16 +40,16 @@ function Invoke-ManageVtpm {
 
     # IsUnique false: the vTPM may be copied along with the VM. A VM may have at most one, and it can
     # only be attached while Halted — the device is presented at boot.
-    $vtpm = New-XenVTPM -VM $vm.opaque_ref -IsUnique $false -PassThru
+    $vtpm = New-XenVTPM -VM $vm -IsUnique $false -PassThru
     Write-Host "  persistence backend: $($vtpm.persistence_backend)"
     Write-Host "  unique to this VM:   $($vtpm.is_unique)"
-    Write-Host "  VM now has $(@((Get-XenVM -Ref $vm.opaque_ref).VTPMs).Count) vTPM(s)"
+    Write-Host "  VM now has $(@((Get-XenVM -Ref $vm).VTPMs).Count) vTPM(s)"
 
     # The VM advertises whether another can be added; once it has one, it cannot.
-    Write-Host "  can add another:     $((Get-XenVM -Ref $vm.opaque_ref).allowed_operations -contains 'create_vtpm')"
+    Write-Host "  can add another:     $((Get-XenVM -Ref $vm).allowed_operations -contains 'create_vtpm')"
 
-    Remove-XenVTPM -Ref $vtpm.opaque_ref
-    Write-Host "  after removal:       $(@((Get-XenVM -Ref $vm.opaque_ref).VTPMs).Count) vTPM(s)"
+    Remove-XenVTPM -Ref $vtpm
+    Write-Host "  after removal:       $(@((Get-XenVM -Ref $vm).VTPMs).Count) vTPM(s)"
     Write-Host "OK: manage-vtpm"
     $session | Disconnect-XenServer
 }
@@ -220,18 +220,18 @@ public static void ManageVtpm(string url, string user, string password)
 
     // is_unique=false: the vTPM may be copied along with the VM. A VM may have at most one, and it
     // can only be attached while Halted — the device is presented at boot.
-    var vtpm = VTPM.create(session, vm.Key.opaque_ref, false);
-    var record = VTPM.get_record(session, vtpm.opaque_ref);
+    var vtpm = VTPM.create(session, vm.Key, false);
+    var record = VTPM.get_record(session, vtpm);
     Console.WriteLine($"  persistence backend: {record.persistence_backend}");
     Console.WriteLine($"  unique to this VM:   {record.is_unique}");
-    Console.WriteLine($"  VM now has {VM.get_VTPMs(session, vm.Key.opaque_ref).Count} vTPM(s)");
+    Console.WriteLine($"  VM now has {VM.get_VTPMs(session, vm.Key).Count} vTPM(s)");
 
     // The VM advertises whether another can be added; once it has one, it cannot.
     Console.WriteLine("  can add another:     " +
-        VM.get_allowed_operations(session, vm.Key.opaque_ref).Contains(vm_operations.create_vtpm));
+        VM.get_allowed_operations(session, vm.Key).Contains(vm_operations.create_vtpm));
 
-    VTPM.destroy(session, vtpm.opaque_ref);
-    Console.WriteLine($"  after removal:       {VM.get_VTPMs(session, vm.Key.opaque_ref).Count} vTPM(s)");
+    VTPM.destroy(session, vtpm);
+    Console.WriteLine($"  after removal:       {VM.get_VTPMs(session, vm.Key).Count} vTPM(s)");
     Console.WriteLine("OK: manage-vtpm");
     session.logout();
 }

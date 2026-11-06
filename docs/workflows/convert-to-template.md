@@ -31,15 +31,15 @@ function Invoke-ConvertToTemplate {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref  # now a real (halted) VM
-    $ref = $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm  # now a real (halted) VM
+    $ref = $vm
     Write-Host "is_a_template after provision: $((Get-XenVM -Ref $ref).is_a_template)"
 
     # Converting a VM to a custom template is a one-way operation.
     $vm | Set-XenVM -IsATemplate $true
     Write-Host "is_a_template after convert:  $((Get-XenVM -Ref $ref).is_a_template)"
 
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "OK: convert-to-template"
     $session | Disconnect-XenServer
 }
@@ -153,7 +153,7 @@ public static void ConvertToTemplate(string url, string user, string password,
     string templateName, string newVmName = "sdk-example-totemplate")
 {
     var session = Connect(url, user, password);
-    var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+    var vm = VM.clone(session, TemplateByName(session, templateName), newVmName);
     Provision(session, vm); // now a real (halted) VM
     Console.WriteLine($"is_a_template after provision: {VM.get_is_a_template(session, vm)}");
 

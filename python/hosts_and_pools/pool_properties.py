@@ -8,6 +8,7 @@ Run it::
 """
 
 from connection import connect
+from helpers import is_set
 
 
 def pool_properties(url, username, password):
@@ -18,8 +19,7 @@ def pool_properties(url, username, password):
     default_sr = session.xenapi.pool.get_default_SR(pool_ref)
     print("Pool:       '%s'" % original)
     print("Default SR: %s"
-          % ("(none)" if default_sr == "OpaqueRef:NULL"
-             else session.xenapi.SR.get_name_label(default_sr)))
+          % (session.xenapi.SR.get_name_label(default_sr) if is_set(default_sr) else "(none)"))
 
     session.xenapi.pool.set_name_label(pool_ref, "sdk-pool-renamed")
     print("Renamed to: '%s'" % session.xenapi.pool.get_name_label(pool_ref))

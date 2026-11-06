@@ -5,6 +5,7 @@ import com.xensource.xenapi.Session;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMAppliance;
 
+import static com.xenserver.samples.Helpers.NULL_REF;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ManageVapp {
@@ -48,9 +49,9 @@ public final class ManageVapp {
             vapp.shutdown(conn);
             System.out.println("Shut down:      " + vm.getPowerState(conn));
 
-            // Detach with the null REFERENCE, not Java's null: the binding doesn't turn null into
-            // OpaqueRef:NULL, and a real host refuses what it sends with INTERNAL_ERROR.
-            vm.setAppliance(conn, new VMAppliance("OpaqueRef:NULL"));
+            // Detach with the null REFERENCE, not Java's null: the binding doesn't turn null into the
+            // null reference, and a real host refuses what it sends with INTERNAL_ERROR.
+            vm.setAppliance(conn, new VMAppliance(NULL_REF));
             vapp.destroy(conn);
             System.out.println("OK: manage-vapp");
         } finally {

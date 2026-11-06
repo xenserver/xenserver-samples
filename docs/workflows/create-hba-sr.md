@@ -42,7 +42,7 @@ function Invoke-CreateHbaSr {
     $xenHost = Get-XenHost | Select-Object -First 1
 
     # The root element varies by backend; find BlockDevice entries by tag wherever they are.
-    $devlistXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost.opaque_ref -DeviceConfig @{} -SmType lvmohba)
+    $devlistXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost -DeviceConfig @{} -SmType lvmohba)
     $device = $devlistXml.SelectNodes("//BlockDevice") |
         Where-Object { -not $ScsiId -or $_.SCSIid -eq $ScsiId } | Select-Object -First 1
     if (-not $device) { throw "no LUN with SCSIid $ScsiId is visible to this host" }
@@ -56,7 +56,7 @@ function Invoke-CreateHbaSr {
 
     # SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
     # there, and SR.create would format it. Reattach that SR rather than destroying it.
-    $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $xenHost.opaque_ref `
+    $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $xenHost `
         -DeviceConfig $deviceConfig -Type lvmohba -SmConfig @{} -PassThru
     $existing = @(([xml]$probe).SelectNodes('/SRlist/SR'))
     if ($existing.Count -gt 0) {
@@ -70,9 +70,9 @@ function Invoke-CreateHbaSr {
     Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
     # Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
     # SR.destroy needs it detached from every host first.
-    Get-XenPBD | Where-Object { $_.SR.opaque_ref -eq $sr.opaque_ref -and $_.currently_attached } |
+    Get-XenPBD | Where-Object { $_.SR -eq $sr -and $_.currently_attached } |
         ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
-    Remove-XenSR -Ref $sr.opaque_ref
+    Remove-XenSR -Ref $sr
     Write-Host "OK: create-hba-sr"
     $session | Disconnect-XenServer
 }
@@ -267,7 +267,7 @@ public static void CreateHbaSr(string url, string user, string password, string 
 {
     const long GiB = 1024L * 1024 * 1024;
     var session = Connect(url, user, password);
-    var host = Host.get_all(session)[0].opaque_ref;
+    var host = Host.get_all(session)[0];
 
     // The root element varies by backend; find BlockDevice entries by tag wherever they are.
     var devlistXml = XDocument.Parse(ProbeForFailure(session, host, new Dictionary<string, string>(), "lvmohba"));
@@ -297,8 +297,8 @@ public static void CreateHbaSr(string url, string user, string password, string 
     // Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
     // SR.destroy needs it detached from every host first.
     foreach (var pbd in SR.get_PBDs(session, sr))
-        if (PBD.get_currently_attached(session, pbd.opaque_ref))
-            PBD.unplug(session, pbd.opaque_ref);
+        if (PBD.get_currently_attached(session, pbd))
+            PBD.unplug(session, pbd);
     SR.destroy(session, sr);
     Console.WriteLine("OK: create-hba-sr");
     session.logout();
@@ -309,7 +309,7 @@ public static void CreateHbaSr(string url, string user, string password, string 
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-be0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-970a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 

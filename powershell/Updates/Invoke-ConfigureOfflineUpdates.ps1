@@ -27,7 +27,7 @@ function Invoke-ConfigureOfflineUpdates {
     $pool = Get-XenPool | Select-Object -First 1
 
     # Remember the pool's own repositories, to put them back afterwards.
-    $previous = @($pool.repositories | ForEach-Object { $_.opaque_ref })
+    $previous = @($pool.repositories)
     $existing = Get-XenRepository | Where-Object { $_.origin -eq 'bundle' } | Select-Object -First 1
     $repo = if ($existing) { $existing } else {
         # Repository.introduce_bundle is a static-style create, so pass the NULL ref for the (ignored)
@@ -36,18 +36,20 @@ function Invoke-ConfigureOfflineUpdates {
             -NameDescription "Updates from uploaded bundles" -PassThru
     }
     try {
-        $pool | Set-XenPool -Repositories @($repo.opaque_ref)
-        Write-Host ("Pool repositories: " + ((Get-XenPool -Ref $pool.opaque_ref).repositories |
-            ForEach-Object { (Get-XenRepository -Ref $_.opaque_ref).name_label }) -join ", ")
+        $pool | Set-XenPool -Repositories @($repo)
+        Write-Host ("Pool repositories: " + ((Get-XenPool -Ref $pool).repositories |
+            ForEach-Object { (Get-XenRepository -Ref $_).name_label }) -join ", ")
 
         if ($BundlePath) {
-            $coordinator = Get-XenHost -Ref $pool.master.opaque_ref
+            $coordinator = Get-XenHost -Ref $pool.master
             $task = New-XenTask -Label "sdk-example-bundle-upload" -Description "" -PassThru
+            # Send-XenBundle/Receive-XenUpdates are HTTP helpers, not XenAPI calls: -TaskRef travels in the
+            # request itself, so it needs the opaque ref string, not the task object.
             Send-XenBundle -XenHost $coordinator.address -Path $BundlePath -TaskRef $task.opaque_ref `
                 -NoWarnCertificates -NoWarnNewCertificates
             $task | Wait-XenTask -ShowProgress
-            $finished = Get-XenTask -Ref $task.opaque_ref
-            Remove-XenTask -Ref $task.opaque_ref
+            $finished = Get-XenTask -Ref $task
+            Remove-XenTask -Ref $task
             if ($finished.status -ne 'success') { throw "bundle upload failed: $($finished.error_info -join ' ')" }
             Write-Host "Uploaded $(Split-Path $BundlePath -Leaf)"
 
@@ -56,7 +58,7 @@ function Invoke-ConfigureOfflineUpdates {
             Receive-XenUpdates -XenHost $coordinator.address -Path $json -TaskRef $task.opaque_ref `
                 -NoWarnCertificates -NoWarnNewCertificates
             $task | Wait-XenTask
-            Remove-XenTask -Ref $task.opaque_ref
+            Remove-XenTask -Ref $task
             $available = Get-Content -Raw -Path $json | ConvertFrom-Json
             Remove-Item $json
             Write-Host "Updates in the bundle: $(@($available.updates).Count) (apply them with hash $($available.hash))"

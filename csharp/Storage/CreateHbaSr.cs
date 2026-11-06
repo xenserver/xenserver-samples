@@ -32,7 +32,7 @@ internal static partial class Workflows
     {
         const long GiB = 1024L * 1024 * 1024;
         var session = Connect(url, user, password);
-        var host = Host.get_all(session)[0].opaque_ref;
+        var host = Host.get_all(session)[0];
 
         // The root element varies by backend; find BlockDevice entries by tag wherever they are.
         var devlistXml = XDocument.Parse(ProbeForFailure(session, host, new Dictionary<string, string>(), "lvmohba"));
@@ -62,8 +62,8 @@ internal static partial class Workflows
         // Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
         // SR.destroy needs it detached from every host first.
         foreach (var pbd in SR.get_PBDs(session, sr))
-            if (PBD.get_currently_attached(session, pbd.opaque_ref))
-                PBD.unplug(session, pbd.opaque_ref);
+            if (PBD.get_currently_attached(session, pbd))
+                PBD.unplug(session, pbd);
         SR.destroy(session, sr);
         Console.WriteLine("OK: create-hba-sr");
         session.logout();

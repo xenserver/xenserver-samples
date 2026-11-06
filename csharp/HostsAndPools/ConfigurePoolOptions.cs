@@ -17,7 +17,7 @@ internal static partial class Workflows
     public static void ConfigurePoolOptions(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var pool = Pool.get_all(session)[0].opaque_ref;
+        var pool = Pool.get_all(session)[0];
 
         // These are plain pool settings, each a single field. Read them, change them, put them back.
         var livePatchingDisabled = Pool.get_live_patching_disabled(session, pool);

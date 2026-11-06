@@ -113,6 +113,10 @@ func hostURL(rawURL, address string) string {
 func safeRestoreHostConfig(session *xenapi.Session, hostURL, sid string, host xenapi.HostRef, path string) (result string) {
 	defer func() {
 		if r := recover(); r != nil {
+			// A transport error quotes the whole request, session id and all: report only what went wrong.
+			if e, ok := r.(*url.Error); ok {
+				r = e.Err
+			}
 			result = fmt.Sprintf("could not connect to %s directly (%v)", hostURL, r)
 		}
 	}()

@@ -32,7 +32,7 @@ function Invoke-DismissAlerts {
     } else {
         $first = $messages[0]
         Write-Host "Dismissing:     $($first.name) (priority $($first.priority))"
-        Remove-XenMessage -Ref $first.opaque_ref
+        Remove-XenMessage -Ref $first
         Write-Host "Alerts left:    $(@(Get-XenMessage).Count)"
     }
     Write-Host "OK: dismiss-alerts"

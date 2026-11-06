@@ -36,16 +36,15 @@ function Invoke-RollingPoolUpdate {
     }
     $repos = @(New-UpdateRepositories -Session $session -RepoUrl $RepoUrl -SourceUrl $SourceUrl)
     # Remember the pool's own repositories, to put them back afterwards.
-    $previous = @((Get-XenPool -Ref $pool.opaque_ref).repositories | ForEach-Object { $_.opaque_ref })
-    $pool | Set-XenPool -Repositories @($repos | ForEach-Object { $_.opaque_ref })
+    $previous = @((Get-XenPool -Ref $pool).repositories)
+    $pool | Set-XenPool -Repositories $repos
     try {
         $hash = $pool | Invoke-XenPool -XenAction SyncUpdates -PassThru
         Write-Host "Synced updates; hash length $($hash.Length)"
 
         # The rolling pattern: apply -> evacuate and retry only if that turns out to be needed ->
         # reboot (only if asked) -> re-enable, one host at a time, coordinator first.
-        $orderedHosts = @($pool.master.opaque_ref) + @(Get-XenHost |
-            Where-Object { $_.opaque_ref -ne $pool.master.opaque_ref } | ForEach-Object { $_.opaque_ref })
+        $orderedHosts = @($pool.master) + @(Get-XenHost | Where-Object { $pool.master -ne $_ })
         foreach ($xenHost in $orderedHosts | ForEach-Object { Get-XenHost -Ref $_ }) {
             Write-Host "Updating $($xenHost.name_label):"
             try {
@@ -63,7 +62,7 @@ function Invoke-RollingPoolUpdate {
                 $xenHost | Invoke-XenHost -XenAction ApplyUpdates -Hash $hash
                 $xenHost | Invoke-XenHost -XenAction Enable
             }
-            $guidance = @((Get-XenHost -Ref $xenHost.opaque_ref).pending_guidances)
+            $guidance = @((Get-XenHost -Ref $xenHost).pending_guidances)
             Write-Host "  applied; pending guidance = [$($guidance -join ', ')]"
             if ($guidance -contains "reboot_host" -or $guidance -contains "restart_toolstack") {
                 # Either restart returns before it has happened, and if this host is the coordinator it

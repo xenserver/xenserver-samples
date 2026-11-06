@@ -32,19 +32,19 @@ internal static partial class Workflows
     public static void ConfigureOfflineUpdates(string url, string user, string password, string bundlePath = null)
     {
         var session = Connect(url, user, password);
-        var pool = Pool.get_all(session)[0].opaque_ref;
+        var pool = Pool.get_all(session)[0];
 
         // Remember the pool's own repositories, to put them back afterwards.
         var previous = Pool.get_repositories(session, pool);
         var existing = Repository.get_all_records(session)
-            .Where(kv => kv.Value.origin == origin.bundle).Select(kv => kv.Key.opaque_ref).FirstOrDefault();
+            .Where(kv => kv.Value.origin == origin.bundle).Select(kv => kv.Key).FirstOrDefault();
         var repo = existing ?? Repository.introduce_bundle(session, "sdk-example-offline",
-            "Updates from uploaded bundles").opaque_ref;
+            "Updates from uploaded bundles");
         try
         {
-            Pool.set_repositories(session, pool, new() { new XenRef<Repository>(repo) });
+            Pool.set_repositories(session, pool, new() { repo });
             Console.WriteLine("Pool repositories: " + string.Join(", ",
-                Pool.get_repositories(session, pool).Select(r => Repository.get_name_label(session, r.opaque_ref))));
+                Pool.get_repositories(session, pool).Select(r => Repository.get_name_label(session, r))));
 
             if (!string.IsNullOrEmpty(bundlePath))
             {

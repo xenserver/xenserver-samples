@@ -33,8 +33,8 @@ internal static partial class Workflows
     public static void ConfigureConsoleAccess(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var pool = Pool.get_all(session)[0].opaque_ref;
-        var host = Pool.get_master(session, pool).opaque_ref;
+        var pool = Pool.get_all(session)[0];
+        var host = Pool.get_master(session, pool);
 
         var beforeVmConsoleIdleTimeout = Pool.get_vm_console_idle_timeout(session, pool);
         var beforeLimitConsoleSessions = Pool.get_limit_console_sessions(session, pool);

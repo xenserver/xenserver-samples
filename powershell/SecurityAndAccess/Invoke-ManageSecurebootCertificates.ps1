@@ -27,7 +27,7 @@ function Invoke-ManageSecurebootCertificates {
     #
     # First, whether the pool holds the certificates to hand out at all. "ready_no_dbx" means it has the
     # essentials but no revocation list - usable, and not the same answer as "ready".
-    Write-Host "Pool Secure Boot readiness: $(Get-XenPoolProperty -Ref $pool.opaque_ref -XenProperty GuestSecurebootReadiness)"
+    Write-Host "Pool Secure Boot readiness: $(Get-XenPoolProperty -Ref $pool -XenProperty GuestSecurebootReadiness)"
     Write-Host "  pool holds certificates:  $([bool]$pool.uefi_certificates)"
 
     # A guest whose certificates have gone stale. Its state is what a client gates the flag/unflag actions
@@ -46,15 +46,15 @@ function Invoke-ManageSecurebootCertificates {
         return
     }
     Write-Host ("{0}: readiness {1}, certificates {2}" -f $vm.name_label,
-        (Get-XenVMProperty -Ref $vm.opaque_ref -XenProperty SecurebootReadiness),
-        (Get-XenVMProperty -Ref $vm.opaque_ref -XenProperty SecurebootCertificatesState))
+        (Get-XenVMProperty -Ref $vm -XenProperty SecurebootReadiness),
+        (Get-XenVMProperty -Ref $vm -XenProperty SecurebootCertificatesState))
 
     # Flagging and unflagging are the same action with opposite values of -Mark.
     $vm | Invoke-XenVM -XenAction UpdateSecurebootCertificatesOnBoot -Mark $true
-    Write-Host "  flagged for refresh:      $((Get-XenVM -Ref $vm.opaque_ref).secureboot_certificates_state)"
+    Write-Host "  flagged for refresh:      $((Get-XenVM -Ref $vm).secureboot_certificates_state)"
 
     $vm | Invoke-XenVM -XenAction UpdateSecurebootCertificatesOnBoot -Mark $false
-    Write-Host "  unflagged:                $((Get-XenVM -Ref $vm.opaque_ref).secureboot_certificates_state)"
+    Write-Host "  unflagged:                $((Get-XenVM -Ref $vm).secureboot_certificates_state)"
 
     Write-Host "OK: manage-secureboot-certificates"
     $session | Disconnect-XenServer

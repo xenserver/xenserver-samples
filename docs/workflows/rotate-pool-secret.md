@@ -39,7 +39,7 @@ function Invoke-RotatePoolSecret {
     }
     try {
         # A pool-wide operation; existing sessions survive it.
-        Invoke-XenPool -Ref $pool.opaque_ref -XenAction RotateSecret
+        Invoke-XenPool -Ref $pool -XenAction RotateSecret
         Write-Host "Rotated. Still connected: $(@(Get-XenPool).Count -eq 1)"
     }
     catch {
@@ -165,7 +165,7 @@ Source: [`csharp/HostsAndPools/RotatePoolSecret.cs`](../../csharp/HostsAndPools/
 public static void RotatePoolSecret(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    var poolRef = Pool.get_all_records(session).Keys.First().opaque_ref;
+    var poolRef = Pool.get_all_records(session).Keys.First();
     Console.WriteLine($"Pool:           {Pool.get_name_label(session, poolRef)}");
 
     // xapi checks its own preconditions before rotating - HA must be disabled, every host must be

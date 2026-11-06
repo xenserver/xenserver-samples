@@ -35,28 +35,28 @@ function Invoke-ManageVmMedia {
 
     # A CD drive is a VBD like any other, distinguished by Type CD; the media is whichever VDI it points
     # at, and an empty drive points at none.
-    $device = @(Get-XenVMProperty -Ref $vm.opaque_ref -XenProperty AllowedVBDDevices)[0]
+    $device = @(Get-XenVMProperty -Ref $vm -XenProperty AllowedVBDDevices)[0]
     $drive = New-XenVBD -VM $vm -Userdevice $device -Bootable $false -Mode RO -Type CD `
         -Empty $true -Unpluggable $true -OtherConfig @{} -QosAlgorithmType '' `
         -QosAlgorithmParams @{} -PassThru
-    Write-Host "  drive $device is empty: $((Get-XenVBD -Ref $drive.opaque_ref).empty)"
+    Write-Host "  drive $device is empty: $((Get-XenVBD -Ref $drive).empty)"
 
     # The ISO library is an SR of content type "iso"; its VDIs are the available images.
     $isoSr = Get-XenSR | Where-Object { $_.content_type -eq 'iso' -and $_.type -ne 'udev' } |
         Select-Object -First 1
-    $iso = $isoSr.VDIs | ForEach-Object { Get-XenVDI -Ref $_.opaque_ref } |
+    $iso = $isoSr.VDIs | ForEach-Object { Get-XenVDI -Ref $_ } |
         Sort-Object name_label | Select-Object -First 1
     Write-Host "  inserting $($iso.name_label)"
-    Invoke-XenVBD -Ref $drive.opaque_ref -XenAction Insert -Vdi $iso
+    Invoke-XenVBD -Ref $drive -XenAction Insert -Vdi $iso
 
-    $loaded = Get-XenVBD -Ref $drive.opaque_ref
+    $loaded = Get-XenVBD -Ref $drive
     Write-Host ("  drive now holds {0} (empty={1})" -f
-        (Get-XenVDI -Ref $loaded.VDI.opaque_ref).name_label, $loaded.empty)
+        (Get-XenVDI -Ref $loaded.VDI).name_label, $loaded.empty)
 
-    Invoke-XenVBD -Ref $drive.opaque_ref -XenAction Eject
-    Write-Host "  after eject, empty=$((Get-XenVBD -Ref $drive.opaque_ref).empty)"
+    Invoke-XenVBD -Ref $drive -XenAction Eject
+    Write-Host "  after eject, empty=$((Get-XenVBD -Ref $drive).empty)"
 
-    Remove-XenVBD -Ref $drive.opaque_ref
+    Remove-XenVBD -Ref $drive
     Write-Host "OK: manage-vm-media"
     $session | Disconnect-XenServer
 }
@@ -142,6 +142,7 @@ Run it::
 """
 
 from connection import connect
+from helpers import NULL_REF
 
 
 def manage_vm_media(url, username, password):
@@ -159,7 +160,7 @@ def manage_vm_media(url, username, password):
 
     device = x.VM.get_allowed_VBD_devices(vm)[0]
     drive = x.VBD.create({
-        "VM": vm, "VDI": "OpaqueRef:NULL", "userdevice": device, "bootable": False,
+        "VM": vm, "VDI": NULL_REF, "userdevice": device, "bootable": False,
         "mode": "RO", "type": "CD", "empty": True, "unpluggable": True,
         "other_config": {}, "qos_algorithm_type": "", "qos_algorithm_params": {},
     })
@@ -219,7 +220,7 @@ public static void ManageVmMedia(string url, string user, string password)
 
     // A CD drive is a VBD like any other, distinguished by type=CD; the media is whichever VDI it
     // points at, and an empty drive points at none.
-    var device = VM.get_allowed_VBD_devices(session, vm.Key.opaque_ref)[0];
+    var device = VM.get_allowed_VBD_devices(session, vm.Key)[0];
     var drive = VBD.create(session, new VBD
     {
         VM = vm.Key,
@@ -233,19 +234,18 @@ public static void ManageVmMedia(string url, string user, string password)
         other_config = new Dictionary<string, string>(),
         qos_algorithm_type = "",
         qos_algorithm_params = new Dictionary<string, string>(),
-    }).opaque_ref;
+    });
     Console.WriteLine($"  drive {device} is empty: {VBD.get_empty(session, drive)}");
 
     // The ISO library is an SR of content type "iso"; its VDIs are the available images.
     var isoSr = SR.get_all_records(session)
         .First(kv => kv.Value.content_type == "iso" && kv.Value.type != "udev");
-    var iso = SR.get_VDIs(session, isoSr.Key.opaque_ref)
-        .Select(v => v.opaque_ref)
+    var iso = SR.get_VDIs(session, isoSr.Key)
         .OrderBy(v => VDI.get_name_label(session, v))
         .First();
     Console.WriteLine($"  inserting {VDI.get_name_label(session, iso)}");
     VBD.insert(session, drive, iso);
-    Console.WriteLine($"  drive now holds {VDI.get_name_label(session, VBD.get_VDI(session, drive).opaque_ref)}"
+    Console.WriteLine($"  drive now holds {VDI.get_name_label(session, VBD.get_VDI(session, drive))}"
                       + $" (empty={VBD.get_empty(session, drive)})");
 
     VBD.eject(session, drive);
@@ -310,7 +310,7 @@ func manageVmMedia(url, user, password string) {
 	check(err)
 	drive, err := xenapi.VBD.Create(session, xenapi.VBDRecord{
 		VM:                 vm,
-		VDI:                "OpaqueRef:NULL",
+		VDI:                nullRef,
 		Userdevice:         devices[0],
 		Bootable:           false,
 		Mode:               xenapi.VbdModeRO,
@@ -367,7 +367,7 @@ func manageVmMedia(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Adding a DVD drive to db-01
+Adding a DVD drive to secure-01
   drive 1 is empty: true
   inserting Windows_Server_2022.iso
   drive now holds Windows_Server_2022.iso (empty=false)
@@ -395,6 +395,7 @@ import com.xensource.xenapi.VM;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.xenserver.samples.Helpers.NULL_REF;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ManageVmMedia {
@@ -432,7 +433,7 @@ public final class ManageVmMedia {
             String device = vm.getAllowedVBDDevices(conn).iterator().next();
             VBD.Record spec = new VBD.Record();
             spec.VM = vm;
-            spec.VDI = new VDI("OpaqueRef:NULL");
+            spec.VDI = new VDI(NULL_REF);
             spec.userdevice = device;
             spec.bootable = false;
             spec.mode = Types.VbdMode.RO;

@@ -21,13 +21,13 @@ function Invoke-DeleteVm {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    $uuid = (Get-XenVM -Ref $vm.opaque_ref).uuid
+    Invoke-VmProvision -Ref $vm
+    $uuid = (Get-XenVM -Ref $vm).uuid
 
-    $vdis = (Get-XenVM -Ref $vm.opaque_ref).VBDs |
-        ForEach-Object { Get-XenVBD -Ref $_.opaque_ref } |
+    $vdis = (Get-XenVM -Ref $vm).VBDs |
+        ForEach-Object { Get-XenVBD -Ref $_ } |
         Where-Object { $_.type -eq 'Disk' } |
-        ForEach-Object { $_.VDI.opaque_ref }
+        ForEach-Object { $_.VDI }
     Write-Host "Deleting VM $uuid with $(@($vdis).Count) disk(s)"
 
     $vm | Remove-XenVM

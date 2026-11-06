@@ -6,6 +6,7 @@ Read a running VM's IP address from its guest metrics, as reported by the in-gue
 import time
 
 from connection import connect
+from helpers import is_set
 
 
 def vm_ip_address(url, username, password, timeout=60, interval=2):
@@ -21,7 +22,7 @@ def vm_ip_address(url, username, password, timeout=60, interval=2):
         vm, ip = None, None
         for v in session.xenapi.VM.get_all_records().values():
             if (v["power_state"] == "Running" and not v["is_a_template"] and not v["is_control_domain"]
-                    and v["guest_metrics"] != "OpaqueRef:NULL"):
+                    and is_set(v["guest_metrics"])):
                 ip = session.xenapi.VM_guest_metrics.get_record(v["guest_metrics"])["networks"].get("0/ip")
                 if ip:
                     vm = v

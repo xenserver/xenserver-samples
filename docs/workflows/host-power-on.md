@@ -38,7 +38,7 @@ function Invoke-HostPowerOn {
     # called ("{mode} script has been removed").
     Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @(
         $xenHost.opaque_ref, 'wake-on-lan', @{})
-    $updated = Get-XenHost -Ref $xenHost.opaque_ref
+    $updated = Get-XenHost -Ref $xenHost
     Write-Host "Power-on mode:  $($updated.power_on_mode)"
     foreach ($k in ($updated.power_on_config.Keys | Sort-Object)) {
         Write-Host "  $k = $($updated.power_on_config[$k])"
@@ -146,7 +146,7 @@ Source: [`csharp/HostsAndPools/HostPowerOn.cs`](../../csharp/HostsAndPools/HostP
 public static void HostPowerOn(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    var hostRef = Host.get_all(session).First().opaque_ref;
+    var hostRef = Host.get_all(session).First();
 
     // Mode and config travel together: the config carries the credentials the mode needs.
     // "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"

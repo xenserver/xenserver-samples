@@ -37,7 +37,7 @@ function Invoke-CreateVmFull {
 
     # Step 2 - Name and description.
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    $ref = $vm.opaque_ref
+    $ref = $vm
     $vm | Set-XenVM -NameDescription "Created by the create-vm-full example"
     $vm | Set-XenVM -IsATemplate $false
     Write-Host "Created VM:    $((Get-XenVM -Ref $ref).uuid)"
@@ -314,7 +314,7 @@ public static void CreateVmFull(string url, string user, string password,
     Console.WriteLine($"Template:      {VM.get_name_label(session, templateRef)}");
 
     // Step 2 - Name and description.
-    var vm = VM.clone(session, templateRef, newVmName).opaque_ref;
+    var vm = VM.clone(session, templateRef, newVmName);
     VM.set_name_description(session, vm, "Created by the create-vm-full example");
     VM.set_is_a_template(session, vm, false);
     Console.WriteLine($"Created VM:    {VM.get_uuid(session, vm)}");
@@ -325,7 +325,7 @@ public static void CreateVmFull(string url, string user, string password,
 
     // Step 4 - Home server (affinity).
     var (hostRef, host) = Host.get_all_records(session).First();
-    VM.set_affinity(session, vm, hostRef.opaque_ref);
+    VM.set_affinity(session, vm, hostRef);
     Console.WriteLine($"Home server:   {host.name_label}");
 
     // Step 5 - CPU & Memory.
@@ -348,11 +348,11 @@ public static void CreateVmFull(string url, string user, string password,
         sharable = false,
         read_only = false,
         other_config = new Dictionary<string, string>(),
-    }).opaque_ref;
+    });
     VBD.create(session, new VBD
     {
-        VM = new XenRef<VM>(vm),
-        VDI = new XenRef<VDI>(vdi),
+        VM = vm,
+        VDI = vdi,
         userdevice = vbdDevice,
         bootable = true,
         mode = vbd_mode.RW,
@@ -369,7 +369,7 @@ public static void CreateVmFull(string url, string user, string password,
     var vifDevice = VM.get_allowed_VIF_devices(session, vm)[0];
     VIF.create(session, new VIF
     {
-        VM = new XenRef<VM>(vm),
+        VM = vm,
         network = netRef,
         device = vifDevice,
         MAC = "",
@@ -403,7 +403,7 @@ public static void CreateVmFull(string url, string user, string password,
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f609-000000000000
+Created VM:    00000001-0000-0000-ef09-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB

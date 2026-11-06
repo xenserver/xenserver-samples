@@ -25,7 +25,7 @@ function Invoke-ManageVmDisks {
     # and PV drivers.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
+    $ref = $vm
     $vm | Invoke-XenVM -XenAction Start
     Wait-GuestAgent -Ref $ref
 
@@ -37,29 +37,29 @@ function Invoke-ManageVmDisks {
     $vbd = New-XenVBD -VM (Get-XenVM -Ref $ref) -VDI $vdi -Userdevice $device -Bootable $false `
         -Mode RW -Type Disk -Empty $false -PassThru
     $vbd | Invoke-XenVBD -XenAction Plug
-    Write-Host "Disk attached:  $((Get-XenVBD -Ref $vbd.opaque_ref).currently_attached)"
+    Write-Host "Disk attached:  $((Get-XenVBD -Ref $vbd).currently_attached)"
 
     # Deactivate = VBD.unplug. The disk stays with the VM; it is just no longer live.
-    Invoke-XenVBD -Ref $vbd.opaque_ref -XenAction Unplug
-    Write-Host "After unplug:   $((Get-XenVBD -Ref $vbd.opaque_ref).currently_attached)"
+    Invoke-XenVBD -Ref $vbd -XenAction Unplug
+    Write-Host "After unplug:   $((Get-XenVBD -Ref $vbd).currently_attached)"
 
-    $size = (Get-XenVDI -Ref $vdi.opaque_ref).virtual_size
-    Invoke-XenVDI -Ref $vdi.opaque_ref -XenAction Resize -Size ([int64]$size * 2)
-    Write-Host "Resized:        $size -> $((Get-XenVDI -Ref $vdi.opaque_ref).virtual_size) bytes"
+    $size = (Get-XenVDI -Ref $vdi).virtual_size
+    Invoke-XenVDI -Ref $vdi -XenAction Resize -Size ([int64]$size * 2)
+    Write-Host "Resized:        $size -> $((Get-XenVDI -Ref $vdi).virtual_size) bytes"
 
-    Invoke-XenVBD -Ref $vbd.opaque_ref -XenAction Plug
-    Write-Host "After plug:     $((Get-XenVBD -Ref $vbd.opaque_ref).currently_attached)"
+    Invoke-XenVBD -Ref $vbd -XenAction Plug
+    Write-Host "After plug:     $((Get-XenVBD -Ref $vbd).currently_attached)"
 
     # Growing a disk that is attached and live is a DIFFERENT action, not a flag on the same one:
     # ResizeOnline tells the storage layer the guest is using the disk while it grows. Only some
     # storage drivers can (none of a stock XenServer 9's do), and the rest refuse with
     # SR_OPERATION_NOT_SUPPORTED - so ask the SR's driver (its SM record's features) first.
-    $srType = (Get-XenSR -Ref $sr.opaque_ref).type
+    $srType = (Get-XenSR -Ref $sr).type
     $features = (Get-XenSM | Where-Object { $_.type -eq $srType } | Select-Object -First 1).features
     if ($features -and $features.ContainsKey("VDI_RESIZE_ONLINE")) {
-        $grown = [int64](Get-XenVDI -Ref $vdi.opaque_ref).virtual_size + 1GB
-        Invoke-XenVDI -Ref $vdi.opaque_ref -XenAction ResizeOnline -Size $grown
-        Write-Host "Grown online:   $((Get-XenVDI -Ref $vdi.opaque_ref).virtual_size) bytes"
+        $grown = [int64](Get-XenVDI -Ref $vdi).virtual_size + 1GB
+        Invoke-XenVDI -Ref $vdi -XenAction ResizeOnline -Size $grown
+        Write-Host "Grown online:   $((Get-XenVDI -Ref $vdi).virtual_size) bytes"
     }
     else {
         Write-Host "Grown online:   not supported by $srType storage; unplug, resize, plug as above"

@@ -27,8 +27,8 @@ function Invoke-AttachUsbDevice {
 
     # Destroy refuses a VUSB that is still attached (OPERATION_NOT_ALLOWED) - on a running VM it gets
     # plugged in as soon as it's created, so unplug it first.
-    if ((Get-XenVUSB -Ref $vusb.opaque_ref).currently_attached) {
-        Invoke-XenVUSB -Ref $vusb.opaque_ref -XenAction Unplug
+    if ((Get-XenVUSB -Ref $vusb).currently_attached) {
+        Invoke-XenVUSB -Ref $vusb -XenAction Unplug
     }
     Remove-XenVUSB -VUSB $vusb
     Set-XenPUSB -PUSB (Get-XenPUSB | Select-Object -First 1) -PassthroughEnabled $false

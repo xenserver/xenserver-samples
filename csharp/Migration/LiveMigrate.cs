@@ -31,17 +31,18 @@ internal static partial class Workflows
         VM.start(session, vm, false, true);
         WaitForGuestAgent(session, vm);
 
-        var sourceHost = VM.get_resident_on(session, vm).opaque_ref;
+        var sourceHost = VM.get_resident_on(session, vm);
         Console.WriteLine($"VM is running on: {Host.get_name_label(session, sourceHost)}");
 
         // Pick a different host in the pool to receive the VM.
-        var destHost = Host.get_all_records(session).Keys.First(h => h.opaque_ref != sourceHost).opaque_ref;
+        var destHost = Host.get_all_records(session).Keys.First(h => !h.Equals(sourceHost));
 
         // Check the destination can boot it, then live-migrate (empty options = default live migration).
         VM.assert_can_boot_here(session, vm, destHost);
         VM.pool_migrate(session, vm, destHost, new Dictionary<string, string>());
 
-        Console.WriteLine($"Migrated to:      {Host.get_name_label(session, VM.get_resident_on(session, vm).opaque_ref)}");
+        Console.WriteLine($"Migrated to:      " +
+                          $"{Host.get_name_label(session, VM.get_resident_on(session, vm))}");
         Console.WriteLine($"Still running:    {VM.get_power_state(session, vm)}");
 
         // Tidy up so the example is repeatable.

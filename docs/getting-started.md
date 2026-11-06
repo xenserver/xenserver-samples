@@ -44,8 +44,8 @@ Whatever the task, the outline is the same three steps:
 3. **Log out.** Sessions consume server resources, so release the session when you're done (in a
    `finally` block, so it happens even on error). Long-running clients keep one session open and reuse it.
 
-[Core concepts](concepts.md) covers the handful of ideas (records, references, tasks and events) that
-make every class read the same way.
+[Core concepts](concepts.md) covers the handful of ideas (names, UUIDs and references, records, tasks and
+events) that make every class read the same way.
 
 ## Pools and the coordinator
 

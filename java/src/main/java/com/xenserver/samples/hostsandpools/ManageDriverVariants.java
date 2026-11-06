@@ -77,7 +77,7 @@ public final class ManageDriverVariants {
      */
     private static String variantName(Connection conn, DriverVariant variant) throws Exception {
         if (variant == null || variant.toWireString() == null
-                || variant.toWireString().equals("OpaqueRef:NULL"))
+                || variant.isNull())
             return "(none)";
         return variant.getName(conn);
     }

@@ -18,7 +18,7 @@ function Invoke-PoolTags {
     # Remove-XenPoolProperty -Tags drops one again.
     $pool = Get-XenPool | Select-Object -First 1
     $pool | Add-XenPool -Tags "sdk-managed"
-    Write-Host "Pool tags: $((Get-XenPool -Ref $pool.opaque_ref).tags -join ', ')"
+    Write-Host "Pool tags: $((Get-XenPool -Ref $pool).tags -join ', ')"
     $pool | Remove-XenPoolProperty -Tags "sdk-managed"
     Write-Host "OK: pool-tags"
     $session | Disconnect-XenServer

@@ -27,16 +27,16 @@ internal static partial class Workflows
 
         // Provision a fresh VM from the template to attach the vGPU to.
         var templateRef = TemplateByName(session, templateName);
-        var vmRef = VM.clone(session, templateRef, newVmName).opaque_ref;
+        var vmRef = VM.clone(session, templateRef, newVmName);
         Provision(session, vmRef);
 
         // Assign the vGPU: device "0" is the VM's first vGPU slot, other_config is empty.
-        var vgpuRef = VGPU.create(session, vmRef, groupRef, "0", new Dictionary<string, string>(), typeRef).opaque_ref;
+        var vgpuRef = VGPU.create(session, vmRef, groupRef, "0", new Dictionary<string, string>(), typeRef);
         Console.WriteLine($"Created vGPU: {VGPU.get_uuid(session, vgpuRef)}");
 
         // Read the assignment back.
         var vgpus = VM.get_VGPUs(session, vmRef);
-        var assigned = VGPU_type.get_model_name(session, VGPU.get_type(session, vgpus[0].opaque_ref).opaque_ref);
+        var assigned = VGPU_type.get_model_name(session, VGPU.get_type(session, vgpus[0]));
         Console.WriteLine($"VM now has {vgpus.Count} vGPU(s); type = {assigned}");
 
         // Tidy up so the example is repeatable.
@@ -49,14 +49,14 @@ internal static partial class Workflows
 
     /// <summary>Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU
     /// type.</summary>
-    private static (string, string) GpuGroupWithVgpuType(Session session)
+    private static (XenRef<GPU_group>, XenRef<VGPU_type>) GpuGroupWithVgpuType(Session session)
     {
         foreach (var (groupRef, group) in GPU_group.get_all_records(session))
         {
             if (group.PGPUs.Count == 0) continue;
             foreach (var typeRef in group.supported_VGPU_types)
-                if (VGPU_type.get_model_name(session, typeRef.opaque_ref) != "passthrough")
-                    return (groupRef.opaque_ref, typeRef.opaque_ref);
+                if (VGPU_type.get_model_name(session, typeRef) != "passthrough")
+                    return (groupRef, typeRef);
         }
         throw new Exception("no GPU group offers a vGPU type");
     }

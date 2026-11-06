@@ -9,7 +9,7 @@ This guide is deliberately short. It gives you enough to get oriented, then hand
 the `xe` CLI, Python, C#, Go and Java, side by side, with the output of running it.
 
 1. [Getting started](getting-started.md): pick a language, run your first example, the shape of every program.
-2. [Core concepts](concepts.md): records and references, accessors, messages, tasks and events.
+2. [Core concepts](concepts.md): names, UUIDs and references, records, accessors, messages, tasks and events.
 3. [Errors](errors.md): what a failed call looks like in each binding.
 4. [Moving data over HTTP](http.md): imports, exports, updates, performance data.
 5. [Conventions and extensions](extensions.md): `other_config`, tags, API versions.

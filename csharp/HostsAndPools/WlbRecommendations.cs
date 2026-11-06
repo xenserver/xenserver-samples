@@ -41,7 +41,7 @@ internal static partial class Workflows
         string wlbCertificate = "")
     {
         var session = Connect(url, user, password);
-        var poolRef = Pool.get_all(session)[0].opaque_ref;
+        var poolRef = Pool.get_all(session)[0];
 
         var certName = "";
         if (wlbCertificate != "")
@@ -61,7 +61,7 @@ internal static partial class Workflows
             // keyed by VM and say where to move it: [0] "wlb", [1] the destination host's UUID (a uuid,
             // not a ref), [2] and [3] ids, [4] the reason.
             foreach (var entry in Pool.retrieve_wlb_recommendations(session))
-                Console.WriteLine($"  move {VM.get_name_label(session, entry.Key.opaque_ref)} " +
+                Console.WriteLine($"  move {VM.get_name_label(session, entry.Key)} " +
                                   $"-> host {entry.Value[1]} ({entry.Value[4]})");
 
             // A VM's own recommendations are keyed by host and star-rate each as a destination:
@@ -76,7 +76,7 @@ internal static partial class Workflows
             {
                 try
                 {
-                    vmRecs = VM.retrieve_wlb_recommendations(session, vm.opaque_ref);
+                    vmRecs = VM.retrieve_wlb_recommendations(session, vm);
                     break;
                 }
                 catch (Failure e)
@@ -88,7 +88,7 @@ internal static partial class Workflows
                 }
             }
             foreach (var entry in vmRecs)
-                Console.WriteLine($"  {Host.get_name_label(session, entry.Key.opaque_ref)} " +
+                Console.WriteLine($"  {Host.get_name_label(session, entry.Key)} " +
                                   $"rated {entry.Value[1]}");
 
             // The appliance's own settings are read and written as one flat map of strings. Send a

@@ -11,6 +11,7 @@ import com.xensource.xenapi.VM;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.xenserver.samples.Helpers.NULL_REF;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ManageVmMedia {
@@ -48,7 +49,7 @@ public final class ManageVmMedia {
             String device = vm.getAllowedVBDDevices(conn).iterator().next();
             VBD.Record spec = new VBD.Record();
             spec.VM = vm;
-            spec.VDI = new VDI("OpaqueRef:NULL");
+            spec.VDI = new VDI(NULL_REF);
             spec.userdevice = device;
             spec.bootable = false;
             spec.mode = Types.VbdMode.RO;

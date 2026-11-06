@@ -52,15 +52,15 @@ function Invoke-ExportImportVm {
         try {
             Invoke-WebRequest -Uri "$Url/import?session_id=$($session.opaque_ref)&task_id=$($task.opaque_ref)" `
                 -Method Put -InFile $path -UseBasicParsing | Out-Null
-            while ((Get-XenTask -Ref $task.opaque_ref).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
-            $finished = Get-XenTask -Ref $task.opaque_ref
+            while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
+            $finished = Get-XenTask -Ref $task
             if ($finished.status -ne 'success') { throw "import failed: $($finished.error_info -join ' ')" }
             # The result lists the imported VMs (<value><array><data>OpaqueRef:...</data></array></value>
             # on a real host), so take the first reference in it.
             $imported = [regex]::Match($finished.result, 'OpaqueRef:[^<]+').Value
         }
         finally {
-            Remove-XenTask -Ref $task.opaque_ref
+            Remove-XenTask -Ref $task
         }
         Write-Host "  imported as $((Get-XenVM -Ref $imported).name_label)"
 

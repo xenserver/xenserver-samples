@@ -38,7 +38,7 @@ function Invoke-ManageCrashDumps {
         return
     }
 
-    $dumps = @($xenHost.crashdumps | ForEach-Object { Get-XenHostCrashdump -Ref $_.opaque_ref })
+    $dumps = @($xenHost.crashdumps | ForEach-Object { Get-XenHostCrashdump -Ref $_ })
     Write-Host "$($xenHost.name_label) has $($dumps.Count) crash dump(s)"
     $total = 0
     foreach ($dump in $dumps) {
@@ -49,7 +49,7 @@ function Invoke-ManageCrashDumps {
 
     # Deleting a dump frees the space on the host; the host itself is untouched.
     $dumps | Remove-XenHostCrashdump
-    Write-Host "  cleared:  $($xenHost.name_label) now has $((Get-XenHost -Ref $xenHost.opaque_ref).crashdumps.Count)"
+    Write-Host "  cleared:  $($xenHost.name_label) now has $((Get-XenHost -Ref $xenHost).crashdumps.Count)"
 
     Write-Host "OK: manage-crash-dumps"
     $session | Disconnect-XenServer
@@ -219,7 +219,7 @@ public static void ManageCrashDumps(string url, string user, string password)
     // once support has what it needs is ordinary housekeeping. They belong to the host that wrote
     // them, so clear them a host at a time.
     var host = Host.get_all(session)
-        .FirstOrDefault(h => Host.get_crashdumps(session, h.opaque_ref).Count > 0)?.opaque_ref;
+        .FirstOrDefault(h => Host.get_crashdumps(session, h).Count > 0);
     if (host == null)
     {
         Console.WriteLine("No crash dumps in this pool — nothing to clear.");
@@ -233,14 +233,14 @@ public static void ManageCrashDumps(string url, string user, string password)
     Console.WriteLine($"{Host.get_name_label(session, host)} has {dumps.Count} crash dump(s)");
     foreach (var dump in dumps)
     {
-        var record = Host_crashdump.get_record(session, dump.opaque_ref);
+        var record = Host_crashdump.get_record(session, dump);
         total += record.size;
         Console.WriteLine($"  {record.timestamp:yyyyMMdd'T'HH:mm:ss'Z'}  {Mib(record.size)}");
     }
     Console.WriteLine($"  {Mib(total)} in total");
 
     // Deleting a dump frees the space on the host; the host itself is untouched.
-    foreach (var dump in dumps) Host_crashdump.destroy(session, dump.opaque_ref);
+    foreach (var dump in dumps) Host_crashdump.destroy(session, dump);
     Console.WriteLine($"  cleared:  {Host.get_name_label(session, host)} now has "
                       + Host.get_crashdumps(session, host).Count);
 

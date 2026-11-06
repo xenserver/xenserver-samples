@@ -33,7 +33,7 @@ function Invoke-ManageVapp {
 
     # `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     # reason to use a vApp rather than selecting several VMs.
-    Set-XenVM -VM $vm -Appliance $vapp.opaque_ref
+    Set-XenVM -VM $vm -Appliance $vapp
     Set-XenVM -VM $vm -Order 0 -StartDelay 5
 
     Invoke-XenVMAppliance -VMAppliance $vapp -XenAction Start -Paused $false
@@ -130,6 +130,7 @@ Run it::
 """
 
 from connection import connect
+from helpers import NULL_REF
 
 
 def manage_vapp(url, username, password, vm_name):
@@ -157,7 +158,7 @@ def manage_vapp(url, username, password, vm_name):
     x.VM_appliance.shutdown(vapp)
     print(f"Shut down:      {x.VM.get_power_state(vm)}")
 
-    x.VM.set_appliance(vm, "OpaqueRef:NULL")
+    x.VM.set_appliance(vm, NULL_REF)
     x.VM_appliance.destroy(vapp)
     print("OK: manage-vapp")
     x.session.logout()
@@ -201,20 +202,20 @@ public static void ManageVapp(string url, string user, string password, string v
     // `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     // reason to use a vApp at all rather than selecting several VMs — the database comes up first and
     // goes down last.
-    VM.set_appliance(session, vm.opaque_ref, vapp.opaque_ref);
-    VM.set_order(session, vm.opaque_ref, 0);
-    VM.set_start_delay(session, vm.opaque_ref, 5);
+    VM.set_appliance(session, vm, vapp);
+    VM.set_order(session, vm, 0);
+    VM.set_start_delay(session, vm, 5);
 
-    VM_appliance.start(session, vapp.opaque_ref, false);
-    Console.WriteLine($"Started:        {VM.get_power_state(session, vm.opaque_ref)}");
+    VM_appliance.start(session, vapp, false);
+    Console.WriteLine($"Started:        {VM.get_power_state(session, vm)}");
 
     // shutdown tries each VM's clean shutdown and falls back to a hard one. clean_shutdown alone fails
     // OPERATION_PARTIALLY_FAILED if any member can't shut down cleanly (no guest OS or PV drivers).
-    VM_appliance.shutdown(session, vapp.opaque_ref);
-    Console.WriteLine($"Shut down:      {VM.get_power_state(session, vm.opaque_ref)}");
+    VM_appliance.shutdown(session, vapp);
+    Console.WriteLine($"Shut down:      {VM.get_power_state(session, vm)}");
 
-    VM.set_appliance(session, vm.opaque_ref, "OpaqueRef:NULL"); // the null reference, spelled out: null would send ""
-    VM_appliance.destroy(session, vapp.opaque_ref);
+    VM.set_appliance(session, vm, Helper.NullOpaqueRef); // the null reference, spelled out: null would send ""
+    VM_appliance.destroy(session, vapp);
     Console.WriteLine("OK: manage-vapp");
     session.logout();
 }
@@ -275,7 +276,7 @@ func manageVapp(url, user, password, vmName string) {
 	state, _ = xenapi.VM.GetPowerState(session, vm)
 	fmt.Printf("Shut down:      %s\n", state)
 
-	check(xenapi.VM.SetAppliance(session, vm, "OpaqueRef:NULL")) // the null reference: "" is not one
+	check(xenapi.VM.SetAppliance(session, vm, nullRef)) // the null reference: "" is not one
 	check(xenapi.VMAppliance.Destroy(session, vapp))
 	fmt.Println("OK: manage-vapp")
 	session.Logout()
@@ -304,6 +305,7 @@ import com.xensource.xenapi.Session;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMAppliance;
 
+import static com.xenserver.samples.Helpers.NULL_REF;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ManageVapp {
@@ -347,9 +349,9 @@ public final class ManageVapp {
             vapp.shutdown(conn);
             System.out.println("Shut down:      " + vm.getPowerState(conn));
 
-            // Detach with the null REFERENCE, not Java's null: the binding doesn't turn null into
-            // OpaqueRef:NULL, and a real host refuses what it sends with INTERNAL_ERROR.
-            vm.setAppliance(conn, new VMAppliance("OpaqueRef:NULL"));
+            // Detach with the null REFERENCE, not Java's null: the binding doesn't turn null into the
+            // null reference, and a real host refuses what it sends with INTERNAL_ERROR.
+            vm.setAppliance(conn, new VMAppliance(NULL_REF));
             vapp.destroy(conn);
             System.out.println("OK: manage-vapp");
         } finally {

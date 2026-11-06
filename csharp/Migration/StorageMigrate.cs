@@ -28,22 +28,23 @@ internal static partial class Workflows
         VM.start(session, vm, false, true);
         WaitForGuestAgent(session, vm);
         var vdi = DiskVdis(session, vm).First();
-        var sourceSr = VDI.get_SR(session, vdi).opaque_ref;
+        var sourceSr = VDI.get_SR(session, vdi);
         Console.WriteLine($"Disk is on SR: {SR.get_name_label(session, sourceSr)}");
 
         // Pick a different SR that holds disks and that the VM's host can reach (an attached PBD
         // there).
-        var host = VM.get_resident_on(session, vm).opaque_ref;
+        var host = VM.get_resident_on(session, vm);
         var destSr = SR.get_all_records(session)
-            .First(kv => kv.Key.opaque_ref != sourceSr && kv.Value.content_type != "iso"
+            .First(kv => !kv.Key.Equals(sourceSr) && kv.Value.content_type != "iso"
                 && kv.Value.type != "iso" && kv.Value.type != "udev"
-                && kv.Value.PBDs.Any(pbd => PBD.get_host(session, pbd.opaque_ref).opaque_ref == host
-                    && PBD.get_currently_attached(session, pbd.opaque_ref))).Key.opaque_ref;
+                && kv.Value.PBDs.Any(pbd => PBD.get_host(session, pbd).Equals(host)
+                    && PBD.get_currently_attached(session, pbd))).Key;
         // pool_migrate returns the disk's new VDI: the copy on the destination SR replaces the
         // original. Copying a disk takes minutes, so run it as a task (see AwaitTask).
-        vdi = AwaitTask(session, VDI.async_pool_migrate(session, vdi, destSr, new Dictionary<string, string>()));
+        vdi = new XenRef<VDI>(AwaitTask(session,
+            VDI.async_pool_migrate(session, vdi, destSr, new Dictionary<string, string>())));
 
-        var nowOn = VDI.get_SR(session, vdi).opaque_ref;
+        var nowOn = VDI.get_SR(session, vdi);
         Console.WriteLine($"Disk moved to:  {SR.get_name_label(session, nowOn)}");
 
         // Tidy up: the VM and the disks it now owns.

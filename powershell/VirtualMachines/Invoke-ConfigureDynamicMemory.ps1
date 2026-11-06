@@ -30,8 +30,8 @@ function Invoke-ConfigureDynamicMemory {
     $ceiling = $vm.memory_static_max
     # MemoryDynamicRange takes the pair as one array argument, so the two bounds are set together and
     # cannot momentarily cross each other.
-    Set-XenVM -Ref $vm.opaque_ref -MemoryDynamicRange @($floor, $ceiling)
-    $after = Get-XenVM -Ref $vm.opaque_ref
+    Set-XenVM -Ref $vm -MemoryDynamicRange @($floor, $ceiling)
+    $after = Get-XenVM -Ref $vm
     Write-Host ("  dynamic range now {0}-{1}" -f
         (Format-Gib $after.memory_dynamic_min), (Format-Gib $after.memory_dynamic_max))
 
@@ -41,14 +41,14 @@ function Invoke-ConfigureDynamicMemory {
         # Parentheses are load-bearing: PowerShell's comma operator binds TIGHTER than multiplication, so
         # @($floor, $ceiling * 2) is @($floor, $ceiling) repeated twice - a four-element array whose first
         # two values are the range we already set. The call then succeeds and proves nothing.
-        Set-XenVM -Ref $vm.opaque_ref -MemoryDynamicRange @($floor, ($ceiling * 2)) -ErrorAction Stop
+        Set-XenVM -Ref $vm -MemoryDynamicRange @($floor, ($ceiling * 2)) -ErrorAction Stop
         Write-Host "  ERROR: an out-of-range maximum was accepted"
     }
     catch {
         Write-Host "  refused a dynamic_max above static_max: $($_.Exception.Message)"
     }
 
-    Set-XenVM -Ref $vm.opaque_ref -MemoryDynamicRange @($vm.memory_dynamic_min, $vm.memory_dynamic_max)
+    Set-XenVM -Ref $vm -MemoryDynamicRange @($vm.memory_dynamic_min, $vm.memory_dynamic_max)
     Write-Host "OK: configure-dynamic-memory"
     $session | Disconnect-XenServer
 }

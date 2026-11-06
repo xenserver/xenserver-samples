@@ -39,16 +39,16 @@ function Invoke-HostMaintenance {
     # SourceVm must have a guest OS with PV drivers.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     # Choose a host that is not the pool coordinator, so the coordinator can receive its guests.
-    $masterRef = (Get-XenPool | Select-Object -First 1).master.opaque_ref
-    $xenHost = Get-XenHost | Where-Object { $_.opaque_ref -ne $masterRef } | Select-Object -First 1
+    $masterRef = (Get-XenPool | Select-Object -First 1).master
+    $xenHost = Get-XenHost | Where-Object { $masterRef -ne $_ } | Select-Object -First 1
     Write-Host "Maintenance host: $($xenHost.name_label)"
 
     # Pin a running VM to that host so evacuation has something to move.
     $sr = Get-XenSR -Name $SrName | Where-Object { $_.shared } | Select-Object -First 1
     if (-not $sr) { throw "No shared SR named '$SrName' was found." }
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
-    Move-DisksToSr -VmRef $ref -SrRef $sr.opaque_ref
+    $ref = $vm
+    Move-DisksToSr -VmRef $ref -SrRef $sr
     $vm | Set-XenVM -Affinity $xenHost
     $vm | Invoke-XenVM -XenAction Start
     Wait-GuestAgent -Ref $ref
@@ -56,17 +56,17 @@ function Invoke-HostMaintenance {
 
     # Enter maintenance mode: disable the host, then evacuate its guests.
     $xenHost | Invoke-XenHost -XenAction Disable
-    Write-Host "After disable:    host.enabled = $((Get-XenHost -Ref $xenHost.opaque_ref).enabled)"
+    Write-Host "After disable:    host.enabled = $((Get-XenHost -Ref $xenHost).enabled)"
     Invoke-Evacuate -XenHost $xenHost
     Write-Host "After evacuate:   guest now on $((Get-XenHost -Ref (Get-XenVM -Ref $ref).resident_on).name_label)"
 
     # Exit maintenance mode.
     $xenHost | Invoke-XenHost -XenAction Enable
-    Write-Host "After enable:     host.enabled = $((Get-XenHost -Ref $xenHost.opaque_ref).enabled)"
+    Write-Host "After enable:     host.enabled = $((Get-XenHost -Ref $xenHost).enabled)"
 
     # Tidy up so the example is repeatable.
     $vm | Invoke-XenVM -XenAction HardShutdown
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "OK: host-maintenance"
     $session | Disconnect-XenServer
 }
@@ -254,8 +254,8 @@ public static void HostMaintenance(string url, string user, string password,
 {
     var session = Connect(url, user, password);
     // Choose a host that is not the pool coordinator, so the coordinator can receive its guests.
-    var master = Pool.get_all_records(session).Values.First().master.opaque_ref;
-    var hostRef = Host.get_all_records(session).Keys.First(h => h.opaque_ref != master).opaque_ref;
+    var master = Pool.get_all_records(session).Values.First().master;
+    var hostRef = Host.get_all_records(session).Keys.First(h => !h.Equals(master));
     Console.WriteLine($"Maintenance host: {Host.get_name_label(session, hostRef)}");
 
     // Pin a throwaway copy of sourceVm to that host so evacuation has something to move.
@@ -269,13 +269,13 @@ public static void HostMaintenance(string url, string user, string password,
     VM.set_affinity(session, vm, hostRef);
     VM.start(session, vm, false, true);
     WaitForGuestAgent(session, vm);
-    Console.WriteLine($"Guest resident on:{Host.get_name_label(session, VM.get_resident_on(session, vm).opaque_ref)}");
+    Console.WriteLine($"Guest resident on:{Host.get_name_label(session, VM.get_resident_on(session, vm))}");
 
     // Enter maintenance mode: disable the host, then evacuate its guests.
     Host.disable(session, hostRef);
     Console.WriteLine($"After disable:    host.enabled = {Host.get_enabled(session, hostRef)}");
     Host.evacuate(session, hostRef);
-    Console.WriteLine($"After evacuate:   guest now on {Host.get_name_label(session, VM.get_resident_on(session, vm).opaque_ref)}");
+    Console.WriteLine($"After evacuate:   guest now on {Host.get_name_label(session, VM.get_resident_on(session, vm))}");
 
     // Exit maintenance mode.
     Host.enable(session, hostRef);

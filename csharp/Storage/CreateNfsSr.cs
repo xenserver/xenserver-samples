@@ -20,7 +20,7 @@ internal static partial class Workflows
         string nfsServer, string nfsPath, string srName = "sdk-example-nfs")
     {
         var session = Connect(url, user, password);
-        var hostRef = Host.get_all_records(session).Keys.First().opaque_ref;
+        var hostRef = Host.get_all_records(session).Keys.First();
         var deviceConfig = new Dictionary<string, string>
         {
             ["server"] = nfsServer,
@@ -31,9 +31,9 @@ internal static partial class Workflows
         var srRef = SR.create(session, hostRef, deviceConfig, 0,
             srName, "NFS SR created by the SDK example",
             "nfs", "user", true, new Dictionary<string, string>());
-        Console.WriteLine($"Created SR: {SR.get_uuid(session, srRef.opaque_ref)}");
+        Console.WriteLine($"Created SR: {SR.get_uuid(session, srRef)}");
 
-        DetachAndForgetSr(session, srRef.opaque_ref);
+        DetachAndForgetSr(session, srRef);
         Console.WriteLine("OK: create-nfs-sr");
         session.logout();
     }

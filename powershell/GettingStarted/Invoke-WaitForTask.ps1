@@ -21,7 +21,7 @@ function Invoke-WaitForTask {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $task = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -Async -PassThru
-    $taskRef = $task.opaque_ref
+    $taskRef = $task
     Write-Host "Started task: $((Get-XenTask -Ref $taskRef).uuid)"
 
     while ((Get-XenTask -Ref $taskRef).status -eq 'Pending') {

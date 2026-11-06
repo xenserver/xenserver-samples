@@ -8,6 +8,7 @@ Run it::
 """
 
 from connection import connect
+from helpers import NULL_REF
 
 
 def manage_vm_media(url, username, password):
@@ -25,7 +26,7 @@ def manage_vm_media(url, username, password):
 
     device = x.VM.get_allowed_VBD_devices(vm)[0]
     drive = x.VBD.create({
-        "VM": vm, "VDI": "OpaqueRef:NULL", "userdevice": device, "bootable": False,
+        "VM": vm, "VDI": NULL_REF, "userdevice": device, "bootable": False,
         "mode": "RO", "type": "CD", "empty": True, "unpluggable": True,
         "other_config": {}, "qos_algorithm_type": "", "qos_algorithm_params": {},
     })

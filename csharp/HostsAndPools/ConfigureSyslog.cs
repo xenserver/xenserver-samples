@@ -14,7 +14,7 @@ internal static partial class Workflows
         string syslogServer = "192.0.2.50")
     {
         var session = Connect(url, user, password);
-        var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+        var host = Pool.get_master(session, Pool.get_all(session)[0]);
 
         Console.WriteLine($"{Host.get_name_label(session, host)} logging: {LoggingLabel(session, host)}");
 
@@ -34,7 +34,7 @@ internal static partial class Workflows
     }
 
     /// <summary>The host's logging config, or "(local only)" when nothing is configured.</summary>
-    private static string LoggingLabel(Session session, string host)
+    private static string LoggingLabel(Session session, XenRef<Host> host)
     {
         var logging = Host.get_logging(session, host);
         return logging.Count == 0 ? "(local only)" : string.Join(", ", logging.Select(kv => $"{kv.Key}={kv.Value}"));

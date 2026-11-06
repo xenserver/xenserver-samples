@@ -53,7 +53,7 @@ function Invoke-ExportImportVdi {
     }
     finally {
         Remove-Item $source, $exported -ErrorAction SilentlyContinue
-        $original, $copy | ForEach-Object { Remove-XenVDI -Ref $_.opaque_ref }
+        $original, $copy | ForEach-Object { Remove-XenVDI -Ref $_ }
     }
     Write-Host "OK: export-import-vdi"
     $session | Disconnect-XenServer
@@ -89,11 +89,11 @@ function Invoke-RawVdiTransfer {
             "&vdi=$($Vdi.opaque_ref)&format=raw"
         if ($Method -eq 'Put') { Invoke-WebRequest -Uri $uri -Method Put -InFile $Path -UseBasicParsing | Out-Null }
         else { Invoke-WebRequest -Uri $uri -OutFile $Path -UseBasicParsing }
-        while ((Get-XenTask -Ref $task.opaque_ref).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
-        $finished = Get-XenTask -Ref $task.opaque_ref
+        while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
+        $finished = Get-XenTask -Ref $task
         if ($finished.status -ne 'success') { throw "$Endpoint failed: $($finished.error_info -join ' ')" }
     }
     finally {
-        Remove-XenTask -Ref $task.opaque_ref
+        Remove-XenTask -Ref $task
     }
 }

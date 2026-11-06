@@ -46,8 +46,8 @@ function Invoke-ConfigureDisasterRecovery {
     $pool = Get-XenPool
     $metadataDisk = {
         Get-XenVDI | Where-Object {
-            $_.type -eq 'metadata' -and $_.SR.opaque_ref -eq $sr.opaque_ref -and
-            $_.metadata_of_pool.opaque_ref -eq $pool.opaque_ref
+            $_.type -eq 'metadata' -and $_.SR -eq $sr -and
+            $_.metadata_of_pool -eq $pool
         } | Select-Object -First 1
     }
 

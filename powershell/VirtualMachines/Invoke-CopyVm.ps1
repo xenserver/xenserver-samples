@@ -28,7 +28,7 @@ function Invoke-CopyVm {
     # VM.copy (like VM.clone) only works on a Halted VM - a running source fails with
     # VM_BAD_POWER_STATE - so shut it down first if it's running, and start it back up again after the
     # copy, rather than assuming the VM is already halted.
-    $wasRunning = (Get-XenVM -Ref $source.opaque_ref).power_state -eq 'Running'
+    $wasRunning = (Get-XenVM -Ref $source).power_state -eq 'Running'
     if ($wasRunning) { $source | Invoke-XenVM -XenAction CleanShutdown }
 
     $copy = $source | Invoke-XenVM -XenAction Copy -NewName $CopyName -SR $sr -PassThru
@@ -38,7 +38,7 @@ function Invoke-CopyVm {
     if ($wasRunning) { $source | Invoke-XenVM -XenAction Start }
 
     # Tidy up: destroy the copy and its disks, leaving the source VM intact.
-    Remove-VmAndDisks -Ref $copy.opaque_ref
+    Remove-VmAndDisks -Ref $copy
     Write-Host "Cleaned up the copied VM (left the source intact)."
     Write-Host "OK: copy-vm"
     $session | Disconnect-XenServer

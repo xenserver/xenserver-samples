@@ -13,6 +13,7 @@ import java.util.Set;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
 import static com.xenserver.samples.Helpers.vmByName;
+import static com.xenserver.samples.Helpers.NULL_REF;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class SnapshotSchedule {
@@ -60,7 +61,7 @@ public final class SnapshotSchedule {
 
         // Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
         // first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
-        vm.setSnapshotSchedule(conn, new VMSS("OpaqueRef:NULL"));
+        vm.setSnapshotSchedule(conn, new VMSS(NULL_REF));
         vmss.destroy(conn);
         for (VM snapshot : kept) destroyVmAndDisks(conn, snapshot);
         System.out.println("OK: snapshot-schedule");

@@ -33,7 +33,7 @@ func manageVmMedia(url, user, password string) {
 	check(err)
 	drive, err := xenapi.VBD.Create(session, xenapi.VBDRecord{
 		VM:                 vm,
-		VDI:                "OpaqueRef:NULL",
+		VDI:                nullRef,
 		Userdevice:         devices[0],
 		Bootable:           false,
 		Mode:               xenapi.VbdModeRO,

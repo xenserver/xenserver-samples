@@ -31,17 +31,17 @@ internal static partial class Workflows
         var vdiRef = VDI.create(session, new VDI
         {
             name_label = "sdk-example-data-disk",
-            SR = new XenRef<SR>(srRef),
+            SR = srRef,
             virtual_size = 4 * GiB,
             type = vdi_type.user,
             sharable = false,
             read_only = false,
             other_config = new Dictionary<string, string>(),
-        }).opaque_ref;
+        });
         var vbdRef = VBD.create(session, new VBD
         {
-            VM = new XenRef<VM>(vmRef),
-            VDI = new XenRef<VDI>(vdiRef),
+            VM = vmRef,
+            VDI = vdiRef,
             userdevice = VM.get_allowed_VBD_devices(session, vmRef)[0],
             bootable = false,
             mode = vbd_mode.RW,
@@ -50,7 +50,7 @@ internal static partial class Workflows
             other_config = new Dictionary<string, string>(),
             qos_algorithm_type = "",
             qos_algorithm_params = new Dictionary<string, string>(),
-        }).opaque_ref;
+        });
         VBD.plug(session, vbdRef);
         Console.WriteLine($"Disk attached:  {VBD.get_currently_attached(session, vbdRef)}");
 

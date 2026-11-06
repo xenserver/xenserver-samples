@@ -32,10 +32,10 @@ function Invoke-WlbRecommendations {
     $certName = ""
     if ($WlbCertificate) {
         $certName = "sdk-example-wlb.pem"
-        Invoke-XenPool -Ref $pool.opaque_ref -XenAction CertificateInstall `
+        Invoke-XenPool -Ref $pool -XenAction CertificateInstall `
             -NameParam $certName -Cert (Get-Content -Raw $WlbCertificate)   # pool-wide: no -Pool/-Ref target
     }
-    Invoke-XenPool -Ref $pool.opaque_ref -XenAction InitializeWlb `
+    Invoke-XenPool -Ref $pool -XenAction InitializeWlb `
         -WlbUrl $WlbHostPort -WlbUsername $WlbUsername -WlbPassword $WlbPassword `
         -XenserverUsername $UserName -XenserverPassword $Password
     try {
@@ -49,7 +49,7 @@ function Invoke-WlbRecommendations {
         # ids, [4] the reason.
         # -PassThru: without it Invoke-Xen* runs the action and emits nothing, so a value-returning
         # action looks like it returned null.
-        $poolRecs = Invoke-XenPool -Ref $pool.opaque_ref -XenAction RetrieveWlbRecommendations -PassThru
+        $poolRecs = Invoke-XenPool -Ref $pool -XenAction RetrieveWlbRecommendations -PassThru
         foreach ($entry in $poolRecs.GetEnumerator()) {
             $fields = @($entry.Value)
             $name = (Get-XenVM -Ref $entry.Key).name_label
@@ -64,7 +64,7 @@ function Invoke-WlbRecommendations {
         $vm = Get-XenVM -Name $VmName
         $deadline = (Get-Date).AddMinutes(10)
         while ($true) {
-            try { $vmRecs = Invoke-XenVM -Ref $vm.opaque_ref -XenAction RetrieveWlbRecommendations -PassThru; break }
+            try { $vmRecs = Invoke-XenVM -Ref $vm -XenAction RetrieveWlbRecommendations -PassThru; break }
             catch {
                 $ex = $_.Exception
                 while ($ex -and -not $ex.ErrorDescription) { $ex = $ex.InnerException }
@@ -82,15 +82,15 @@ function Invoke-WlbRecommendations {
 
         # The appliance's own settings are read and written as one flat map of strings. Send a nightly
         # reporting schedule, then read the configuration back to confirm it took.
-        Invoke-XenPool -Ref $pool.opaque_ref -XenAction SendWlbConfiguration -Config @{ ReportingCronString = "0 3 * * *" }
-        $config = Invoke-XenPool -Ref $pool.opaque_ref -XenAction RetrieveWlbConfiguration -PassThru
+        Invoke-XenPool -Ref $pool -XenAction SendWlbConfiguration -Config @{ ReportingCronString = "0 3 * * *" }
+        $config = Invoke-XenPool -Ref $pool -XenAction RetrieveWlbConfiguration -PassThru
         $pairs = $config.GetEnumerator() | Sort-Object Key | ForEach-Object { "$($_.Key)=$($_.Value)" }
         Write-Host "  appliance configuration: $($pairs -join ', ')"
     }
     finally {
         # Disconnect from the appliance however the above went, or the pool stays attached to it.
-        Invoke-XenPool -Ref $pool.opaque_ref -XenAction DeconfigureWlb
-        if ($certName) { Invoke-XenPool -Ref $pool.opaque_ref -XenAction CertificateUninstall -NameParam $certName }
+        Invoke-XenPool -Ref $pool -XenAction DeconfigureWlb
+        if ($certName) { Invoke-XenPool -Ref $pool -XenAction CertificateUninstall -NameParam $certName }
     }
     Write-Host "OK: wlb-recommendations"
     $session | Disconnect-XenServer

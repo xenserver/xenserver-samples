@@ -33,22 +33,22 @@ function Invoke-ReconnectSrStorage {
         -NameLabel "sdk-example-moved-storage" -NameDescription "SR used by the SDK reconnect example" `
         -Type "nfs" -ContentType "user" -Shared $true -PassThru
     try {
-        $pbds = @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_.opaque_ref })
+        $pbds = @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_ })
         $pbds | Invoke-XenPBD -XenAction Unplug
 
         foreach ($pbd in $pbds) {
             $deviceConfig = @{} + $pbd.device_config
             $deviceConfig.server = $NewNfsServer
-            Remove-XenPBD -Ref $pbd.opaque_ref
+            Remove-XenPBD -Ref $pbd
             $replacement = New-XenPBD -XenHost $pbd.host -SR $sr -DeviceConfig $deviceConfig -OtherConfig @{} -PassThru
             $replacement | Invoke-XenPBD -XenAction Plug
             Write-Host ("{0}: now reaches {1}:{2}" -f
-                (Get-XenHost -Ref $pbd.host.opaque_ref).name_label, $deviceConfig.server, $deviceConfig.serverpath)
+                (Get-XenHost -Ref $pbd.host).name_label, $deviceConfig.server, $deviceConfig.serverpath)
         }
     }
     finally {
         # Tidy up: detach the SR from every host and forget it, leaving the storage itself untouched.
-        Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
+        Invoke-DetachAndForgetSr -Ref $sr
     }
     Write-Host "OK: reconnect-sr-storage"
     $session | Disconnect-XenServer

@@ -21,7 +21,7 @@ func poolProperties(url, user, password string) {
 	original, _ := xenapi.Pool.GetNameLabel(session, poolRef)
 	defaultSr, _ := xenapi.Pool.GetDefaultSR(session, poolRef)
 	srName := "(none)"
-	if defaultSr != xenapi.SRRef("OpaqueRef:NULL") {
+	if isSet(defaultSr) {
 		srName, _ = xenapi.SR.GetNameLabel(session, defaultSr)
 	}
 	fmt.Printf("Pool:       '%s'\n", original)

@@ -44,8 +44,8 @@ function Invoke-AttachUsbDevice {
 
     # Destroy refuses a VUSB that is still attached (OPERATION_NOT_ALLOWED) - on a running VM it gets
     # plugged in as soon as it's created, so unplug it first.
-    if ((Get-XenVUSB -Ref $vusb.opaque_ref).currently_attached) {
-        Invoke-XenVUSB -Ref $vusb.opaque_ref -XenAction Unplug
+    if ((Get-XenVUSB -Ref $vusb).currently_attached) {
+        Invoke-XenVUSB -Ref $vusb -XenAction Unplug
     }
     Remove-XenVUSB -VUSB $vusb
     Set-XenPUSB -PUSB (Get-XenPUSB | Select-Object -First 1) -PassthroughEnabled $false
@@ -192,13 +192,13 @@ public static void AttachUsbDevice(string url, string user, string password, str
     // device that has not been released fails rather than silently doing nothing.
     PUSB.set_passthrough_enabled(session, pusb.Key, true);
 
-    var vusb = VUSB.create(session, vm.opaque_ref, pusb.Value.USB_group, new Dictionary<string, string>());
-    Console.WriteLine($"Attached:       {VM.get_VUSBs(session, vm.opaque_ref).Count} device(s)");
+    var vusb = VUSB.create(session, vm, pusb.Value.USB_group, new Dictionary<string, string>());
+    Console.WriteLine($"Attached:       {VM.get_VUSBs(session, vm).Count} device(s)");
 
     // VUSB.destroy refuses a VUSB that is still attached (OPERATION_NOT_ALLOWED) - on a running VM
     // it gets plugged in as soon as it's created, so unplug it first.
-    if (VUSB.get_currently_attached(session, vusb.opaque_ref)) VUSB.unplug(session, vusb.opaque_ref);
-    VUSB.destroy(session, vusb.opaque_ref);
+    if (VUSB.get_currently_attached(session, vusb)) VUSB.unplug(session, vusb);
+    VUSB.destroy(session, vusb);
     PUSB.set_passthrough_enabled(session, pusb.Key, false);
     Console.WriteLine("OK: attach-usb-device");
     session.logout();

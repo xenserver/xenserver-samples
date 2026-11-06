@@ -35,8 +35,8 @@ function Invoke-CreateSmbSr {
         -NameLabel $SrName -NameDescription "SMB SR created by the SDK example" `
         -Type "smb" -ContentType "user" -Shared $true -PassThru
     Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
-    Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
-    Remove-XenSecret -Ref $secret.opaque_ref
+    Invoke-DetachAndForgetSr -Ref $sr
+    Remove-XenSecret -Ref $secret
     Write-Host "OK: create-smb-sr"
     $session | Disconnect-XenServer
 }

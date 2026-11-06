@@ -33,7 +33,7 @@ func vmIpAddress(url, user, password, timeoutStr, intervalStr string) {
 		var ip string
 		for _, r := range vms {
 			if r.PowerState != xenapi.VMPowerStateRunning || r.IsATemplate || r.IsControlDomain ||
-				r.GuestMetrics == xenapi.VMGuestMetricsRef("OpaqueRef:NULL") {
+				!isSet(r.GuestMetrics) {
 				continue
 			}
 			gm, err := xenapi.VMGuestMetrics.GetRecord(session, r.GuestMetrics)

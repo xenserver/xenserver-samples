@@ -15,34 +15,34 @@ function Invoke-ManagePoolMembership {
     $pool = Get-XenPool | Select-Object -First 1
 
     $hosts = Get-XenHost
-    $originalRef = $pool.master.opaque_ref
-    $original = $hosts | Where-Object { $_.opaque_ref -eq $originalRef }
+    $originalRef = $pool.master
+    $original = $hosts | Where-Object { $originalRef -eq $_ }
     Write-Host "Coordinator: $($original.name_label)"
     foreach ($h in $hosts) {
-        $tag = if ($h.opaque_ref -eq $originalRef) { " (coordinator)" } else { "" }
+        $tag = if ($originalRef -eq $h) { " (coordinator)" } else { "" }
         Write-Host "  member: $($h.name_label)$tag"
     }
 
     # Promote another member. The pool database moves with the role and clients are redirected, so this
     # briefly interrupts management traffic — it does not move any VM.
-    $other = $hosts | Where-Object { $_.opaque_ref -ne $originalRef } | Select-Object -First 1
-    Invoke-XenPool -Ref $pool.opaque_ref -XenAction DesignateNewMaster -XenHost $other.opaque_ref
+    $other = $hosts | Where-Object { $originalRef -ne $_ } | Select-Object -First 1
+    Invoke-XenPool -Ref $pool -XenAction DesignateNewMaster -XenHost $other
     Write-Host "Promoting:   $($other.name_label) (xapi restarts pool-wide; reconnecting)"
 
     $session = Reconnect-AfterMasterChange -Url $Url -UserName $UserName -Password $Password `
         -NewMasterUuid $other.uuid
     $pool = Get-XenPool | Select-Object -First 1
-    Write-Host "Promoted:    $((Get-XenHost -Ref $pool.master.opaque_ref).name_label)"
+    Write-Host "Promoted:    $((Get-XenHost -Ref $pool.master).name_label)"
 
     # Put it back. Ejecting a member (Pool.eject) is the other half of this surface and is deliberately
     # not shown: it cannot be undone from the pool, because rejoining is initiated by the ejected host.
-    Invoke-XenPool -Ref $pool.opaque_ref -XenAction DesignateNewMaster -XenHost $originalRef
+    Invoke-XenPool -Ref $pool -XenAction DesignateNewMaster -XenHost $originalRef
     Write-Host "Restoring:   $($original.name_label) (reconnecting again)"
 
     $session = Reconnect-AfterMasterChange -Url $Url -UserName $UserName -Password $Password `
         -NewMasterUuid $original.uuid
     $pool = Get-XenPool | Select-Object -First 1
-    Write-Host "Restored:    $((Get-XenHost -Ref $pool.master.opaque_ref).name_label)"
+    Write-Host "Restored:    $((Get-XenHost -Ref $pool.master).name_label)"
 
     Write-Host "OK: manage-pool-membership"
     $session | Disconnect-XenServer
@@ -75,9 +75,9 @@ function Reconnect-AfterMasterChange {
             # The new coordinator answers before the pool has settled - calls made too soon fail
             # (HANDLE_INVALID on the operation's own task) - so also wait for every host to be back,
             # live and enabled.
-            $settled = (Get-XenHost -Ref $master.opaque_ref).uuid -eq $NewMasterUuid -and
+            $settled = (Get-XenHost -Ref $master).uuid -eq $NewMasterUuid -and
                 -not (Get-XenHost | Where-Object {
-                    -not $_.enabled -or -not (Get-XenHostMetrics -Ref $_.metrics.opaque_ref).live
+                    -not $_.enabled -or -not (Get-XenHostMetrics -Ref $_.metrics).live
                 })
             if ($settled) { return $session }
             $session | Disconnect-XenServer

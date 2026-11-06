@@ -34,7 +34,7 @@ function Invoke-CheckpointVm {
     # Checkpointing needs the guest's cooperation (VM_LACKS_FEATURE without PV drivers), hence a copy of
     # SourceVm - a VM with a guest OS and PV drivers - rather than an OS-less template clone.
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
+    $ref = $vm
     $vm | Invoke-XenVM -XenAction Start
     Wait-GuestAgent -Ref $ref
 
@@ -52,7 +52,7 @@ function Invoke-CheckpointVm {
     $vm | Invoke-XenVM -XenAction Resume
 
     # Tidy up. The checkpoint owns its own snapshot disks, separate from the VM's.
-    Remove-VmAndDisks -Ref $checkpoint.opaque_ref
+    Remove-VmAndDisks -Ref $checkpoint
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $ref
     Write-Host "OK: checkpoint-vm"
@@ -214,7 +214,7 @@ public static void CheckpointVm(string url, string user, string password,
     VM.start(session, vm, false, true);
     WaitForGuestAgent(session, vm);
 
-    var checkpoint = VM.checkpoint(session, vm, "sdk-example-checkpoint-1").opaque_ref;
+    var checkpoint = VM.checkpoint(session, vm, "sdk-example-checkpoint-1");
     Console.WriteLine($"Created checkpoint: {VM.get_uuid(session, checkpoint)}");
     Console.WriteLine($"is_a_snapshot = {VM.get_is_a_snapshot(session, checkpoint)}");
 
@@ -239,7 +239,7 @@ public static void CheckpointVm(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-6f0a-000000000000
+Created checkpoint: 00000001-0000-0000-480a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm

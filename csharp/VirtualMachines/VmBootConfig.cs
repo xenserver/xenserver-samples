@@ -18,7 +18,7 @@ internal static partial class Workflows
         string templateName, string newVmName = "sdk-example-boot")
     {
         var session = Connect(url, user, password);
-        var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+        var vm = VM.clone(session, TemplateByName(session, templateName), newVmName);
         Provision(session, vm);
 
         VM.set_VCPUs_max(session, vm, 4);

@@ -18,8 +18,8 @@ function Invoke-ManageVif {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    $ref = $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm
+    $ref = $vm
 
     $net = Get-XenNetwork | Select-Object -First 1
     $device = (Get-XenVMProperty -Ref $ref -XenProperty AllowedVIFDevices)[0]
@@ -28,7 +28,7 @@ function Invoke-ManageVif {
     Write-Host "Attached a VIF on device $device; VM now has $(@((Get-XenVM -Ref $ref).VIFs).Count) NIC(s)"
 
     $vif | Remove-XenVIF
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "OK: manage-vif"
     $session | Disconnect-XenServer
 }

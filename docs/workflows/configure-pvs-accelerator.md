@@ -38,13 +38,13 @@ function Invoke-ConfigurePvsAccelerator {
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     # A proxy may only sit on the VM's LOWEST-numbered NIC, so sort by device rather than taking the
     # first VIF — the list comes back in creation order, which is the same thing only by luck.
-    $vif = $vm.VIFs | ForEach-Object { Get-XenVIF -Ref $_.opaque_ref } |
+    $vif = $vm.VIFs | ForEach-Object { Get-XenVIF -Ref $_ } |
         Sort-Object { [int]$_.device } | Select-Object -First 1
     if (-not $vif) { throw "$VmName has no network interface to accelerate" }
     # ... and one that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT).
-    $existing = Get-XenPVSProxy | Where-Object { $_.VIF.opaque_ref -eq $vif.opaque_ref } | Select-Object -First 1
+    $existing = Get-XenPVSProxy | Where-Object { $_.VIF -eq $vif } | Select-Object -First 1
     if ($existing) {
-        throw "$VmName is already accelerated by site '$((Get-XenPVSSite -Ref $existing.site.opaque_ref).name_label)'"
+        throw "$VmName is already accelerated by site '$((Get-XenPVSSite -Ref $existing.site).name_label)'"
     }
 
     # PVS_site.introduce and PVS_server.introduce are CONSTRUCTORS, and every parameter set of
@@ -63,16 +63,16 @@ function Invoke-ConfigurePvsAccelerator {
     # server does not enforce that, but a cache on shared storage rarely makes sense and can't be
     # shared between hosts anyway. New-XenPVSCacheStorage is a real cmdlet.
     foreach ($xenHost in Get-XenHost) {
-        $local = Get-XenPBD | Where-Object { $_.host.opaque_ref -eq $xenHost.opaque_ref } |
-            ForEach-Object { Get-XenSR -Ref $_.SR.opaque_ref } |
+        $local = Get-XenPBD | Where-Object { $_.host -eq $xenHost } |
+            ForEach-Object { Get-XenSR -Ref $_.SR } |
             Where-Object { -not $_.shared -and $_.content_type -ne 'iso' -and $_.type -ne 'udev' } |
             Select-Object -First 1
         if (-not $local) { continue }
-        New-XenPVSCacheStorage -XenHost $xenHost.opaque_ref -SR $local.opaque_ref -Site $site `
+        New-XenPVSCacheStorage -XenHost $xenHost -SR $local -Site $site `
             -Size 10GB | Out-Null
     }
 
-    $proxy = New-XenPVSProxy -Site $site -VIF $vif.opaque_ref -PassThru
+    $proxy = New-XenPVSProxy -Site $site -VIF $vif -PassThru
 
     $record = Get-XenPVSSite -Ref $site
     Write-Host "Site '$($record.name_label)' with $($record.cache_storage.Count) cache(s) and $($record.servers.Count) server(s)"
@@ -84,9 +84,9 @@ function Invoke-ConfigurePvsAccelerator {
     # makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down ourselves
     # first, in the same order every real PVS teardown uses. (Cache storage doesn't need a separate
     # call - forget cascades it correctly.)
-    Remove-XenPVSProxy -Ref $proxy.opaque_ref
+    Remove-XenPVSProxy -Ref $proxy
     foreach ($serverRef in (Get-XenPVSSite -Ref $site).servers) {
-        Invoke-XenPVSServer -Ref $serverRef.opaque_ref -XenAction Forget
+        Invoke-XenPVSServer -Ref $serverRef -XenAction Forget
     }
     Invoke-XenPVSSite -Ref $site -XenAction Forget
     Write-Host "OK: configure-pvs-accelerator"
@@ -323,10 +323,10 @@ public static void ConfigurePvsAccelerator(string url, string user, string passw
     // running - a proxy on a halted VM just reports "stopped" until it starts.
     var vm = VmByName(session, vmName);
     var vifs = VM.get_VIFs(session, vm)
-        .OrderBy(r => int.Parse(VIF.get_device(session, r.opaque_ref))).ToList();
+        .OrderBy(r => int.Parse(VIF.get_device(session, r))).ToList();
     if (vifs.Count == 0) throw new Exception($"{vmName} has no network interface to accelerate");
     foreach (var existing in PVS_proxy.get_all_records(session).Values)
-        if (existing.VIF.opaque_ref == vifs[0].opaque_ref)
+        if (existing.VIF.Equals(vifs[0]))
             throw new Exception($"{vmName} is already accelerated by site " +
                                 $"'{PVS_site.get_name_label(session, existing.site)}'");
 
@@ -342,9 +342,9 @@ public static void ConfigurePvsAccelerator(string url, string user, string passw
         if (local == null) continue;
         PVS_cache_storage.create(session, new PVS_cache_storage
         {
-            host = new XenRef<Host>(hostRef.opaque_ref),
-            SR = new XenRef<SR>(local),
-            site = new XenRef<PVS_site>(site),
+            host = hostRef,
+            SR = local,
+            site = site,
             size = 10L * 1024 * 1024 * 1024,
         });
     }
@@ -352,7 +352,7 @@ public static void ConfigurePvsAccelerator(string url, string user, string passw
     // A proxy may only sit on the VM's LOWEST-numbered NIC, hence sorting by device above rather
     // than taking VIFs[0] — the list comes back in creation order, which is the same thing only by
     // luck.
-    var proxy = PVS_proxy.create(session, site, vifs[0].opaque_ref);
+    var proxy = PVS_proxy.create(session, site, vifs[0]);
 
     var record = PVS_site.get_record(session, site);
     Console.WriteLine($"Site '{record.name_label}' with {record.cache_storage.Count} cache(s) "
@@ -365,23 +365,23 @@ public static void ConfigurePvsAccelerator(string url, string user, string passw
     // makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
     // ourselves first, in the same order every real PVS teardown uses.
     PVS_proxy.destroy(session, proxy);
-    foreach (var serverRef in PVS_site.get_servers(session, site)) PVS_server.forget(session, serverRef.opaque_ref);
+    foreach (var serverRef in PVS_site.get_servers(session, site)) PVS_server.forget(session, serverRef);
     PVS_site.forget(session, site);
     Console.WriteLine("OK: configure-pvs-accelerator");
     session.logout();
 }
 
 /// <summary>The host's own non-ISO storage, found through its PBDs.</summary>
-private static string LocalSr(Session session, XenRef<Host> host)
+private static XenRef<SR> LocalSr(Session session, XenRef<Host> host)
 {
-    foreach (var pbdRef in Host.get_PBDs(session, host.opaque_ref))
+    foreach (var pbdRef in Host.get_PBDs(session, host))
     {
         // Keep the REF and read the record through it: a record fetched by get_record does not
         // carry its own opaque_ref, so reaching for sr.opaque_ref afterwards hands you a null.
-        var srRef = PBD.get_SR(session, pbdRef.opaque_ref);
-        var sr = SR.get_record(session, srRef.opaque_ref);
+        var srRef = PBD.get_SR(session, pbdRef);
+        var sr = SR.get_record(session, srRef);
         if (!sr.shared && sr.content_type != "iso" && sr.type != "udev")
-            return srRef.opaque_ref;
+            return srRef;
     }
     return null;
 }

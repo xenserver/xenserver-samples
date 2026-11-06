@@ -9,6 +9,14 @@ import XenAPI
 
 from connection import connect
 
+# A reference field that points at nothing holds this value; set a field to it to clear it.
+NULL_REF = "OpaqueRef:NULL"
+
+
+def is_set(ref):
+    """Whether a reference field points at an object (it isn't empty or the null reference)."""
+    return bool(ref) and ref != NULL_REF
+
 
 def template_by_name(session, name):
     """Find a template VM by its exact name (rather than picking an arbitrary one)."""
@@ -96,7 +104,7 @@ def wait_for_guest_agent(session, vm, timeout=300, interval=2):
         if "clean_shutdown" not in session.xenapi.VM.get_allowed_operations(vm):
             return False
         metrics = session.xenapi.VM.get_guest_metrics(vm)
-        return metrics != "OpaqueRef:NULL" and session.xenapi.VM_guest_metrics.get_PV_drivers_detected(metrics)
+        return is_set(metrics) and session.xenapi.VM_guest_metrics.get_PV_drivers_detected(metrics)
 
     deadline = time.time() + timeout
     while not ready():
@@ -185,7 +193,7 @@ def disk_vdis(session, vm_ref):
         if session.xenapi.VBD.get_type(vbd) != "Disk":
             continue
         vdi = session.xenapi.VBD.get_VDI(vbd)
-        if vdi != "OpaqueRef:NULL":
+        if is_set(vdi):
             vdis.append(vdi)
     return vdis
 
@@ -199,7 +207,7 @@ def destroy_vm_and_disks(session, vm_ref):
     suspend image holding its memory, which no VBD points at: destroy that as well."""
     vdis = disk_vdis(session, vm_ref)
     suspend_vdi = session.xenapi.VM.get_suspend_VDI(vm_ref)
-    if suspend_vdi != "OpaqueRef:NULL":
+    if is_set(suspend_vdi):
         vdis.append(suspend_vdi)
     session.xenapi.VM.destroy(vm_ref)
     for vdi in vdis:

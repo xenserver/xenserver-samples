@@ -61,8 +61,8 @@ function Invoke-ConfigureDisasterRecovery {
     $pool = Get-XenPool
     $metadataDisk = {
         Get-XenVDI | Where-Object {
-            $_.type -eq 'metadata' -and $_.SR.opaque_ref -eq $sr.opaque_ref -and
-            $_.metadata_of_pool.opaque_ref -eq $pool.opaque_ref
+            $_.type -eq 'metadata' -and $_.SR -eq $sr -and
+            $_.metadata_of_pool -eq $pool
         } | Select-Object -First 1
     }
 
@@ -325,14 +325,14 @@ public static void ConfigureDisasterRecovery(string url, string user, string pas
 {
     var session = Connect(url, user, password);
 
-    bool SupportsReplication(string sr)
+    bool SupportsReplication(XenRef<SR> sr)
     {
         try { SR.assert_supports_database_replication(session, sr); return true; }
         catch (Failure) { return false; }
     }
     var candidates = SR.get_all_records(session)
-        .Where(kv => kv.Value.shared && kv.Value.content_type != "iso" && SupportsReplication(kv.Key.opaque_ref))
-        .Select(kv => kv.Key.opaque_ref).ToList();
+        .Where(kv => kv.Value.shared && kv.Value.content_type != "iso" && SupportsReplication(kv.Key))
+        .Select(kv => kv.Key).ToList();
     var names = string.Join(", ", candidates.Select(sr => SR.get_name_label(session, sr)));
     Console.WriteLine($"SRs that can hold the pool metadata: {(names.Length > 0 ? names : "none")}");
     if (!string.IsNullOrEmpty(srName))
@@ -345,9 +345,9 @@ public static void ConfigureDisasterRecovery(string url, string user, string pas
 
     // The pool's own metadata disk on this SR is what says replication is on: a disk of type metadata
     // whose metadata_of_pool is this pool.
-    var pool = Pool.get_all(session)[0].opaque_ref;
-    string MetadataDisk() => SR.get_VDIs(session, chosen).Select(v => v.opaque_ref).FirstOrDefault(v =>
-        VDI.get_type(session, v) == vdi_type.metadata && VDI.get_metadata_of_pool(session, v).opaque_ref == pool);
+    var pool = Pool.get_all(session)[0];
+    XenRef<VDI> MetadataDisk() => SR.get_VDIs(session, chosen).FirstOrDefault(v =>
+        VDI.get_type(session, v) == vdi_type.metadata && VDI.get_metadata_of_pool(session, v).Equals(pool));
 
     var wasOn = MetadataDisk() != null;
     if (wasOn)
@@ -379,7 +379,7 @@ public static void ConfigureDisasterRecovery(string url, string user, string pas
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-530b-000000000000), 3804 MiB, up to date: True
+  metadata disk: Metadata for DR (00000001-0000-0000-030b-000000000000), 3804 MiB, up to date: True
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```

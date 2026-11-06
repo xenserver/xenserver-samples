@@ -31,15 +31,15 @@ internal static partial class Workflows
         // Destination: choose a host, a network and an SR, then ask for a receiver token. The disks go to
         // the destination pool's default SR.
         var destPool = Pool.get_all(dest)[0];
-        var destHost = Pool.get_master(dest, destPool).opaque_ref;
-        var destSr = Pool.get_default_SR(dest, destPool).opaque_ref;
-        var managementPif = Host.get_PIFs(dest, destHost).First(pif => PIF.get_management(dest, pif.opaque_ref));
-        var destManagementNetwork = PIF.get_network(dest, managementPif.opaque_ref).opaque_ref;
-        string migrationNetwork;
+        var destHost = Pool.get_master(dest, destPool);
+        var destSr = Pool.get_default_SR(dest, destPool);
+        var managementPif = Host.get_PIFs(dest, destHost).First(pif => PIF.get_management(dest, pif));
+        var destManagementNetwork = PIF.get_network(dest, managementPif);
+        XenRef<Network> migrationNetwork;
         if (transferNetwork != null)
         {
             migrationNetwork = Network.get_all_records(dest)
-                .First(kv => kv.Value.name_label == transferNetwork).Key.opaque_ref;
+                .First(kv => kv.Value.name_label == transferNetwork).Key;
         }
         else
         {
@@ -56,12 +56,12 @@ internal static partial class Workflows
         var vdiMap = new Dictionary<XenRef<VDI>, XenRef<SR>>();
         foreach (var vbdRef in VM.get_VBDs(source, vm))
         {
-            if (VBD.get_type(source, vbdRef.opaque_ref) != vbd_type.Disk) continue;
-            var vdi = VBD.get_VDI(source, vbdRef.opaque_ref);
-            if (vdi.opaque_ref != "OpaqueRef:NULL") vdiMap[vdi] = new XenRef<SR>(destSr);
+            if (VBD.get_type(source, vbdRef) != vbd_type.Disk) continue;
+            var vdi = VBD.get_VDI(source, vbdRef);
+            if (!Helper.IsNullOrEmptyOpaqueRef(vdi)) vdiMap[vdi] = destSr;
         }
         var vifMap = new Dictionary<XenRef<VIF>, XenRef<Network>>();
-        foreach (var vifRef in VM.get_VIFs(source, vm)) vifMap[vifRef] = new XenRef<Network>(destManagementNetwork);
+        foreach (var vifRef in VM.get_VIFs(source, vm)) vifMap[vifRef] = destManagementNetwork;
 
         var options = new Dictionary<string, string> { ["copy"] = "true" };
         var copy = VM.migrate_send(source, vm, receiver, false, vdiMap, vifMap, options,
@@ -69,12 +69,12 @@ internal static partial class Workflows
 
         // Copy (not move): the source VM is still on the source pool.
         Console.WriteLine($"Sent '{vmName}' to the destination pool (copy); source still present: " +
-                          $"{VmByName(source, vmName) == vm}");
+                          $"{VmByName(source, vmName).Equals(vm)}");
         // The result is the new VM's ref on the DESTINATION pool - use the destination session to read it.
         Console.WriteLine($"  the copy on the destination: {VM.get_name_label(dest, copy)} ({VM.get_uuid(dest, copy)})");
 
         // Tidy up so the example is repeatable: the copy and its disks, on the destination pool.
-        DestroyVmAndDisks(dest, copy.opaque_ref);
+        DestroyVmAndDisks(dest, copy);
         Console.WriteLine("OK: cross-pool-copy-vm");
         source.logout();
         dest.logout();

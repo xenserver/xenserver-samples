@@ -26,7 +26,7 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
         var vm = VmByName(session, vmName);
-        var pool = Pool.get_all(session).First().opaque_ref;
+        var pool = Pool.get_all(session).First();
 
         // The pool's custom field DEFINITIONS (name and type, String or Date) live in a small XML document in
         // pool.gui_config["XenCenter.CustomFields"] (the key keeps its historical name); a client shows no

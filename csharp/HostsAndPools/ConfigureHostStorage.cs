@@ -16,7 +16,7 @@ internal static partial class Workflows
     public static void ConfigureHostStorage(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+        var host = Pool.get_master(session, Pool.get_all(session)[0]);
 
         // The IQN identifies this host to iSCSI targets, so a target's access list is written against
         // it — changing it on a host with live iSCSI storage cuts it off. Existing iSCSI SRs must be

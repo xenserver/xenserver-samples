@@ -33,15 +33,15 @@ internal static partial class Workflows
         // floor, which is the least the guest can boot in.
         var floor = Math.Max(before.memory_static_min, before.memory_static_max * 3 / 4);
         var ceiling = before.memory_static_max;
-        VM.set_memory_dynamic_range(session, vm.Key.opaque_ref, floor, ceiling);
-        Console.WriteLine($"  dynamic range now {Gib(VM.get_memory_dynamic_min(session, vm.Key.opaque_ref))}-"
-                          + $"{Gib(VM.get_memory_dynamic_max(session, vm.Key.opaque_ref))}");
+        VM.set_memory_dynamic_range(session, vm.Key, floor, ceiling);
+        Console.WriteLine($"  dynamic range now {Gib(VM.get_memory_dynamic_min(session, vm.Key))}-"
+                          + $"{Gib(VM.get_memory_dynamic_max(session, vm.Key))}");
 
         // The ordering is enforced, not advisory: a range wider than the static bounds is refused rather
         // than quietly clamped.
         try
         {
-            VM.set_memory_dynamic_range(session, vm.Key.opaque_ref, floor, ceiling * 2);
+            VM.set_memory_dynamic_range(session, vm.Key, floor, ceiling * 2);
             Console.WriteLine("  ERROR: an out-of-range maximum was accepted");
         }
         catch (Failure failure)
@@ -49,7 +49,7 @@ internal static partial class Workflows
             Console.WriteLine($"  refused a dynamic_max above static_max: {failure.ErrorDescription[0]}");
         }
 
-        VM.set_memory_dynamic_range(session, vm.Key.opaque_ref,
+        VM.set_memory_dynamic_range(session, vm.Key,
             before.memory_dynamic_min, before.memory_dynamic_max);
         Console.WriteLine("OK: configure-dynamic-memory");
         session.logout();

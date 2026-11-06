@@ -47,10 +47,10 @@ function Invoke-WlbRecommendations {
     $certName = ""
     if ($WlbCertificate) {
         $certName = "sdk-example-wlb.pem"
-        Invoke-XenPool -Ref $pool.opaque_ref -XenAction CertificateInstall `
+        Invoke-XenPool -Ref $pool -XenAction CertificateInstall `
             -NameParam $certName -Cert (Get-Content -Raw $WlbCertificate)   # pool-wide: no -Pool/-Ref target
     }
-    Invoke-XenPool -Ref $pool.opaque_ref -XenAction InitializeWlb `
+    Invoke-XenPool -Ref $pool -XenAction InitializeWlb `
         -WlbUrl $WlbHostPort -WlbUsername $WlbUsername -WlbPassword $WlbPassword `
         -XenserverUsername $UserName -XenserverPassword $Password
     try {
@@ -64,7 +64,7 @@ function Invoke-WlbRecommendations {
         # ids, [4] the reason.
         # -PassThru: without it Invoke-Xen* runs the action and emits nothing, so a value-returning
         # action looks like it returned null.
-        $poolRecs = Invoke-XenPool -Ref $pool.opaque_ref -XenAction RetrieveWlbRecommendations -PassThru
+        $poolRecs = Invoke-XenPool -Ref $pool -XenAction RetrieveWlbRecommendations -PassThru
         foreach ($entry in $poolRecs.GetEnumerator()) {
             $fields = @($entry.Value)
             $name = (Get-XenVM -Ref $entry.Key).name_label
@@ -79,7 +79,7 @@ function Invoke-WlbRecommendations {
         $vm = Get-XenVM -Name $VmName
         $deadline = (Get-Date).AddMinutes(10)
         while ($true) {
-            try { $vmRecs = Invoke-XenVM -Ref $vm.opaque_ref -XenAction RetrieveWlbRecommendations -PassThru; break }
+            try { $vmRecs = Invoke-XenVM -Ref $vm -XenAction RetrieveWlbRecommendations -PassThru; break }
             catch {
                 $ex = $_.Exception
                 while ($ex -and -not $ex.ErrorDescription) { $ex = $ex.InnerException }
@@ -97,15 +97,15 @@ function Invoke-WlbRecommendations {
 
         # The appliance's own settings are read and written as one flat map of strings. Send a nightly
         # reporting schedule, then read the configuration back to confirm it took.
-        Invoke-XenPool -Ref $pool.opaque_ref -XenAction SendWlbConfiguration -Config @{ ReportingCronString = "0 3 * * *" }
-        $config = Invoke-XenPool -Ref $pool.opaque_ref -XenAction RetrieveWlbConfiguration -PassThru
+        Invoke-XenPool -Ref $pool -XenAction SendWlbConfiguration -Config @{ ReportingCronString = "0 3 * * *" }
+        $config = Invoke-XenPool -Ref $pool -XenAction RetrieveWlbConfiguration -PassThru
         $pairs = $config.GetEnumerator() | Sort-Object Key | ForEach-Object { "$($_.Key)=$($_.Value)" }
         Write-Host "  appliance configuration: $($pairs -join ', ')"
     }
     finally {
         # Disconnect from the appliance however the above went, or the pool stays attached to it.
-        Invoke-XenPool -Ref $pool.opaque_ref -XenAction DeconfigureWlb
-        if ($certName) { Invoke-XenPool -Ref $pool.opaque_ref -XenAction CertificateUninstall -NameParam $certName }
+        Invoke-XenPool -Ref $pool -XenAction DeconfigureWlb
+        if ($certName) { Invoke-XenPool -Ref $pool -XenAction CertificateUninstall -NameParam $certName }
     }
     Write-Host "OK: wlb-recommendations"
     $session | Disconnect-XenServer
@@ -116,10 +116,10 @@ function Invoke-WlbRecommendations {
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
-  sdk-host1 rated 1.0
+  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host2 rated 3.7
+  sdk-host1 rated 1.0
   appliance configuration: ReportingCronString=0 3 * * *
 OK: wlb-recommendations
 ```
@@ -378,7 +378,7 @@ public static void WlbRecommendations(string url, string user, string password, 
     string wlbCertificate = "")
 {
     var session = Connect(url, user, password);
-    var poolRef = Pool.get_all(session)[0].opaque_ref;
+    var poolRef = Pool.get_all(session)[0];
 
     var certName = "";
     if (wlbCertificate != "")
@@ -398,7 +398,7 @@ public static void WlbRecommendations(string url, string user, string password, 
         // keyed by VM and say where to move it: [0] "wlb", [1] the destination host's UUID (a uuid,
         // not a ref), [2] and [3] ids, [4] the reason.
         foreach (var entry in Pool.retrieve_wlb_recommendations(session))
-            Console.WriteLine($"  move {VM.get_name_label(session, entry.Key.opaque_ref)} " +
+            Console.WriteLine($"  move {VM.get_name_label(session, entry.Key)} " +
                               $"-> host {entry.Value[1]} ({entry.Value[4]})");
 
         // A VM's own recommendations are keyed by host and star-rate each as a destination:
@@ -413,7 +413,7 @@ public static void WlbRecommendations(string url, string user, string password, 
         {
             try
             {
-                vmRecs = VM.retrieve_wlb_recommendations(session, vm.opaque_ref);
+                vmRecs = VM.retrieve_wlb_recommendations(session, vm);
                 break;
             }
             catch (Failure e)
@@ -425,7 +425,7 @@ public static void WlbRecommendations(string url, string user, string password, 
             }
         }
         foreach (var entry in vmRecs)
-            Console.WriteLine($"  {Host.get_name_label(session, entry.Key.opaque_ref)} " +
+            Console.WriteLine($"  {Host.get_name_label(session, entry.Key)} " +
                               $"rated {entry.Value[1]}");
 
         // The appliance's own settings are read and written as one flat map of strings. Send a
@@ -450,8 +450,8 @@ public static void WlbRecommendations(string url, string user, string password, 
 
 ```text
 WLB: wlb.example:8012
-  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
+  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
   sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *

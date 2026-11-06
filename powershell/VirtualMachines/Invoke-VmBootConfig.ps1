@@ -18,8 +18,8 @@ function Invoke-VmBootConfig {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    $ref = $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm
+    $ref = $vm
 
     # Set the vCPU topology and switch the VM to UEFI boot: firmware ("bios"/"uefi") lives in
     # HVM_boot_params, Secure Boot in platform["secureboot"]. "auto" (not a hard-coded "true") is the xe
@@ -36,7 +36,7 @@ function Invoke-VmBootConfig {
     Write-Host "Boot order: $($configured.HVM_boot_params['order'])"
     Write-Host "Boot mode: firmware=$($configured.HVM_boot_params['firmware']), secureboot=$($configured.platform['secureboot']) (resolved against pool certificates at boot)"
 
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "OK: vm-boot-config"
     $session | Disconnect-XenServer
 }

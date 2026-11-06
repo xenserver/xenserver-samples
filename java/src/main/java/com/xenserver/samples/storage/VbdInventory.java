@@ -34,7 +34,7 @@ public final class VbdInventory {
             VBD.Record rec = vbd.getRecord(conn);
             if (rec.type != Types.VbdType.DISK) continue;
             VDI vdi = vbd.getVDI(conn);
-            long size = vdi.toWireString().equals("OpaqueRef:NULL") ? 0 : vdi.getVirtualSize(conn) / GiB;
+            long size = vdi.isNull() ? 0 : vdi.getVirtualSize(conn) / GiB;
             System.out.println("  - device " + rec.userdevice + ": " + size + " GiB");
         }
         System.out.println("OK: vbd-inventory");

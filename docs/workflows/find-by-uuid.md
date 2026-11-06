@@ -37,7 +37,7 @@ function Invoke-FindByUuid {
 
     $resolved = Get-XenVM -Uuid $uuid
     Write-Host "UUID $uuid resolves to $($resolved.name_label)"
-    Write-Host "Same object: $($resolved.opaque_ref -eq $vm.opaque_ref)"
+    Write-Host "Same object: $($resolved.uuid -eq $vm.uuid)"
     Write-Host "OK: find-by-uuid"
     $session | Disconnect-XenServer
 }
@@ -143,9 +143,9 @@ public static void FindByUuid(string url, string user, string password, string v
     // UUIDs are stable identifiers you can persist and resolve back to a (session-scoped) ref.
     var vm = VmByName(session, vmName);
     var uuid = VM.get_uuid(session, vm);
-    var resolved = VM.get_by_uuid(session, uuid).opaque_ref;
+    var resolved = VM.get_by_uuid(session, uuid);
     Console.WriteLine($"UUID {uuid} resolves to {VM.get_name_label(session, resolved)}");
-    Console.WriteLine($"Same object: {resolved == vm}");
+    Console.WriteLine($"Same object: {resolved.Equals(vm)}");
     Console.WriteLine("OK: find-by-uuid");
     session.logout();
 }

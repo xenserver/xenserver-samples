@@ -23,14 +23,14 @@ internal static partial class Workflows
         // it over a network every host is on - the management network - since corosync is
         // latency-sensitive and a cluster that loses quorum takes its GFS2 storage offline with it.
         var pifs = PIF.get_all_records(session);
-        var network = pifs.First(kv => kv.Value.management).Value.network.opaque_ref;
-        var was = pifs.Where(kv => kv.Value.network.opaque_ref == network)
-            .ToDictionary(kv => kv.Key.opaque_ref, kv => kv.Value.disallow_unplug);
+        var network = pifs.First(kv => kv.Value.management).Value.network;
+        var was = pifs.Where(kv => kv.Value.network.Equals(network))
+            .ToDictionary(kv => kv.Key, kv => kv.Value.disallow_unplug);
 
         var existing = Cluster.get_all(session);
-        string cluster;
+        XenRef<Cluster> cluster;
         if (existing.Count > 0)
-            cluster = existing[0].opaque_ref;
+            cluster = existing[0];
         else
         {
             // Corosync must not lose its network, so each host's PIF on it has to refuse unplugging
@@ -39,7 +39,7 @@ internal static partial class Workflows
                 PIF.set_disallow_unplug(session, pif, true);
             // token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses 20000
             // as "too large" - it is not milliseconds.
-            cluster = Cluster.pool_create(session, network, "corosync", 20.0, 1.0).opaque_ref;
+            cluster = Cluster.pool_create(session, network, "corosync", 20.0, 1.0);
         }
 
         var record = Cluster.get_record(session, cluster);
@@ -48,7 +48,7 @@ internal static partial class Workflows
 
         // Taking a host out is what a management-interface change does; it can cost the pool quorum,
         // which is why the field is worth reading back rather than assuming.
-        var member = Cluster_host.get_all(session)[0].opaque_ref;
+        var member = Cluster_host.get_all(session)[0];
         Cluster_host.disable(session, member);
         Console.WriteLine($"One member out, quorate: {Cluster.get_is_quorate(session, cluster)}");
 

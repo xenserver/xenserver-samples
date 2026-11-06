@@ -45,8 +45,8 @@ function Invoke-ChangedBlockTracking {
     $second = Invoke-XenVM -VM $vm -XenAction Snapshot -NewName 'cbt-backup-2' -PassThru
     # Re-fetch the snapshots: the object -PassThru hands back is the VM as it was when created, and its
     # disks are attached a moment later, so its VBDs list is empty.
-    $vdiFrom = Get-FirstDisk -Snapshot (Get-XenVM -Ref $first.opaque_ref)
-    $vdiTo = Get-FirstDisk -Snapshot (Get-XenVM -Ref $second.opaque_ref)
+    $vdiFrom = Get-FirstDisk -Snapshot (Get-XenVM -Ref $first)
+    $vdiTo = Get-FirstDisk -Snapshot (Get-XenVM -Ref $second)
 
     # One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
     # only those blocks, over NBD.
@@ -70,14 +70,14 @@ function Invoke-ChangedBlockTracking {
     # Release the older snapshot's blocks but keep its change metadata, so the next incremental can
     # still diff against it. DataDestroy refuses a disk that a VM still uses (VDI_IN_USE), so remove the
     # older snapshot's VM record first, as a backup tool does. The VDI record stays; its type changes.
-    Remove-XenVM -Ref $first.opaque_ref
+    Remove-XenVM -Ref $first
     Invoke-XenVDI -Ref $vdiFrom -XenAction DataDestroy
     $after = Get-XenVDI -Ref $vdiFrom
     Write-Host "  older snapshot is now type=$($after.type), still cbt_enabled=$($after.cbt_enabled)"
 
     # Tidy up: the newer snapshot and its disk, the metadata-only VDI, and CBT on the VM's own disk if
     # this example switched it on.
-    Remove-VmAndDisks -Ref $second.opaque_ref
+    Remove-VmAndDisks -Ref $second
     Remove-XenVDI -Ref $vdiFrom
     if (-not $wasEnabled) { Invoke-XenVDI -Ref $live -XenAction DisableCbt }
     Write-Host "OK: changed-block-tracking"
@@ -91,8 +91,8 @@ function Get-FirstDisk {
     #>
     param([Parameter(Mandatory = $true)]$Snapshot)
     foreach ($vbdRef in $Snapshot.VBDs) {
-        $vbd = Get-XenVBD -Ref $vbdRef.opaque_ref
-        if ($vbd.type -eq 'Disk') { return $vbd.VDI.opaque_ref }
+        $vbd = Get-XenVBD -Ref $vbdRef
+        if ($vbd.type -eq 'Disk') { return $vbd.VDI }
     }
     throw "no disk found"
 }
@@ -102,7 +102,7 @@ function Get-FirstDisk {
 
 ```text
 Backing up web-01
-  12639 blocks of 409600 changed (789.9 MiB to copy, not 25,600.0 MiB)
+  12743 blocks of 409600 changed (796.4 MiB to copy, not 25,600.0 MiB)
   older snapshot is now type=cbt_metadata, still cbt_enabled=True
 OK: changed-block-tracking
 ```
@@ -292,14 +292,14 @@ public static void ChangedBlockTracking(string url, string user, string password
 
     // CBT is switched on for the VM's own disk, and every snapshot taken from then on inherits it.
     // It can't be switched on for a snapshot's disk after the fact (OPERATION_NOT_ALLOWED).
-    var live = FirstDisk(session, vm.Key.opaque_ref);
+    var live = FirstDisk(session, vm.Key);
     var wasEnabled = VDI.get_cbt_enabled(session, live);
     if (!wasEnabled) VDI.enable_cbt(session, live);
 
-    var first = VM.snapshot(session, vm.Key.opaque_ref, "cbt-backup-1");
-    var second = VM.snapshot(session, vm.Key.opaque_ref, "cbt-backup-2");
-    var vdiFrom = FirstDisk(session, first.opaque_ref);
-    var vdiTo = FirstDisk(session, second.opaque_ref);
+    var first = VM.snapshot(session, vm.Key, "cbt-backup-1");
+    var second = VM.snapshot(session, vm.Key, "cbt-backup-2");
+    var vdiFrom = FirstDisk(session, first);
+    var vdiTo = FirstDisk(session, second);
 
     // One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
     // only those blocks, over NBD.
@@ -312,14 +312,14 @@ public static void ChangedBlockTracking(string url, string user, string password
     // Release the older snapshot's blocks but keep its change metadata, so the next incremental can
     // still diff against it. data_destroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the
     // older snapshot's VM record first, as a backup tool does. The VDI record stays; its type changes.
-    VM.destroy(session, first.opaque_ref);
+    VM.destroy(session, first);
     VDI.data_destroy(session, vdiFrom);
     Console.WriteLine($"  older snapshot is now type={VDI.get_type(session, vdiFrom)}, "
                       + $"still cbt_enabled={VDI.get_cbt_enabled(session, vdiFrom)}");
 
     // Tidy up: the newer snapshot and its disk, the metadata-only VDI, and CBT on the VM's own disk
     // if this example switched it on.
-    DestroyVmAndDisks(session, second.opaque_ref);
+    DestroyVmAndDisks(session, second);
     VDI.destroy(session, vdiFrom);
     if (!wasEnabled) VDI.disable_cbt(session, live);
     Console.WriteLine("OK: changed-block-tracking");
@@ -327,11 +327,11 @@ public static void ChangedBlockTracking(string url, string user, string password
 }
 
 /// <summary>The VDI behind a VM's first real disk (a CD drive is a VBD too).</summary>
-private static string FirstDisk(Session session, string vmRef)
+private static XenRef<VDI> FirstDisk(Session session, XenRef<VM> vmRef)
 {
     foreach (var vbdRef in VM.get_VBDs(session, vmRef))
-        if (VBD.get_type(session, vbdRef.opaque_ref) == vbd_type.Disk)
-            return VBD.get_VDI(session, vbdRef.opaque_ref).opaque_ref;
+        if (VBD.get_type(session, vbdRef) == vbd_type.Disk)
+            return VBD.get_VDI(session, vbdRef);
     throw new Exception("no disk found");
 }
 ```
@@ -340,7 +340,7 @@ private static string FirstDisk(Session session, string vmRef)
 
 ```text
 Backing up web-01
-  12759 blocks of 409600 changed (797.4 MiB to copy, not 25600.0 MiB)
+  12711 blocks of 409600 changed (794.4 MiB to copy, not 25600.0 MiB)
   older snapshot is now type=cbt_metadata, still cbt_enabled=True
 OK: changed-block-tracking
 ```

@@ -64,12 +64,12 @@ internal static partial class Workflows
     /// Whether VM.suspend has a suspend-image SR to use: the VM's own, else the pool's, else the
     /// resident host's - the same fallback order xapi's choose_suspend_sr uses.
     /// </summary>
-    private static bool HasSuspendSr(Session session, string vm)
+    private static bool HasSuspendSr(Session session, XenRef<VM> vm)
     {
-        if (VM.get_suspend_SR(session, vm).opaque_ref != "OpaqueRef:NULL") return true;
-        var pool = Pool.get_all(session)[0].opaque_ref;
-        if (Pool.get_suspend_image_SR(session, pool).opaque_ref != "OpaqueRef:NULL") return true;
-        var host = Pool.get_master(session, pool).opaque_ref;
-        return Host.get_suspend_image_sr(session, host).opaque_ref != "OpaqueRef:NULL";
+        if (!Helper.IsNullOrEmptyOpaqueRef(VM.get_suspend_SR(session, vm))) return true;
+        var pool = Pool.get_all(session)[0];
+        if (!Helper.IsNullOrEmptyOpaqueRef(Pool.get_suspend_image_SR(session, pool))) return true;
+        var host = Pool.get_master(session, pool);
+        return !Helper.IsNullOrEmptyOpaqueRef(Host.get_suspend_image_sr(session, host));
     }
 }

@@ -32,8 +32,8 @@ function Invoke-DetachAndForgetSr {
         Forget refuses an SR that is still attached (SR_HAS_PBD), so unplug its PBDs first. Forgetting
         drops the pool's record of the SR but leaves the data on the storage itself.
     #>
-    param([Parameter(Mandatory = $true)][string]$Ref)
-    (Get-XenSR -Ref $Ref).PBDs | ForEach-Object { Get-XenPBD -Ref $_.opaque_ref } |
+    param([Parameter(Mandatory = $true)]$Ref)
+    (Get-XenSR -Ref $Ref).PBDs | ForEach-Object { Get-XenPBD -Ref $_ } |
         Where-Object { $_.currently_attached } |
         ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
     Invoke-XenSR -Ref $Ref -XenAction Forget
@@ -48,11 +48,11 @@ function Invoke-VmProvision {
         literally and Provision fails with UUID_INVALID, so point the disks at the pool's default SR first -
         exactly what `xe vm-install` does before calling VM.provision itself.
     #>
-    param([Parameter(Mandatory = $true)][string]$Ref)
+    param([Parameter(Mandatory = $true)]$Ref)
     $vm = Get-XenVM -Ref $Ref
     $disks = $vm.other_config["disks"]
     if ($disks -and $disks.Contains('sr=""')) {
-        $srUuid = (Get-XenSR -Ref (Get-XenPool | Select-Object -First 1).default_SR.opaque_ref).uuid
+        $srUuid = (Get-XenSR -Ref (Get-XenPool | Select-Object -First 1).default_SR).uuid
         # Set-XenVM -OtherConfig replaces the whole map, so copy it and change only "disks".
         $oc = @{}
         foreach ($k in $vm.other_config.Keys) { $oc[$k] = $vm.other_config[$k] }
@@ -71,14 +71,14 @@ function Remove-VmAndDisks {
         fresh read of the VM: an object from -PassThru may predate its disks) and destroy them afterwards -
         exactly what Invoke-DeleteVm does by hand.
     #>
-    param([Parameter(Mandatory = $true)][string]$Ref)
+    param([Parameter(Mandatory = $true)]$Ref)
     $vdis = (Get-XenVM -Ref $Ref).VBDs |
-        ForEach-Object { Get-XenVBD -Ref $_.opaque_ref } |
-        Where-Object { $_.type -eq 'Disk' -and $_.VDI.opaque_ref -ne 'OpaqueRef:NULL' } |
-        ForEach-Object { $_.VDI.opaque_ref }
+        ForEach-Object { Get-XenVBD -Ref $_ } |
+        Where-Object { $_.type -eq 'Disk' -and $_.VDI -ne 'OpaqueRef:NULL' } |
+        ForEach-Object { $_.VDI }
     # A checkpoint (or a suspended VM) also owns a suspend image holding its memory, which no VBD points
     # at: destroy that as well.
-    $suspendVdi = (Get-XenVM -Ref $Ref).suspend_VDI.opaque_ref
+    $suspendVdi = (Get-XenVM -Ref $Ref).suspend_VDI
     if ($suspendVdi -and $suspendVdi -ne 'OpaqueRef:NULL') { $vdis = @($vdis) + $suspendVdi }
     Remove-XenVM -Ref $Ref
     $vdis | ForEach-Object { Remove-XenVDI -Ref $_ }
@@ -106,9 +106,9 @@ function Copy-OfGuest {
     if (-not $source) { throw "No VM named '$SourceVmName' was found." }
     $snapshot = $source | Invoke-XenVM -XenAction Snapshot -NewName "$NewVmName-source" -PassThru
     $vm = $snapshot | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    Remove-VmAndDisks -Ref $snapshot.opaque_ref
-    return Get-XenVM -Ref $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm
+    Remove-VmAndDisks -Ref $snapshot
+    return Get-XenVM -Ref $vm
 }
 
 function Invoke-Evacuate {
@@ -122,8 +122,8 @@ function Invoke-Evacuate {
     #>
     param([Parameter(Mandatory = $true)]$XenHost)
     $network = (Get-XenPIF | Where-Object {
-        $_.management -and $_.host.opaque_ref -eq $XenHost.opaque_ref
-    } | Select-Object -First 1).network.opaque_ref
+        $_.management -and $_.host -eq $XenHost
+    } | Select-Object -First 1).network
     $XenHost | Invoke-XenHost -XenAction Evacuate -Network $network
 }
 
@@ -139,15 +139,15 @@ function Wait-GuestAgent {
         the guest metrics to report the PV drivers too. A booting OS takes a while.
     #>
     param(
-        [Parameter(Mandatory = $true)][string]$Ref,
+        [Parameter(Mandatory = $true)]$Ref,
         [int]$TimeoutSeconds = 300,
         [int]$IntervalSeconds = 2
     )
     $ready = {
         $vm = Get-XenVM -Ref $Ref
         $vm.allowed_operations -contains 'clean_shutdown' -and
-            $vm.guest_metrics.opaque_ref -ne 'OpaqueRef:NULL' -and
-            (Get-XenVMGuestMetrics -Ref $vm.guest_metrics.opaque_ref).PV_drivers_detected
+            $vm.guest_metrics -ne 'OpaqueRef:NULL' -and
+            (Get-XenVMGuestMetrics -Ref $vm.guest_metrics).PV_drivers_detected
     }
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while (-not (& $ready)) {
@@ -173,7 +173,7 @@ function Invoke-ProbeForFailure {
         formats the LUN.)
     #>
     param(
-        [Parameter(Mandatory = $true)][string]$XenHostRef,
+        [Parameter(Mandatory = $true)]$XenHostRef,
         [Parameter(Mandatory = $true)][hashtable]$DeviceConfig,
         [Parameter(Mandatory = $true)][string]$SmType
     )
@@ -269,12 +269,12 @@ function Move-DisksToSr {
         storage-migrate already demonstrates; reused here to guarantee a VM's disk lands on a *shared* SR
         before pinning/starting it for an evacuation demo.
     #>
-    param([Parameter(Mandatory = $true)][string]$VmRef, [Parameter(Mandatory = $true)][string]$SrRef)
-    (Get-XenVM -Ref $VmRef).VBDs | ForEach-Object { Get-XenVBD -Ref $_.opaque_ref } |
-        Where-Object { $_.type -eq 'Disk' -and $_.VDI.opaque_ref -ne 'OpaqueRef:NULL' } |
+    param([Parameter(Mandatory = $true)]$VmRef, [Parameter(Mandatory = $true)]$SrRef)
+    (Get-XenVM -Ref $VmRef).VBDs | ForEach-Object { Get-XenVBD -Ref $_ } |
+        Where-Object { $_.type -eq 'Disk' -and $_.VDI -ne 'OpaqueRef:NULL' } |
         ForEach-Object {
-            if ((Get-XenVDI -Ref $_.VDI.opaque_ref).SR.opaque_ref -ne $SrRef) {
-                Invoke-XenVDI -Ref $_.VDI.opaque_ref -XenAction PoolMigrate -SR $SrRef -Options @{}
+            if ((Get-XenVDI -Ref $_.VDI).SR -ne $SrRef) {
+                Invoke-XenVDI -Ref $_.VDI -XenAction PoolMigrate -SR $SrRef -Options @{}
             }
         }
 }
@@ -306,5 +306,5 @@ function New-UpdateRepositories {
 
 function Get-HostLive {
     param($XenHost)
-    (Get-XenHostMetrics -Ref (Get-XenHost -Ref $XenHost.opaque_ref).metrics.opaque_ref).live
+    (Get-XenHostMetrics -Ref (Get-XenHost -Ref $XenHost).metrics).live
 }

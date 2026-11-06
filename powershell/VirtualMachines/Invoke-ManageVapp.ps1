@@ -20,7 +20,7 @@ function Invoke-ManageVapp {
 
     # `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     # reason to use a vApp rather than selecting several VMs.
-    Set-XenVM -VM $vm -Appliance $vapp.opaque_ref
+    Set-XenVM -VM $vm -Appliance $vapp
     Set-XenVM -VM $vm -Order 0 -StartDelay 5
 
     Invoke-XenVMAppliance -VMAppliance $vapp -XenAction Start -Paused $false

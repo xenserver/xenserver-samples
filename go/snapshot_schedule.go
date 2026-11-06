@@ -56,7 +56,7 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 
 	// Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
 	// first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
-	check(xenapi.VM.SetSnapshotSchedule(session, vmRef, "OpaqueRef:NULL"))
+	check(xenapi.VM.SetSnapshotSchedule(session, vmRef, nullRef))
 	check(xenapi.VMSS.Destroy(session, vmssRef))
 	for _, s := range kept {
 		destroyVMAndDisks(session, s)

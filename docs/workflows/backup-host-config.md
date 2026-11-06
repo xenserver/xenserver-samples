@@ -29,8 +29,8 @@ function Invoke-BackupHostConfig {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-    $coordinator = (Get-XenPool).master.opaque_ref
-    $hosts = @(Get-XenHost | Sort-Object { $_.opaque_ref -ne $coordinator })
+    $coordinator = (Get-XenPool).master
+    $hosts = @(Get-XenHost | Sort-Object { $coordinator -ne $_ })
     $vmHost = $hosts[0]
     $hostUrl = Get-HostUrl -Url $Url -Address $vmHost.address
     Write-Host "Backing up $($vmHost.name_label)"
@@ -106,13 +106,13 @@ function Restore-ExampleHostConfig {
             -Uri ("$HostUrl/host_restore?session_id=$($Session.opaque_ref)" +
                   "&ref=$($VMHost.opaque_ref)&task_id=$($task.opaque_ref)") | Out-Null
 
-        while ((Get-XenTask -Ref $task.opaque_ref).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
-        $finished = Get-XenTask -Ref $task.opaque_ref
+        while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
+        $finished = Get-XenTask -Ref $task
         if ($finished.status -eq 'success') { return 'accepted' }
         return "refused ($($finished.error_info[-1]))"
     }
     finally {
-        Remove-XenTask -Ref $task.opaque_ref
+        Remove-XenTask -Ref $task
     }
 }
 ```
@@ -121,9 +121,9 @@ function Restore-ExampleHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-2a64b052-3ca0-4549-9929-cd6cc0ff3f68.backup
+  wrote 83 bytes to sdk-example-host-0d4e262c-9668-4ea8-931b-4e40d4f45a8e.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:38882 directly (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:38882))
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:40800 directly (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:40800))
 OK: backup-host-config
 ```
 
@@ -348,8 +348,8 @@ public static void BackupHostConfig(string url, string user, string password)
     var session = Connect(url, user, password);
 
     // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-    var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
-    var hosts = Host.get_all(session).Select(h => h.opaque_ref).OrderBy(h => h != host).ToList();
+    var host = Pool.get_master(session, Pool.get_all(session)[0]);
+    var hosts = Host.get_all(session).OrderBy(h => !h.Equals(host)).ToList();
     var hostUrl = HostUrl(url, Host.get_address(session, host));
     Console.WriteLine($"Backing up {Host.get_name_label(session, host)}");
 
@@ -360,7 +360,7 @@ public static void BackupHostConfig(string url, string user, string password)
     using (var client = InsecureHttpClient())
     {
         using var response = client.GetAsync(
-            $"{hostUrl}/host_backup?session_id={session.opaque_ref}&ref={host}",
+            $"{hostUrl}/host_backup?session_id={session.opaque_ref}&ref={host.opaque_ref}",
             HttpCompletionOption.ResponseHeadersRead).Result;
         response.EnsureSuccessStatusCode();
         using (var httpStream = response.Content.ReadAsStreamAsync().Result)
@@ -415,7 +415,7 @@ private static string HostUrl(string url, string address)
 /// before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
 /// a task you create first, name in the URL, and poll once the upload has finished.
 /// </remarks>
-private static string RestoreHostConfig(Session session, string hostUrl, string host, string path)
+private static string RestoreHostConfig(Session session, string hostUrl, XenRef<Host> host, string path)
 {
     var task = Task.create(session, "host_restore", "restoring a configuration backup").opaque_ref;
     try
@@ -429,7 +429,7 @@ private static string RestoreHostConfig(Session session, string hostUrl, string 
         using (var fileStream = File.OpenRead(path))
         {
             var response = client.PutAsync(
-                $"{hostUrl}/host_restore?session_id={session.opaque_ref}&ref={host}&task_id={task}",
+                $"{hostUrl}/host_restore?session_id={session.opaque_ref}&ref={host.opaque_ref}&task_id={task}",
                 new StreamContent(fileStream)).Result;
             response.EnsureSuccessStatusCode();
         }
@@ -450,9 +450,9 @@ private static string RestoreHostConfig(Session session, string hostUrl, string 
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-61ff127b714c4cbfadd0e962699d86a4.backup
+  wrote 83 bytes to sdk-example-host-9244441c72b042f1abcdd370b636a048.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:22292 directly (One or more errors occurred. (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:22292)))
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:37992 directly (One or more errors occurred. (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:37992)))
 OK: backup-host-config
 ```
 
@@ -578,6 +578,10 @@ func hostURL(rawURL, address string) string {
 func safeRestoreHostConfig(session *xenapi.Session, hostURL, sid string, host xenapi.HostRef, path string) (result string) {
 	defer func() {
 		if r := recover(); r != nil {
+			// A transport error quotes the whole request, session id and all: report only what went wrong.
+			if e, ok := r.(*url.Error); ok {
+				r = e.Err
+			}
 			result = fmt.Sprintf("could not connect to %s directly (%v)", hostURL, r)
 		}
 	}()
@@ -635,9 +639,9 @@ func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.Hos
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-1918929038.backup
+  wrote 83 bytes to sdk-example-host-2185826082.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:20550 directly (Put "https://198.51.100.12:20550/host_restore?session_id=OpaqueRef:00000001-session-2896&ref=OpaqueRef:00000001-host-79&task_id=OpaqueRef:00000001-task-2898": dial tcp 198.51.100.12:20550: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.)
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:24722 directly (dial tcp 198.51.100.12:24722: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.)
 OK: backup-host-config
 ```
 

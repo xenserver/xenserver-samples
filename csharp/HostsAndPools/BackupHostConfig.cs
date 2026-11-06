@@ -30,8 +30,8 @@ internal static partial class Workflows
         var session = Connect(url, user, password);
 
         // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-        var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
-        var hosts = Host.get_all(session).Select(h => h.opaque_ref).OrderBy(h => h != host).ToList();
+        var host = Pool.get_master(session, Pool.get_all(session)[0]);
+        var hosts = Host.get_all(session).OrderBy(h => !h.Equals(host)).ToList();
         var hostUrl = HostUrl(url, Host.get_address(session, host));
         Console.WriteLine($"Backing up {Host.get_name_label(session, host)}");
 
@@ -42,7 +42,7 @@ internal static partial class Workflows
         using (var client = InsecureHttpClient())
         {
             using var response = client.GetAsync(
-                $"{hostUrl}/host_backup?session_id={session.opaque_ref}&ref={host}",
+                $"{hostUrl}/host_backup?session_id={session.opaque_ref}&ref={host.opaque_ref}",
                 HttpCompletionOption.ResponseHeadersRead).Result;
             response.EnsureSuccessStatusCode();
             using (var httpStream = response.Content.ReadAsStreamAsync().Result)
@@ -97,7 +97,7 @@ internal static partial class Workflows
     /// before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
     /// a task you create first, name in the URL, and poll once the upload has finished.
     /// </remarks>
-    private static string RestoreHostConfig(Session session, string hostUrl, string host, string path)
+    private static string RestoreHostConfig(Session session, string hostUrl, XenRef<Host> host, string path)
     {
         var task = Task.create(session, "host_restore", "restoring a configuration backup").opaque_ref;
         try
@@ -111,7 +111,7 @@ internal static partial class Workflows
             using (var fileStream = File.OpenRead(path))
             {
                 var response = client.PutAsync(
-                    $"{hostUrl}/host_restore?session_id={session.opaque_ref}&ref={host}&task_id={task}",
+                    $"{hostUrl}/host_restore?session_id={session.opaque_ref}&ref={host.opaque_ref}&task_id={task}",
                     new StreamContent(fileStream)).Result;
                 response.EnsureSuccessStatusCode();
             }

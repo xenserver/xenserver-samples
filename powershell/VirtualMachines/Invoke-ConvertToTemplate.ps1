@@ -18,15 +18,15 @@ function Invoke-ConvertToTemplate {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref  # now a real (halted) VM
-    $ref = $vm.opaque_ref
+    Invoke-VmProvision -Ref $vm  # now a real (halted) VM
+    $ref = $vm
     Write-Host "is_a_template after provision: $((Get-XenVM -Ref $ref).is_a_template)"
 
     # Converting a VM to a custom template is a one-way operation.
     $vm | Set-XenVM -IsATemplate $true
     Write-Host "is_a_template after convert:  $((Get-XenVM -Ref $ref).is_a_template)"
 
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "OK: convert-to-template"
     $session | Disconnect-XenServer
 }

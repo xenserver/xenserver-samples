@@ -21,9 +21,9 @@ internal static partial class Workflows
         var session = Connect(url, user, password);
         var repos = IntroduceUpdateRepositories(session, repoUrl, sourceUrl);
         Console.WriteLine("Introduced repositories: " +
-            string.Join(", ", repos.Select(r => Repository.get_name_label(session, r.opaque_ref))));
+            string.Join(", ", repos.Select(r => Repository.get_name_label(session, r))));
 
-        var pool = Pool.get_all(session)[0].opaque_ref;
+        var pool = Pool.get_all(session)[0];
         // Remember the pool's own repositories, to put them back afterwards.
         var previous = Pool.get_repositories(session, pool);
         Pool.set_repositories(session, pool, repos);
@@ -34,7 +34,7 @@ internal static partial class Workflows
         // Tidy up so the example is repeatable.
         Pool.set_update_sync_enabled(session, pool, false);
         Pool.set_repositories(session, pool, previous);
-        foreach (var repo in repos) Repository.forget(session, repo.opaque_ref);
+        foreach (var repo in repos) Repository.forget(session, repo);
         Console.WriteLine("OK: configure-updates");
         session.logout();
     }

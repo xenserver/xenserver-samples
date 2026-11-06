@@ -20,20 +20,22 @@ function Invoke-PvsAccelerator {
     foreach ($site in $sites) {
         Write-Host "Site: $($site.name_label)"
         foreach ($csRef in $site.cache_storage) {
-            $cs = Get-XenPVSCacheStorage -Ref $csRef.opaque_ref
-            $cacheHost = Get-XenHost -Ref $cs.host.opaque_ref
-            $sr = Get-XenSR -Ref $cs.SR.opaque_ref
+            $cs = Get-XenPVSCacheStorage -Ref $csRef
+            $cacheHost = Get-XenHost -Ref $cs.host
+            $sr = Get-XenSR -Ref $cs.SR
             Write-Host ("  cache:  $($cacheHost.name_label)  $([long]($cs.size / 1GB)) GiB on $($sr.name_label)")
         }
         foreach ($serverRef in $site.servers) {
-            $server = Get-XenPVSServer -Ref $serverRef.opaque_ref
+            $server = Get-XenPVSServer -Ref $serverRef
             Write-Host ("  server: $($server.addresses -join ', ')  ports $($server.first_port)-$($server.last_port)")
         }
         # Which VMs are accelerated: walk each proxy to its VIF to its VM.
         $accelerated = @{}
         foreach ($proxyRef in $site.proxies) {
-            $proxy = Get-XenPVSProxy -Ref $proxyRef.opaque_ref
-            $vif = Get-XenVIF -Ref $proxy.VIF.opaque_ref
+            $proxy = Get-XenPVSProxy -Ref $proxyRef
+            $vif = Get-XenVIF -Ref $proxy.VIF
+            # Keyed by the plain ref string (not the VM object) so the lookup below, keyed the same way
+            # off each guest's own opaque_ref, finds it: VM doesn't define value equality or a hash code.
             $accelerated[$vif.VM.opaque_ref] = $proxy.status
         }
         $guests = Get-XenVM | Where-Object { -not $_.is_control_domain -and -not $_.is_a_template -and -not $_.is_a_snapshot }

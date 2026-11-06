@@ -16,8 +16,8 @@ function Invoke-BackupHostConfig {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-    $coordinator = (Get-XenPool).master.opaque_ref
-    $hosts = @(Get-XenHost | Sort-Object { $_.opaque_ref -ne $coordinator })
+    $coordinator = (Get-XenPool).master
+    $hosts = @(Get-XenHost | Sort-Object { $coordinator -ne $_ })
     $vmHost = $hosts[0]
     $hostUrl = Get-HostUrl -Url $Url -Address $vmHost.address
     Write-Host "Backing up $($vmHost.name_label)"
@@ -93,12 +93,12 @@ function Restore-ExampleHostConfig {
             -Uri ("$HostUrl/host_restore?session_id=$($Session.opaque_ref)" +
                   "&ref=$($VMHost.opaque_ref)&task_id=$($task.opaque_ref)") | Out-Null
 
-        while ((Get-XenTask -Ref $task.opaque_ref).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
-        $finished = Get-XenTask -Ref $task.opaque_ref
+        while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
+        $finished = Get-XenTask -Ref $task
         if ($finished.status -eq 'success') { return 'accepted' }
         return "refused ($($finished.error_info[-1]))"
     }
     finally {
-        Remove-XenTask -Ref $task.opaque_ref
+        Remove-XenTask -Ref $task
     }
 }

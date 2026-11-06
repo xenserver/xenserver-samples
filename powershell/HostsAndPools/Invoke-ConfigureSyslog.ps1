@@ -13,7 +13,7 @@ function Invoke-ConfigureSyslog {
         [string]$SyslogServer = "192.0.2.50"
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master.opaque_ref
+    $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master
 
     Write-Host "$($xenHost.name_label) logging: $(Format-Logging $xenHost.logging)"
 
@@ -24,11 +24,11 @@ function Invoke-ConfigureSyslog {
     $xenHost | Remove-XenHostProperty -Logging "syslog_destination"
     $xenHost | Add-XenHost -Logging ([System.Collections.Generic.KeyValuePair[string, string]]::new("syslog_destination", $SyslogServer))
     $xenHost | Invoke-XenHost -XenAction SyslogReconfigure
-    Write-Host "  now logging to: $((Get-XenHost -Ref $xenHost.opaque_ref).logging['syslog_destination'])"
+    Write-Host "  now logging to: $((Get-XenHost -Ref $xenHost).logging['syslog_destination'])"
 
     $xenHost | Remove-XenHostProperty -Logging "syslog_destination"
     $xenHost | Invoke-XenHost -XenAction SyslogReconfigure
-    Write-Host "  restored: $(Format-Logging (Get-XenHost -Ref $xenHost.opaque_ref).logging)"
+    Write-Host "  restored: $(Format-Logging (Get-XenHost -Ref $xenHost).logging)"
     Write-Host "OK: configure-syslog"
     $session | Disconnect-XenServer
 }

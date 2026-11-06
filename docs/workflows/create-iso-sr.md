@@ -37,7 +37,7 @@ function Invoke-CreateIsoSr {
         -NameLabel "sdk-example-iso" -NameDescription "ISO library created by the SDK example" `
         -Type "iso" -ContentType "iso" -Shared $true -PassThru
     Write-Host "Created ISO SR: $($sr.uuid)"
-    Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
+    Invoke-DetachAndForgetSr -Ref $sr
     Write-Host "OK: create-iso-sr"
     $session | Disconnect-XenServer
 }
@@ -148,7 +148,7 @@ Source: [`csharp/Storage/CreateIsoSr.cs`](../../csharp/Storage/CreateIsoSr.cs)
 public static void CreateIsoSr(string url, string user, string password, string location)
 {
     var session = Connect(url, user, password);
-    var host = Host.get_all(session)[0].opaque_ref;
+    var host = Host.get_all(session)[0];
     var dc = new Dictionary<string, string> { ["location"] = location, ["type"] = "nfs_iso" };
     var sr = SR.create(session, host, dc, 0, "sdk-example-iso", "ISO library created by the SDK example",
         "iso", "iso", true, new Dictionary<string, string>());
@@ -162,7 +162,7 @@ public static void CreateIsoSr(string url, string user, string password, string 
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-d20a-000000000000
+Created ISO SR: 00000001-0000-0000-080b-000000000000
 OK: create-iso-sr
 ```
 

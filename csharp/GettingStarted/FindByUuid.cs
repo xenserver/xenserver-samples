@@ -20,9 +20,9 @@ internal static partial class Workflows
         // UUIDs are stable identifiers you can persist and resolve back to a (session-scoped) ref.
         var vm = VmByName(session, vmName);
         var uuid = VM.get_uuid(session, vm);
-        var resolved = VM.get_by_uuid(session, uuid).opaque_ref;
+        var resolved = VM.get_by_uuid(session, uuid);
         Console.WriteLine($"UUID {uuid} resolves to {VM.get_name_label(session, resolved)}");
-        Console.WriteLine($"Same object: {resolved == vm}");
+        Console.WriteLine($"Same object: {resolved.Equals(vm)}");
         Console.WriteLine("OK: find-by-uuid");
         session.logout();
     }

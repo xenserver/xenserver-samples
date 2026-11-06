@@ -14,15 +14,15 @@ internal static partial class Workflows
     public static void RestartHost(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var pool = Pool.get_all(session).First().opaque_ref;
+        var pool = Pool.get_all(session).First();
 
         // Rebooting a host is never just the reboot: anything running on it has to go somewhere first,
         // and the host has to stop accepting new VMs while that happens.
         //
         // Not the coordinator: it is the host this session is talking to, and taking it down would drop
         // the connection underneath the rest of the example.
-        var coordinator = Pool.get_master(session, pool).opaque_ref;
-        var host = Host.get_all(session).First(h => h.opaque_ref != coordinator).opaque_ref;
+        var coordinator = Pool.get_master(session, pool);
+        var host = Host.get_all(session).First(h => !h.Equals(coordinator));
         Console.WriteLine($"Restarting {Host.get_name_label(session, host)}");
         Console.WriteLine($"  enabled={Host.get_enabled(session, host)}, guests={GuestCount(session, host)}");
 
@@ -74,7 +74,7 @@ internal static partial class Workflows
     /// real out-of-band power control has no retry of its own, so a tool that doesn't wait can issue a
     /// second command while the first is still in flight.
     /// </summary>
-    private static void WaitForHostLive(Session session, string host, bool want,
+    private static void WaitForHostLive(Session session, XenRef<Host> host, bool want,
         int timeoutSeconds = 60, int intervalSeconds = 2)
     {
         var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
@@ -86,6 +86,6 @@ internal static partial class Workflows
     }
 
     /// <summary>Resident VMs excluding the control domain, which never moves.</summary>
-    private static int GuestCount(Session session, string host) =>
-        Host.get_resident_VMs(session, host).Count(v => !VM.get_is_control_domain(session, v.opaque_ref));
+    private static int GuestCount(Session session, XenRef<Host> host) =>
+        Host.get_resident_VMs(session, host).Count(v => !VM.get_is_control_domain(session, v));
 }

@@ -28,13 +28,13 @@ function Invoke-PoolProperties {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
     $original = $pool.name_label
-    $defaultSr = $pool.default_SR.opaque_ref
+    $defaultSr = $pool.default_SR
     $srName = if ($defaultSr -eq "OpaqueRef:NULL") { "(none)" } else { (Get-XenSR -Ref $defaultSr).name_label }
     Write-Host "Pool:       '$original'"
     Write-Host "Default SR: $srName"
 
     $pool | Set-XenPool -NameLabel "sdk-pool-renamed"
-    Write-Host "Renamed to: '$((Get-XenPool -Ref $pool.opaque_ref).name_label)'"
+    Write-Host "Renamed to: '$((Get-XenPool -Ref $pool).name_label)'"
 
     $pool | Set-XenPool -NameLabel $original  # restore
     Write-Host "OK: pool-properties"
@@ -101,6 +101,7 @@ Run it::
 """
 
 from connection import connect
+from helpers import is_set
 
 
 def pool_properties(url, username, password):
@@ -111,8 +112,7 @@ def pool_properties(url, username, password):
     default_sr = session.xenapi.pool.get_default_SR(pool_ref)
     print("Pool:       '%s'" % original)
     print("Default SR: %s"
-          % ("(none)" if default_sr == "OpaqueRef:NULL"
-             else session.xenapi.SR.get_name_label(default_sr)))
+          % (session.xenapi.SR.get_name_label(default_sr) if is_set(default_sr) else "(none)"))
 
     session.xenapi.pool.set_name_label(pool_ref, "sdk-pool-renamed")
     print("Renamed to: '%s'" % session.xenapi.pool.get_name_label(pool_ref))
@@ -148,11 +148,12 @@ Source: [`csharp/HostsAndPools/PoolProperties.cs`](../../csharp/HostsAndPools/Po
 public static void PoolProperties(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    var poolRef = Pool.get_all(session)[0].opaque_ref;
+    var poolRef = Pool.get_all(session)[0];
     var original = Pool.get_name_label(session, poolRef);
-    var defaultSr = Pool.get_default_SR(session, poolRef).opaque_ref;
+    var defaultSr = Pool.get_default_SR(session, poolRef);
     Console.WriteLine($"Pool:       '{original}'");
-    Console.WriteLine($"Default SR: {(defaultSr == "OpaqueRef:NULL" ? "(none)" : SR.get_name_label(session, defaultSr))}");
+    Console.WriteLine($"Default SR: {(Helper.IsNullOrEmptyOpaqueRef(defaultSr)
+        ? "(none)" : SR.get_name_label(session, defaultSr))}");
 
     Pool.set_name_label(session, poolRef, "sdk-pool-renamed");
     Console.WriteLine($"Renamed to: '{Pool.get_name_label(session, poolRef)}'");
@@ -201,7 +202,7 @@ func poolProperties(url, user, password string) {
 	original, _ := xenapi.Pool.GetNameLabel(session, poolRef)
 	defaultSr, _ := xenapi.Pool.GetDefaultSR(session, poolRef)
 	srName := "(none)"
-	if defaultSr != xenapi.SRRef("OpaqueRef:NULL") {
+	if isSet(defaultSr) {
 		srName, _ = xenapi.SR.GetNameLabel(session, defaultSr)
 	}
 	fmt.Printf("Pool:       '%s'\n", original)
@@ -262,7 +263,7 @@ public final class PoolProperties {
         String original = pool.getNameLabel(conn);
         SR defaultSr = pool.getDefaultSR(conn);
         System.out.println("Pool:       '" + original + "'");
-        System.out.println("Default SR: " + (defaultSr.toWireString().equals("OpaqueRef:NULL")
+        System.out.println("Default SR: " + (defaultSr.isNull()
                 ? "(none)" : defaultSr.getNameLabel(conn)));
 
         pool.setNameLabel(conn, "sdk-pool-renamed");

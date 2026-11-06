@@ -33,8 +33,8 @@ internal static partial class Workflows
         string ldaps = "false")
     {
         var session = Connect(url, user, password);
-        var pool = Pool.get_all(session)[0].opaque_ref;
-        var coordinator = Pool.get_master(session, pool).opaque_ref;
+        var pool = Pool.get_all(session)[0];
+        var coordinator = Pool.get_master(session, pool);
         var alreadyJoined = !string.IsNullOrEmpty(domain)
             && Host.get_external_auth_type(session, coordinator) == "AD"
             && string.Equals(Host.get_external_auth_service_name(session, coordinator), domain,
@@ -62,11 +62,12 @@ internal static partial class Workflows
             subject_identifier = sid,
             other_config = new Dictionary<string, string>(),
             roles = new List<XenRef<Role>>(),
-        }).opaque_ref;
+        });
         var adminRole = Role.get_by_name_label(session, "pool-admin")[0];
         Subject.add_to_roles(session, subject, adminRole);
         Console.WriteLine($"Added subject {info["subject-displayname"]} ({info["subject-name"]}) as " +
-            string.Join(", ", Subject.get_roles(session, subject).Select(r => Role.get_name_label(session, r.opaque_ref))));
+            string.Join(", ",
+                Subject.get_roles(session, subject).Select(r => Role.get_name_label(session, r))));
 
         // Revoking access does not end sessions the user already has: logging the subject out is a
         // separate act, and the one that actually gets them off the pool now rather than at next login.

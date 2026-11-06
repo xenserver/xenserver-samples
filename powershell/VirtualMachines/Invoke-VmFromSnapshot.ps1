@@ -24,15 +24,15 @@ function Invoke-VmFromSnapshot {
     # A clone of a snapshot is a template, not another snapshot: it stands on its own instead of being
     # filed under the original VM. Provision it to get an ordinary VM you can start.
     $newVm = $snapshot | Invoke-XenVM -XenAction Clone -NewName 'sdk-example-vm-from-snapshot' -PassThru
-    Invoke-VmProvision -Ref $newVm.opaque_ref
-    Write-Host "  new VM:      $($newVm.name_label) (is_a_template=$((Get-XenVM -Ref $newVm.opaque_ref).is_a_template))"
+    Invoke-VmProvision -Ref $newVm
+    Write-Host "  new VM:      $($newVm.name_label) (is_a_template=$((Get-XenVM -Ref $newVm).is_a_template))"
 
     # Another clone, left as the template it already is: a starting point to stamp more VMs from.
     $template = $snapshot | Invoke-XenVM -XenAction Clone -NewName 'sdk-example-template-from-snapshot' -PassThru
-    Write-Host "  new template:$($template.name_label) (is_a_template=$((Get-XenVM -Ref $template.opaque_ref).is_a_template))"
+    Write-Host "  new template:$($template.name_label) (is_a_template=$((Get-XenVM -Ref $template).is_a_template))"
 
     # Each clone made its own disks, and the snapshot has its own snapshot disks; destroy them all.
-    foreach ($ref in @($newVm.opaque_ref, $template.opaque_ref, $snapshot.opaque_ref)) {
+    foreach ($ref in @($newVm, $template, $snapshot)) {
         Remove-VmAndDisks -Ref $ref
     }
     Write-Host "OK: vm-from-snapshot"

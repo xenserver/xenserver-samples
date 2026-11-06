@@ -15,13 +15,13 @@ function Invoke-PoolProperties {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
     $original = $pool.name_label
-    $defaultSr = $pool.default_SR.opaque_ref
+    $defaultSr = $pool.default_SR
     $srName = if ($defaultSr -eq "OpaqueRef:NULL") { "(none)" } else { (Get-XenSR -Ref $defaultSr).name_label }
     Write-Host "Pool:       '$original'"
     Write-Host "Default SR: $srName"
 
     $pool | Set-XenPool -NameLabel "sdk-pool-renamed"
-    Write-Host "Renamed to: '$((Get-XenPool -Ref $pool.opaque_ref).name_label)'"
+    Write-Host "Renamed to: '$((Get-XenPool -Ref $pool).name_label)'"
 
     $pool | Set-XenPool -NameLabel $original  # restore
     Write-Host "OK: pool-properties"

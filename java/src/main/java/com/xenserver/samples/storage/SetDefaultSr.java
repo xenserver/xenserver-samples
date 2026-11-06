@@ -72,7 +72,7 @@ public final class SetDefaultSr {
      * An SR's name, tolerating the null reference an unset pool field holds.
      */
     private static String srLabel(Connection conn, SR sr) throws Exception {
-        if (sr == null || sr.toWireString() == null || sr.toWireString().equals("OpaqueRef:NULL"))
+        if (sr == null || sr.toWireString() == null || sr.isNull())
             return "(none)";
         return sr.getNameLabel(conn);
     }

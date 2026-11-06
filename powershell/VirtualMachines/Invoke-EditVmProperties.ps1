@@ -28,7 +28,7 @@ function Invoke-EditVmProperties {
     $vm | Set-XenVM -NameDescription "Edited by the SDK example"
     $vm | Set-XenVM -OtherConfig $oc
 
-    $edited = Get-XenVM -Ref $vm.opaque_ref
+    $edited = Get-XenVM -Ref $vm
     Write-Host "New description: $($edited.name_description)"
     Write-Host "other_config[sdk_example] = $($edited.other_config['sdk_example'])"
 

@@ -54,8 +54,8 @@ function Invoke-ApplyUpdate {
     }
     $repos = @(New-UpdateRepositories -Session $session -RepoUrl $RepoUrl -SourceUrl $SourceUrl)
     # Remember the pool's own repositories, to put them back afterwards.
-    $previous = @((Get-XenPool -Ref $pool.opaque_ref).repositories | ForEach-Object { $_.opaque_ref })
-    $pool | Set-XenPool -Repositories @($repos | ForEach-Object { $_.opaque_ref })
+    $previous = @((Get-XenPool -Ref $pool).repositories)
+    $pool | Set-XenPool -Repositories $repos
     try {
         # Sync the pool's update metadata; -PassThru returns the hash identifying the synced set.
         $hash = $pool | Invoke-XenPool -XenAction SyncUpdates -PassThru
@@ -64,8 +64,7 @@ function Invoke-ApplyUpdate {
         # Apply the synced updates to each host, coordinator first as the documentation requires (the
         # hash is the action's -Hash parameter). Then read the reboot guidance to decide whether a
         # host needs a reboot.
-        $orderedHosts = @($pool.master.opaque_ref) + @(Get-XenHost |
-            Where-Object { $_.opaque_ref -ne $pool.master.opaque_ref } | ForEach-Object { $_.opaque_ref })
+        $orderedHosts = @($pool.master) + @(Get-XenHost | Where-Object { $pool.master -ne $_ })
         foreach ($xenHost in $orderedHosts | ForEach-Object { Get-XenHost -Ref $_ }) {
             try {
                 $xenHost | Invoke-XenHost -XenAction ApplyUpdates -Hash $hash
@@ -82,13 +81,13 @@ function Invoke-ApplyUpdate {
                 $xenHost | Invoke-XenHost -XenAction ApplyUpdates -Hash $hash
                 $xenHost | Invoke-XenHost -XenAction Enable
             }
-            $guidance = @((Get-XenHost -Ref $xenHost.opaque_ref).pending_guidances)
+            $guidance = @((Get-XenHost -Ref $xenHost).pending_guidances)
             Write-Host "  $($xenHost.name_label): applied; pending guidance = [$($guidance -join ', ')]"
             if ($guidance -contains "reboot_host" -or $guidance -contains "restart_toolstack") {
                 # As in rolling-pool-update: either restart returns before it has happened, and the
                 # coordinator's takes this session with it - so wait for it, reconnecting.
                 $key = if ($guidance -contains "reboot_host") { "boot_time" } else { "agent_start_time" }
-                $before = (Get-XenHost -Ref $xenHost.opaque_ref).other_config[$key]
+                $before = (Get-XenHost -Ref $xenHost).other_config[$key]
                 if ($key -eq "boot_time") {
                     $xenHost | Invoke-XenHost -XenAction Reboot
                 }
@@ -347,7 +346,7 @@ Source: [`csharp/Updates/ApplyUpdate.cs`](../../csharp/Updates/ApplyUpdate.cs)
 public static void ApplyUpdate(string url, string user, string password, string repoUrl, string sourceUrl)
 {
     var session = Connect(url, user, password);
-    var pool = Pool.get_all(session)[0].opaque_ref;
+    var pool = Pool.get_all(session)[0];
     // Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
     // for Workload Balancing to be switched off before you start updating - so check both up front
     // and stop rather than disabling either for you; turn them back on again once the update is done.
@@ -375,23 +374,23 @@ public static void ApplyUpdate(string url, string user, string password, string 
         // example restarting a VM, is not handled here.)
         var hosts = Host.get_all_records(session);
         var master = Pool.get_master(session, pool);
-        var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => r.opaque_ref != master.opaque_ref));
+        var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => !r.Equals(master)));
         foreach (var hostRef in orderedRefs)
         {
             var host = hosts[hostRef];
             try
             {
-                Host.apply_updates(session, hostRef.opaque_ref, hash);
+                Host.apply_updates(session, hostRef, hash);
             }
             catch (Failure f) when (f.ErrorDescription[0] == "HOST_EVACUATION_IS_REQUIRED")
             {
                 Console.WriteLine($"  {host.name_label}: needs evacuating first; evacuating and retrying");
-                Host.disable(session, hostRef.opaque_ref);
-                Host.evacuate(session, hostRef.opaque_ref);
-                Host.apply_updates(session, hostRef.opaque_ref, hash);
-                Host.enable(session, hostRef.opaque_ref);
+                Host.disable(session, hostRef);
+                Host.evacuate(session, hostRef);
+                Host.apply_updates(session, hostRef, hash);
+                Host.enable(session, hostRef);
             }
-            var guidance = Host.get_pending_guidances(session, hostRef.opaque_ref);
+            var guidance = Host.get_pending_guidances(session, hostRef);
             Console.WriteLine($"  {host.name_label}: applied; pending guidance = " +
                               $"[{string.Join(", ", guidance)}]");
             // Modern xapi (>=23.18.0) doesn't reboot a host for you: it only records pending_guidances,
@@ -403,20 +402,20 @@ public static void ApplyUpdate(string url, string user, string password, string 
                 // coordinator's takes this session with it - so wait for it, reconnecting.
                 var rebooting = guidance.Contains(update_guidances.reboot_host);
                 var key = rebooting ? "boot_time" : "agent_start_time";
-                Host.get_other_config(session, hostRef.opaque_ref).TryGetValue(key, out var before);
-                if (rebooting) Host.reboot(session, hostRef.opaque_ref);
-                else Host.restart_agent(session, hostRef.opaque_ref);
+                Host.get_other_config(session, hostRef).TryGetValue(key, out var before);
+                if (rebooting) Host.reboot(session, hostRef);
+                else Host.restart_agent(session, hostRef);
                 session = WaitForRestart(url, user, password, host.uuid, key, before);
             }
             // apply_updates disables the host while it works (auto_enable: a restart puts it back) -
             // with no restart to do, nothing re-enables it. Return it to service either way.
-            EnableWhenBooted(session, hostRef.opaque_ref);
+            EnableWhenBooted(session, hostRef);
         }
     }
     finally
     {
         Pool.set_repositories(session, pool, previous);
-        foreach (var repo in repos) Repository.forget(session, repo.opaque_ref);
+        foreach (var repo in repos) Repository.forget(session, repo);
     }
     Console.WriteLine("OK: apply-update");
     session.logout();

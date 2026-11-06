@@ -68,10 +68,10 @@ public final class VmLifecycle {
      * host's - the same fallback order xapi's choose_suspend_sr uses.
      */
     private static boolean hasSuspendSr(Connection conn, VM vm) throws Exception {
-        if (!vm.getSuspendSR(conn).toWireString().equals("OpaqueRef:NULL")) return true;
+        if (!vm.getSuspendSR(conn).isNull()) return true;
         Pool pool = Pool.getAll(conn).iterator().next();
-        if (!pool.getSuspendImageSR(conn).toWireString().equals("OpaqueRef:NULL")) return true;
+        if (!pool.getSuspendImageSR(conn).isNull()) return true;
         Host host = pool.getMaster(conn);
-        return !host.getSuspendImageSr(conn).toWireString().equals("OpaqueRef:NULL");
+        return !host.getSuspendImageSr(conn).isNull();
     }
 }

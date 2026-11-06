@@ -33,7 +33,7 @@ function Invoke-ConfigureHa {
     # computed with none protected can be too high, and protecting a VM afterwards then fails
     # HA_OPERATION_WOULD_BREAK_FAILOVER_PLAN. The configuration maps VM references (XenRef objects - a ref
     # string fails to cast) to restart priorities.
-    $guestRef = [XenAPI.XenRef[XenAPI.VM]]::Create($guest.opaque_ref)
+    $guestRef = [XenAPI.XenRef[XenAPI.VM]]::new($guest)
     $ntol = $pool | Invoke-XenPool -XenAction HaComputeHypotheticalMaxHostFailuresToTolerate `
         -Configuration @{ $guestRef = "restart" } -PassThru
     Write-Host "Max failures:  $ntol"
@@ -45,13 +45,13 @@ function Invoke-ConfigureHa {
 
         $was = $guest.ha_restart_priority
         $guest | Set-XenVM -HaRestartPriority "restart"
-        $nowPriority = (Get-XenVM -Ref $guest.opaque_ref).ha_restart_priority
+        $nowPriority = (Get-XenVM -Ref $guest).ha_restart_priority
         Write-Host "$($guest.name_label) priority: '$was' -> '$nowPriority'"
         $guest | Set-XenVM -HaRestartPriority $was
 
         # And a pool-wide judgement call: if a guest shuts itself down from the inside, is that a
         # failure HA should undo, or an administrator's intent it should respect?
-        $internal = (Get-XenPool -Ref $pool.opaque_ref).ha_reboot_vm_on_internal_shutdown
+        $internal = (Get-XenPool -Ref $pool).ha_reboot_vm_on_internal_shutdown
         Write-Host "Restart on internal shutdown: $internal"
     }
     finally {

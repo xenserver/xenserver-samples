@@ -23,6 +23,14 @@ func check(err error) {
 	}
 }
 
+// nullRef is what a reference field holds when it points at nothing; set a field to it to clear it.
+const nullRef = "OpaqueRef:NULL"
+
+// isSet reports whether a reference field points at an object (it isn't empty or the null reference).
+func isSet[T ~string](ref T) bool {
+	return ref != "" && ref != nullRef
+}
+
 // templateByName finds a template VM by its exact name (rather than picking an arbitrary one).
 func templateByName(session *xenapi.Session, name string) xenapi.VMRef {
 	vms, err := xenapi.VM.GetAllRecords(session)
@@ -134,7 +142,7 @@ func guestAgentReady(session *xenapi.Session, vm xenapi.VMRef) bool {
 	}
 	metrics, err := xenapi.VM.GetGuestMetrics(session, vm)
 	check(err)
-	if metrics == xenapi.VMGuestMetricsRef("OpaqueRef:NULL") {
+	if !isSet(metrics) {
 		return false
 	}
 	detected, err := xenapi.VMGuestMetrics.GetPVDriversDetected(session, metrics)
@@ -286,7 +294,7 @@ func diskVdis(session *xenapi.Session, vmRef xenapi.VMRef) []xenapi.VDIRef {
 		}
 		vdi, err := xenapi.VBD.GetVDI(session, vbd)
 		check(err)
-		if vdi != xenapi.VDIRef("OpaqueRef:NULL") {
+		if isSet(vdi) {
 			vdis = append(vdis, vdi)
 		}
 	}
@@ -302,7 +310,7 @@ func destroyVMAndDisks(session *xenapi.Session, vm xenapi.VMRef) {
 	// points at: destroy that as well.
 	suspendVDI, err := xenapi.VM.GetSuspendVDI(session, vm)
 	check(err)
-	if suspendVDI != "OpaqueRef:NULL" {
+	if isSet(suspendVDI) {
 		vdis = append(vdis, suspendVDI)
 	}
 	check(xenapi.VM.Destroy(session, vm))
@@ -364,7 +372,7 @@ func failureCode(err error) string {
 
 // srLabel is an SR's name, tolerating the null reference an unset pool field holds.
 func srLabel(session *xenapi.Session, sr xenapi.SRRef) string {
-	if sr == "" || sr == "OpaqueRef:NULL" {
+	if !isSet(sr) {
 		return "(none)"
 	}
 	name, err := xenapi.SR.GetNameLabel(session, sr)

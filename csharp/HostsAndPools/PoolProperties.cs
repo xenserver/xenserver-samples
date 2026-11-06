@@ -16,11 +16,12 @@ internal static partial class Workflows
     public static void PoolProperties(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var poolRef = Pool.get_all(session)[0].opaque_ref;
+        var poolRef = Pool.get_all(session)[0];
         var original = Pool.get_name_label(session, poolRef);
-        var defaultSr = Pool.get_default_SR(session, poolRef).opaque_ref;
+        var defaultSr = Pool.get_default_SR(session, poolRef);
         Console.WriteLine($"Pool:       '{original}'");
-        Console.WriteLine($"Default SR: {(defaultSr == "OpaqueRef:NULL" ? "(none)" : SR.get_name_label(session, defaultSr))}");
+        Console.WriteLine($"Default SR: {(Helper.IsNullOrEmptyOpaqueRef(defaultSr)
+            ? "(none)" : SR.get_name_label(session, defaultSr))}");
 
         Pool.set_name_label(session, poolRef, "sdk-pool-renamed");
         Console.WriteLine($"Renamed to: '{Pool.get_name_label(session, poolRef)}'");

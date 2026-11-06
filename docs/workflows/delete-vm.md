@@ -34,13 +34,13 @@ function Invoke-DeleteVm {
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
-    Invoke-VmProvision -Ref $vm.opaque_ref
-    $uuid = (Get-XenVM -Ref $vm.opaque_ref).uuid
+    Invoke-VmProvision -Ref $vm
+    $uuid = (Get-XenVM -Ref $vm).uuid
 
-    $vdis = (Get-XenVM -Ref $vm.opaque_ref).VBDs |
-        ForEach-Object { Get-XenVBD -Ref $_.opaque_ref } |
+    $vdis = (Get-XenVM -Ref $vm).VBDs |
+        ForEach-Object { Get-XenVBD -Ref $_ } |
         Where-Object { $_.type -eq 'Disk' } |
-        ForEach-Object { $_.VDI.opaque_ref }
+        ForEach-Object { $_.VDI }
     Write-Host "Deleting VM $uuid with $(@($vdis).Count) disk(s)"
 
     $vm | Remove-XenVM
@@ -168,7 +168,7 @@ public static void DeleteVm(string url, string user, string password,
     var session = Connect(url, user, password);
     // Make a throwaway VM to delete. VM.destroy removes the VM but leaves its disks, so the
     // owned VDIs are destroyed explicitly afterward.
-    var vm = VM.clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+    var vm = VM.clone(session, TemplateByName(session, templateName), newVmName);
     Provision(session, vm);
     var uuid = VM.get_uuid(session, vm);
     var vdis = DiskVdis(session, vm);
@@ -187,7 +187,7 @@ public static void DeleteVm(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-160a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-000a-000000000000 with 1 disk(s)
 VM still present: False
 OK: delete-vm
 ```

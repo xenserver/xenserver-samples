@@ -19,7 +19,7 @@ internal static partial class Workflows
         // once support has what it needs is ordinary housekeeping. They belong to the host that wrote
         // them, so clear them a host at a time.
         var host = Host.get_all(session)
-            .FirstOrDefault(h => Host.get_crashdumps(session, h.opaque_ref).Count > 0)?.opaque_ref;
+            .FirstOrDefault(h => Host.get_crashdumps(session, h).Count > 0);
         if (host == null)
         {
             Console.WriteLine("No crash dumps in this pool — nothing to clear.");
@@ -33,14 +33,14 @@ internal static partial class Workflows
         Console.WriteLine($"{Host.get_name_label(session, host)} has {dumps.Count} crash dump(s)");
         foreach (var dump in dumps)
         {
-            var record = Host_crashdump.get_record(session, dump.opaque_ref);
+            var record = Host_crashdump.get_record(session, dump);
             total += record.size;
             Console.WriteLine($"  {record.timestamp:yyyyMMdd'T'HH:mm:ss'Z'}  {Mib(record.size)}");
         }
         Console.WriteLine($"  {Mib(total)} in total");
 
         // Deleting a dump frees the space on the host; the host itself is untouched.
-        foreach (var dump in dumps) Host_crashdump.destroy(session, dump.opaque_ref);
+        foreach (var dump in dumps) Host_crashdump.destroy(session, dump);
         Console.WriteLine($"  cleared:  {Host.get_name_label(session, host)} now has "
                           + Host.get_crashdumps(session, host).Count);
 

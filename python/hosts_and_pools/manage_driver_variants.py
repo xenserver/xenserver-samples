@@ -5,6 +5,7 @@ between the variant that is selected and the one currently loaded.
 """
 
 from connection import connect
+from helpers import is_set
 
 
 def manage_driver_variants(url, username, password):
@@ -47,4 +48,4 @@ def manage_driver_variants(url, username, password):
 
 def variant_name(x, ref):
     """A driver variant's name, tolerating the null reference an unloaded driver has."""
-    return x.Driver_variant.get_name(ref) if ref and ref != "OpaqueRef:NULL" else "(none)"
+    return x.Driver_variant.get_name(ref) if is_set(ref) else "(none)"

@@ -21,12 +21,12 @@ internal static partial class Workflows
         Console.WriteLine($"Using template: {VM.get_name_label(session, templateRef)}");
 
         var vmRef = VM.clone(session, templateRef, newVmName);
-        Console.WriteLine($"Cloned new VM: {VM.get_uuid(session, vmRef.opaque_ref)}");
+        Console.WriteLine($"Cloned new VM: {VM.get_uuid(session, vmRef)}");
 
-        Provision(session, vmRef.opaque_ref);
-        Console.WriteLine($"Provisioned. is_a_template = {VM.get_is_a_template(session, vmRef.opaque_ref)}");
+        Provision(session, vmRef);
+        Console.WriteLine($"Provisioned. is_a_template = {VM.get_is_a_template(session, vmRef)}");
 
-        DestroyVmAndDisks(session, vmRef.opaque_ref);
+        DestroyVmAndDisks(session, vmRef);
         Console.WriteLine("Cleaned up the example VM.");
 
         Console.WriteLine("OK: create-vm");

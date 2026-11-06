@@ -35,7 +35,7 @@ function Invoke-CreateNetwork {
     # Raise the MTU to use jumbo frames. Every NIC and switch along the path has to agree, so this is a
     # property of the network rather than of any one interface on it.
     $net | Set-XenNetwork -MTU 9000
-    Write-Host "MTU now:         $((Get-XenNetwork -Ref $net.opaque_ref).MTU)"
+    Write-Host "MTU now:         $((Get-XenNetwork -Ref $net).MTU)"
 
     $net | Remove-XenNetwork
     Write-Host "OK: create-network"
@@ -164,14 +164,14 @@ public static void CreateNetwork(string url, string user, string password,
         other_config = new Dictionary<string, string>(),
     };
     var netRef = Network.create(session, record);
-    Console.WriteLine($"Created network: {Network.get_uuid(session, netRef.opaque_ref)}");
+    Console.WriteLine($"Created network: {Network.get_uuid(session, netRef)}");
 
     // Raise the MTU to use jumbo frames. Every NIC and switch along the path has to agree, so this is
     // a property of the network rather than of any one interface on it.
-    Network.set_MTU(session, netRef.opaque_ref, 9000);
-    Console.WriteLine($"MTU now:         {Network.get_MTU(session, netRef.opaque_ref)}");
+    Network.set_MTU(session, netRef, 9000);
+    Console.WriteLine($"MTU now:         {Network.get_MTU(session, netRef)}");
 
-    Network.destroy(session, netRef.opaque_ref);
+    Network.destroy(session, netRef);
     Console.WriteLine("OK: create-network");
     session.logout();
 }
@@ -180,7 +180,7 @@ public static void CreateNetwork(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created network: 00000001-0000-0000-c30a-000000000000
+Created network: 00000001-0000-0000-b50a-000000000000
 MTU now:         9000
 OK: create-network
 ```

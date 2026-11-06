@@ -28,27 +28,27 @@ internal static partial class Workflows
             Console.WriteLine($"Site: {site.name_label}");
             foreach (var csRef in site.cache_storage)
             {
-                var cs = PVS_cache_storage.get_record(session, csRef.opaque_ref);
-                var cacheHost = Host.get_record(session, cs.host.opaque_ref);
-                var sr = SR.get_record(session, cs.SR.opaque_ref);
+                var cs = PVS_cache_storage.get_record(session, csRef);
+                var cacheHost = Host.get_record(session, cs.host);
+                var sr = SR.get_record(session, cs.SR);
                 Console.WriteLine($"  cache:  {cacheHost.name_label}  {cs.size / (1024L * 1024 * 1024)} GiB on {sr.name_label}");
             }
             foreach (var serverRef in site.servers)
             {
-                var server = PVS_server.get_record(session, serverRef.opaque_ref);
+                var server = PVS_server.get_record(session, serverRef);
                 Console.WriteLine($"  server: {string.Join(", ", server.addresses)}  ports {server.first_port}-{server.last_port}");
             }
             // Which VMs are accelerated: walk each proxy to its VIF to its VM.
-            var accelerated = new HashSet<string>();
+            var accelerated = new HashSet<XenRef<VM>>();
             foreach (var proxyRef in site.proxies)
             {
-                var proxy = PVS_proxy.get_record(session, proxyRef.opaque_ref);
-                var vif = VIF.get_record(session, proxy.VIF.opaque_ref);
-                accelerated.Add(vif.VM.opaque_ref);
+                var proxy = PVS_proxy.get_record(session, proxyRef);
+                var vif = VIF.get_record(session, proxy.VIF);
+                accelerated.Add(vif.VM);
             }
             var guests = VM.get_all_records(session)
                 .Where(kv => !kv.Value.is_control_domain && !kv.Value.is_a_template && !kv.Value.is_a_snapshot).ToList();
-            var count = guests.Count(kv => accelerated.Contains(kv.Key.opaque_ref));
+            var count = guests.Count(kv => accelerated.Contains(kv.Key));
             Console.WriteLine($"  {count} of {guests.Count} VM(s) accelerated");
         }
         Console.WriteLine("OK: pvs-accelerator");

@@ -238,8 +238,8 @@ public static void ConfigureNrpe(string url, string user, string password)
     foreach (var host in Host.get_all(session))
     {
         string Nrpe(string fn, Dictionary<string, string> args) =>
-            Host.call_plugin(session, host.opaque_ref, "nrpe", fn, args);
-        var label = Host.get_name_label(session, host.opaque_ref);
+            Host.call_plugin(session, host, "nrpe", fn, args);
+        var label = Host.get_name_label(session, host);
 
         // Capture what we're about to change, to put back afterwards.
         var statusBefore = Nrpe("status", new()).Trim();

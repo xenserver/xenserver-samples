@@ -19,13 +19,13 @@ function Invoke-RestartHost {
     # Not the coordinator: it is the host this session is talking to, and taking it down would drop the
     # connection underneath the rest of the example.
     $pool = Get-XenPool | Select-Object -First 1
-    $xenHost = Get-XenHost | Where-Object { $_.opaque_ref -ne $pool.master.opaque_ref } | Select-Object -First 1
+    $xenHost = Get-XenHost | Where-Object { $pool.master -ne $_ } | Select-Object -First 1
     Write-Host "Restarting $($xenHost.name_label)"
     Write-Host "  enabled=$($xenHost.enabled), guests=$(Measure-HostGuest $xenHost)"
 
     # Disabled means "accept no new VMs"; it does not move anything on its own.
     $xenHost | Invoke-XenHost -XenAction Disable
-    Write-Host "  disabled:   enabled=$((Get-XenHost -Ref $xenHost.opaque_ref).enabled)"
+    Write-Host "  disabled:   enabled=$((Get-XenHost -Ref $xenHost).enabled)"
 
     # Evacuate moves the guests elsewhere in the pool. Afterwards only the control domain - the host's own
     # management VM, which cannot move - is left.
@@ -40,13 +40,13 @@ function Invoke-RestartHost {
     Wait-HostLive -XenHost $xenHost -Want $false -TimeoutSeconds 600
     Wait-HostLive -XenHost $xenHost -Want $true -TimeoutSeconds 1200 -IntervalSeconds 10
     Enable-WhenBooted -XenHost $xenHost
-    Write-Host "  rebooted, re-enabled: enabled=$((Get-XenHost -Ref $xenHost.opaque_ref).enabled)"
+    Write-Host "  rebooted, re-enabled: enabled=$((Get-XenHost -Ref $xenHost).enabled)"
 
     # The other ending: off, and back on out of band - but only demonstrated if that is actually
     # configured, and waiting for each transition before starting the next: host.power_on has no retry
     # of its own and simply fails, "The host failed to power on.", if no mechanism is configured or
     # working.
-    if ((Get-XenHost -Ref $xenHost.opaque_ref).power_on_mode) {
+    if ((Get-XenHost -Ref $xenHost).power_on_mode) {
         $xenHost | Invoke-XenHost -XenAction Disable
         $xenHost | Invoke-XenHost -XenAction Shutdown
         Wait-HostLive -XenHost $xenHost -Want $false
@@ -55,7 +55,7 @@ function Invoke-RestartHost {
         Wait-HostLive -XenHost $xenHost -Want $true -TimeoutSeconds 1200 -IntervalSeconds 10
         Write-Host "  powered on: live=$(Get-HostLive $xenHost)"
         Enable-WhenBooted -XenHost $xenHost
-        Write-Host "  re-enabled: enabled=$((Get-XenHost -Ref $xenHost.opaque_ref).enabled)"
+        Write-Host "  re-enabled: enabled=$((Get-XenHost -Ref $xenHost).enabled)"
     }
     else {
         Write-Host "  skipping shutdown/power-on: no out-of-band power-on mode is configured on this host"
@@ -71,8 +71,8 @@ function Measure-HostGuest {
         Resident VMs excluding the control domain, which never moves.
     #>
     param($XenHost)
-    @((Get-XenHost -Ref $XenHost.opaque_ref).resident_VMs |
-        Where-Object { -not (Get-XenVM -Ref $_.opaque_ref).is_control_domain }).Count
+    @((Get-XenHost -Ref $XenHost).resident_VMs |
+        Where-Object { -not (Get-XenVM -Ref $_).is_control_domain }).Count
 }
 
 function Wait-HostLive {

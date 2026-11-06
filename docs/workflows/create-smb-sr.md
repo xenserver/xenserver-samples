@@ -50,8 +50,8 @@ function Invoke-CreateSmbSr {
         -NameLabel $SrName -NameDescription "SMB SR created by the SDK example" `
         -Type "smb" -ContentType "user" -Shared $true -PassThru
     Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
-    Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
-    Remove-XenSecret -Ref $secret.opaque_ref
+    Invoke-DetachAndForgetSr -Ref $sr
+    Remove-XenSecret -Ref $secret
     Write-Host "OK: create-smb-sr"
     $session | Disconnect-XenServer
 }
@@ -185,13 +185,13 @@ public static void CreateSmbSr(string url, string user, string password, string 
 {
     const long GiB = 1024L * 1024 * 1024;
     var session = Connect(url, user, password);
-    var host = Host.get_all(session)[0].opaque_ref;
+    var host = Host.get_all(session)[0];
 
     var secret = Secret.create(session, new Secret
     {
         value = smbPassword,
         other_config = new Dictionary<string, string>(),
-    }).opaque_ref;
+    });
     var dc = new Dictionary<string, string>
     {
         // server is the share as one UNC path, //server/share: the SMB driver has no separate serverpath.
@@ -212,7 +212,7 @@ public static void CreateSmbSr(string url, string user, string password, string 
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-700a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-8c0a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 

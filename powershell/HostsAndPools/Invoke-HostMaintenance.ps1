@@ -24,16 +24,16 @@ function Invoke-HostMaintenance {
     # SourceVm must have a guest OS with PV drivers.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     # Choose a host that is not the pool coordinator, so the coordinator can receive its guests.
-    $masterRef = (Get-XenPool | Select-Object -First 1).master.opaque_ref
-    $xenHost = Get-XenHost | Where-Object { $_.opaque_ref -ne $masterRef } | Select-Object -First 1
+    $masterRef = (Get-XenPool | Select-Object -First 1).master
+    $xenHost = Get-XenHost | Where-Object { $masterRef -ne $_ } | Select-Object -First 1
     Write-Host "Maintenance host: $($xenHost.name_label)"
 
     # Pin a running VM to that host so evacuation has something to move.
     $sr = Get-XenSR -Name $SrName | Where-Object { $_.shared } | Select-Object -First 1
     if (-not $sr) { throw "No shared SR named '$SrName' was found." }
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
-    Move-DisksToSr -VmRef $ref -SrRef $sr.opaque_ref
+    $ref = $vm
+    Move-DisksToSr -VmRef $ref -SrRef $sr
     $vm | Set-XenVM -Affinity $xenHost
     $vm | Invoke-XenVM -XenAction Start
     Wait-GuestAgent -Ref $ref
@@ -41,17 +41,17 @@ function Invoke-HostMaintenance {
 
     # Enter maintenance mode: disable the host, then evacuate its guests.
     $xenHost | Invoke-XenHost -XenAction Disable
-    Write-Host "After disable:    host.enabled = $((Get-XenHost -Ref $xenHost.opaque_ref).enabled)"
+    Write-Host "After disable:    host.enabled = $((Get-XenHost -Ref $xenHost).enabled)"
     Invoke-Evacuate -XenHost $xenHost
     Write-Host "After evacuate:   guest now on $((Get-XenHost -Ref (Get-XenVM -Ref $ref).resident_on).name_label)"
 
     # Exit maintenance mode.
     $xenHost | Invoke-XenHost -XenAction Enable
-    Write-Host "After enable:     host.enabled = $((Get-XenHost -Ref $xenHost.opaque_ref).enabled)"
+    Write-Host "After enable:     host.enabled = $((Get-XenHost -Ref $xenHost).enabled)"
 
     # Tidy up so the example is repeatable.
     $vm | Invoke-XenVM -XenAction HardShutdown
-    Remove-VmAndDisks -Ref $vm.opaque_ref
+    Remove-VmAndDisks -Ref $vm
     Write-Host "OK: host-maintenance"
     $session | Disconnect-XenServer
 }

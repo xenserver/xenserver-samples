@@ -10,7 +10,7 @@ Run it::
 """
 
 from connection import connect
-from helpers import destroy_vm_and_disks, vm_by_name
+from helpers import destroy_vm_and_disks, is_set, vm_by_name
 
 
 def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
@@ -48,7 +48,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
         if source.xenapi.VBD.get_type(vbd) != "Disk":
             continue
         vdi = source.xenapi.VBD.get_VDI(vbd)
-        if vdi != "OpaqueRef:NULL":
+        if is_set(vdi):
             vdi_map[vdi] = dest_sr
     vif_map = {vif: dest_management_network for vif in source.xenapi.VM.get_VIFs(vm)}
 

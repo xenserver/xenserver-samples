@@ -21,7 +21,7 @@ internal static partial class Workflows
     public static void CreateIsoSr(string url, string user, string password, string location)
     {
         var session = Connect(url, user, password);
-        var host = Host.get_all(session)[0].opaque_ref;
+        var host = Host.get_all(session)[0];
         var dc = new Dictionary<string, string> { ["location"] = location, ["type"] = "nfs_iso" };
         var sr = SR.create(session, host, dc, 0, "sdk-example-iso", "ISO library created by the SDK example",
             "iso", "iso", true, new Dictionary<string, string>());

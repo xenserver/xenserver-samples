@@ -28,7 +28,7 @@ internal static partial class Workflows
         Console.WriteLine($"Template:      {VM.get_name_label(session, templateRef)}");
 
         // Step 2 - Name and description.
-        var vm = VM.clone(session, templateRef, newVmName).opaque_ref;
+        var vm = VM.clone(session, templateRef, newVmName);
         VM.set_name_description(session, vm, "Created by the create-vm-full example");
         VM.set_is_a_template(session, vm, false);
         Console.WriteLine($"Created VM:    {VM.get_uuid(session, vm)}");
@@ -39,7 +39,7 @@ internal static partial class Workflows
 
         // Step 4 - Home server (affinity).
         var (hostRef, host) = Host.get_all_records(session).First();
-        VM.set_affinity(session, vm, hostRef.opaque_ref);
+        VM.set_affinity(session, vm, hostRef);
         Console.WriteLine($"Home server:   {host.name_label}");
 
         // Step 5 - CPU & Memory.
@@ -62,11 +62,11 @@ internal static partial class Workflows
             sharable = false,
             read_only = false,
             other_config = new Dictionary<string, string>(),
-        }).opaque_ref;
+        });
         VBD.create(session, new VBD
         {
-            VM = new XenRef<VM>(vm),
-            VDI = new XenRef<VDI>(vdi),
+            VM = vm,
+            VDI = vdi,
             userdevice = vbdDevice,
             bootable = true,
             mode = vbd_mode.RW,
@@ -83,7 +83,7 @@ internal static partial class Workflows
         var vifDevice = VM.get_allowed_VIF_devices(session, vm)[0];
         VIF.create(session, new VIF
         {
-            VM = new XenRef<VM>(vm),
+            VM = vm,
             network = netRef,
             device = vifDevice,
             MAC = "",

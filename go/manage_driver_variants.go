@@ -84,7 +84,7 @@ func manageDriverVariants(url, user, password string) {
 
 // variantName is a driver variant's name, tolerating the null reference an unloaded driver has.
 func variantName(session *xenapi.Session, ref xenapi.DriverVariantRef) string {
-	if ref == "" || ref == "OpaqueRef:NULL" {
+	if !isSet(ref) {
 		return "(none)"
 	}
 	name, err := xenapi.DriverVariant.GetName(session, ref)

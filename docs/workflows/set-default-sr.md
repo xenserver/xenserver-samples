@@ -51,14 +51,14 @@ function Invoke-SetDefaultSr {
 
     $srRef = $sr | ConvertTo-XenRef
     $pool | Set-XenPool -DefaultSR $srRef -SuspendImageSR $srRef -CrashDumpSR $srRef
-    Write-Host ("  switched to:    {0}" -f (Get-SrLabel (Get-XenPool -Ref $pool.opaque_ref).default_SR))
+    Write-Host ("  switched to:    {0}" -f (Get-SrLabel (Get-XenPool -Ref $pool).default_SR))
 
     # Restore the original choice before tidying up: an SR that is still the pool default is the awkward
     # one to remove.
     $pool | Set-XenPool -DefaultSR $before -SuspendImageSR $beforeSuspend -CrashDumpSR $beforeCrash
-    @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_.opaque_ref }) | Invoke-XenPBD -XenAction Unplug
+    @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_ }) | Invoke-XenPBD -XenAction Unplug
     $sr | Invoke-XenSR -XenAction Forget
-    Write-Host ("  restored to:    {0}" -f (Get-SrLabel (Get-XenPool -Ref $pool.opaque_ref).default_SR))
+    Write-Host ("  restored to:    {0}" -f (Get-SrLabel (Get-XenPool -Ref $pool).default_SR))
     Write-Host "OK: set-default-sr"
     $session | Disconnect-XenServer
 }
@@ -69,8 +69,8 @@ function Get-SrLabel {
         An SR's name, tolerating the null reference an unset pool field holds.
     #>
     param($SrRef)
-    if (-not $SrRef -or $SrRef.opaque_ref -eq "OpaqueRef:NULL") { return "(none)" }
-    (Get-XenSR -Ref $SrRef.opaque_ref).name_label
+    if (-not $SrRef -or $SrRef -eq "OpaqueRef:NULL") { return "(none)" }
+    (Get-XenSR -Ref $SrRef).name_label
 }
 ```
 
@@ -176,6 +176,7 @@ then put the original choice back.
 """
 
 from connection import connect
+from helpers import is_set
 
 
 def set_default_sr(url, username, password, nfs_server="192.0.2.10", nfs_path="/export/spare"):
@@ -227,7 +228,7 @@ def host_first(x):
 
 def sr_label(x, sr):
     """An SR's name, tolerating the null reference an unset pool field holds."""
-    return x.SR.get_name_label(sr) if sr and sr != "OpaqueRef:NULL" else "(none)"
+    return x.SR.get_name_label(sr) if is_set(sr) else "(none)"
 ```
 
 <details><summary>Example output</summary>
@@ -256,51 +257,51 @@ public static void SetDefaultSr(string url, string user, string password,
     string nfsServer = "192.0.2.10", string nfsPath = "/export/spare")
 {
     var session = Connect(url, user, password);
-    var pool = Pool.get_all(session).First().opaque_ref;
+    var pool = Pool.get_all(session).First();
 
     // Capture all three separately. New disks land on the default SR, a suspended VM's memory image
     // goes to the suspend-image SR and host crash dumps to the crash-dump SR. They are usually the
     // same storage but need not be, and a pool that has never suspended or crashed anything can
     // legitimately leave the latter two unset — so restoring all three from the default would
     // quietly invent settings that were not there.
-    var before = Pool.get_default_SR(session, pool).opaque_ref;
-    var beforeSuspend = Pool.get_suspend_image_SR(session, pool).opaque_ref;
-    var beforeCrash = Pool.get_crash_dump_SR(session, pool).opaque_ref;
+    var before = Pool.get_default_SR(session, pool);
+    var beforeSuspend = Pool.get_suspend_image_SR(session, pool);
+    var beforeCrash = Pool.get_crash_dump_SR(session, pool);
     Console.WriteLine($"default storage:  {SrLabel(session, before)}");
     Console.WriteLine($"  suspend images: {SrLabel(session, beforeSuspend)}");
     Console.WriteLine($"  crash dumps:    {SrLabel(session, beforeCrash)}");
 
     // Somewhere to switch to. A pool default has to be reachable from every host, so it is a shared
     // SR; a local one would strand any VM whose disk landed on the wrong host.
-    var sr = SR.create(session, Host.get_all(session).First().opaque_ref,
+    var sr = SR.create(session, Host.get_all(session).First(),
         new Dictionary<string, string>
         {
             ["server"] = nfsServer,
             ["serverpath"] = nfsPath,
             ["nfsversion"] = "3",
         }, 0, "sdk-example-default", "SR used by the SDK default-storage example",
-        "nfs", "user", true, new Dictionary<string, string>()).opaque_ref;
+        "nfs", "user", true, new Dictionary<string, string>());
 
     Pool.set_default_SR(session, pool, sr);
     Pool.set_suspend_image_SR(session, pool, sr);
     Pool.set_crash_dump_SR(session, pool, sr);
-    Console.WriteLine($"  switched to:    {SrLabel(session, Pool.get_default_SR(session, pool).opaque_ref)}");
+    Console.WriteLine($"  switched to:    {SrLabel(session, Pool.get_default_SR(session, pool))}");
 
     // Restore the original choice before tidying up: an SR that is still the pool default is the
     // awkward one to remove.
     Pool.set_default_SR(session, pool, before);
     Pool.set_suspend_image_SR(session, pool, beforeSuspend);
     Pool.set_crash_dump_SR(session, pool, beforeCrash);
-    foreach (var pbd in SR.get_PBDs(session, sr)) PBD.unplug(session, pbd.opaque_ref);
+    foreach (var pbd in SR.get_PBDs(session, sr)) PBD.unplug(session, pbd);
     SR.forget(session, sr);
-    Console.WriteLine($"  restored to:    {SrLabel(session, Pool.get_default_SR(session, pool).opaque_ref)}");
+    Console.WriteLine($"  restored to:    {SrLabel(session, Pool.get_default_SR(session, pool))}");
     Console.WriteLine("OK: set-default-sr");
     session.logout();
 }
 
 /// <summary>An SR's name, tolerating the null reference an unset pool field holds.</summary>
-private static string SrLabel(Session session, string sr) =>
-    string.IsNullOrEmpty(sr) || sr == "OpaqueRef:NULL" ? "(none)" : SR.get_name_label(session, sr);
+private static string SrLabel(Session session, XenRef<SR> sr) =>
+    Helper.IsNullOrEmptyOpaqueRef(sr) ? "(none)" : SR.get_name_label(session, sr);
 ```
 
 <details><summary>Example output</summary>
@@ -483,7 +484,7 @@ public final class SetDefaultSr {
      * An SR's name, tolerating the null reference an unset pool field holds.
      */
     private static String srLabel(Connection conn, SR sr) throws Exception {
-        if (sr == null || sr.toWireString() == null || sr.toWireString().equals("OpaqueRef:NULL"))
+        if (sr == null || sr.toWireString() == null || sr.isNull())
             return "(none)";
         return sr.getNameLabel(conn);
     }

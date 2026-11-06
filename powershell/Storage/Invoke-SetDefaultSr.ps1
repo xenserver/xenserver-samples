@@ -38,14 +38,14 @@ function Invoke-SetDefaultSr {
 
     $srRef = $sr | ConvertTo-XenRef
     $pool | Set-XenPool -DefaultSR $srRef -SuspendImageSR $srRef -CrashDumpSR $srRef
-    Write-Host ("  switched to:    {0}" -f (Get-SrLabel (Get-XenPool -Ref $pool.opaque_ref).default_SR))
+    Write-Host ("  switched to:    {0}" -f (Get-SrLabel (Get-XenPool -Ref $pool).default_SR))
 
     # Restore the original choice before tidying up: an SR that is still the pool default is the awkward
     # one to remove.
     $pool | Set-XenPool -DefaultSR $before -SuspendImageSR $beforeSuspend -CrashDumpSR $beforeCrash
-    @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_.opaque_ref }) | Invoke-XenPBD -XenAction Unplug
+    @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_ }) | Invoke-XenPBD -XenAction Unplug
     $sr | Invoke-XenSR -XenAction Forget
-    Write-Host ("  restored to:    {0}" -f (Get-SrLabel (Get-XenPool -Ref $pool.opaque_ref).default_SR))
+    Write-Host ("  restored to:    {0}" -f (Get-SrLabel (Get-XenPool -Ref $pool).default_SR))
     Write-Host "OK: set-default-sr"
     $session | Disconnect-XenServer
 }
@@ -56,6 +56,6 @@ function Get-SrLabel {
         An SR's name, tolerating the null reference an unset pool field holds.
     #>
     param($SrRef)
-    if (-not $SrRef -or $SrRef.opaque_ref -eq "OpaqueRef:NULL") { return "(none)" }
-    (Get-XenSR -Ref $SrRef.opaque_ref).name_label
+    if (-not $SrRef -or $SrRef -eq "OpaqueRef:NULL") { return "(none)" }
+    (Get-XenSR -Ref $SrRef).name_label
 }

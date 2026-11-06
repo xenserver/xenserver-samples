@@ -30,7 +30,7 @@ func vbdInventory(url, user, password, vmName string) {
 		}
 		vdi, _ := xenapi.VBD.GetVDI(session, vbdRef)
 		var size int64
-		if vdi != xenapi.VDIRef("OpaqueRef:NULL") {
+		if isSet(vdi) {
 			virtualSize, _ := xenapi.VDI.GetVirtualSize(session, vdi)
 			size = virtualSize / GiB
 		}

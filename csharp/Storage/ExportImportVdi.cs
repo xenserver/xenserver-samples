@@ -32,16 +32,16 @@ internal static partial class Workflows
         var sr = SrByName(session, srName);
         const long size = 8 * 1024 * 1024;
 
-        string NewDisk(string name) => VDI.create(session, new VDI
+        XenRef<VDI> NewDisk(string name) => VDI.create(session, new VDI
         {
             name_label = name,
-            SR = new XenRef<SR>(sr),
+            SR = sr,
             virtual_size = size,
             type = vdi_type.user,
             sharable = false,
             read_only = false,
             other_config = new Dictionary<string, string>(),
-        }).opaque_ref;
+        });
 
         // One raw transfer of a disk's contents, waiting for its task to finish.
         byte[] Transfer(HttpMethod method, string path, string vdi, byte[] data = null)

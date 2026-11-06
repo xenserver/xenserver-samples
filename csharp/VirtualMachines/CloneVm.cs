@@ -27,7 +27,7 @@ internal static partial class Workflows
         var wasRunning = VM.get_power_state(session, source) == vm_power_state.Running;
         if (wasRunning) VM.clean_shutdown(session, source);
 
-        var clone = VM.clone(session, source, cloneName).opaque_ref;
+        var clone = VM.clone(session, source, cloneName);
         Console.WriteLine($"Cloned '{VM.get_name_label(session, source)}' → {VM.get_name_label(session, clone)}");
         Console.WriteLine($"Clone has {VM.get_VBDs(session, clone).Count} VBD(s)");
 

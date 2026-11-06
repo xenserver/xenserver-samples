@@ -31,7 +31,7 @@ function Invoke-ConfigurePoolOptions {
     # Compression trades CPU for bandwidth when a VM's memory is moved between hosts.
     $pool | Set-XenPool -MigrationCompression (-not $before["migration compression"])
 
-    $after = Get-XenPool -Ref $pool.opaque_ref
+    $after = Get-XenPool -Ref $pool
     Write-Host "after changing:"
     Write-Host ("  {0,-22} {1}" -f "live patching disabled", $after.live_patching_disabled)
     Write-Host ("  {0,-22} {1}" -f "IGMP snooping", $after.igmp_snooping_enabled)

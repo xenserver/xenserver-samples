@@ -16,7 +16,7 @@ function Invoke-ServerStatusReport {
     # Report on the coordinator. Each host answers for itself, so which one you ask decides whose logs
     # you get - support normally wants every host, one download each.
     $pool = Get-XenPool | Select-Object -First 1
-    $xenHost = Get-XenHost -Ref $pool.master.opaque_ref
+    $xenHost = Get-XenHost -Ref $pool.master
     Write-Host "Status report for $($xenHost.name_label)"
 
     # The host publishes a catalogue of the sections it can report on, each with a size estimate and

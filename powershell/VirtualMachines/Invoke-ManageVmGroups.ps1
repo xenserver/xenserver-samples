@@ -26,16 +26,16 @@ function Invoke-ManageVmGroups {
     Write-Host "Created group:  $($group.uuid)"
 
     # Membership is written from the VM side...
-    Set-XenVM -VM $vm -Groups @($group.opaque_ref)
+    Set-XenVM -VM $vm -Groups @($group)
 
     # ...and read back from the group side, which is the half that is easy to get wrong.
-    $members = (Get-XenVMGroup -Ref $group.opaque_ref).VMs
+    $members = (Get-XenVMGroup -Ref $group).VMs
     Write-Host "Group members:  $($members.Count)"
     foreach ($m in $members) { Write-Host "  $((Get-XenVM -Ref $m).name_label)" }
 
     # VM_group.destroy already clears the group from every member VM's groups field - no need to remove
     # membership ourselves first.
-    Remove-XenVMGroup -Ref $group.opaque_ref
+    Remove-XenVMGroup -Ref $group
     Write-Host "OK: manage-vm-groups"
     Disconnect-XenServer -Session $session
 }

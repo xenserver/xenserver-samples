@@ -38,7 +38,7 @@ function Invoke-ManageSrLifecycle {
         -NameLabel "sdk-example-lifecycle" -NameDescription "SR used by the SDK lifecycle example" `
         -Type "nfs" -ContentType "user" -Shared $true -PassThru
 
-    $pbds = @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_.opaque_ref })
+    $pbds = @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_ })
     Write-Host ("{0}: connected on {1} of {2} host(s)" -f
         $sr.name_label, (Measure-AttachedPbd $pbds), $pbds.Count)
 
@@ -50,7 +50,7 @@ function Invoke-ManageSrLifecycle {
     Write-Host ("  reattached: connected on {0} host(s)" -f (Measure-AttachedPbd $pbds))
 
     $sr | Invoke-XenSR -XenAction Scan
-    Write-Host ("  rescanned:  {0} disk(s)" -f (Get-XenSR -Ref $sr.opaque_ref).VDIs.Count)
+    Write-Host ("  rescanned:  {0} disk(s)" -f (Get-XenSR -Ref $sr).VDIs.Count)
 
     # Forgetting drops the pool's record of the SR but leaves the storage itself untouched, so the same
     # export can be introduced again later. Detach before forgetting: a connected SR is still in use.
@@ -69,7 +69,7 @@ function Measure-AttachedPbd {
         Re-read each one: the cached records were fetched before the plug state changed.
     #>
     param($Pbds)
-    @($Pbds | Where-Object { (Get-XenPBD -Ref $_.opaque_ref).currently_attached }).Count
+    @($Pbds | Where-Object { (Get-XenPBD -Ref $_).currently_attached }).Count
 }
 ```
 
@@ -245,16 +245,16 @@ public static void ManageSrLifecycle(string url, string user, string password,
     // block device — and detaching the SR means unplugging every one of them. That is why an SR can
     // be attached on some hosts and not others, and why a repair action exists at all: it plugs back
     // the PBDs that are missing.
-    var host = Host.get_all(session).First().opaque_ref;
+    var host = Host.get_all(session).First();
     var sr = SR.create(session, host, new Dictionary<string, string>
     {
         ["server"] = nfsServer,
         ["serverpath"] = nfsPath,
         ["nfsversion"] = "3",
     }, 0, "sdk-example-lifecycle", "SR used by the SDK lifecycle example",
-        "nfs", "user", true, new Dictionary<string, string>()).opaque_ref;
+        "nfs", "user", true, new Dictionary<string, string>());
 
-    var pbds = SR.get_PBDs(session, sr).Select(p => p.opaque_ref).ToList();
+    var pbds = SR.get_PBDs(session, sr);
     Console.WriteLine($"{SR.get_name_label(session, sr)}: connected on "
                       + $"{AttachedPbds(session, pbds)} of {pbds.Count} host(s)");
 
@@ -278,7 +278,7 @@ public static void ManageSrLifecycle(string url, string user, string password,
 }
 
 /// <summary>How many of these connections are currently live.</summary>
-private static int AttachedPbds(Session session, IEnumerable<string> pbds) =>
+private static int AttachedPbds(Session session, IEnumerable<XenRef<PBD>> pbds) =>
     pbds.Count(pbd => PBD.get_currently_attached(session, pbd));
 ```
 

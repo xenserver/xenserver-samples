@@ -7,7 +7,7 @@ afterwards.
 """
 
 from connection import connect
-from helpers import copy_of_guest, destroy_vm_and_disks, wait_for_guest_agent
+from helpers import copy_of_guest, destroy_vm_and_disks, is_set, wait_for_guest_agent
 
 
 def vm_lifecycle(url, username, password, source_vm, new_vm_name="sdk-example-lifecycle"):
@@ -56,10 +56,10 @@ def _has_suspend_sr(session, vm):
     """Whether VM.suspend has a suspend-image SR to use: the VM's own, else the pool's, else the
     resident host's - the same fallback order xapi's choose_suspend_sr uses."""
     x = session.xenapi
-    if x.VM.get_suspend_SR(vm) != "OpaqueRef:NULL":
+    if is_set(x.VM.get_suspend_SR(vm)):
         return True
     pool = x.pool.get_all()[0]
-    if x.pool.get_suspend_image_SR(pool) != "OpaqueRef:NULL":
+    if is_set(x.pool.get_suspend_image_SR(pool)):
         return True
     host = x.pool.get_master(pool)
-    return x.host.get_suspend_image_sr(host) != "OpaqueRef:NULL"
+    return is_set(x.host.get_suspend_image_sr(host))

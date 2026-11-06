@@ -25,30 +25,30 @@ function Invoke-ManageCertificates {
     # InstallTrustedCertificate returns nothing, so find the new record by diffing the set.
     # InstallTrustedCertificate/UninstallTrustedCertificate are the current API; the CA-specific pair
     # this example used to call (InstallCaCertificate/UninstallCaCertificate) were deprecated in favour.
-    $before = @(Get-XenCertificate | ForEach-Object { $_.opaque_ref })
-    Invoke-XenPool -Ref $pool.opaque_ref -XenAction InstallTrustedCertificate -Cert $certPem -Ca $true -Purpose @()
-    $certRef = @(Get-XenCertificate | ForEach-Object { $_.opaque_ref } | Where-Object { $before -notcontains $_ })[0]
+    $before = @(Get-XenCertificate | ForEach-Object { $_.uuid })
+    Invoke-XenPool -Ref $pool -XenAction InstallTrustedCertificate -Cert $certPem -Ca $true -Purpose @()
+    $cert = @(Get-XenCertificate | Where-Object { $before -notcontains $_.uuid })[0]
     Write-Host "After CA add:   $(@(Get-XenCertificate).Count)"
 
     # Actually replace the host's own TLS identity with a real certificate (what this workflow's name
     # promises, beyond CA trust), then reset it back to a fresh self-signed one.
-    Invoke-XenHost -Ref $xenHost.opaque_ref -XenAction InstallServerCertificate `
+    Invoke-XenHost -Ref $xenHost -XenAction InstallServerCertificate `
         -Certificate $certPem -PrivateKey $keyPem -CertificateChain ''
     Write-Host "Host certificate replaced with a real, generated certificate."
 
-    Invoke-XenHost -Ref $xenHost.opaque_ref -XenAction ResetServerCertificate
+    Invoke-XenHost -Ref $xenHost -XenAction ResetServerCertificate
     Write-Host "Host certificate reset (a fresh self-signed identity)."
 
-    Invoke-XenPool -Ref $pool.opaque_ref -XenAction UninstallTrustedCertificate -Certificate $certRef
+    Invoke-XenPool -Ref $pool -XenAction UninstallTrustedCertificate -Certificate $cert
     Write-Host "After CA remove:$(@(Get-XenCertificate).Count)"
 
     # Separately from which certificates exist: whether the pool actually CHECKS the ones its members
     # present to each other. Turning it on is a one-way door from here - there is no matching disable,
     # because a pool that could be talked out of verifying would not be verifying - so the call is
     # idempotent and safe to repeat.
-    Write-Host "TLS verification: $(Get-XenPoolProperty -Ref $pool.opaque_ref -XenProperty TlsVerificationEnabled)"
-    Invoke-XenPool -Ref $pool.opaque_ref -XenAction EnableTlsVerification
-    Write-Host "  after enabling: $(Get-XenPoolProperty -Ref $pool.opaque_ref -XenProperty TlsVerificationEnabled)"
+    Write-Host "TLS verification: $(Get-XenPoolProperty -Ref $pool -XenProperty TlsVerificationEnabled)"
+    Invoke-XenPool -Ref $pool -XenAction EnableTlsVerification
+    Write-Host "  after enabling: $(Get-XenPoolProperty -Ref $pool -XenProperty TlsVerificationEnabled)"
     Write-Host "OK: manage-certificates"
     Disconnect-XenServer -Session $session
 }

@@ -20,21 +20,21 @@ internal static partial class Workflows
         var halted = VM.get_all_records(session)
             .Where(kv => !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot
                          && kv.Value.power_state == vm_power_state.Halted)
-            .Select(kv => kv.Key.opaque_ref).ToList();
+            .Select(kv => kv.Key).ToList();
 
         var sr = SR.get_all_records(session).First(kv =>
             kv.Value.shared && kv.Value.content_type != "iso"
-            && kv.Value.type != "iso" && kv.Value.type != "udev").Key.opaque_ref;
+            && kv.Value.type != "iso" && kv.Value.type != "udev").Key;
         var vdi = VDI.create(session, new VDI
         {
             name_label = "sdk-example-portable-disk",
-            SR = new XenRef<SR>(sr),
+            SR = sr,
             virtual_size = 4 * GiB,
             type = vdi_type.user,
             sharable = false,
             read_only = false,
             other_config = new Dictionary<string, string>(),
-        }).opaque_ref;
+        });
         Console.WriteLine($"Disk {VDI.get_name_label(session, vdi)} created on "
                           + SR.get_name_label(session, sr));
 
@@ -49,24 +49,25 @@ internal static partial class Workflows
         Console.WriteLine($"  attached to {VM.get_name_label(session, halted[1])}");
         Console.WriteLine($"  the disk is on {VDI.get_VBDs(session, vdi).Count} VM(s)");
 
-        foreach (var r in VDI.get_VBDs(session, vdi)) VBD.destroy(session, r.opaque_ref);
+        foreach (var r in VDI.get_VBDs(session, vdi)) VBD.destroy(session, r);
         VDI.destroy(session, vdi);
         Console.WriteLine("OK: attach-existing-disk");
         session.logout();
     }
 
     /// <summary>Join an existing disk to a VM on its next free device slot.</summary>
-    private static string AttachVdi(Session session, string vm, string vdi) => VBD.create(session, new VBD
-    {
-        VM = new XenRef<VM>(vm),
-        VDI = new XenRef<VDI>(vdi),
-        userdevice = VM.get_allowed_VBD_devices(session, vm).First(),
-        bootable = false,
-        mode = vbd_mode.RW,
-        type = vbd_type.Disk,
-        empty = false,
-        other_config = new Dictionary<string, string>(),
-        qos_algorithm_type = "",
-        qos_algorithm_params = new Dictionary<string, string>(),
-    }).opaque_ref;
+    private static XenRef<VBD> AttachVdi(Session session, XenRef<VM> vm, XenRef<VDI> vdi) =>
+        VBD.create(session, new VBD
+        {
+            VM = vm,
+            VDI = vdi,
+            userdevice = VM.get_allowed_VBD_devices(session, vm).First(),
+            bootable = false,
+            mode = vbd_mode.RW,
+            type = vbd_type.Disk,
+            empty = false,
+            other_config = new Dictionary<string, string>(),
+            qos_algorithm_type = "",
+            qos_algorithm_params = new Dictionary<string, string>(),
+        });
 }

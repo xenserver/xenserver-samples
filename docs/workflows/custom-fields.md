@@ -65,7 +65,7 @@ function Invoke-CustomFields {
     foreach ($k in $vm.other_config.Keys) { $oc[$k] = $vm.other_config[$k] }
     $oc[$fieldKey] = "Platform Team"
     $vm | Set-XenVM -OtherConfig $oc
-    Write-Host "Custom field Owner = $((Get-XenVM -Ref $vm.opaque_ref).other_config[$fieldKey])"
+    Write-Host "Custom field Owner = $((Get-XenVM -Ref $vm).other_config[$fieldKey])"
 
     $vm | Remove-XenVMProperty -OtherConfig $fieldKey
     if ($addedDefinition) {
@@ -253,7 +253,7 @@ public static void CustomFields(string url, string user, string password, string
 {
     var session = Connect(url, user, password);
     var vm = VmByName(session, vmName);
-    var pool = Pool.get_all(session).First().opaque_ref;
+    var pool = Pool.get_all(session).First();
 
     // The pool's custom field DEFINITIONS (name and type, String or Date) live in a small XML document in
     // pool.gui_config["XenCenter.CustomFields"] (the key keeps its historical name); a client shows no

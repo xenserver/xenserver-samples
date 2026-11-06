@@ -25,7 +25,7 @@ function Invoke-ManageSrLifecycle {
         -NameLabel "sdk-example-lifecycle" -NameDescription "SR used by the SDK lifecycle example" `
         -Type "nfs" -ContentType "user" -Shared $true -PassThru
 
-    $pbds = @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_.opaque_ref })
+    $pbds = @($sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_ })
     Write-Host ("{0}: connected on {1} of {2} host(s)" -f
         $sr.name_label, (Measure-AttachedPbd $pbds), $pbds.Count)
 
@@ -37,7 +37,7 @@ function Invoke-ManageSrLifecycle {
     Write-Host ("  reattached: connected on {0} host(s)" -f (Measure-AttachedPbd $pbds))
 
     $sr | Invoke-XenSR -XenAction Scan
-    Write-Host ("  rescanned:  {0} disk(s)" -f (Get-XenSR -Ref $sr.opaque_ref).VDIs.Count)
+    Write-Host ("  rescanned:  {0} disk(s)" -f (Get-XenSR -Ref $sr).VDIs.Count)
 
     # Forgetting drops the pool's record of the SR but leaves the storage itself untouched, so the same
     # export can be introduced again later. Detach before forgetting: a connected SR is still in use.
@@ -56,5 +56,5 @@ function Measure-AttachedPbd {
         Re-read each one: the cached records were fetched before the plug state changed.
     #>
     param($Pbds)
-    @($Pbds | Where-Object { (Get-XenPBD -Ref $_.opaque_ref).currently_attached }).Count
+    @($Pbds | Where-Object { (Get-XenPBD -Ref $_).currently_attached }).Count
 }

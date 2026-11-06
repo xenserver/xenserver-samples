@@ -16,7 +16,7 @@ function Invoke-ConfigureConsoleAccess {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
-    $xenHost = Get-XenHost -Ref $pool.master.opaque_ref
+    $xenHost = Get-XenHost -Ref $pool.master
 
     # NB: pool.https_only and pool.console_idle_timeout are SET below but never read back AT THE POOL
     # LEVEL. SDK 26.14 generates a setter and no getter for either there, because both are really
@@ -40,10 +40,10 @@ function Invoke-ConfigureConsoleAccess {
     $pool | Set-XenPool -HttpsOnly $true
 
     Write-Host "after tightening:"
-    Write-Host ("  {0,-26} {1}s" -f "VM console idle timeout", (Get-XenPool -Ref $pool.opaque_ref).vm_console_idle_timeout)
-    Write-Host ("  {0,-26} {1}" -f "limit console sessions", (Get-XenPool -Ref $pool.opaque_ref).limit_console_sessions)
-    Write-Host ("  {0,-26} {1}s" -f "host console idle timeout", (Get-XenHost -Ref $xenHost.opaque_ref).console_idle_timeout)
-    Write-Host ("  {0,-26} {1}" -f "host https only", (Get-XenHost -Ref $xenHost.opaque_ref).https_only)
+    Write-Host ("  {0,-26} {1}s" -f "VM console idle timeout", (Get-XenPool -Ref $pool).vm_console_idle_timeout)
+    Write-Host ("  {0,-26} {1}" -f "limit console sessions", (Get-XenPool -Ref $pool).limit_console_sessions)
+    Write-Host ("  {0,-26} {1}s" -f "host console idle timeout", (Get-XenHost -Ref $xenHost).console_idle_timeout)
+    Write-Host ("  {0,-26} {1}" -f "host https only", (Get-XenHost -Ref $xenHost).https_only)
 
     $pool | Set-XenPool -HttpsOnly $beforeHostHttpsOnly
     $pool | Set-XenPool -ConsoleIdleTimeout $beforeHostConsoleIdleTimeout

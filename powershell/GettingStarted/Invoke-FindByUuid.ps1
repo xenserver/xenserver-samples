@@ -24,7 +24,7 @@ function Invoke-FindByUuid {
 
     $resolved = Get-XenVM -Uuid $uuid
     Write-Host "UUID $uuid resolves to $($resolved.name_label)"
-    Write-Host "Same object: $($resolved.opaque_ref -eq $vm.opaque_ref)"
+    Write-Host "Same object: $($resolved.uuid -eq $vm.uuid)"
     Write-Host "OK: find-by-uuid"
     $session | Disconnect-XenServer
 }

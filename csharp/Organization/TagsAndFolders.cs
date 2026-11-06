@@ -18,7 +18,7 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
         var vm = VmByName(session, vmName);
-        var host = Host.get_all(session)[0].opaque_ref;
+        var host = Host.get_all(session)[0];
 
         // Tags work on any object type (VM, host, SR, network, …).
         VM.add_tags(session, vm, "web");

@@ -33,20 +33,22 @@ function Invoke-PvsAccelerator {
     foreach ($site in $sites) {
         Write-Host "Site: $($site.name_label)"
         foreach ($csRef in $site.cache_storage) {
-            $cs = Get-XenPVSCacheStorage -Ref $csRef.opaque_ref
-            $cacheHost = Get-XenHost -Ref $cs.host.opaque_ref
-            $sr = Get-XenSR -Ref $cs.SR.opaque_ref
+            $cs = Get-XenPVSCacheStorage -Ref $csRef
+            $cacheHost = Get-XenHost -Ref $cs.host
+            $sr = Get-XenSR -Ref $cs.SR
             Write-Host ("  cache:  $($cacheHost.name_label)  $([long]($cs.size / 1GB)) GiB on $($sr.name_label)")
         }
         foreach ($serverRef in $site.servers) {
-            $server = Get-XenPVSServer -Ref $serverRef.opaque_ref
+            $server = Get-XenPVSServer -Ref $serverRef
             Write-Host ("  server: $($server.addresses -join ', ')  ports $($server.first_port)-$($server.last_port)")
         }
         # Which VMs are accelerated: walk each proxy to its VIF to its VM.
         $accelerated = @{}
         foreach ($proxyRef in $site.proxies) {
-            $proxy = Get-XenPVSProxy -Ref $proxyRef.opaque_ref
-            $vif = Get-XenVIF -Ref $proxy.VIF.opaque_ref
+            $proxy = Get-XenPVSProxy -Ref $proxyRef
+            $vif = Get-XenVIF -Ref $proxy.VIF
+            # Keyed by the plain ref string (not the VM object) so the lookup below, keyed the same way
+            # off each guest's own opaque_ref, finds it: VM doesn't define value equality or a hash code.
             $accelerated[$vif.VM.opaque_ref] = $proxy.status
         }
         $guests = Get-XenVM | Where-Object { -not $_.is_control_domain -and -not $_.is_a_template -and -not $_.is_a_snapshot }
@@ -211,27 +213,27 @@ public static void PvsAccelerator(string url, string user, string password)
         Console.WriteLine($"Site: {site.name_label}");
         foreach (var csRef in site.cache_storage)
         {
-            var cs = PVS_cache_storage.get_record(session, csRef.opaque_ref);
-            var cacheHost = Host.get_record(session, cs.host.opaque_ref);
-            var sr = SR.get_record(session, cs.SR.opaque_ref);
+            var cs = PVS_cache_storage.get_record(session, csRef);
+            var cacheHost = Host.get_record(session, cs.host);
+            var sr = SR.get_record(session, cs.SR);
             Console.WriteLine($"  cache:  {cacheHost.name_label}  {cs.size / (1024L * 1024 * 1024)} GiB on {sr.name_label}");
         }
         foreach (var serverRef in site.servers)
         {
-            var server = PVS_server.get_record(session, serverRef.opaque_ref);
+            var server = PVS_server.get_record(session, serverRef);
             Console.WriteLine($"  server: {string.Join(", ", server.addresses)}  ports {server.first_port}-{server.last_port}");
         }
         // Which VMs are accelerated: walk each proxy to its VIF to its VM.
-        var accelerated = new HashSet<string>();
+        var accelerated = new HashSet<XenRef<VM>>();
         foreach (var proxyRef in site.proxies)
         {
-            var proxy = PVS_proxy.get_record(session, proxyRef.opaque_ref);
-            var vif = VIF.get_record(session, proxy.VIF.opaque_ref);
-            accelerated.Add(vif.VM.opaque_ref);
+            var proxy = PVS_proxy.get_record(session, proxyRef);
+            var vif = VIF.get_record(session, proxy.VIF);
+            accelerated.Add(vif.VM);
         }
         var guests = VM.get_all_records(session)
             .Where(kv => !kv.Value.is_control_domain && !kv.Value.is_a_template && !kv.Value.is_a_snapshot).ToList();
-        var count = guests.Count(kv => accelerated.Contains(kv.Key.opaque_ref));
+        var count = guests.Count(kv => accelerated.Contains(kv.Key));
         Console.WriteLine($"  {count} of {guests.Count} VM(s) accelerated");
     }
     Console.WriteLine("OK: pvs-accelerator");

@@ -32,15 +32,15 @@ function Invoke-ConfigureClustering {
     # every host is on - the management network - since corosync is latency-sensitive and a cluster that
     # loses quorum takes its GFS2 storage offline with it.
     $pifs = @(Get-XenPIF)
-    $network = Get-XenNetwork -Ref ($pifs | Where-Object { $_.management } | Select-Object -First 1).network.opaque_ref
-    $networkPifs = @($pifs | Where-Object { $_.network.opaque_ref -eq $network.opaque_ref })
+    $network = Get-XenNetwork -Ref ($pifs | Where-Object { $_.management } | Select-Object -First 1).network
+    $networkPifs = @($pifs | Where-Object { $_.network -eq $network })
 
     $cluster = Get-XenCluster | Select-Object -First 1
     $created = -not $cluster
     if ($created) {
         # Corosync must not lose its network, so each host's PIF on it has to refuse unplugging first:
         # Cluster.pool_create fails PIF_ALLOWS_UNPLUG otherwise. $networkPifs keeps the old settings.
-        $networkPifs | ForEach-Object { Set-XenPIF -Ref $_.opaque_ref -DisallowUnplug $true }
+        $networkPifs | ForEach-Object { Set-XenPIF -Ref $_ -DisallowUnplug $true }
         # Invoke-XenCluster's parameter sets are XenObject / Ref / Uuid -- every one of them identifies an
         # EXISTING cluster -- so the module cannot express pool_create, which is a constructor. Same
         # situation as the event API: call it over JSON-RPC (see Invoke-XenMethod in Helpers.ps1).
@@ -54,17 +54,17 @@ function Invoke-ConfigureClustering {
 
     # Taking a host out is what a management-interface change does; it can cost quorum.
     $member = Get-XenClusterHost | Select-Object -First 1
-    Invoke-XenClusterHost -Ref $member.opaque_ref -XenAction Disable
+    Invoke-XenClusterHost -Ref $member -XenAction Disable
     Write-Host "One member out, quorate: $((Get-XenCluster | Select-Object -First 1).is_quorate)"
 
-    Invoke-XenClusterHost -Ref $member.opaque_ref -XenAction Enable
-    Invoke-XenCluster -Ref $cluster.opaque_ref -XenAction PoolResync
+    Invoke-XenClusterHost -Ref $member -XenAction Enable
+    Invoke-XenCluster -Ref $cluster -XenAction PoolResync
     Write-Host "Resynced,   quorate: $((Get-XenCluster | Select-Object -First 1).is_quorate)"
 
     # Tidy up a cluster this example created (one that was already there stays), and the PIF settings.
     if ($created) {
-        Invoke-XenCluster -Ref $cluster.opaque_ref -XenAction PoolDestroy
-        $networkPifs | ForEach-Object { Set-XenPIF -Ref $_.opaque_ref -DisallowUnplug $_.disallow_unplug }
+        Invoke-XenCluster -Ref $cluster -XenAction PoolDestroy
+        $networkPifs | ForEach-Object { Set-XenPIF -Ref $_ -DisallowUnplug $_.disallow_unplug }
         Write-Host "Cluster removed again."
     }
 
@@ -254,14 +254,14 @@ public static void ConfigureClustering(string url, string user, string password)
     // it over a network every host is on - the management network - since corosync is
     // latency-sensitive and a cluster that loses quorum takes its GFS2 storage offline with it.
     var pifs = PIF.get_all_records(session);
-    var network = pifs.First(kv => kv.Value.management).Value.network.opaque_ref;
-    var was = pifs.Where(kv => kv.Value.network.opaque_ref == network)
-        .ToDictionary(kv => kv.Key.opaque_ref, kv => kv.Value.disallow_unplug);
+    var network = pifs.First(kv => kv.Value.management).Value.network;
+    var was = pifs.Where(kv => kv.Value.network.Equals(network))
+        .ToDictionary(kv => kv.Key, kv => kv.Value.disallow_unplug);
 
     var existing = Cluster.get_all(session);
-    string cluster;
+    XenRef<Cluster> cluster;
     if (existing.Count > 0)
-        cluster = existing[0].opaque_ref;
+        cluster = existing[0];
     else
     {
         // Corosync must not lose its network, so each host's PIF on it has to refuse unplugging
@@ -270,7 +270,7 @@ public static void ConfigureClustering(string url, string user, string password)
             PIF.set_disallow_unplug(session, pif, true);
         // token_timeout is in seconds (the API's default is 20.0, coefficient 1.0): XS9 refuses 20000
         // as "too large" - it is not milliseconds.
-        cluster = Cluster.pool_create(session, network, "corosync", 20.0, 1.0).opaque_ref;
+        cluster = Cluster.pool_create(session, network, "corosync", 20.0, 1.0);
     }
 
     var record = Cluster.get_record(session, cluster);
@@ -279,7 +279,7 @@ public static void ConfigureClustering(string url, string user, string password)
 
     // Taking a host out is what a management-interface change does; it can cost the pool quorum,
     // which is why the field is worth reading back rather than assuming.
-    var member = Cluster_host.get_all(session)[0].opaque_ref;
+    var member = Cluster_host.get_all(session)[0];
     Cluster_host.disable(session, member);
     Console.WriteLine($"One member out, quorate: {Cluster.get_is_quorate(session, cluster)}");
 

@@ -25,7 +25,7 @@ function Invoke-CreateHbaSr {
     $xenHost = Get-XenHost | Select-Object -First 1
 
     # The root element varies by backend; find BlockDevice entries by tag wherever they are.
-    $devlistXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost.opaque_ref -DeviceConfig @{} -SmType lvmohba)
+    $devlistXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost -DeviceConfig @{} -SmType lvmohba)
     $device = $devlistXml.SelectNodes("//BlockDevice") |
         Where-Object { -not $ScsiId -or $_.SCSIid -eq $ScsiId } | Select-Object -First 1
     if (-not $device) { throw "no LUN with SCSIid $ScsiId is visible to this host" }
@@ -39,7 +39,7 @@ function Invoke-CreateHbaSr {
 
     # SCSIid alone is also enough to probe the LUN itself: an <SR> in the answer means one is already
     # there, and SR.create would format it. Reattach that SR rather than destroying it.
-    $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $xenHost.opaque_ref `
+    $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $xenHost `
         -DeviceConfig $deviceConfig -Type lvmohba -SmConfig @{} -PassThru
     $existing = @(([xml]$probe).SelectNodes('/SRlist/SR'))
     if ($existing.Count -gt 0) {
@@ -53,9 +53,9 @@ function Invoke-CreateHbaSr {
     Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
     # Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
     # SR.destroy needs it detached from every host first.
-    Get-XenPBD | Where-Object { $_.SR.opaque_ref -eq $sr.opaque_ref -and $_.currently_attached } |
+    Get-XenPBD | Where-Object { $_.SR -eq $sr -and $_.currently_attached } |
         ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
-    Remove-XenSR -Ref $sr.opaque_ref
+    Remove-XenSR -Ref $sr
     Write-Host "OK: create-hba-sr"
     $session | Disconnect-XenServer
 }

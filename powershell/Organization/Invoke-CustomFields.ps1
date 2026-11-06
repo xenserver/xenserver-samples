@@ -52,7 +52,7 @@ function Invoke-CustomFields {
     foreach ($k in $vm.other_config.Keys) { $oc[$k] = $vm.other_config[$k] }
     $oc[$fieldKey] = "Platform Team"
     $vm | Set-XenVM -OtherConfig $oc
-    Write-Host "Custom field Owner = $((Get-XenVM -Ref $vm.opaque_ref).other_config[$fieldKey])"
+    Write-Host "Custom field Owner = $((Get-XenVM -Ref $vm).other_config[$fieldKey])"
 
     $vm | Remove-XenVMProperty -OtherConfig $fieldKey
     if ($addedDefinition) {

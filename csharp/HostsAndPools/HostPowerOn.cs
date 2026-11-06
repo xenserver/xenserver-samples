@@ -13,7 +13,7 @@ internal static partial class Workflows
     public static void HostPowerOn(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var hostRef = Host.get_all(session).First().opaque_ref;
+        var hostRef = Host.get_all(session).First();
 
         // Mode and config travel together: the config carries the credentials the mode needs.
         // "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"

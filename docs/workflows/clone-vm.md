@@ -39,7 +39,7 @@ function Invoke-CloneVm {
     # VM.clone (like VM.copy) only works on a Halted VM - a running source fails with
     # VM_BAD_POWER_STATE - so shut it down first if it's running, and start it back up again after the
     # clone, rather than assuming the VM is already halted.
-    $wasRunning = (Get-XenVM -Ref $source.opaque_ref).power_state -eq 'Running'
+    $wasRunning = (Get-XenVM -Ref $source).power_state -eq 'Running'
     if ($wasRunning) { $source | Invoke-XenVM -XenAction CleanShutdown }
 
     $clone = $source | Invoke-XenVM -XenAction Clone -NewName $CloneName -PassThru
@@ -49,7 +49,7 @@ function Invoke-CloneVm {
     if ($wasRunning) { $source | Invoke-XenVM -XenAction Start }
 
     # Tidy up: destroy the clone and its (owned) disks.
-    Remove-VmAndDisks -Ref $clone.opaque_ref
+    Remove-VmAndDisks -Ref $clone
     Write-Host "OK: clone-vm"
     $session | Disconnect-XenServer
 }
@@ -187,7 +187,7 @@ public static void CloneVm(string url, string user, string password,
     var wasRunning = VM.get_power_state(session, source) == vm_power_state.Running;
     if (wasRunning) VM.clean_shutdown(session, source);
 
-    var clone = VM.clone(session, source, cloneName).opaque_ref;
+    var clone = VM.clone(session, source, cloneName);
     Console.WriteLine($"Cloned '{VM.get_name_label(session, source)}' → {VM.get_name_label(session, clone)}");
     Console.WriteLine($"Clone has {VM.get_VBDs(session, clone).Count} VBD(s)");
 

@@ -24,7 +24,7 @@ function Invoke-GpuInventory {
     $group = $groups | Select-Object -First 1
     $before = $group.allocation_algorithm
     $group | Set-XenGPUGroup -AllocationAlgorithm breadth_first
-    $after = (Get-XenGPUGroup -Ref $group.opaque_ref).allocation_algorithm
+    $after = (Get-XenGPUGroup -Ref $group).allocation_algorithm
     Write-Host "Allocation:      $before -> $after"
     $group | Set-XenGPUGroup -AllocationAlgorithm $before
     Write-Host "OK: gpu-inventory"

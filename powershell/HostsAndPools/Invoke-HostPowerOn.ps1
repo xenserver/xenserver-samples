@@ -23,7 +23,7 @@ function Invoke-HostPowerOn {
     # called ("{mode} script has been removed").
     Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @(
         $xenHost.opaque_ref, 'wake-on-lan', @{})
-    $updated = Get-XenHost -Ref $xenHost.opaque_ref
+    $updated = Get-XenHost -Ref $xenHost
     Write-Host "Power-on mode:  $($updated.power_on_mode)"
     foreach ($k in ($updated.power_on_config.Keys | Sort-Object)) {
         Write-Host "  $k = $($updated.power_on_config[$k])"

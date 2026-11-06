@@ -21,7 +21,7 @@ function Invoke-CheckpointVm {
     # Checkpointing needs the guest's cooperation (VM_LACKS_FEATURE without PV drivers), hence a copy of
     # SourceVm - a VM with a guest OS and PV drivers - rather than an OS-less template clone.
     $vm = Copy-OfGuest -SourceVmName $SourceVm -NewVmName $NewVmName
-    $ref = $vm.opaque_ref
+    $ref = $vm
     $vm | Invoke-XenVM -XenAction Start
     Wait-GuestAgent -Ref $ref
 
@@ -39,7 +39,7 @@ function Invoke-CheckpointVm {
     $vm | Invoke-XenVM -XenAction Resume
 
     # Tidy up. The checkpoint owns its own snapshot disks, separate from the VM's.
-    Remove-VmAndDisks -Ref $checkpoint.opaque_ref
+    Remove-VmAndDisks -Ref $checkpoint
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $ref
     Write-Host "OK: checkpoint-vm"

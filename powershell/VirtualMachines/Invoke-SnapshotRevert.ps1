@@ -21,7 +21,7 @@ function Invoke-SnapshotRevert {
         Select-Object -First 1
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     Write-Host "Snapshotting VM: $($vm.name_label)"
-    $wasRunning = (Get-XenVM -Ref $vm.opaque_ref).power_state -eq 'Running'
+    $wasRunning = (Get-XenVM -Ref $vm).power_state -eq 'Running'
 
     $snap = $vm | Invoke-XenVM -XenAction Snapshot -NewName $SnapshotName -PassThru
     Write-Host "Created snapshot: $($snap.uuid)"
@@ -32,9 +32,9 @@ function Invoke-SnapshotRevert {
     # works too). Only a running VM has a console to capture, and a host that can't reach it answers
     # 404 or 500 instead of an image: the picture is incidental, so carry on. Still pure PowerShell:
     # Connect-Example has already trusted the server's certificate.
-    if ((Get-XenVM -Ref $vm.opaque_ref).power_state -eq 'Running') {
-        $console = (Get-XenVM -Ref $vm.opaque_ref).consoles |
-            ForEach-Object { Get-XenConsole -Ref $_.opaque_ref } | Where-Object { $_.protocol -eq 'rfb' } |
+    if ((Get-XenVM -Ref $vm).power_state -eq 'Running') {
+        $console = (Get-XenVM -Ref $vm).consoles |
+            ForEach-Object { Get-XenConsole -Ref $_ } | Where-Object { $_.protocol -eq 'rfb' } |
             Select-Object -First 1
         $thumb = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck `
             -Uri "$Url/vncsnapshot?session_id=$($session.opaque_ref)&ref=$($console.opaque_ref)"
@@ -59,7 +59,7 @@ function Invoke-SnapshotRevert {
 
     # A snapshot is itself a (special) VM record, with its own snapshot disks; destroy both to clean up
     # (the source VM's disks are untouched - they are not the snapshot's).
-    Remove-VmAndDisks -Ref $snap.opaque_ref
+    Remove-VmAndDisks -Ref $snap
     Write-Host "OK: snapshot-revert"
     $session | Disconnect-XenServer
 }

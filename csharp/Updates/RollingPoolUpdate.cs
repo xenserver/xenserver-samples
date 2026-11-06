@@ -21,7 +21,7 @@ internal static partial class Workflows
     public static void RollingPoolUpdate(string url, string user, string password, string repoUrl, string sourceUrl)
     {
         var session = Connect(url, user, password);
-        var pool = Pool.get_all(session)[0].opaque_ref;
+        var pool = Pool.get_all(session)[0];
         // Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
         // for Workload Balancing to be switched off before you start updating - so check both up front
         // and stop rather than disabling either for you; turn them back on again once the update is done.
@@ -48,25 +48,24 @@ internal static partial class Workflows
             // hosts, for example restarting a VM, is not handled here.)
             var hosts = Host.get_all_records(session);
             var master = Pool.get_master(session, pool);
-            var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => r.opaque_ref != master.opaque_ref));
+            var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => !r.Equals(master)));
             foreach (var hostRef in orderedRefs)
             {
                 var host = hosts[hostRef];
-                var h = hostRef.opaque_ref;
                 Console.WriteLine($"Updating {host.name_label}:");
                 try
                 {
-                    Host.apply_updates(session, h, hash);  // apply the synced updates
+                    Host.apply_updates(session, hostRef, hash);  // apply the synced updates
                 }
                 catch (Failure f) when (f.ErrorDescription[0] == "HOST_EVACUATION_IS_REQUIRED")
                 {
                     Console.WriteLine("  needs evacuating first; evacuating and retrying");
-                    Host.disable(session, h);   // stop new VMs landing here
-                    Host.evacuate(session, h);  // move running guests to the rest of the pool
-                    Host.apply_updates(session, h, hash);
-                    Host.enable(session, h);
+                    Host.disable(session, hostRef);   // stop new VMs landing here
+                    Host.evacuate(session, hostRef);  // move running guests to the rest of the pool
+                    Host.apply_updates(session, hostRef, hash);
+                    Host.enable(session, hostRef);
                 }
-                var guidance = Host.get_pending_guidances(session, h);
+                var guidance = Host.get_pending_guidances(session, hostRef);
                 Console.WriteLine($"  applied; pending guidance = [{string.Join(", ", guidance)}]");
                 if (guidance.Contains(update_guidances.reboot_host) ||
                     guidance.Contains(update_guidances.restart_toolstack))
@@ -76,18 +75,18 @@ internal static partial class Workflows
                     // reconnect until it reports a newer start and is live again.
                     var rebooting = guidance.Contains(update_guidances.reboot_host);
                     var key = rebooting ? "boot_time" : "agent_start_time";
-                    Host.get_other_config(session, h).TryGetValue(key, out var before);
-                    if (rebooting) Host.reboot(session, h);           // reboot into the updated software
-                    else Host.restart_agent(session, h);
+                    Host.get_other_config(session, hostRef).TryGetValue(key, out var before);
+                    if (rebooting) Host.reboot(session, hostRef);           // reboot into the updated software
+                    else Host.restart_agent(session, hostRef);
                     session = WaitForRestart(url, user, password, host.uuid, key, before);
                 }
-                EnableWhenBooted(session, h);          // return the host to service
+                EnableWhenBooted(session, hostRef);          // return the host to service
             }
         }
         finally
         {
             Pool.set_repositories(session, pool, previous);
-            foreach (var repo in repos) Repository.forget(session, repo.opaque_ref);
+            foreach (var repo in repos) Repository.forget(session, repo);
         }
         Console.WriteLine("OK: rolling-pool-update");
         session.logout();

@@ -38,9 +38,9 @@ function Invoke-VmIpAddress {
         $ip = $null
         foreach ($candidate in Get-XenVM | Where-Object {
                 $_.power_state -eq 'Running' -and -not $_.is_a_template -and -not $_.is_control_domain -and
-                $_.guest_metrics.opaque_ref -ne 'OpaqueRef:NULL'
+                $_.guest_metrics -ne 'OpaqueRef:NULL'
             }) {
-            $networks = (Get-XenVMGuestMetrics -Ref $candidate.guest_metrics.opaque_ref).networks
+            $networks = (Get-XenVMGuestMetrics -Ref $candidate.guest_metrics).networks
             if ($networks.ContainsKey("0/ip") -and $networks["0/ip"]) {
                 $vm = $candidate
                 $ip = $networks["0/ip"]
@@ -135,6 +135,7 @@ Read a running VM's IP address from its guest metrics, as reported by the in-gue
 import time
 
 from connection import connect
+from helpers import is_set
 
 
 def vm_ip_address(url, username, password, timeout=60, interval=2):
@@ -150,7 +151,7 @@ def vm_ip_address(url, username, password, timeout=60, interval=2):
         vm, ip = None, None
         for v in session.xenapi.VM.get_all_records().values():
             if (v["power_state"] == "Running" and not v["is_a_template"] and not v["is_control_domain"]
-                    and v["guest_metrics"] != "OpaqueRef:NULL"):
+                    and is_set(v["guest_metrics"])):
                 ip = session.xenapi.VM_guest_metrics.get_record(v["guest_metrics"])["networks"].get("0/ip")
                 if ip:
                     vm = v
@@ -204,7 +205,7 @@ public static void VmIpAddress(string url, string user, string password,
         string ip = null;
         foreach (var v in VM.get_all_records(session).Values.Where(v =>
                      v.power_state == vm_power_state.Running && !v.is_a_template && !v.is_control_domain
-                     && v.guest_metrics.opaque_ref != "OpaqueRef:NULL"))
+                     && !Helper.IsNullOrEmptyOpaqueRef(v.guest_metrics)))
         {
             if (VM_guest_metrics.get_record(session, v.guest_metrics).networks.TryGetValue("0/ip", out ip)
                 && !string.IsNullOrEmpty(ip))
@@ -276,7 +277,7 @@ func vmIpAddress(url, user, password, timeoutStr, intervalStr string) {
 		var ip string
 		for _, r := range vms {
 			if r.PowerState != xenapi.VMPowerStateRunning || r.IsATemplate || r.IsControlDomain ||
-				r.GuestMetrics == xenapi.VMGuestMetricsRef("OpaqueRef:NULL") {
+				!isSet(r.GuestMetrics) {
 				continue
 			}
 			gm, err := xenapi.VMGuestMetrics.GetRecord(session, r.GuestMetrics)
@@ -356,7 +357,7 @@ public final class VmIpAddress {
                 String ip = null;
                 for (VM.Record r : VM.getAllRecords(conn).values()) {
                     if (r.powerState != Types.VmPowerState.RUNNING || r.isATemplate || r.isControlDomain
-                            || r.guestMetrics.toWireString().equals("OpaqueRef:NULL")) continue;
+                            || r.guestMetrics.isNull()) continue;
                     Map<String, String> networks = r.guestMetrics.getRecord(conn).networks;
                     ip = networks.get("0/ip");
                     if (ip != null && !ip.isEmpty()) { vm = r; break; }

@@ -24,7 +24,7 @@ internal static partial class Workflows
     public static void ManageSecurebootCertificates(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var pool = Pool.get_all(session).First().opaque_ref;
+        var pool = Pool.get_all(session).First();
 
         // A Secure Boot guest carries its own copy of the pool's UEFI certificates, taken when it was
         // created. Rotating the pool's leaves the guest's stale, and the fix is applied at the guest's
@@ -50,7 +50,7 @@ internal static partial class Workflows
             session.logout();
             return;
         }
-        var vm = candidate.Key.opaque_ref;
+        var vm = candidate.Key;
         Console.WriteLine($"{VM.get_name_label(session, vm)}: readiness "
                           + $"{VM.get_secureboot_readiness(session, vm)}, certificates "
                           + $"{VM.get_secureboot_certificates_state(session, vm)}");

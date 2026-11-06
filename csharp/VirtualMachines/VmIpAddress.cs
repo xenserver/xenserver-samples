@@ -32,7 +32,7 @@ internal static partial class Workflows
             string ip = null;
             foreach (var v in VM.get_all_records(session).Values.Where(v =>
                          v.power_state == vm_power_state.Running && !v.is_a_template && !v.is_control_domain
-                         && v.guest_metrics.opaque_ref != "OpaqueRef:NULL"))
+                         && !Helper.IsNullOrEmptyOpaqueRef(v.guest_metrics)))
             {
                 if (VM_guest_metrics.get_record(session, v.guest_metrics).networks.TryGetValue("0/ip", out ip)
                     && !string.IsNullOrEmpty(ip))

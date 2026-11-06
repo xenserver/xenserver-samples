@@ -13,7 +13,7 @@ function Invoke-ConfigureHostStorage {
         [Parameter(Mandatory = $true)][string]$Password
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master.opaque_ref
+    $xenHost = Get-XenHost -Ref (Get-XenPool | Select-Object -First 1).master
 
     # The IQN identifies this host to iSCSI targets, so a target's access list is written against it -
     # changing it on a host with live iSCSI storage cuts it off. Existing iSCSI SRs must be detached
@@ -27,7 +27,7 @@ function Invoke-ConfigureHostStorage {
 
     $xenHost | Set-XenHost -IscsiIqn "iqn.2026-01.com.example:$($xenHost.name_label)"
     $xenHost | Set-XenHost -Multipathing $true
-    $updated = Get-XenHost -Ref $xenHost.opaque_ref
+    $updated = Get-XenHost -Ref $xenHost
     Write-Host "  IQN now:      $($updated.iscsi_iqn)"
     Write-Host "  multipathing: $($updated.multipathing)"
 

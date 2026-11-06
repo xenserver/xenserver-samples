@@ -39,21 +39,20 @@ function Invoke-SnapshotSchedule {
         -Schedule @{ hour = '2'; min = '0' } -PassThru
     Write-Host "Created schedule: $($vmss.uuid)"
 
-    Set-XenVM -VM $vm -SnapshotSchedule $vmss.opaque_ref
-    Write-Host "Members:          $((Get-XenVMSS -Ref $vmss.opaque_ref).VMs.Count)"
+    Set-XenVM -VM $vm -SnapshotSchedule $vmss
+    Write-Host "Members:          $((Get-XenVMSS -Ref $vmss).VMs.Count)"
 
     # Run it three times against a retention of two: the oldest is pruned away. Compare against the
     # snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
-    $before = @((Get-XenVM -Ref $vm.opaque_ref).snapshots | ForEach-Object { $_.opaque_ref })
-    1..3 | ForEach-Object { Invoke-XenVMSS -Ref $vmss.opaque_ref -XenAction SnapshotNow | Out-Null }
-    $kept = @((Get-XenVM -Ref $vm.opaque_ref).snapshots | ForEach-Object { $_.opaque_ref } |
-        Where-Object { $before -notcontains $_ })
+    $before = @((Get-XenVM -Ref $vm).snapshots)
+    1..3 | ForEach-Object { Invoke-XenVMSS -Ref $vmss -XenAction SnapshotNow | Out-Null }
+    $kept = @((Get-XenVM -Ref $vm).snapshots | Where-Object { $before -notcontains $_ })
     Write-Host "Snapshots kept:   $($kept.Count) (retention 2)"
 
     # Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     # first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
     Set-XenVM -VM $vm -SnapshotSchedule 'OpaqueRef:NULL'
-    Remove-XenVMSS -Ref $vmss.opaque_ref
+    Remove-XenVMSS -Ref $vmss
     $kept | ForEach-Object { Remove-VmAndDisks -Ref $_ }
     Write-Host "OK: snapshot-schedule"
     Disconnect-XenServer -Session $session
@@ -131,7 +130,7 @@ Run it::
 """
 
 from connection import connect
-from helpers import destroy_vm_and_disks, vm_by_name
+from helpers import NULL_REF, destroy_vm_and_disks, vm_by_name
 
 
 def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-example-schedule"):
@@ -164,7 +163,7 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
 
     # Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     # first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
-    session.xenapi.VM.set_snapshot_schedule(vm_ref, "OpaqueRef:NULL")
+    session.xenapi.VM.set_snapshot_schedule(vm_ref, NULL_REF)
     session.xenapi.VMSS.destroy(vmss_ref)
     for snapshot in kept:
         destroy_vm_and_disks(session, snapshot)
@@ -175,7 +174,7 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-120a-000000000000
+Created schedule: 00000001-0000-0000-1b0a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -213,22 +212,22 @@ public static void SnapshotSchedule(string url, string user, string password,
         frequency = vmss_frequency.daily,
         retained_snapshots = 2,
         schedule = new Dictionary<string, string> { ["hour"] = "2", ["min"] = "0" },
-    }).opaque_ref;
+    });
     Console.WriteLine($"Created schedule: {VMSS.get_uuid(session, vmssRef)}");
 
-    VM.set_snapshot_schedule(session, vmRef, new XenRef<VMSS>(vmssRef));
+    VM.set_snapshot_schedule(session, vmRef, vmssRef);
     Console.WriteLine($"Members:          {VMSS.get_VMs(session, vmssRef).Count}");
 
     // Run it three times against a retention of two: the oldest is pruned away. Compare against the
     // snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
-    var before = VM.get_snapshots(session, vmRef).Select(s => s.opaque_ref).ToHashSet();
+    var before = VM.get_snapshots(session, vmRef).ToHashSet();
     for (var i = 0; i < 3; i++) VMSS.snapshot_now(session, vmssRef);
-    var kept = VM.get_snapshots(session, vmRef).Select(s => s.opaque_ref).Where(s => !before.Contains(s)).ToList();
+    var kept = VM.get_snapshots(session, vmRef).Where(s => !before.Contains(s)).ToList();
     Console.WriteLine($"Snapshots kept:   {kept.Count} (retention 2)");
 
     // Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     // first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
-    VM.set_snapshot_schedule(session, vmRef, new XenRef<VMSS>("OpaqueRef:NULL"));
+    VM.set_snapshot_schedule(session, vmRef, new XenRef<VMSS>(Helper.NullOpaqueRef));
     VMSS.destroy(session, vmssRef);
     foreach (var snapshot in kept) DestroyVmAndDisks(session, snapshot);
     Console.WriteLine("OK: snapshot-schedule");
@@ -239,7 +238,7 @@ public static void SnapshotSchedule(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-060a-000000000000
+Created schedule: 00000001-0000-0000-190a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -310,7 +309,7 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 
 	// Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
 	// first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
-	check(xenapi.VM.SetSnapshotSchedule(session, vmRef, "OpaqueRef:NULL"))
+	check(xenapi.VM.SetSnapshotSchedule(session, vmRef, nullRef))
 	check(xenapi.VMSS.Destroy(session, vmssRef))
 	for _, s := range kept {
 		destroyVMAndDisks(session, s)
@@ -351,6 +350,7 @@ import java.util.Set;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
 import static com.xenserver.samples.Helpers.vmByName;
+import static com.xenserver.samples.Helpers.NULL_REF;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class SnapshotSchedule {
@@ -398,7 +398,7 @@ public final class SnapshotSchedule {
 
         // Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
         // first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
-        vm.setSnapshotSchedule(conn, new VMSS("OpaqueRef:NULL"));
+        vm.setSnapshotSchedule(conn, new VMSS(NULL_REF));
         vmss.destroy(conn);
         for (VM snapshot : kept) destroyVmAndDisks(conn, snapshot);
         System.out.println("OK: snapshot-schedule");
@@ -410,7 +410,7 @@ public final class SnapshotSchedule {
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-1b0a-000000000000
+Created schedule: 00000001-0000-0000-0e0a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule

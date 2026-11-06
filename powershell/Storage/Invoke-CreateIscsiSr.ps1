@@ -45,13 +45,13 @@ function Invoke-CreateIscsiSr {
 
     try {
         # First failing probe: target only -> the backend lists the IQNs it offers.
-        $iqnXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost.opaque_ref -DeviceConfig $dc -SmType lvmoiscsi)
+        $iqnXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost -DeviceConfig $dc -SmType lvmoiscsi)
         $dc["targetIQN"] = Select-TargetIqn -IqnXml $iqnXml -Target $Target -TargetIqn $TargetIqn
         Write-Host "Discovered IQN: $($dc['targetIQN'])"
 
         # Second failing probe: +targetIQN -> the backend lists the LUNs behind it. Real create also
         # carries LUNid whenever it is known.
-        $lunXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost.opaque_ref -DeviceConfig $dc -SmType lvmoiscsi)
+        $lunXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost -DeviceConfig $dc -SmType lvmoiscsi)
         $luns = @($lunXml.SelectNodes("//LUN"))
         $lun = Select-Lun -Luns $luns -ScsiId $ScsiId
         $dc["SCSIid"] = $lun.SCSIid
@@ -62,7 +62,7 @@ function Invoke-CreateIscsiSr {
         # The device-config is now complete enough to create from - which means it is also complete
         # enough to probe the LUN itself: an <SR> in the answer means one is already there, and
         # SR.create would format it. Reattach that SR rather than destroying it.
-        $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $xenHost.opaque_ref -DeviceConfig $dc `
+        $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $xenHost -DeviceConfig $dc `
             -Type lvmoiscsi -SmConfig @{} -PassThru
         $existing = @(([xml]$probe).SelectNodes('/SRlist/SR'))
         if ($existing.Count -gt 0) {
@@ -76,12 +76,12 @@ function Invoke-CreateIscsiSr {
         Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
         # Tidy up: this example created the SR, so destroy it - a forgotten SR would stay on the LUN.
         # SR.destroy needs it detached from every host first.
-        Get-XenPBD | Where-Object { $_.SR.opaque_ref -eq $sr.opaque_ref -and $_.currently_attached } |
+        Get-XenPBD | Where-Object { $_.SR -eq $sr -and $_.currently_attached } |
             ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
-        Remove-XenSR -Ref $sr.opaque_ref
+        Remove-XenSR -Ref $sr
     }
     finally {
-        if ($secret) { Remove-XenSecret -Ref $secret.opaque_ref }
+        if ($secret) { Remove-XenSecret -Ref $secret }
     }
     Write-Host "OK: create-iscsi-sr"
     $session | Disconnect-XenServer

@@ -65,15 +65,15 @@ function Invoke-ExportImportVm {
         try {
             Invoke-WebRequest -Uri "$Url/import?session_id=$($session.opaque_ref)&task_id=$($task.opaque_ref)" `
                 -Method Put -InFile $path -UseBasicParsing | Out-Null
-            while ((Get-XenTask -Ref $task.opaque_ref).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
-            $finished = Get-XenTask -Ref $task.opaque_ref
+            while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
+            $finished = Get-XenTask -Ref $task
             if ($finished.status -ne 'success') { throw "import failed: $($finished.error_info -join ' ')" }
             # The result lists the imported VMs (<value><array><data>OpaqueRef:...</data></array></value>
             # on a real host), so take the first reference in it.
             $imported = [regex]::Match($finished.result, 'OpaqueRef:[^<]+').Value
         }
         finally {
-            Remove-XenTask -Ref $task.opaque_ref
+            Remove-XenTask -Ref $task
         }
         Write-Host "  imported as $((Get-XenVM -Ref $imported).name_label)"
 
@@ -119,7 +119,7 @@ function Get-TarEntryName {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-3ed100ff-8a90-45ba-95ce-2ddd8b773ef2.xva
+  wrote 4.0 MiB to sdk-example-export-a2765405-93d9-4238-95ca-a7e7180c2d12.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01 (imported)
 OK: export-import-vm
@@ -369,7 +369,7 @@ public static void ExportImportVm(string url, string user, string password, stri
         // first, append &task_id=<task> to the /import URL, poll the task, and parse the ref out
         // of task.get_result() (same <value>...</value> string-strip wait-for-task already uses).
         var task = Task.create(session, "vm_import", $"importing {vmName} back").opaque_ref;
-        string imported;
+        XenRef<VM> imported;
         try
         {
             using (var client = InsecureHttpClient())
@@ -387,8 +387,8 @@ public static void ExportImportVm(string url, string user, string password, stri
                 throw new Exception($"import failed: {string.Join(", ", Task.get_error_info(session, task))}");
             // The result lists the imported VMs (<value><array><data>OpaqueRef:...</data></array></value>
             // on a real host), so take the first reference in it.
-            imported = System.Text.RegularExpressions.Regex.Match(
-                Task.get_result(session, task), "OpaqueRef:[^<]+").Value;
+            imported = new XenRef<VM>(System.Text.RegularExpressions.Regex.Match(
+                Task.get_result(session, task), "OpaqueRef:[^<]+").Value);
         }
         finally
         {
@@ -413,7 +413,7 @@ public static void ExportImportVm(string url, string user, string password, stri
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-5803f870cc7b422f82bcd5e09b9e1b19.xva
+  wrote 4.0 MiB to sdk-example-export-7e36c573dcdf4f0c957688c422c374d3.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01 (imported)
 OK: export-import-vm

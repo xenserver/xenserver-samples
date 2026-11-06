@@ -9,7 +9,7 @@ Run it::
 """
 
 from connection import connect
-from helpers import destroy_vm_and_disks, vm_by_name
+from helpers import NULL_REF, destroy_vm_and_disks, vm_by_name
 
 
 def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-example-schedule"):
@@ -42,7 +42,7 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
 
     # Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     # first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
-    session.xenapi.VM.set_snapshot_schedule(vm_ref, "OpaqueRef:NULL")
+    session.xenapi.VM.set_snapshot_schedule(vm_ref, NULL_REF)
     session.xenapi.VMSS.destroy(vmss_ref)
     for snapshot in kept:
         destroy_vm_and_disks(session, snapshot)

@@ -36,10 +36,10 @@ function Invoke-ConfigureUpdates {
 
     $pool = Get-XenPool | Select-Object -First 1
     # Remember the pool's own repositories, to put them back afterwards.
-    $previous = @((Get-XenPool -Ref $pool.opaque_ref).repositories | ForEach-Object { $_.opaque_ref })
-    $pool | Set-XenPool -Repositories @($repos | ForEach-Object { $_.opaque_ref })
+    $previous = @((Get-XenPool -Ref $pool).repositories)
+    $pool | Set-XenPool -Repositories $repos
     $pool | Set-XenPool -UpdateSyncEnabled $true
-    $p = Get-XenPool -Ref $pool.opaque_ref
+    $p = Get-XenPool -Ref $pool
     Write-Host "Pool repositories: $($p.repositories.Count); auto-sync enabled: $($p.update_sync_enabled)"
 
     # Tidy up so the example is repeatable.
@@ -192,9 +192,9 @@ public static void ConfigureUpdates(string url, string user, string password, st
     var session = Connect(url, user, password);
     var repos = IntroduceUpdateRepositories(session, repoUrl, sourceUrl);
     Console.WriteLine("Introduced repositories: " +
-        string.Join(", ", repos.Select(r => Repository.get_name_label(session, r.opaque_ref))));
+        string.Join(", ", repos.Select(r => Repository.get_name_label(session, r))));
 
-    var pool = Pool.get_all(session)[0].opaque_ref;
+    var pool = Pool.get_all(session)[0];
     // Remember the pool's own repositories, to put them back afterwards.
     var previous = Pool.get_repositories(session, pool);
     Pool.set_repositories(session, pool, repos);
@@ -205,7 +205,7 @@ public static void ConfigureUpdates(string url, string user, string password, st
     // Tidy up so the example is repeatable.
     Pool.set_update_sync_enabled(session, pool, false);
     Pool.set_repositories(session, pool, previous);
-    foreach (var repo in repos) Repository.forget(session, repo.opaque_ref);
+    foreach (var repo in repos) Repository.forget(session, repo);
     Console.WriteLine("OK: configure-updates");
     session.logout();
 }

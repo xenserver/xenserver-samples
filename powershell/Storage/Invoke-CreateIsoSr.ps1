@@ -24,7 +24,7 @@ function Invoke-CreateIsoSr {
         -NameLabel "sdk-example-iso" -NameDescription "ISO library created by the SDK example" `
         -Type "iso" -ContentType "iso" -Shared $true -PassThru
     Write-Host "Created ISO SR: $($sr.uuid)"
-    Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
+    Invoke-DetachAndForgetSr -Ref $sr
     Write-Host "OK: create-iso-sr"
     $session | Disconnect-XenServer
 }

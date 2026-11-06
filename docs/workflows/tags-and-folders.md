@@ -37,8 +37,8 @@ function Invoke-TagsAndFolders {
     # Remove-Xen*Property drops it.
     $vm | Add-XenVM -Tags "web"
     $vmHost | Add-XenHost -Tags "gold"
-    Write-Host "VM tags:   $((Get-XenVM -Ref $vm.opaque_ref).tags -join ', ')"
-    Write-Host "Host tags: $((Get-XenHost -Ref $vmHost.opaque_ref).tags -join ', ')"
+    Write-Host "VM tags:   $((Get-XenVM -Ref $vm).tags -join ', ')"
+    Write-Host "Host tags: $((Get-XenHost -Ref $vmHost).tags -join ', ')"
 
     # Folder placement lives in other_config["folder"] as a leading-slash path; merge it into the map.
     $current = $vm.other_config
@@ -46,7 +46,7 @@ function Invoke-TagsAndFolders {
     foreach ($k in $current.Keys) { $oc[$k] = $current[$k] }
     $oc["folder"] = "/Production/Web"
     $vm | Set-XenVM -OtherConfig $oc
-    Write-Host "VM folder: $((Get-XenVM -Ref $vm.opaque_ref).other_config['folder'])"
+    Write-Host "VM folder: $((Get-XenVM -Ref $vm).other_config['folder'])"
 
     # Tidy up.
     $vm | Remove-XenVMProperty -Tags "web"
@@ -179,7 +179,7 @@ public static void TagsAndFolders(string url, string user, string password, stri
 {
     var session = Connect(url, user, password);
     var vm = VmByName(session, vmName);
-    var host = Host.get_all(session)[0].opaque_ref;
+    var host = Host.get_all(session)[0];
 
     // Tags work on any object type (VM, host, SR, network, …).
     VM.add_tags(session, vm, "web");

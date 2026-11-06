@@ -60,7 +60,7 @@ function Invoke-DisasterRecoveryFailover {
     # Which SRs are on the LUN, and which of them hold pool metadata. sm_config metadata=true asks for
     # their names and the pool_metadata_detected flag as well as their uuids. (SR.probe is a static call:
     # the host goes in -XenHost, and -Ref, which the cmdlet insists on, is ignored.)
-    $master = (Get-XenPool).master.opaque_ref
+    $master = (Get-XenPool).master
     $probe = Invoke-XenSR -Ref "OpaqueRef:NULL" -XenAction Probe -XenHost $master -DeviceConfig $deviceConfig `
         -Type $SrType -SmConfig @{ metadata = 'true' } -PassThru
     $srs = @(([xml]$probe).SelectNodes('/SRlist/SR'))
@@ -72,7 +72,7 @@ function Invoke-DisasterRecoveryFailover {
 
     $task = New-XenDRTask -Type $SrType -DeviceConfig $deviceConfig `
         -Whitelist @($srs | ForEach-Object { "$($_.UUID)".Trim() }) -PassThru
-    $introduced = @($task.introduced_SRs | ForEach-Object { Get-XenSR -Ref $_.opaque_ref })
+    $introduced = @($task.introduced_SRs | ForEach-Object { Get-XenSR -Ref $_ })
     Write-Host "Attached $(($introduced | ForEach-Object { $_.name_label }) -join ', ')"
 
     # Recover from every replicated database on the attached SRs: vApps first (their VMs come with them),
@@ -85,7 +85,7 @@ function Invoke-DisasterRecoveryFailover {
     $recoveredVapps = @()
     foreach ($sr in $introduced) {
         $vdis = Get-XenVDI | Where-Object {
-            $_.SR.opaque_ref -eq $sr.opaque_ref -and $_.type -eq 'metadata' -and $_.metadata_latest
+            $_.SR -eq $sr -and $_.type -eq 'metadata' -and $_.metadata_latest
         }
         foreach ($vdi in $vdis) {
             $databaseRef = Invoke-XenMethod -Session $session -Method 'VDI.open_database' -Params @($vdi.opaque_ref)
@@ -165,7 +165,7 @@ function Invoke-DisasterRecoveryFailover {
         # The SRs the recovered VMs needed are no longer the task's: detach and forget those too.
         foreach ($sr in $introduced) {
             if (Get-XenSR -Uuid $sr.uuid -ErrorAction SilentlyContinue) {
-                Invoke-DetachAndForgetSr -Ref $sr.opaque_ref
+                Invoke-DetachAndForgetSr -Ref $sr
             }
         }
         Write-Host "Test failover: removed the recovered VMs and detached the replica"
@@ -566,7 +566,7 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
 
     // Which SRs are on the LUN, and which of them hold pool metadata. sm_config metadata=true asks for
     // their names and the pool_metadata_detected flag as well as their uuids.
-    var master = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+    var master = Pool.get_master(session, Pool.get_all(session)[0]);
     var found = XDocument.Parse(SR.probe(session, master, deviceConfig, srType,
         new Dictionary<string, string> { ["metadata"] = "true" }));
     var srs = found.Descendants("SR").Select(e => (
@@ -578,8 +578,8 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
     if (srs.Count == 0)
         throw new Exception("there is no SR on that LUN");
 
-    var task = DR_task.create(session, srType, deviceConfig, srs.Select(s => s.Uuid).ToArray()).opaque_ref;
-    var introduced = DR_task.get_introduced_SRs(session, task).Select(r => r.opaque_ref).ToList();
+    var task = DR_task.create(session, srType, deviceConfig, srs.Select(s => s.Uuid).ToArray());
+    var introduced = DR_task.get_introduced_SRs(session, task);
     Console.WriteLine($"Attached {string.Join(", ", introduced.Select(sr => SR.get_name_label(session, sr)))}");
 
     // Recover from every replicated database on the attached SRs: vApps first (their VMs come with them),
@@ -589,7 +589,7 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
     var recoveredVapps = new List<string>();
     foreach (var sr in introduced)
     {
-        foreach (var vdi in SR.get_VDIs(session, sr).Select(v => v.opaque_ref))
+        foreach (var vdi in SR.get_VDIs(session, sr))
         {
             if (VDI.get_type(session, vdi) != vdi_type.metadata || !VDI.get_metadata_latest(session, vdi))
                 continue;
@@ -598,27 +598,27 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
             database.JsonRpcClient.ServerCertificateValidationCallback = (req, cert, chain, errors) => true;
 
             // A pool often has no name of its own; show its coordinator's name instead.
-            var pool = Pool.get_all(database)[0].opaque_ref;
+            var pool = Pool.get_all(database)[0];
             var poolName = Pool.get_name_label(database, pool);
             if (string.IsNullOrEmpty(poolName))
-                poolName = Host.get_name_label(database, Pool.get_master(database, pool).opaque_ref);
+                poolName = Host.get_name_label(database, Pool.get_master(database, pool));
             Console.WriteLine($"  pool metadata of {poolName}");
 
-            var inRecoveredVapp = new HashSet<string>();
+            var inRecoveredVapp = new HashSet<XenRef<VM>>();
             foreach (var (vapp, record) in VM_appliance.get_all_records(database))
             {
-                try { VM_appliance.assert_can_be_recovered(database, vapp.opaque_ref, session.opaque_ref); }
+                try { VM_appliance.assert_can_be_recovered(database, vapp, session.opaque_ref); }
                 catch (Failure e)
                 {
                     Console.WriteLine($"  cannot recover vApp {record.name_label}: {e.ErrorDescription[0]}");
                     continue;
                 }
-                VM_appliance.recover(database, vapp.opaque_ref, session.opaque_ref, false);
+                VM_appliance.recover(database, vapp, session.opaque_ref, false);
                 recoveredVapps.Add(record.uuid);
                 foreach (var vm in record.VMs)
                 {
-                    recoveredVms.Add(VM.get_uuid(database, vm.opaque_ref));
-                    inRecoveredVapp.Add(vm.opaque_ref);
+                    recoveredVms.Add(VM.get_uuid(database, vm));
+                    inRecoveredVapp.Add(vm);
                 }
                 Console.WriteLine($"  recovered vApp {record.name_label}");
             }
@@ -626,15 +626,15 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
             foreach (var (vm, record) in VM.get_all_records(database).OrderBy(kv => kv.Value.name_label))
             {
                 if (record.is_a_template || record.is_control_domain || record.is_a_snapshot
-                    || inRecoveredVapp.Contains(vm.opaque_ref))
+                    || inRecoveredVapp.Contains(vm))
                     continue;
-                try { VM.assert_can_be_recovered(database, vm.opaque_ref, session.opaque_ref); }
+                try { VM.assert_can_be_recovered(database, vm, session.opaque_ref); }
                 catch (Failure e)
                 {
                     Console.WriteLine($"  cannot recover {record.name_label}: {e.ErrorDescription[0]}");
                     continue;
                 }
-                VM.recover(database, vm.opaque_ref, session.opaque_ref, false);
+                VM.recover(database, vm, session.opaque_ref, false);
                 recoveredVms.Add(record.uuid);
                 Console.WriteLine($"  recovered {record.name_label}");
             }
@@ -645,7 +645,7 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
     // The recovered VMs keep their uuids, so look them up by uuid - a name may be taken here already.
     foreach (var uuid in recoveredVms)
     {
-        var vm = VM.get_by_uuid(session, uuid).opaque_ref;
+        var vm = VM.get_by_uuid(session, uuid);
         Console.WriteLine($"{VM.get_name_label(session, vm)} is {VM.get_power_state(session, vm)}");
     }
 
@@ -653,13 +653,13 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
     {
         foreach (var uuid in recoveredVms)
         {
-            var vm = VM.get_by_uuid(session, uuid).opaque_ref;
+            var vm = VM.get_by_uuid(session, uuid);
             if (VM.get_power_state(session, vm) != vm_power_state.Halted)
                 VM.hard_shutdown(session, vm);
             VM.destroy(session, vm);
         }
         foreach (var uuid in recoveredVapps)
-            VM_appliance.destroy(session, VM_appliance.get_by_uuid(session, uuid).opaque_ref);
+            VM_appliance.destroy(session, VM_appliance.get_by_uuid(session, uuid));
     }
     // Destroying the task detaches and forgets the SRs it attached that no recovered VM needs.
     DR_task.destroy(session, task);
@@ -671,8 +671,8 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
             try
             {
                 foreach (var pbd in SR.get_PBDs(session, sr))
-                    if (PBD.get_currently_attached(session, pbd.opaque_ref))
-                        PBD.unplug(session, pbd.opaque_ref);
+                    if (PBD.get_currently_attached(session, pbd))
+                        PBD.unplug(session, pbd);
                 SR.forget(session, sr);
             }
             catch (Failure e) when (e.ErrorDescription[0] == "HANDLE_INVALID")

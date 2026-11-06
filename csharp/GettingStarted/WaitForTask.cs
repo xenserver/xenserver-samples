@@ -19,7 +19,7 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
         // Every message has an Async.* twin that returns a Task ref immediately; poll it to completion.
-        var task = VM.async_clone(session, TemplateByName(session, templateName), newVmName).opaque_ref;
+        var task = VM.async_clone(session, TemplateByName(session, templateName), newVmName);
         Console.WriteLine($"Started task: {Task.get_uuid(session, task)}");
 
         while (Task.get_status(session, task) == task_status_type.pending)
