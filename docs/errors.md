@@ -14,11 +14,11 @@ change.
 
 ## In each binding
 
-- **C#**: a `Failure` whose `ErrorDescription` is the array; `ErrorDescription[0]` is the code.
-- **Python**: an `XenAPI.Failure` whose `details` is the array.
-- **Java**: a `Types.XenAPIException`; specific errors are typed subclasses (for example `UuidInvalid`).
-- **Go**: a returned `error` value carrying the code.
 - **PowerShell**: a terminating error you catch with `try`/`catch`.
 - **xe**: a non-zero exit status, with the error code and its parameters printed (on standard output).
+- **Python**: an `XenAPI.Failure` whose `details` is the array.
+- **C#**: a `Failure` whose `ErrorDescription` is the array; `ErrorDescription[0]` is the code.
+- **Go**: a returned `error` value carrying the code.
+- **Java**: a `Types.XenAPIException`; specific errors are typed subclasses (for example `UuidInvalid`).
 
 [Handle an API error](workflows/error-handling.md) shows the idiom in each language, side by side.

@@ -3,9 +3,9 @@
 Ready-to-run code for managing [XenServer](https://www.xenserver.com/) pools with the XenServer SDK.
 
 Whether you want to list your VMs, automate a rolling update or wire XenServer into your own tooling,
-there's an example here to start from. Each one is written in **C#, Python, Java, Go and PowerShell, and
-for the `xe` command line**, so you can read it in the language you know and use it in the language you
-need.
+there's an example here to start from. Each one is written for **PowerShell and the `xe` command line,
+and in Python, C#, Go and Java**, so you can read it in the language you know and use it in the language
+you need.
 
 The samples are a companion to the
 [XenServer SDK Guide](https://docs.xenserver.com/en-us/xenserver/8/developer/sdk-guide), which has the
@@ -30,12 +30,12 @@ full API reference and the SDK downloads.
 
    | Language | From its folder |
    |---|---|
-   | [Python](python) | `python workflows.py connect-inventory https://<coordinator> root <password>` |
-   | [C#](csharp) | `dotnet run -- connect-inventory https://<coordinator> root <password>` |
-   | [Java](java) | `mvn compile exec:java -Dxenapi.version=<version> -Dexec.args="connect-inventory https://<coordinator> root <password>"` |
-   | [Go](go) | `go run . connect-inventory https://<coordinator> root <password>` |
    | [PowerShell](powershell) | `pwsh -File workflows.ps1 connect-inventory https://<coordinator> root <password>` |
    | [xe CLI](cli) | `./workflows.sh connect-inventory https://<coordinator> root <password>` |
+   | [Python](python) | `python workflows.py connect-inventory https://<coordinator> root <password>` |
+   | [C#](csharp) | `dotnet run -- connect-inventory https://<coordinator> root <password>` |
+   | [Go](go) | `go run . connect-inventory https://<coordinator> root <password>` |
+   | [Java](java) | `mvn compile exec:java -Dxenapi.version=<version> -Dexec.args="connect-inventory https://<coordinator> root <password>"` |
 
 3. **Explore.** Browse the [workflow examples](docs/workflows/README.md) and run any of them the same
    way.
@@ -70,7 +70,7 @@ Every workflow follows the same pattern, so once you've read one you can read th
 - **It connects to any pool member.** The shared connect helper accepts a host's self-signed
   certificate. If you point it at a pool member rather than the coordinator, it follows the
   `HOST_IS_SLAVE` redirect.
-- **It runs from the command line.** Each language's dispatcher (`workflows.py`, `workflows.ps1`, ...)
+- **It runs from the command line.** Each language's dispatcher (`workflows.ps1`, `workflows.sh`, `workflows.py`, ...)
   runs any workflow:
 
   ```

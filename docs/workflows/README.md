@@ -2,7 +2,7 @@
 
 # Workflow examples
 
-Real-world pool-management tasks, each implemented in C# (.NET), Python, Java, Go, PowerShell and the xe CLI. Each page shows the code in every language and example output from running it against a test pool: on yours, the names, addresses and UUIDs will differ. Every program first opens a session: see [Connecting](connecting.md).
+Real-world pool-management tasks, each implemented in PowerShell, the xe CLI, Python, C# (.NET), Go and Java. Each page shows the code in every language and example output from running it against a test pool: on yours, the names, addresses and UUIDs will differ. Every program first opens a session: see [Connecting](connecting.md).
 
 Run any of them with `<program> <workflow> <url> <user> <password> [key=value ...]`; see the [repository README](../../README.md) for how to build and run each language.
 
@@ -155,9 +155,9 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 
 Where every workflow above lives, per language:
 
-- C# (.NET): [`csharp/`](../../csharp) (one file per workflow)
-- Python: [`python/`](../../python) (one file per workflow)
-- Java: [`java/`](../../java) (one file per workflow)
-- Go: [`go/`](../../go) (one file per workflow)
 - PowerShell: [`powershell/`](../../powershell) (one file per workflow)
 - xe CLI: [`cli/`](../../cli) (one file per workflow)
+- Python: [`python/`](../../python) (one file per workflow)
+- C# (.NET): [`csharp/`](../../csharp) (one file per workflow)
+- Go: [`go/`](../../go) (one file per workflow)
+- Java: [`java/`](../../java) (one file per workflow)

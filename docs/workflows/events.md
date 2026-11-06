@@ -6,244 +6,6 @@ Subscribe to the event stream and observe a change land as an event — the mech
 
 Workflow `events`. [All workflows](README.md) · [Connecting](connecting.md)
 
-## C# (.NET)
-
-Source: [`csharp/GettingStarted/Events.cs`](../../csharp/GettingStarted/Events.cs)
-
-```csharp
-/// <summary>
-/// Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a
-/// client's view of the pool live.
-/// </summary>
-/// <example>
-/// <code>
-/// Workflows.Events("https://xenserver", "root", password, "web-01");
-/// </code>
-/// </example>
-public static void Events(string url, string user, string password, string vmName)
-{
-    var session = Connect(url, user, password);
-    var classes = new[] { "VM" };
-    var batch = (EventBatch)Event.from(session, classes, "", 1.0);
-    var token = batch.token;
-    Console.WriteLine("Established event token after initial snapshot.");
-
-    var vmRef = VmByName(session, vmName);
-    var original = VM.get_name_description(session, vmRef);
-    VM.set_name_description(session, vmRef, "changed-to-trigger-event");
-
-    batch = (EventBatch)Event.from(session, classes, token, 5.0);
-    Console.WriteLine($"Received {batch.events.Length} event(s) after the change.");
-    foreach (var ev in batch.events.Take(3))
-        Console.WriteLine($"  - {ev.operation} {ev.class_}");
-
-    VM.set_name_description(session, vmRef, original); // put it back
-    Console.WriteLine("OK: events");
-    session.logout();
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Established event token after initial snapshot.
-Received 1 event(s) after the change.
-  - mod vm
-OK: events
-```
-
-</details>
-
-## Python
-
-Source: [`python/getting_started/events.py`](../../python/getting_started/events.py)
-
-```python
-"""Event monitoring.
-
-Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a
-client's view of the pool live.
-
-Run it::
-
-    events("https://xenserver", "root", password, "web-01")
-"""
-
-from connection import connect
-from helpers import vm_by_name
-
-
-def events(url, username, password, vm_name):
-    """Watch the event stream and observe a change we make to the named VM land as an event."""
-    session = connect(url, username, password)
-    event_from = getattr(session.xenapi.event, "from")  # 'from' is a Python keyword
-
-    # An empty token yields the current world and a fresh token to watch from.
-    batch = event_from(["VM"], "", 1.0)
-    token = batch["token"]
-    print("Established event token after initial snapshot.")
-
-    # Make a change, then poll for it.
-    vm_ref = vm_by_name(session, vm_name)
-    original = session.xenapi.VM.get_name_description(vm_ref)
-    session.xenapi.VM.set_name_description(vm_ref, "changed-to-trigger-event")
-
-    batch = event_from(["VM"], token, 5.0)
-    print("Received %d event(s) after the change." % len(batch["events"]))
-    for ev in batch["events"][:3]:
-        print("  - %s %s" % (ev["operation"], ev["class"]))
-
-    session.xenapi.VM.set_name_description(vm_ref, original)  # put it back
-    print("OK: events")
-    session.xenapi.session.logout()
-```
-
-<details><summary>Example output</summary>
-
-```text
-Established event token after initial snapshot.
-Received 1 event(s) after the change.
-  - mod vm
-OK: events
-```
-
-</details>
-
-## Java
-
-Source: [`java/src/main/java/com/xenserver/samples/gettingstarted/Events.java`](../../java/src/main/java/com/xenserver/samples/gettingstarted/Events.java)
-
-```java
-package com.xenserver.samples.gettingstarted;
-
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Event;
-import com.xensource.xenapi.EventBatch;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.VM;
-
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import static com.xenserver.samples.Helpers.vmByName;
-import static com.xenserver.samples.PoolConnection.connect;
-
-public final class Events {
-    private Events() {
-    }
-
-    /**
-     * Event monitoring.
-     *
-     * <p>Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a
-     * client's view of the pool live.
-     *
-     * <p>Run it:
-     *
-     * <pre>{@code
-     * Events.run("https://xenserver", "root", password, "web-01");
-     * }</pre>
-     */
-    public static void run(String url, String user, String password, String vmName) throws Exception {
-        Connection conn = connect(url, user, password);
-        Set<String> classes = new LinkedHashSet<>();
-        classes.add("VM");
-
-        EventBatch batch = Event.from(conn, classes, "", 1.0);
-        String token = batch.token;
-        System.out.println("Established event token after initial snapshot.");
-
-        VM vm = vmByName(conn, vmName);
-        String original = vm.getNameDescription(conn);
-        vm.setNameDescription(conn, "changed-to-trigger-event");
-
-        batch = Event.from(conn, classes, token, 5.0);
-        System.out.println("Received " + batch.events.size() + " event(s) after the change.");
-        int shown = 0;
-        for (Event.Record ev : batch.events) {
-            if (shown++ >= 3) break;
-            System.out.println("  - " + ev.operation + " " + ev.clazz);
-        }
-
-        vm.setNameDescription(conn, original); // put it back
-        System.out.println("OK: events");
-        Session.logout(conn);
-    }
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Established event token after initial snapshot.
-Received 1 event(s) after the change.
-  - mod vm
-OK: events
-```
-
-</details>
-
-## Go
-
-Source: [`go/events.go`](../../go/events.go)
-
-```go
-package main
-
-import (
-	"fmt"
-
-	"go/xenapi"
-)
-
-// events - Event monitoring.
-//
-// Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a
-// client's view of the pool live.
-//
-// Run it:
-//
-//	events("https://xenserver", "root", password, "web-01")
-func events(url, user, password, vmName string) {
-	session := connect(url, user, password)
-	classes := []string{"VM"}
-	batch, err := xenapi.Event.From(session, classes, "", 1.0)
-	check(err)
-	token := batch.Token
-	fmt.Println("Established event token after initial snapshot.")
-
-	vmRef := vmByName(session, vmName)
-	original, err := xenapi.VM.GetNameDescription(session, vmRef)
-	check(err)
-	check(xenapi.VM.SetNameDescription(session, vmRef, "changed-to-trigger-event"))
-
-	batch, err = xenapi.Event.From(session, classes, token, 5.0)
-	check(err)
-	fmt.Printf("Received %d event(s) after the change.\n", len(batch.Events))
-	for i, ev := range batch.Events {
-		if i >= 3 {
-			break
-		}
-		fmt.Printf("  - %s %s\n", ev.Operation, ev.Class)
-	}
-
-	check(xenapi.VM.SetNameDescription(session, vmRef, original)) // put it back
-	fmt.Println("OK: events")
-	session.Logout()
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Established event token after initial snapshot.
-Received 1 event(s) after the change.
-  - mod vm
-OK: events
-```
-
-</details>
-
 ## PowerShell
 
 Source: [`powershell/GettingStarted/Invoke-Events.ps1`](../../powershell/GettingStarted/Invoke-Events.ps1)
@@ -357,6 +119,244 @@ events() {
 
 ```text
 Observed web-01's name-description change via event-wait
+OK: events
+```
+
+</details>
+
+## Python
+
+Source: [`python/getting_started/events.py`](../../python/getting_started/events.py)
+
+```python
+"""Event monitoring.
+
+Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a
+client's view of the pool live.
+
+Run it::
+
+    events("https://xenserver", "root", password, "web-01")
+"""
+
+from connection import connect
+from helpers import vm_by_name
+
+
+def events(url, username, password, vm_name):
+    """Watch the event stream and observe a change we make to the named VM land as an event."""
+    session = connect(url, username, password)
+    event_from = getattr(session.xenapi.event, "from")  # 'from' is a Python keyword
+
+    # An empty token yields the current world and a fresh token to watch from.
+    batch = event_from(["VM"], "", 1.0)
+    token = batch["token"]
+    print("Established event token after initial snapshot.")
+
+    # Make a change, then poll for it.
+    vm_ref = vm_by_name(session, vm_name)
+    original = session.xenapi.VM.get_name_description(vm_ref)
+    session.xenapi.VM.set_name_description(vm_ref, "changed-to-trigger-event")
+
+    batch = event_from(["VM"], token, 5.0)
+    print("Received %d event(s) after the change." % len(batch["events"]))
+    for ev in batch["events"][:3]:
+        print("  - %s %s" % (ev["operation"], ev["class"]))
+
+    session.xenapi.VM.set_name_description(vm_ref, original)  # put it back
+    print("OK: events")
+    session.xenapi.session.logout()
+```
+
+<details><summary>Example output</summary>
+
+```text
+Established event token after initial snapshot.
+Received 1 event(s) after the change.
+  - mod vm
+OK: events
+```
+
+</details>
+
+## C# (.NET)
+
+Source: [`csharp/GettingStarted/Events.cs`](../../csharp/GettingStarted/Events.cs)
+
+```csharp
+/// <summary>
+/// Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a
+/// client's view of the pool live.
+/// </summary>
+/// <example>
+/// <code>
+/// Workflows.Events("https://xenserver", "root", password, "web-01");
+/// </code>
+/// </example>
+public static void Events(string url, string user, string password, string vmName)
+{
+    var session = Connect(url, user, password);
+    var classes = new[] { "VM" };
+    var batch = (EventBatch)Event.from(session, classes, "", 1.0);
+    var token = batch.token;
+    Console.WriteLine("Established event token after initial snapshot.");
+
+    var vmRef = VmByName(session, vmName);
+    var original = VM.get_name_description(session, vmRef);
+    VM.set_name_description(session, vmRef, "changed-to-trigger-event");
+
+    batch = (EventBatch)Event.from(session, classes, token, 5.0);
+    Console.WriteLine($"Received {batch.events.Length} event(s) after the change.");
+    foreach (var ev in batch.events.Take(3))
+        Console.WriteLine($"  - {ev.operation} {ev.class_}");
+
+    VM.set_name_description(session, vmRef, original); // put it back
+    Console.WriteLine("OK: events");
+    session.logout();
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Established event token after initial snapshot.
+Received 1 event(s) after the change.
+  - mod vm
+OK: events
+```
+
+</details>
+
+## Go
+
+Source: [`go/events.go`](../../go/events.go)
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"go/xenapi"
+)
+
+// events - Event monitoring.
+//
+// Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a
+// client's view of the pool live.
+//
+// Run it:
+//
+//	events("https://xenserver", "root", password, "web-01")
+func events(url, user, password, vmName string) {
+	session := connect(url, user, password)
+	classes := []string{"VM"}
+	batch, err := xenapi.Event.From(session, classes, "", 1.0)
+	check(err)
+	token := batch.Token
+	fmt.Println("Established event token after initial snapshot.")
+
+	vmRef := vmByName(session, vmName)
+	original, err := xenapi.VM.GetNameDescription(session, vmRef)
+	check(err)
+	check(xenapi.VM.SetNameDescription(session, vmRef, "changed-to-trigger-event"))
+
+	batch, err = xenapi.Event.From(session, classes, token, 5.0)
+	check(err)
+	fmt.Printf("Received %d event(s) after the change.\n", len(batch.Events))
+	for i, ev := range batch.Events {
+		if i >= 3 {
+			break
+		}
+		fmt.Printf("  - %s %s\n", ev.Operation, ev.Class)
+	}
+
+	check(xenapi.VM.SetNameDescription(session, vmRef, original)) // put it back
+	fmt.Println("OK: events")
+	session.Logout()
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Established event token after initial snapshot.
+Received 1 event(s) after the change.
+  - mod vm
+OK: events
+```
+
+</details>
+
+## Java
+
+Source: [`java/src/main/java/com/xenserver/samples/gettingstarted/Events.java`](../../java/src/main/java/com/xenserver/samples/gettingstarted/Events.java)
+
+```java
+package com.xenserver.samples.gettingstarted;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Event;
+import com.xensource.xenapi.EventBatch;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.VM;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import static com.xenserver.samples.Helpers.vmByName;
+import static com.xenserver.samples.PoolConnection.connect;
+
+public final class Events {
+    private Events() {
+    }
+
+    /**
+     * Event monitoring.
+     *
+     * <p>Subscribe to the event stream and observe a change land as an event — the mechanism for keeping a
+     * client's view of the pool live.
+     *
+     * <p>Run it:
+     *
+     * <pre>{@code
+     * Events.run("https://xenserver", "root", password, "web-01");
+     * }</pre>
+     */
+    public static void run(String url, String user, String password, String vmName) throws Exception {
+        Connection conn = connect(url, user, password);
+        Set<String> classes = new LinkedHashSet<>();
+        classes.add("VM");
+
+        EventBatch batch = Event.from(conn, classes, "", 1.0);
+        String token = batch.token;
+        System.out.println("Established event token after initial snapshot.");
+
+        VM vm = vmByName(conn, vmName);
+        String original = vm.getNameDescription(conn);
+        vm.setNameDescription(conn, "changed-to-trigger-event");
+
+        batch = Event.from(conn, classes, token, 5.0);
+        System.out.println("Received " + batch.events.size() + " event(s) after the change.");
+        int shown = 0;
+        for (Event.Record ev : batch.events) {
+            if (shown++ >= 3) break;
+            System.out.println("  - " + ev.operation + " " + ev.clazz);
+        }
+
+        vm.setNameDescription(conn, original); // put it back
+        System.out.println("OK: events");
+        Session.logout(conn);
+    }
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Established event token after initial snapshot.
+Received 1 event(s) after the change.
+  - mod vm
 OK: events
 ```
 

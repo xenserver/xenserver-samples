@@ -31,14 +31,15 @@ SAMPLE_STORE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sample-
 BANNER = ("<!-- Generated from workflows.json, the example sources and a run of each example. "
           "Edit those, not this file. -->")
 
-# (id, title, source directory, code-fence language)
+# (id, title, source directory, code-fence language), in the order every page shows them: the scripting
+# options first, then the SDK languages.
 LANGUAGES = [
-    ("csharp", "C# (.NET)", "csharp", "csharp"),
-    ("python", "Python", "python", "python"),
-    ("java", "Java", "java", "java"),
-    ("go", "Go", "go", "go"),
     ("powershell", "PowerShell", "powershell", "powershell"),
     ("cli", "xe CLI", "cli", "bash"),
+    ("python", "Python", "python", "python"),
+    ("csharp", "C# (.NET)", "csharp", "csharp"),
+    ("go", "Go", "go", "go"),
+    ("java", "Java", "java", "java"),
 ]
 
 SOURCE_EXTENSIONS = (".cs", ".java", ".go", ".py", ".ps1", ".sh")
@@ -242,13 +243,13 @@ def first_sentence(s):
 
 
 def index_page(sections):
-    titles = [title for _, title, _, _ in LANGUAGES]
+    titles = ["the " + title if lang == "cli" else title for lang, title, _, _ in LANGUAGES]
     md = [BANNER, "",
           "# Workflow examples", "",
           "Real-world pool-management tasks, each implemented in " + ", ".join(titles[:-1]) +
-          " and the %s. Each page shows the code in every language and example output from running it "
-          "against a test pool: on yours, the names, addresses and UUIDs will differ. Every program "
-          "first opens a session: see [Connecting](connecting.md)." % titles[-1], "",
+          " and " + titles[-1] + ". Each page shows the code in every language and example output from "
+          "running it against a test pool: on yours, the names, addresses and UUIDs will differ. Every "
+          "program first opens a session: see [Connecting](connecting.md).", "",
           "Run any of them with `<program> <workflow> <url> <user> <password> [key=value ...]`; see the "
           "[repository README](../../README.md) for how to build and run each language.", ""]
     for name, workflows in sections:

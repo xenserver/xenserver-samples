@@ -38,8 +38,8 @@ sets the paths, and says how to point each build at it:
 
 | Language | |
 |---|---|
-| Python | `PYTHONPATH` |
 | PowerShell 7 | `PSModulePath` |
+| Python | `PYTHONPATH` |
 | C# | `dotnet build $CI_SDK_DOTNET_ARGS` |
 | Java | install `$CI_SDK_JAVA_JAR` with `mvn install:install-file`, then `-Dxenapi.version=$CI_SDK_JAVA_VERSION` |
 

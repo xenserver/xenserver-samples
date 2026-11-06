@@ -6,38 +6,41 @@ Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count,
 
 Workflow `read-metrics`. [All workflows](README.md) · [Connecting](connecting.md)
 
-## C# (.NET)
+## PowerShell
 
-Source: [`csharp/HostsAndPools/ReadMetrics.cs`](../../csharp/HostsAndPools/ReadMetrics.cs)
+Source: [`powershell/HostsAndPools/Invoke-ReadMetrics.ps1`](../../powershell/HostsAndPools/Invoke-ReadMetrics.ps1)
 
-```csharp
-/// <summary>
-/// Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory).
-/// </summary>
-/// <example>
-/// <code>
-/// Workflows.ReadMetrics("https://xenserver", "root", password);
-/// </code>
-/// </example>
-public static void ReadMetrics(string url, string user, string password)
-{
-    const long MiB = 1024L * 1024;
-    var session = Connect(url, user, password);
-    var (hostRef, host) = Host.get_all_records(session).First();
-    var hm = Host.get_metrics(session, hostRef.opaque_ref).opaque_ref;
-    Console.WriteLine($"Host {host.name_label}: " +
-        $"{Host_metrics.get_memory_total(session, hm) / MiB} MiB total, " +
-        $"{Host.compute_free_memory(session, hostRef.opaque_ref) / MiB} MiB free, " +
-        $"live = {Host_metrics.get_live(session, hm)}");
+```powershell
+function Invoke-ReadMetrics {
+    <#
+    .SYNOPSIS
+        Read host & VM metrics.
+    .DESCRIPTION
+        Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory).
+    .EXAMPLE
+        Invoke-ReadMetrics -Url https://xenserver -UserName root -Password $password
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$UserName,
+        [Parameter(Mandatory = $true)][string]$Password
+    )
+    $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
+    $xenHost = Get-XenHost | Select-Object -First 1
+    $hm = Get-XenHostMetrics -Ref $xenHost.metrics.opaque_ref
+    Write-Host ("Host $($xenHost.name_label): " +
+        "$([long]($hm.memory_total / 1MB)) MiB total, " +
+        "$([long](($xenHost | Invoke-XenHost -XenAction ComputeFreeMemory -PassThru) / 1MB)) MiB free, " +
+        "live = $($hm.live)")
 
-    var vm = VM.get_all_records(session).First(kv => !kv.Value.is_a_template
-        && !kv.Value.is_control_domain && kv.Value.power_state == vm_power_state.Running).Key.opaque_ref;
-    var vmm = VM.get_metrics(session, vm).opaque_ref;
-    Console.WriteLine($"VM {VM.get_name_label(session, vm)}: " +
-        $"{VM_metrics.get_VCPUs_number(session, vmm)} vCPU(s), " +
-        $"{VM_metrics.get_memory_actual(session, vmm) / MiB} MiB");
-    Console.WriteLine("OK: read-metrics");
-    session.logout();
+    $vm = Get-XenVM |
+        Where-Object { -not $_.is_a_template -and -not $_.is_control_domain -and $_.power_state -eq 'Running' } |
+        Select-Object -First 1
+    $vmm = Get-XenVMMetrics -Ref $vm.metrics.opaque_ref
+    Write-Host ("VM $($vm.name_label): " +
+        "$($vmm.VCPUs_number) vCPU(s), $([long]($vmm.memory_actual / 1MB)) MiB")
+    Write-Host "OK: read-metrics"
+    $session | Disconnect-XenServer
 }
 ```
 
@@ -46,6 +49,38 @@ public static void ReadMetrics(string url, string user, string password)
 ```text
 Host sdk-host1: 65536 MiB total, 57344 MiB free, live = True
 VM web-01: 2 vCPU(s), 4096 MiB
+OK: read-metrics
+```
+
+</details>
+
+## xe CLI
+
+Source: [`cli/hosts-and-pools/read-metrics.sh`](../../cli/hosts-and-pools/read-metrics.sh)
+
+```bash
+# Read host & VM metrics.
+#
+# Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory).
+#
+# Run it:
+#   ./workflows.sh read-metrics https://xenserver root "$password"
+
+read_metrics() {
+    h=$(first_host)
+    # On the CLI, a host's and a VM's metrics read as parameters of the host and VM themselves.
+    echo "Host $(xe host-param-get uuid=$h param-name=name-label): free memory $(xe host-compute-free-memory uuid=$h), live=$(xe host-param-get uuid=$h param-name=host-metrics-live)"
+    vm=$(vm_uuid web-01)
+    echo "VM web-01: $(xe vm-param-get uuid=$vm param-name=VCPUs-number) vCPU(s)"
+    echo "OK: read-metrics"
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Host sdk-host1: free memory , live=true
+VM web-01: 2 vCPU(s)
 OK: read-metrics
 ```
 
@@ -102,72 +137,45 @@ OK: read-metrics
 
 </details>
 
-## Java
+## C# (.NET)
 
-Source: [`java/src/main/java/com/xenserver/samples/hostsandpools/ReadMetrics.java`](../../java/src/main/java/com/xenserver/samples/hostsandpools/ReadMetrics.java)
+Source: [`csharp/HostsAndPools/ReadMetrics.cs`](../../csharp/HostsAndPools/ReadMetrics.cs)
 
-```java
-package com.xenserver.samples.hostsandpools;
+```csharp
+/// <summary>
+/// Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory).
+/// </summary>
+/// <example>
+/// <code>
+/// Workflows.ReadMetrics("https://xenserver", "root", password);
+/// </code>
+/// </example>
+public static void ReadMetrics(string url, string user, string password)
+{
+    const long MiB = 1024L * 1024;
+    var session = Connect(url, user, password);
+    var (hostRef, host) = Host.get_all_records(session).First();
+    var hm = Host.get_metrics(session, hostRef.opaque_ref).opaque_ref;
+    Console.WriteLine($"Host {host.name_label}: " +
+        $"{Host_metrics.get_memory_total(session, hm) / MiB} MiB total, " +
+        $"{Host.compute_free_memory(session, hostRef.opaque_ref) / MiB} MiB free, " +
+        $"live = {Host_metrics.get_live(session, hm)}");
 
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMMetrics;
-
-import java.util.Map;
-
-import static com.xenserver.samples.PoolConnection.connect;
-
-public final class ReadMetrics {
-    private ReadMetrics() {
-    }
-
-    /**
-     * Read host &amp; VM metrics.
-     *
-     * <p>Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory).
-     *
-     * <p>Run it:
-     *
-     * <pre>{@code
-     * ReadMetrics.run("https://xenserver", "root", password);
-     * }</pre>
-     */
-    public static void run(String url, String user, String password) throws Exception {
-        final long MiB = 1024L * 1024;
-        Connection conn = connect(url, user, password);
-        Map.Entry<Host, Host.Record> he = Host.getAllRecords(conn).entrySet().iterator().next();
-        HostMetrics hm = he.getKey().getMetrics(conn);
-        System.out.println("Host " + he.getValue().nameLabel + ": "
-                + hm.getMemoryTotal(conn) / MiB + " MiB total, "
-                + he.getKey().computeFreeMemory(conn) / MiB + " MiB free, "
-                + "live = " + hm.getLive(conn));
-
-        VM vm = null;
-        for (Map.Entry<VM, VM.Record> e : VM.getAllRecords(conn).entrySet()) {
-            VM.Record r = e.getValue();
-            if (!r.isATemplate && !r.isControlDomain && r.powerState == Types.VmPowerState.RUNNING) {
-                vm = e.getKey();
-                break;
-            }
-        }
-        VMMetrics vmm = vm.getMetrics(conn);
-        System.out.println("VM " + vm.getNameLabel(conn) + ": "
-                + vmm.getVCPUsNumber(conn) + " vCPU(s), "
-                + vmm.getMemoryActual(conn) / MiB + " MiB");
-        System.out.println("OK: read-metrics");
-        Session.logout(conn);
-    }
+    var vm = VM.get_all_records(session).First(kv => !kv.Value.is_a_template
+        && !kv.Value.is_control_domain && kv.Value.power_state == vm_power_state.Running).Key.opaque_ref;
+    var vmm = VM.get_metrics(session, vm).opaque_ref;
+    Console.WriteLine($"VM {VM.get_name_label(session, vm)}: " +
+        $"{VM_metrics.get_VCPUs_number(session, vmm)} vCPU(s), " +
+        $"{VM_metrics.get_memory_actual(session, vmm) / MiB} MiB");
+    Console.WriteLine("OK: read-metrics");
+    session.logout();
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Host sdk-host1: 65536 MiB total, 57344 MiB free, live = true
+Host sdk-host1: 65536 MiB total, 57344 MiB free, live = True
 VM web-01: 2 vCPU(s), 4096 MiB
 OK: read-metrics
 ```
@@ -244,81 +252,73 @@ OK: read-metrics
 
 </details>
 
-## PowerShell
+## Java
 
-Source: [`powershell/HostsAndPools/Invoke-ReadMetrics.ps1`](../../powershell/HostsAndPools/Invoke-ReadMetrics.ps1)
+Source: [`java/src/main/java/com/xenserver/samples/hostsandpools/ReadMetrics.java`](../../java/src/main/java/com/xenserver/samples/hostsandpools/ReadMetrics.java)
 
-```powershell
-function Invoke-ReadMetrics {
-    <#
-    .SYNOPSIS
-        Read host & VM metrics.
-    .DESCRIPTION
-        Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory).
-    .EXAMPLE
-        Invoke-ReadMetrics -Url https://xenserver -UserName root -Password $password
-    #>
-    param(
-        [Parameter(Mandatory = $true)][string]$Url,
-        [Parameter(Mandatory = $true)][string]$UserName,
-        [Parameter(Mandatory = $true)][string]$Password
-    )
-    $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost | Select-Object -First 1
-    $hm = Get-XenHostMetrics -Ref $xenHost.metrics.opaque_ref
-    Write-Host ("Host $($xenHost.name_label): " +
-        "$([long]($hm.memory_total / 1MB)) MiB total, " +
-        "$([long](($xenHost | Invoke-XenHost -XenAction ComputeFreeMemory -PassThru) / 1MB)) MiB free, " +
-        "live = $($hm.live)")
+```java
+package com.xenserver.samples.hostsandpools;
 
-    $vm = Get-XenVM |
-        Where-Object { -not $_.is_a_template -and -not $_.is_control_domain -and $_.power_state -eq 'Running' } |
-        Select-Object -First 1
-    $vmm = Get-XenVMMetrics -Ref $vm.metrics.opaque_ref
-    Write-Host ("VM $($vm.name_label): " +
-        "$($vmm.VCPUs_number) vCPU(s), $([long]($vmm.memory_actual / 1MB)) MiB")
-    Write-Host "OK: read-metrics"
-    $session | Disconnect-XenServer
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.HostMetrics;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMMetrics;
+
+import java.util.Map;
+
+import static com.xenserver.samples.PoolConnection.connect;
+
+public final class ReadMetrics {
+    private ReadMetrics() {
+    }
+
+    /**
+     * Read host &amp; VM metrics.
+     *
+     * <p>Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory).
+     *
+     * <p>Run it:
+     *
+     * <pre>{@code
+     * ReadMetrics.run("https://xenserver", "root", password);
+     * }</pre>
+     */
+    public static void run(String url, String user, String password) throws Exception {
+        final long MiB = 1024L * 1024;
+        Connection conn = connect(url, user, password);
+        Map.Entry<Host, Host.Record> he = Host.getAllRecords(conn).entrySet().iterator().next();
+        HostMetrics hm = he.getKey().getMetrics(conn);
+        System.out.println("Host " + he.getValue().nameLabel + ": "
+                + hm.getMemoryTotal(conn) / MiB + " MiB total, "
+                + he.getKey().computeFreeMemory(conn) / MiB + " MiB free, "
+                + "live = " + hm.getLive(conn));
+
+        VM vm = null;
+        for (Map.Entry<VM, VM.Record> e : VM.getAllRecords(conn).entrySet()) {
+            VM.Record r = e.getValue();
+            if (!r.isATemplate && !r.isControlDomain && r.powerState == Types.VmPowerState.RUNNING) {
+                vm = e.getKey();
+                break;
+            }
+        }
+        VMMetrics vmm = vm.getMetrics(conn);
+        System.out.println("VM " + vm.getNameLabel(conn) + ": "
+                + vmm.getVCPUsNumber(conn) + " vCPU(s), "
+                + vmm.getMemoryActual(conn) / MiB + " MiB");
+        System.out.println("OK: read-metrics");
+        Session.logout(conn);
+    }
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Host sdk-host1: 65536 MiB total, 57344 MiB free, live = True
+Host sdk-host1: 65536 MiB total, 57344 MiB free, live = true
 VM web-01: 2 vCPU(s), 4096 MiB
-OK: read-metrics
-```
-
-</details>
-
-## xe CLI
-
-Source: [`cli/hosts-and-pools/read-metrics.sh`](../../cli/hosts-and-pools/read-metrics.sh)
-
-```bash
-# Read host & VM metrics.
-#
-# Read live host metrics (total/free memory, liveness) and VM metrics (vCPU count, memory).
-#
-# Run it:
-#   ./workflows.sh read-metrics https://xenserver root "$password"
-
-read_metrics() {
-    h=$(first_host)
-    # On the CLI, a host's and a VM's metrics read as parameters of the host and VM themselves.
-    echo "Host $(xe host-param-get uuid=$h param-name=name-label): free memory $(xe host-compute-free-memory uuid=$h), live=$(xe host-param-get uuid=$h param-name=host-metrics-live)"
-    vm=$(vm_uuid web-01)
-    echo "VM web-01: $(xe vm-param-get uuid=$vm param-name=VCPUs-number) vCPU(s)"
-    echo "OK: read-metrics"
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Host sdk-host1: free memory , live=true
-VM web-01: 2 vCPU(s)
 OK: read-metrics
 ```
 

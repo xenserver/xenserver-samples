@@ -6,459 +6,6 @@ Build a PVS Accelerator site from nothing and take it down again: introduce the 
 
 Workflow `configure-pvs-accelerator`. [All workflows](README.md) · [Connecting](connecting.md)
 
-## C# (.NET)
-
-Source: [`csharp/HostsAndPools/ConfigurePvsAccelerator.cs`](../../csharp/HostsAndPools/ConfigurePvsAccelerator.cs)
-
-```csharp
-/// <summary>
-/// Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server,
-/// put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then forget
-/// the site — which cascades to everything hanging off it.
-/// </summary>
-/// <example>
-/// <code>
-/// Workflows.ConfigurePvsAccelerator("https://xenserver", "root", password, "db-01");
-/// </code>
-/// </example>
-public static void ConfigurePvsAccelerator(string url, string user, string password, string vmName)
-{
-    var session = Connect(url, user, password);
-
-    // Check the VM first, before creating anything: it needs a NIC for the proxy to sit on, and one
-    // that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT). It need not be
-    // running - a proxy on a halted VM just reports "stopped" until it starts.
-    var vm = VmByName(session, vmName);
-    var vifs = VM.get_VIFs(session, vm)
-        .OrderBy(r => int.Parse(VIF.get_device(session, r.opaque_ref))).ToList();
-    if (vifs.Count == 0) throw new Exception($"{vmName} has no network interface to accelerate");
-    foreach (var existing in PVS_proxy.get_all_records(session).Values)
-        if (existing.VIF.opaque_ref == vifs[0].opaque_ref)
-            throw new Exception($"{vmName} is already accelerated by site " +
-                                $"'{PVS_site.get_name_label(session, existing.site)}'");
-
-    var site = PVS_site.introduce(session, "sdk-example-pvs", "Created by the SDK examples", "");
-    PVS_server.introduce(session, new[] { "203.0.113.90" }, 6910, 6930, site);
-
-    // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
-    // the network; the server does not enforce that, but a cache on shared storage rarely makes
-    // sense and can't be shared between hosts anyway.
-    foreach (var hostRef in Host.get_all(session))
-    {
-        var local = LocalSr(session, hostRef);
-        if (local == null) continue;
-        PVS_cache_storage.create(session, new PVS_cache_storage
-        {
-            host = new XenRef<Host>(hostRef.opaque_ref),
-            SR = new XenRef<SR>(local),
-            site = new XenRef<PVS_site>(site),
-            size = 10L * 1024 * 1024 * 1024,
-        });
-    }
-
-    // A proxy may only sit on the VM's LOWEST-numbered NIC, hence sorting by device above rather
-    // than taking VIFs[0] — the list comes back in creation order, which is the same thing only by
-    // luck.
-    var proxy = PVS_proxy.create(session, site, vifs[0].opaque_ref);
-
-    var record = PVS_site.get_record(session, site);
-    Console.WriteLine($"Site '{record.name_label}' with {record.cache_storage.Count} cache(s) "
-                      + $"and {record.servers.Count} server(s)");
-    // "caching" means it is actually accelerating. A site with no cache storage reports
-    // "initialised", and a proxy on a VM whose NIC is unplugged reports "stopped".
-    Console.WriteLine($"  {VM.get_name_label(session, vm)}: {PVS_proxy.get_status(session, proxy)}");
-
-    // Forgetting the site only cascades its cache storage - a running proxy or a server it still has
-    // makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
-    // ourselves first, in the same order every real PVS teardown uses.
-    PVS_proxy.destroy(session, proxy);
-    foreach (var serverRef in PVS_site.get_servers(session, site)) PVS_server.forget(session, serverRef.opaque_ref);
-    PVS_site.forget(session, site);
-    Console.WriteLine("OK: configure-pvs-accelerator");
-    session.logout();
-}
-
-/// <summary>The host's own non-ISO storage, found through its PBDs.</summary>
-private static string LocalSr(Session session, XenRef<Host> host)
-{
-    foreach (var pbdRef in Host.get_PBDs(session, host.opaque_ref))
-    {
-        // Keep the REF and read the record through it: a record fetched by get_record does not
-        // carry its own opaque_ref, so reaching for sr.opaque_ref afterwards hands you a null.
-        var srRef = PBD.get_SR(session, pbdRef.opaque_ref);
-        var sr = SR.get_record(session, srRef.opaque_ref);
-        if (!sr.shared && sr.content_type != "iso" && sr.type != "udev")
-            return srRef.opaque_ref;
-    }
-    return null;
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
-  db-01: stopped
-OK: configure-pvs-accelerator
-```
-
-</details>
-
-## Python
-
-Source: [`python/hosts_and_pools/configure_pvs_accelerator.py`](../../python/hosts_and_pools/configure_pvs_accelerator.py)
-
-```python
-"""Configure PVS Accelerator.
-
-Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS
-server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC,
-then forget the site — which cascades to everything hanging off it.
-"""
-
-from connection import connect
-from helpers import vm_by_name
-
-
-def configure_pvs_accelerator(url, username, password, vm_name):
-    """Build a PVS Accelerator site from nothing: a site, a PVS server, a read cache on each
-    host, and one accelerated VM (vm_name). Then take it all down again.
-
-    The inventory example above reads a configuration someone else made; this one makes it."""
-    session = connect(url, username, password)
-    x = session.xenapi
-
-    # Check the VM first, before creating anything: it needs a NIC for the proxy to sit on, and one
-    # that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT). It need not be
-    # running - a proxy on a halted VM just reports "stopped" until it starts.
-    vm = vm_by_name(session, vm_name)
-    vifs = sorted(x.VM.get_VIFs(vm), key=lambda v: int(x.VIF.get_device(v)))
-    if not vifs:
-        raise RuntimeError("%s has no network interface to accelerate" % vm_name)
-    for proxy in x.PVS_proxy.get_all_records().values():
-        if proxy["VIF"] == vifs[0]:
-            raise RuntimeError("%s is already accelerated by site '%s'"
-                               % (vm_name, x.PVS_site.get_name_label(proxy["site"])))
-
-    site = x.PVS_site.introduce("sdk-example-pvs", "Created by the SDK examples", "")
-    x.PVS_server.introduce(["203.0.113.90"], 6910, 6930, site)
-
-    # The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
-    # the network; xapi does not enforce that, but a cache on shared storage rarely makes sense and
-    # can't be shared between hosts anyway.
-    for host in x.host.get_all():
-        local = local_sr(x, host)
-        if local:
-            # size as a STRING: XML-RPC only carries 32-bit integers, so the Python binding passes
-            # every XenAPI Int as a string. 10 GiB does not fit, and passing an int raises inside
-            # xmlrpc.client rather than at the API — a confusing place to land.
-            x.PVS_cache_storage.create({"host": host, "SR": local, "site": site,
-                                        "size": str(10 * 1024 ** 3)})
-
-    # A proxy may only sit on the VM's LOWEST-numbered VIF, hence sorting by device above rather than
-    # taking VIFs[0] — the list comes back in creation order, which is the same thing only by luck.
-    proxy = x.PVS_proxy.create(site, vifs[0])
-
-    print("Site '%s' with %d cache(s) and %d server(s)"
-          % (x.PVS_site.get_name_label(site),
-             len(x.PVS_site.get_cache_storage(site)),
-             len(x.PVS_site.get_servers(site))))
-    # "caching" means it is actually accelerating. A site with no cache storage reports
-    # "initialised", and a proxy on a VM whose VIF is unplugged reports "stopped".
-    print("  %s: %s" % (x.VM.get_name_label(vm), x.PVS_proxy.get_status(proxy)))
-
-    # Forgetting the site only cascades its cache storage - a running proxy or a server it still
-    # has makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
-    # ourselves first, in the same order every real PVS teardown uses.
-    x.PVS_proxy.destroy(proxy)
-    for server_ref in x.PVS_site.get_servers(site):
-        x.PVS_server.forget(server_ref)
-    x.PVS_site.forget(site)
-    print("OK: configure-pvs-accelerator")
-    session.logout()
-
-
-def local_sr(x, host):
-    """The host's own non-ISO storage, found through its PBDs."""
-    for pbd in x.host.get_PBDs(host):
-        sr = x.PBD.get_SR(pbd)
-        record = x.SR.get_record(sr)
-        if not record["shared"] and record["content_type"] != "iso" and record["type"] != "udev":
-            return sr
-    return None
-```
-
-<details><summary>Example output</summary>
-
-```text
-Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
-  db-01: stopped
-OK: configure-pvs-accelerator
-```
-
-</details>
-
-## Java
-
-Source: [`java/src/main/java/com/xenserver/samples/hostsandpools/ConfigurePvsAccelerator.java`](../../java/src/main/java/com/xenserver/samples/hostsandpools/ConfigurePvsAccelerator.java)
-
-```java
-package com.xenserver.samples.hostsandpools;
-
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.PVSCacheStorage;
-import com.xensource.xenapi.PVSProxy;
-import com.xensource.xenapi.PVSServer;
-import com.xensource.xenapi.PVSSite;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VM;
-
-import static com.xenserver.samples.Helpers.vmByName;
-import static com.xenserver.samples.PoolConnection.connect;
-
-public final class ConfigurePvsAccelerator {
-    private ConfigurePvsAccelerator() {
-    }
-
-    /**
-     * Configure PVS Accelerator.
-     *
-     * <p>Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS
-     * server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC,
-     * then forget the site — which cascades to everything hanging off it.
-     *
-     * <p>Build a PVS Accelerator site from nothing: a site, a PVS server, a read cache on each host, and
-     * one accelerated VM (vmName). Then take it all down again.
-     *
-     * <p>Run it:
-     *
-     * <pre>{@code
-     * ConfigurePvsAccelerator.run("https://xenserver", "root", password, "db-01");
-     * }</pre>
-     */
-    public static void run(String url, String user, String password, String vmName)
-            throws Exception {
-        Connection conn = connect(url, user, password);
-        try {
-            // Check the VM first, before creating anything: it needs a NIC for the proxy to sit on. It
-            // need not be running - a proxy on a halted VM just reports "stopped" until it starts.
-            VM vm = vmByName(conn, vmName);
-            java.util.List<VIF> vifs = new java.util.ArrayList<>(vm.getVIFs(conn));
-            vifs.sort(java.util.Comparator.comparingInt(v -> {
-                try {
-                    return Integer.parseInt(v.getDevice(conn));
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }));
-            if (vifs.isEmpty()) throw new RuntimeException(vmName + " has no network interface to accelerate");
-            // ... and one that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT).
-            for (PVSProxy.Record proxy : PVSProxy.getAllRecords(conn).values())
-                if (proxy.VIF.equals(vifs.get(0)))
-                    throw new RuntimeException(vmName + " is already accelerated by site '"
-                            + proxy.site.getNameLabel(conn) + "'");
-
-            PVSSite site = PVSSite.introduce(conn, "sdk-example-pvs", "Created by the SDK examples", "");
-            PVSServer.introduce(conn, new java.util.HashSet<>(java.util.Arrays.asList("203.0.113.90")),
-                6910L, 6930L, site);
-
-            // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
-            // the network; the server does not enforce that, but a cache on shared storage rarely makes
-            // sense and can't be shared between hosts anyway.
-            for (Host host : Host.getAll(conn)) {
-                SR local = localSr(conn, host);
-                if (local == null) continue;
-                PVSCacheStorage.Record cache = new PVSCacheStorage.Record();
-                cache.host = host;
-                cache.SR = local;
-                cache.site = site;
-                cache.size = 10L * 1024 * 1024 * 1024;
-                PVSCacheStorage.create(conn, cache);
-            }
-
-            // A proxy may only sit on the VM's LOWEST-numbered VIF, hence sorting by device above rather
-            // than taking the first one — the set comes back unordered, so "the first one" means
-            // nothing here.
-            PVSProxy proxy = PVSProxy.create(conn, site, vifs.get(0));
-
-            PVSSite.Record record = site.getRecord(conn);
-            System.out.printf("Site '%s' with %d cache(s) and %d server(s)%n",
-                record.nameLabel, record.cacheStorage.size(), record.servers.size());
-            // "caching" means it is actually accelerating. A site with no cache storage reports
-            // "initialised", and a proxy on a VM whose VIF is unplugged reports "stopped".
-            System.out.printf("  %s: %s%n", vm.getNameLabel(conn), proxy.getStatus(conn));
-
-            // Forgetting the site only cascades its cache storage - a running proxy or a server it still
-            // has makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
-            // ourselves first, in the same order every real PVS teardown uses.
-            proxy.destroy(conn);
-            for (PVSServer server : site.getServers(conn)) server.forget(conn);
-            site.forget(conn);
-            System.out.println("OK: configure-pvs-accelerator");
-        } finally {
-            Session.logout(conn);
-        }
-    }
-
-    /**
-     * The host's own non-ISO storage, found through its PBDs.
-     */
-    private static SR localSr(Connection conn, Host host) throws Exception {
-        for (PBD pbd : host.getPBDs(conn)) {
-            SR sr = pbd.getSR(conn);
-            SR.Record r = sr.getRecord(conn);
-            if (!r.shared && !"iso".equals(r.contentType) && r.type != null && !r.type.equals("udev"))
-                return sr;
-        }
-        return null;
-    }
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
-  db-01: stopped
-OK: configure-pvs-accelerator
-```
-
-</details>
-
-## Go
-
-Source: [`go/configure_pvs_accelerator.go`](../../go/configure_pvs_accelerator.go)
-
-```go
-package main
-
-import (
-	"fmt"
-	"sort"
-	"strconv"
-
-	"go/xenapi"
-)
-
-// configurePvsAccelerator - Configure PVS Accelerator.
-//
-// Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS
-// server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC,
-// then forget the site — which cascades to everything hanging off it.
-func configurePvsAccelerator(url, user, password, vmName string) {
-	session := connect(url, user, password)
-	defer session.Logout()
-
-	// Check the VM first, before creating anything: it needs a NIC for the proxy to sit on. It need
-	// not be running - a proxy on a halted VM just reports "stopped" until it starts.
-	vm := vmByName(session, vmName)
-	vifs, err := xenapi.VM.GetVIFs(session, vm)
-	check(err)
-	if len(vifs) == 0 {
-		panic(fmt.Sprintf("%s has no network interface to accelerate", vmName))
-	}
-	// A proxy may only sit on the VM's LOWEST-numbered NIC, so sort by device rather than taking
-	// VIFs[0] — the list comes back in creation order, which is the same thing only by luck.
-	sort.Slice(vifs, func(i, j int) bool { return vifDevice(session, vifs[i]) < vifDevice(session, vifs[j]) })
-	// ... and one that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT).
-	proxies, err := xenapi.PVSProxy.GetAllRecords(session)
-	check(err)
-	for _, proxy := range proxies {
-		if proxy.VIF == vifs[0] {
-			siteName, _ := xenapi.PVSSite.GetNameLabel(session, proxy.Site)
-			panic(fmt.Sprintf("%s is already accelerated by site '%s'", vmName, siteName))
-		}
-	}
-
-	site, err := xenapi.PVSSite.Introduce(session, "sdk-example-pvs", "Created by the SDK examples", "")
-	check(err)
-	_, err = xenapi.PVSServer.Introduce(session, []string{"203.0.113.90"}, 6910, 6930, site)
-	check(err)
-
-	// The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off the
-	// network; the server does not enforce that, but a cache on shared storage rarely makes sense and
-	// can't be shared between hosts anyway.
-	hosts, err := xenapi.Host.GetAll(session)
-	check(err)
-	for _, host := range hosts {
-		local, ok := localSR(session, host)
-		if !ok {
-			continue
-		}
-		_, err = xenapi.PVSCacheStorage.Create(session, xenapi.PVSCacheStorageRecord{
-			Host: host, SR: local, Site: site, Size: 10 * 1024 * 1024 * 1024,
-		})
-		check(err)
-	}
-
-	// A proxy may only sit on the VM's LOWEST-numbered NIC, hence sorting by device above rather than
-	// taking VIFs[0] — the list comes back in creation order, which is the same thing only by luck.
-	proxy, err := xenapi.PVSProxy.Create(session, site, vifs[0])
-	check(err)
-
-	record, err := xenapi.PVSSite.GetRecord(session, site)
-	check(err)
-	fmt.Printf("Site '%s' with %d cache(s) and %d server(s)\n",
-		record.NameLabel, len(record.CacheStorage), len(record.Servers))
-	// "caching" means it is actually accelerating. A site with no cache storage reports "initialised",
-	// and a proxy on a VM whose NIC is unplugged reports "stopped".
-	status, err := xenapi.PVSProxy.GetStatus(session, proxy)
-	check(err)
-	vmLabel, _ := xenapi.VM.GetNameLabel(session, vm)
-	fmt.Printf("  %s: %s\n", vmLabel, status)
-
-	// Forgetting the site only cascades its cache storage - a running proxy or a server it still
-	// has makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
-	// ourselves first, in the same order every real PVS teardown uses. (Cache storage doesn't need
-	// a separate call - forget cascades it correctly.)
-	check(xenapi.PVSProxy.Destroy(session, proxy))
-	servers, err := xenapi.PVSSite.GetServers(session, site)
-	check(err)
-	for _, server := range servers {
-		check(xenapi.PVSServer.Forget(session, server))
-	}
-	check(xenapi.PVSSite.Forget(session, site))
-	fmt.Println("OK: configure-pvs-accelerator")
-}
-
-// localSR returns the host's own non-ISO storage, found through its PBDs.
-func localSR(session *xenapi.Session, host xenapi.HostRef) (xenapi.SRRef, bool) {
-	pbds, err := xenapi.Host.GetPBDs(session, host)
-	check(err)
-	for _, pbd := range pbds {
-		ref, err := xenapi.PBD.GetSR(session, pbd)
-		check(err)
-		sr, err := xenapi.SR.GetRecord(session, ref)
-		check(err)
-		if !sr.Shared && sr.ContentType != "iso" && sr.Type != "udev" {
-			return ref, true
-		}
-	}
-	return "", false
-}
-
-func vifDevice(session *xenapi.Session, vif xenapi.VIFRef) int {
-	device, err := xenapi.VIF.GetDevice(session, vif)
-	check(err)
-	n, _ := strconv.Atoi(device)
-	return n
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
-  db-01: stopped
-OK: configure-pvs-accelerator
-```
-
-</details>
-
 ## PowerShell
 
 Source: [`powershell/HostsAndPools/Invoke-ConfigurePvsAccelerator.ps1`](../../powershell/HostsAndPools/Invoke-ConfigurePvsAccelerator.ps1)
@@ -645,6 +192,459 @@ lowest_device_vif() {
         if [ -z "$best_dev" ] || [ "$dev" -lt "$best_dev" ]; then best_uuid=$vif; best_dev=$dev; fi
     done
     echo "$best_uuid"
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
+  db-01: stopped
+OK: configure-pvs-accelerator
+```
+
+</details>
+
+## Python
+
+Source: [`python/hosts_and_pools/configure_pvs_accelerator.py`](../../python/hosts_and_pools/configure_pvs_accelerator.py)
+
+```python
+"""Configure PVS Accelerator.
+
+Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS
+server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC,
+then forget the site — which cascades to everything hanging off it.
+"""
+
+from connection import connect
+from helpers import vm_by_name
+
+
+def configure_pvs_accelerator(url, username, password, vm_name):
+    """Build a PVS Accelerator site from nothing: a site, a PVS server, a read cache on each
+    host, and one accelerated VM (vm_name). Then take it all down again.
+
+    The inventory example above reads a configuration someone else made; this one makes it."""
+    session = connect(url, username, password)
+    x = session.xenapi
+
+    # Check the VM first, before creating anything: it needs a NIC for the proxy to sit on, and one
+    # that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT). It need not be
+    # running - a proxy on a halted VM just reports "stopped" until it starts.
+    vm = vm_by_name(session, vm_name)
+    vifs = sorted(x.VM.get_VIFs(vm), key=lambda v: int(x.VIF.get_device(v)))
+    if not vifs:
+        raise RuntimeError("%s has no network interface to accelerate" % vm_name)
+    for proxy in x.PVS_proxy.get_all_records().values():
+        if proxy["VIF"] == vifs[0]:
+            raise RuntimeError("%s is already accelerated by site '%s'"
+                               % (vm_name, x.PVS_site.get_name_label(proxy["site"])))
+
+    site = x.PVS_site.introduce("sdk-example-pvs", "Created by the SDK examples", "")
+    x.PVS_server.introduce(["203.0.113.90"], 6910, 6930, site)
+
+    # The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+    # the network; xapi does not enforce that, but a cache on shared storage rarely makes sense and
+    # can't be shared between hosts anyway.
+    for host in x.host.get_all():
+        local = local_sr(x, host)
+        if local:
+            # size as a STRING: XML-RPC only carries 32-bit integers, so the Python binding passes
+            # every XenAPI Int as a string. 10 GiB does not fit, and passing an int raises inside
+            # xmlrpc.client rather than at the API — a confusing place to land.
+            x.PVS_cache_storage.create({"host": host, "SR": local, "site": site,
+                                        "size": str(10 * 1024 ** 3)})
+
+    # A proxy may only sit on the VM's LOWEST-numbered VIF, hence sorting by device above rather than
+    # taking VIFs[0] — the list comes back in creation order, which is the same thing only by luck.
+    proxy = x.PVS_proxy.create(site, vifs[0])
+
+    print("Site '%s' with %d cache(s) and %d server(s)"
+          % (x.PVS_site.get_name_label(site),
+             len(x.PVS_site.get_cache_storage(site)),
+             len(x.PVS_site.get_servers(site))))
+    # "caching" means it is actually accelerating. A site with no cache storage reports
+    # "initialised", and a proxy on a VM whose VIF is unplugged reports "stopped".
+    print("  %s: %s" % (x.VM.get_name_label(vm), x.PVS_proxy.get_status(proxy)))
+
+    # Forgetting the site only cascades its cache storage - a running proxy or a server it still
+    # has makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
+    # ourselves first, in the same order every real PVS teardown uses.
+    x.PVS_proxy.destroy(proxy)
+    for server_ref in x.PVS_site.get_servers(site):
+        x.PVS_server.forget(server_ref)
+    x.PVS_site.forget(site)
+    print("OK: configure-pvs-accelerator")
+    session.logout()
+
+
+def local_sr(x, host):
+    """The host's own non-ISO storage, found through its PBDs."""
+    for pbd in x.host.get_PBDs(host):
+        sr = x.PBD.get_SR(pbd)
+        record = x.SR.get_record(sr)
+        if not record["shared"] and record["content_type"] != "iso" and record["type"] != "udev":
+            return sr
+    return None
+```
+
+<details><summary>Example output</summary>
+
+```text
+Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
+  db-01: stopped
+OK: configure-pvs-accelerator
+```
+
+</details>
+
+## C# (.NET)
+
+Source: [`csharp/HostsAndPools/ConfigurePvsAccelerator.cs`](../../csharp/HostsAndPools/ConfigurePvsAccelerator.cs)
+
+```csharp
+/// <summary>
+/// Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server,
+/// put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then forget
+/// the site — which cascades to everything hanging off it.
+/// </summary>
+/// <example>
+/// <code>
+/// Workflows.ConfigurePvsAccelerator("https://xenserver", "root", password, "db-01");
+/// </code>
+/// </example>
+public static void ConfigurePvsAccelerator(string url, string user, string password, string vmName)
+{
+    var session = Connect(url, user, password);
+
+    // Check the VM first, before creating anything: it needs a NIC for the proxy to sit on, and one
+    // that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT). It need not be
+    // running - a proxy on a halted VM just reports "stopped" until it starts.
+    var vm = VmByName(session, vmName);
+    var vifs = VM.get_VIFs(session, vm)
+        .OrderBy(r => int.Parse(VIF.get_device(session, r.opaque_ref))).ToList();
+    if (vifs.Count == 0) throw new Exception($"{vmName} has no network interface to accelerate");
+    foreach (var existing in PVS_proxy.get_all_records(session).Values)
+        if (existing.VIF.opaque_ref == vifs[0].opaque_ref)
+            throw new Exception($"{vmName} is already accelerated by site " +
+                                $"'{PVS_site.get_name_label(session, existing.site)}'");
+
+    var site = PVS_site.introduce(session, "sdk-example-pvs", "Created by the SDK examples", "");
+    PVS_server.introduce(session, new[] { "203.0.113.90" }, 6910, 6930, site);
+
+    // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+    // the network; the server does not enforce that, but a cache on shared storage rarely makes
+    // sense and can't be shared between hosts anyway.
+    foreach (var hostRef in Host.get_all(session))
+    {
+        var local = LocalSr(session, hostRef);
+        if (local == null) continue;
+        PVS_cache_storage.create(session, new PVS_cache_storage
+        {
+            host = new XenRef<Host>(hostRef.opaque_ref),
+            SR = new XenRef<SR>(local),
+            site = new XenRef<PVS_site>(site),
+            size = 10L * 1024 * 1024 * 1024,
+        });
+    }
+
+    // A proxy may only sit on the VM's LOWEST-numbered NIC, hence sorting by device above rather
+    // than taking VIFs[0] — the list comes back in creation order, which is the same thing only by
+    // luck.
+    var proxy = PVS_proxy.create(session, site, vifs[0].opaque_ref);
+
+    var record = PVS_site.get_record(session, site);
+    Console.WriteLine($"Site '{record.name_label}' with {record.cache_storage.Count} cache(s) "
+                      + $"and {record.servers.Count} server(s)");
+    // "caching" means it is actually accelerating. A site with no cache storage reports
+    // "initialised", and a proxy on a VM whose NIC is unplugged reports "stopped".
+    Console.WriteLine($"  {VM.get_name_label(session, vm)}: {PVS_proxy.get_status(session, proxy)}");
+
+    // Forgetting the site only cascades its cache storage - a running proxy or a server it still has
+    // makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
+    // ourselves first, in the same order every real PVS teardown uses.
+    PVS_proxy.destroy(session, proxy);
+    foreach (var serverRef in PVS_site.get_servers(session, site)) PVS_server.forget(session, serverRef.opaque_ref);
+    PVS_site.forget(session, site);
+    Console.WriteLine("OK: configure-pvs-accelerator");
+    session.logout();
+}
+
+/// <summary>The host's own non-ISO storage, found through its PBDs.</summary>
+private static string LocalSr(Session session, XenRef<Host> host)
+{
+    foreach (var pbdRef in Host.get_PBDs(session, host.opaque_ref))
+    {
+        // Keep the REF and read the record through it: a record fetched by get_record does not
+        // carry its own opaque_ref, so reaching for sr.opaque_ref afterwards hands you a null.
+        var srRef = PBD.get_SR(session, pbdRef.opaque_ref);
+        var sr = SR.get_record(session, srRef.opaque_ref);
+        if (!sr.shared && sr.content_type != "iso" && sr.type != "udev")
+            return srRef.opaque_ref;
+    }
+    return null;
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
+  db-01: stopped
+OK: configure-pvs-accelerator
+```
+
+</details>
+
+## Go
+
+Source: [`go/configure_pvs_accelerator.go`](../../go/configure_pvs_accelerator.go)
+
+```go
+package main
+
+import (
+	"fmt"
+	"sort"
+	"strconv"
+
+	"go/xenapi"
+)
+
+// configurePvsAccelerator - Configure PVS Accelerator.
+//
+// Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS
+// server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC,
+// then forget the site — which cascades to everything hanging off it.
+func configurePvsAccelerator(url, user, password, vmName string) {
+	session := connect(url, user, password)
+	defer session.Logout()
+
+	// Check the VM first, before creating anything: it needs a NIC for the proxy to sit on. It need
+	// not be running - a proxy on a halted VM just reports "stopped" until it starts.
+	vm := vmByName(session, vmName)
+	vifs, err := xenapi.VM.GetVIFs(session, vm)
+	check(err)
+	if len(vifs) == 0 {
+		panic(fmt.Sprintf("%s has no network interface to accelerate", vmName))
+	}
+	// A proxy may only sit on the VM's LOWEST-numbered NIC, so sort by device rather than taking
+	// VIFs[0] — the list comes back in creation order, which is the same thing only by luck.
+	sort.Slice(vifs, func(i, j int) bool { return vifDevice(session, vifs[i]) < vifDevice(session, vifs[j]) })
+	// ... and one that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT).
+	proxies, err := xenapi.PVSProxy.GetAllRecords(session)
+	check(err)
+	for _, proxy := range proxies {
+		if proxy.VIF == vifs[0] {
+			siteName, _ := xenapi.PVSSite.GetNameLabel(session, proxy.Site)
+			panic(fmt.Sprintf("%s is already accelerated by site '%s'", vmName, siteName))
+		}
+	}
+
+	site, err := xenapi.PVSSite.Introduce(session, "sdk-example-pvs", "Created by the SDK examples", "")
+	check(err)
+	_, err = xenapi.PVSServer.Introduce(session, []string{"203.0.113.90"}, 6910, 6930, site)
+	check(err)
+
+	// The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off the
+	// network; the server does not enforce that, but a cache on shared storage rarely makes sense and
+	// can't be shared between hosts anyway.
+	hosts, err := xenapi.Host.GetAll(session)
+	check(err)
+	for _, host := range hosts {
+		local, ok := localSR(session, host)
+		if !ok {
+			continue
+		}
+		_, err = xenapi.PVSCacheStorage.Create(session, xenapi.PVSCacheStorageRecord{
+			Host: host, SR: local, Site: site, Size: 10 * 1024 * 1024 * 1024,
+		})
+		check(err)
+	}
+
+	// A proxy may only sit on the VM's LOWEST-numbered NIC, hence sorting by device above rather than
+	// taking VIFs[0] — the list comes back in creation order, which is the same thing only by luck.
+	proxy, err := xenapi.PVSProxy.Create(session, site, vifs[0])
+	check(err)
+
+	record, err := xenapi.PVSSite.GetRecord(session, site)
+	check(err)
+	fmt.Printf("Site '%s' with %d cache(s) and %d server(s)\n",
+		record.NameLabel, len(record.CacheStorage), len(record.Servers))
+	// "caching" means it is actually accelerating. A site with no cache storage reports "initialised",
+	// and a proxy on a VM whose NIC is unplugged reports "stopped".
+	status, err := xenapi.PVSProxy.GetStatus(session, proxy)
+	check(err)
+	vmLabel, _ := xenapi.VM.GetNameLabel(session, vm)
+	fmt.Printf("  %s: %s\n", vmLabel, status)
+
+	// Forgetting the site only cascades its cache storage - a running proxy or a server it still
+	// has makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
+	// ourselves first, in the same order every real PVS teardown uses. (Cache storage doesn't need
+	// a separate call - forget cascades it correctly.)
+	check(xenapi.PVSProxy.Destroy(session, proxy))
+	servers, err := xenapi.PVSSite.GetServers(session, site)
+	check(err)
+	for _, server := range servers {
+		check(xenapi.PVSServer.Forget(session, server))
+	}
+	check(xenapi.PVSSite.Forget(session, site))
+	fmt.Println("OK: configure-pvs-accelerator")
+}
+
+// localSR returns the host's own non-ISO storage, found through its PBDs.
+func localSR(session *xenapi.Session, host xenapi.HostRef) (xenapi.SRRef, bool) {
+	pbds, err := xenapi.Host.GetPBDs(session, host)
+	check(err)
+	for _, pbd := range pbds {
+		ref, err := xenapi.PBD.GetSR(session, pbd)
+		check(err)
+		sr, err := xenapi.SR.GetRecord(session, ref)
+		check(err)
+		if !sr.Shared && sr.ContentType != "iso" && sr.Type != "udev" {
+			return ref, true
+		}
+	}
+	return "", false
+}
+
+func vifDevice(session *xenapi.Session, vif xenapi.VIFRef) int {
+	device, err := xenapi.VIF.GetDevice(session, vif)
+	check(err)
+	n, _ := strconv.Atoi(device)
+	return n
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)
+  db-01: stopped
+OK: configure-pvs-accelerator
+```
+
+</details>
+
+## Java
+
+Source: [`java/src/main/java/com/xenserver/samples/hostsandpools/ConfigurePvsAccelerator.java`](../../java/src/main/java/com/xenserver/samples/hostsandpools/ConfigurePvsAccelerator.java)
+
+```java
+package com.xenserver.samples.hostsandpools;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.PVSCacheStorage;
+import com.xensource.xenapi.PVSProxy;
+import com.xensource.xenapi.PVSServer;
+import com.xensource.xenapi.PVSSite;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VM;
+
+import static com.xenserver.samples.Helpers.vmByName;
+import static com.xenserver.samples.PoolConnection.connect;
+
+public final class ConfigurePvsAccelerator {
+    private ConfigurePvsAccelerator() {
+    }
+
+    /**
+     * Configure PVS Accelerator.
+     *
+     * <p>Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS
+     * server, put a read cache on each host's local storage, accelerate a VM by proxying its first NIC,
+     * then forget the site — which cascades to everything hanging off it.
+     *
+     * <p>Build a PVS Accelerator site from nothing: a site, a PVS server, a read cache on each host, and
+     * one accelerated VM (vmName). Then take it all down again.
+     *
+     * <p>Run it:
+     *
+     * <pre>{@code
+     * ConfigurePvsAccelerator.run("https://xenserver", "root", password, "db-01");
+     * }</pre>
+     */
+    public static void run(String url, String user, String password, String vmName)
+            throws Exception {
+        Connection conn = connect(url, user, password);
+        try {
+            // Check the VM first, before creating anything: it needs a NIC for the proxy to sit on. It
+            // need not be running - a proxy on a halted VM just reports "stopped" until it starts.
+            VM vm = vmByName(conn, vmName);
+            java.util.List<VIF> vifs = new java.util.ArrayList<>(vm.getVIFs(conn));
+            vifs.sort(java.util.Comparator.comparingInt(v -> {
+                try {
+                    return Integer.parseInt(v.getDevice(conn));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }));
+            if (vifs.isEmpty()) throw new RuntimeException(vmName + " has no network interface to accelerate");
+            // ... and one that no site accelerates yet (a VIF takes one proxy: PVS_PROXY_ALREADY_PRESENT).
+            for (PVSProxy.Record proxy : PVSProxy.getAllRecords(conn).values())
+                if (proxy.VIF.equals(vifs.get(0)))
+                    throw new RuntimeException(vmName + " is already accelerated by site '"
+                            + proxy.site.getNameLabel(conn) + "'");
+
+            PVSSite site = PVSSite.introduce(conn, "sdk-example-pvs", "Created by the SDK examples", "");
+            PVSServer.introduce(conn, new java.util.HashSet<>(java.util.Arrays.asList("203.0.113.90")),
+                6910L, 6930L, site);
+
+            // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
+            // the network; the server does not enforce that, but a cache on shared storage rarely makes
+            // sense and can't be shared between hosts anyway.
+            for (Host host : Host.getAll(conn)) {
+                SR local = localSr(conn, host);
+                if (local == null) continue;
+                PVSCacheStorage.Record cache = new PVSCacheStorage.Record();
+                cache.host = host;
+                cache.SR = local;
+                cache.site = site;
+                cache.size = 10L * 1024 * 1024 * 1024;
+                PVSCacheStorage.create(conn, cache);
+            }
+
+            // A proxy may only sit on the VM's LOWEST-numbered VIF, hence sorting by device above rather
+            // than taking the first one — the set comes back unordered, so "the first one" means
+            // nothing here.
+            PVSProxy proxy = PVSProxy.create(conn, site, vifs.get(0));
+
+            PVSSite.Record record = site.getRecord(conn);
+            System.out.printf("Site '%s' with %d cache(s) and %d server(s)%n",
+                record.nameLabel, record.cacheStorage.size(), record.servers.size());
+            // "caching" means it is actually accelerating. A site with no cache storage reports
+            // "initialised", and a proxy on a VM whose VIF is unplugged reports "stopped".
+            System.out.printf("  %s: %s%n", vm.getNameLabel(conn), proxy.getStatus(conn));
+
+            // Forgetting the site only cascades its cache storage - a running proxy or a server it still
+            // has makes forget refuse with PVS_SITE_CONTAINS_RUNNING_PROXIES/_SERVERS, so tear those down
+            // ourselves first, in the same order every real PVS teardown uses.
+            proxy.destroy(conn);
+            for (PVSServer server : site.getServers(conn)) server.forget(conn);
+            site.forget(conn);
+            System.out.println("OK: configure-pvs-accelerator");
+        } finally {
+            Session.logout(conn);
+        }
+    }
+
+    /**
+     * The host's own non-ISO storage, found through its PBDs.
+     */
+    private static SR localSr(Connection conn, Host host) throws Exception {
+        for (PBD pbd : host.getPBDs(conn)) {
+            SR sr = pbd.getSR(conn);
+            SR.Record r = sr.getRecord(conn);
+            if (!r.shared && !"iso".equals(r.contentType) && r.type != null && !r.type.equals("udev"))
+                return sr;
+        }
+        return null;
+    }
 }
 ```
 

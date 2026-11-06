@@ -10,469 +10,6 @@ Apply the CDN's updates across the pool host by host, coordinator first: sync th
 
 Workflow `rolling-pool-update`. [All workflows](README.md) · [Connecting](connecting.md)
 
-## C# (.NET)
-
-Source: [`csharp/Updates/RollingPoolUpdate.cs`](../../csharp/Updates/RollingPoolUpdate.cs)
-
-```csharp
-/// <summary>
-/// Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host in
-/// turn - coordinator first - apply the updates (evacuating its VMs first only if that turns out to be
-/// needed), reboot if asked to, and re-enable it — host-by-host orchestration.
-/// </summary>
-/// <example>
-/// <code>
-/// Workflows.RollingPoolUpdate("https://xenserver", "root", password, "https://repo.ops.xenserver.com/xs9",
-/// Workflows."https://repo-src.ops.xenserver.com/xs9");
-/// </code>
-/// </example>
-public static void RollingPoolUpdate(string url, string user, string password, string repoUrl, string sourceUrl)
-{
-    var session = Connect(url, user, password);
-    var pool = Pool.get_all(session)[0].opaque_ref;
-    // Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
-    // for Workload Balancing to be switched off before you start updating - so check both up front
-    // and stop rather than disabling either for you; turn them back on again once the update is done.
-    if (Pool.get_ha_enabled(session, pool) || Pool.get_wlb_enabled(session, pool))
-        throw new Exception("HA and Workload Balancing must both be off before updating the pool; " +
-                             "disable them, run this again, then re-enable them once it finishes");
-    // Needs an enabled update repository the same way apply-update does - introduce and attach a
-    // throwaway one, forget it again afterwards.
-    var repos = IntroduceUpdateRepositories(session, repoUrl, sourceUrl);
-    // Remember the pool's own repositories, to put them back afterwards.
-    var previous = Pool.get_repositories(session, pool);
-    Pool.set_repositories(session, pool, repos);
-    try
-    {
-        // Sync the pool's update metadata; the returned hash identifies the synced set.
-        var hash = Pool.sync_updates(session, pool, false, "", "");
-        Console.WriteLine($"Synced updates; hash length {hash.Length}");
-
-        // Apply them host-by-host, coordinator first, so the pool never goes fully offline (the
-        // rolling pattern): apply -> evacuate and retry only if that turns out to be needed ->
-        // reboot (only if asked) -> re-enable. Modern xapi (>=23.18.0) doesn't reboot a host
-        // for you: it only records pending_guidances, so only reboot (or restart the toolstack)
-        // when the applied batch actually asks for it. (Guidance that targets VMs instead of
-        // hosts, for example restarting a VM, is not handled here.)
-        var hosts = Host.get_all_records(session);
-        var master = Pool.get_master(session, pool);
-        var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => r.opaque_ref != master.opaque_ref));
-        foreach (var hostRef in orderedRefs)
-        {
-            var host = hosts[hostRef];
-            var h = hostRef.opaque_ref;
-            Console.WriteLine($"Updating {host.name_label}:");
-            try
-            {
-                Host.apply_updates(session, h, hash);  // apply the synced updates
-            }
-            catch (Failure f) when (f.ErrorDescription[0] == "HOST_EVACUATION_IS_REQUIRED")
-            {
-                Console.WriteLine("  needs evacuating first; evacuating and retrying");
-                Host.disable(session, h);   // stop new VMs landing here
-                Host.evacuate(session, h);  // move running guests to the rest of the pool
-                Host.apply_updates(session, h, hash);
-                Host.enable(session, h);
-            }
-            var guidance = Host.get_pending_guidances(session, h);
-            Console.WriteLine($"  applied; pending guidance = [{string.Join(", ", guidance)}]");
-            if (guidance.Contains(update_guidances.reboot_host) ||
-                guidance.Contains(update_guidances.restart_toolstack))
-            {
-                // Either restart returns before it has happened, and if this host is the coordinator
-                // it takes this session with it - so note when the host last started, restart it, and
-                // reconnect until it reports a newer start and is live again.
-                var rebooting = guidance.Contains(update_guidances.reboot_host);
-                var key = rebooting ? "boot_time" : "agent_start_time";
-                Host.get_other_config(session, h).TryGetValue(key, out var before);
-                if (rebooting) Host.reboot(session, h);           // reboot into the updated software
-                else Host.restart_agent(session, h);
-                session = WaitForRestart(url, user, password, host.uuid, key, before);
-            }
-            EnableWhenBooted(session, h);          // return the host to service
-        }
-    }
-    finally
-    {
-        Pool.set_repositories(session, pool, previous);
-        foreach (var repo in repos) Repository.forget(session, repo.opaque_ref);
-    }
-    Console.WriteLine("OK: rolling-pool-update");
-    session.logout();
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Synced updates; hash length 64
-Updating sdk-host1:
-  applied; pending guidance = []
-Updating sdk-host2:
-  applied; pending guidance = []
-OK: rolling-pool-update
-```
-
-</details>
-
-## Python
-
-Source: [`python/updates/rolling_pool_update.py`](../../python/updates/rolling_pool_update.py)
-
-```python
-"""Rolling pool update.
-
-Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host in
-turn - coordinator first - apply the updates (evacuating its VMs first only if that turns out to be
-needed), reboot if asked to, and re-enable it — host-by-host orchestration.
-
-Run it::
-
-    rolling_pool_update("https://xenserver", "root", password, "https://repo.ops.xenserver.com/xs9",
-    "https://repo-src.ops.xenserver.com/xs9")
-"""
-
-import XenAPI
-
-from connection import connect
-from helpers import enable_when_booted, introduce_update_repositories, wait_for_restart
-
-
-def rolling_pool_update(url, username, password, repo_url, source_url):
-    """Apply the CDN's updates host-by-host, coordinator first, so the pool never goes fully offline.
-
-    Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
-    for Workload Balancing to be switched off before you start updating - so check both up front and
-    stop rather than disabling either for you; turn them back on again once the update is done.
-    Needs an enabled update repository the same way apply-update does - introduce and attach a
-    throwaway one, forget it again afterwards. Modern xapi (>=23.18.0) doesn't reboot a host for
-    you: it only records pending_guidances, so only reboot (or restart the toolstack) when the
-    applied batch actually asks for it, and only evacuate a host first if applying without doing so
-    fails with HOST_EVACUATION_IS_REQUIRED - most updates don't need it. Guidance that targets VMs
-    instead of hosts (for example restarting a VM) is not handled here."""
-    session = connect(url, username, password)
-    pool = session.xenapi.pool.get_all()[0]
-    if session.xenapi.pool.get_ha_enabled(pool) or session.xenapi.pool.get_wlb_enabled(pool):
-        raise RuntimeError("HA and Workload Balancing must both be off before updating the pool; "
-                            "disable them, run this again, then re-enable them once it finishes")
-    repos = introduce_update_repositories(session, repo_url, source_url)
-    # Remember the pool's own repositories, to put them back afterwards.
-    previous = session.xenapi.pool.get_repositories(pool)
-    session.xenapi.pool.set_repositories(pool, repos)
-    try:
-        hash_ = session.xenapi.pool.sync_updates(pool, False, "", "")
-        print("Synced updates; hash length %d" % len(hash_))
-
-        # The rolling pattern: apply -> evacuate and retry only if that turns out to be needed ->
-        # reboot (only if asked) -> re-enable, one host at a time, coordinator first.
-        hosts = session.xenapi.host.get_all_records()
-        master = session.xenapi.pool.get_master(pool)
-        ordered_refs = [master] + [ref for ref in hosts if ref != master]
-        for host_ref in ordered_refs:
-            host = hosts[host_ref]
-            print("Updating %s:" % host["name_label"])
-            try:
-                session.xenapi.host.apply_updates(host_ref, hash_)  # apply the synced updates
-            except XenAPI.Failure as e:
-                if e.details[0] != "HOST_EVACUATION_IS_REQUIRED":
-                    raise
-                print("  needs evacuating first; evacuating and retrying")
-                session.xenapi.host.disable(host_ref)   # stop new VMs landing here
-                session.xenapi.host.evacuate(host_ref)  # move running guests to the rest of the pool
-                session.xenapi.host.apply_updates(host_ref, hash_)
-                session.xenapi.host.enable(host_ref)
-            guidance = session.xenapi.host.get_pending_guidances(host_ref)
-            print("  applied; pending guidance = [%s]" % ", ".join(guidance))
-            if "reboot_host" in guidance or "restart_toolstack" in guidance:
-                # Either restart returns before it has happened, and if this host is the coordinator
-                # it takes this session with it - so note when the host last started, restart it, and
-                # reconnect until it reports a newer start and is live again.
-                key = "boot_time" if "reboot_host" in guidance else "agent_start_time"
-                before = session.xenapi.host.get_other_config(host_ref).get(key)
-                if key == "boot_time":
-                    session.xenapi.host.reboot(host_ref)       # reboot into the updated software
-                else:
-                    session.xenapi.host.restart_agent(host_ref)
-                session = wait_for_restart(url, username, password, host["uuid"], key, before)
-            enable_when_booted(session.xenapi, host_ref)       # return the host to service
-    finally:
-        session.xenapi.pool.set_repositories(pool, previous)
-        for repo in repos:
-            session.xenapi.Repository.forget(repo)
-    print("OK: rolling-pool-update")
-    session.xenapi.session.logout()
-```
-
-<details><summary>Example output</summary>
-
-```text
-Synced updates; hash length 64
-Updating sdk-host1:
-  applied; pending guidance = []
-Updating sdk-host2:
-  applied; pending guidance = []
-OK: rolling-pool-update
-```
-
-</details>
-
-## Java
-
-Source: [`java/src/main/java/com/xenserver/samples/updates/RollingPoolUpdate.java`](../../java/src/main/java/com/xenserver/samples/updates/RollingPoolUpdate.java)
-
-```java
-package com.xenserver.samples.updates;
-
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.Repository;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Types;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.xenserver.samples.Helpers.enableWhenBooted;
-import static com.xenserver.samples.Helpers.introduceUpdateRepositories;
-import static com.xenserver.samples.Helpers.waitForRestart;
-import static com.xenserver.samples.PoolConnection.connect;
-
-public final class RollingPoolUpdate {
-    private RollingPoolUpdate() {
-    }
-
-    /**
-     * Rolling pool update.
-     *
-     * <p>Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host
-     * in turn - coordinator first - apply the updates (evacuating its VMs first only if that turns out to
-     * be needed), reboot if asked to, and re-enable it — host-by-host orchestration.
-     *
-     * <p>Host.applyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-     * Workload Balancing to be switched off before you start updating - so check both up front and stop
-     * rather than disabling either for you; turn them back on again once the update is done.
-     *
-     * <p>Needs an enabled update repository the same way apply-update does - introduce and attach a
-     * throwaway one, forget it again afterwards. Modern xapi (&gt;=23.18.0) doesn't reboot a host for you:
-     * it only records pending guidance, so only reboot (or restart the toolstack) when the applied batch
-     * actually asks for it, and only evacuate a host first if applying without doing so fails with
-     * HOST_EVACUATION_IS_REQUIRED - most updates don't need it. Guidance that targets VMs instead of hosts
-     * (for example restarting a VM) is not handled here.
-     *
-     * <p>Run it:
-     *
-     * <pre>{@code
-     * RollingPoolUpdate.run("https://xenserver", "root", password, "https://repo.ops.xenserver.com/xs9",
-     * "https://repo-src.ops.xenserver.com/xs9");
-     * }</pre>
-     */
-    public static void run(String url, String user, String password, String repoUrl,
-            String sourceUrl) throws Exception {
-        Connection conn = connect(url, user, password);
-        Pool pool = Pool.getAll(conn).iterator().next();
-        if (pool.getHaEnabled(conn) || pool.getWlbEnabled(conn)) {
-            throw new RuntimeException("HA and Workload Balancing must both be off before updating the "
-                    + "pool; disable them, run this again, then re-enable them once it finishes");
-        }
-        Set<Repository> repos = introduceUpdateRepositories(conn, repoUrl, sourceUrl);
-        // Remember the pool's own repositories, to put them back afterwards.
-        Set<Repository> previous = pool.getRepositories(conn);
-        pool.setRepositories(conn, repos);
-        try {
-            String hash = pool.syncUpdates(conn, false, "", "");
-            System.out.println("Synced updates; hash length " + hash.length());
-
-            // The rolling pattern: apply -> evacuate and retry only if that turns out to be needed ->
-            // reboot (only if asked) -> re-enable, one host at a time, coordinator first.
-            Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
-            Host master = pool.getMaster(conn);
-            List<Host> ordered = new ArrayList<>();
-            ordered.add(master);
-            for (Host h : hosts.keySet()) {
-                if (!h.equals(master)) ordered.add(h);
-            }
-            for (Host host : ordered) {
-                Host.Record rec = hosts.get(host);
-                System.out.println("Updating " + rec.nameLabel + ":");
-                try {
-                    host.applyUpdates(conn, hash); // apply the synced updates
-                } catch (Types.HostEvacuationIsRequired ex) {
-                    System.out.println("  needs evacuating first; evacuating and retrying");
-                    host.disable(conn);            // stop new VMs landing here
-                    host.evacuate(conn);           // move running guests to the rest of the pool
-                    host.applyUpdates(conn, hash);
-                    host.enable(conn);
-                }
-                Set<Types.UpdateGuidances> guidance = host.getPendingGuidances(conn);
-                System.out.println("  applied; pending guidance = " + guidance);
-                if (guidance.contains(Types.UpdateGuidances.REBOOT_HOST)
-                        || guidance.contains(Types.UpdateGuidances.RESTART_TOOLSTACK)) {
-                    // Either restart returns before it has happened, and if this host is the coordinator
-                    // it takes this connection with it - so note when the host last started, restart it,
-                    // and reconnect until it reports a newer start and is live again.
-                    boolean reboot = guidance.contains(Types.UpdateGuidances.REBOOT_HOST);
-                    String key = reboot ? "boot_time" : "agent_start_time";
-                    String before = host.getOtherConfig(conn).get(key);
-                    if (reboot) {
-                        host.reboot(conn);     // reboot into the updated software
-                    } else {
-                        host.restartAgent(conn);
-                    }
-                    conn = waitForRestart(url, user, password, rec.uuid, key, before);
-                }
-                enableWhenBooted(conn, host);  // return the host to service
-            }
-        } finally {
-            pool.setRepositories(conn, previous);
-            for (Repository repo : repos) repo.forget(conn);
-        }
-        System.out.println("OK: rolling-pool-update");
-        Session.logout(conn);
-    }
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Synced updates; hash length 64
-Updating sdk-host1:
-  applied; pending guidance = []
-Updating sdk-host2:
-  applied; pending guidance = []
-OK: rolling-pool-update
-```
-
-</details>
-
-## Go
-
-Source: [`go/rolling_pool_update.go`](../../go/rolling_pool_update.go)
-
-```go
-package main
-
-import (
-	"fmt"
-
-	"go/xenapi"
-)
-
-// rollingPoolUpdate applies the CDN's updates host-by-host, coordinator first, so the pool never
-// goes fully offline.
-//
-// Host.ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-// Workload Balancing to be switched off before you start updating - so check both up front and stop
-// rather than disabling either for you; turn them back on again once the update is done.
-//
-// Needs an enabled update repository the same way apply-update does - introduce and attach a
-// throwaway one, forget it again afterwards. Modern xapi (>=23.18.0) doesn't reboot a host for you:
-// it only records pending_guidances, so only reboot (or restart the toolstack) when the applied
-// batch actually asks for it, and only evacuate a host first if applying without doing so fails
-// with HOST_EVACUATION_IS_REQUIRED - most updates don't need it. Guidance that targets VMs instead
-// of hosts (for example restarting a VM) is not handled here.
-func rollingPoolUpdate(url, user, password, repoURL, sourceURL string) {
-	session := connect(url, user, password)
-	// Deferred first, so it runs LAST: after the deferred repository restore below, which needs
-	// the session. A closure, so it logs out whichever session is current by then.
-	defer func() { session.Logout() }()
-	pools, err := xenapi.Pool.GetAll(session)
-	check(err)
-	pool := pools[0]
-	haEnabled, err := xenapi.Pool.GetHaEnabled(session, pool)
-	check(err)
-	wlbEnabled, err := xenapi.Pool.GetWlbEnabled(session, pool)
-	check(err)
-	if haEnabled || wlbEnabled {
-		panic("HA and Workload Balancing must both be off before updating the pool; disable them, " +
-			"run this again, then re-enable them once it finishes")
-	}
-	repos := introduceUpdateRepositories(session, repoURL, sourceURL)
-	// Remember the pool's own repositories, to put them back afterwards.
-	previous, perr := xenapi.Pool.GetRepositories(session, pool)
-	check(perr)
-	check(xenapi.Pool.SetRepositories(session, pool, repos))
-	defer func() {
-		check(xenapi.Pool.SetRepositories(session, pool, previous))
-		for _, repo := range repos {
-			check(xenapi.Repository.Forget(session, repo))
-		}
-	}()
-
-	hash, err := xenapi.Pool.SyncUpdates5(session, pool, false, "", "")
-	check(err)
-	fmt.Printf("Synced updates; hash length %d\n", len(hash))
-
-	// The rolling pattern: apply -> evacuate and retry only if that turns out to be needed ->
-	// reboot (only if asked) -> re-enable, one host at a time, coordinator first.
-	hosts, err := xenapi.Host.GetAllRecords(session)
-	check(err)
-	master, err := xenapi.Pool.GetMaster(session, pool)
-	check(err)
-	orderedRefs := []xenapi.HostRef{master}
-	for hostRef := range hosts {
-		if hostRef != master {
-			orderedRefs = append(orderedRefs, hostRef)
-		}
-	}
-	for _, hostRef := range orderedRefs {
-		host := hosts[hostRef]
-		fmt.Printf("Updating %s:\n", host.NameLabel)
-		if _, err := xenapi.Host.ApplyUpdates(session, hostRef, hash); err != nil {
-			if failureCode(err) != xenapi.ErrorHostEvacuationIsRequired {
-				panic(err)
-			}
-			fmt.Println("  needs evacuating first; evacuating and retrying")
-			check(xenapi.Host.Disable(session, hostRef, true)) // stop new VMs landing here
-			check(xenapi.Host.Evacuate2(session, hostRef))     // move running guests to the rest of the pool
-			_, err := xenapi.Host.ApplyUpdates(session, hostRef, hash)
-			check(err)
-			check(xenapi.Host.Enable(session, hostRef))
-		}
-		guidance, _ := xenapi.Host.GetPendingGuidances(session, hostRef)
-		fmt.Printf("  applied; pending guidance = %v\n", guidance)
-		rebootHost := containsGuidance(guidance, xenapi.UpdateGuidancesRebootHost)
-		restartToolstack := containsGuidance(guidance, xenapi.UpdateGuidancesRestartToolstack)
-		if rebootHost || restartToolstack {
-			// Either restart returns before it has happened, and if this host is the coordinator it
-			// takes this session with it - so note when the host last started, restart it, and
-			// reconnect until it reports a newer start and is live again.
-			key := "agent_start_time"
-			if rebootHost {
-				key = "boot_time"
-			}
-			otherConfig, err := xenapi.Host.GetOtherConfig(session, hostRef)
-			check(err)
-			before := otherConfig[key]
-			if rebootHost {
-				check(xenapi.Host.Reboot(session, hostRef)) // reboot into the updated software
-			} else {
-				check(xenapi.Host.RestartAgent(session, hostRef))
-			}
-			session = waitForRestart(url, user, password, host.UUID, key, before)
-		}
-		enableWhenBooted(session, hostRef) // return the host to service
-	}
-	fmt.Println("OK: rolling-pool-update")
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Synced updates; hash length 64
-Updating sdk-host1:
-  applied; pending guidance = []
-Updating sdk-host2:
-  applied; pending guidance = []
-OK: rolling-pool-update
-```
-
-</details>
-
 ## PowerShell
 
 Source: [`powershell/Updates/Invoke-RollingPoolUpdate.ps1`](../../powershell/Updates/Invoke-RollingPoolUpdate.ps1)
@@ -686,6 +223,469 @@ Updating sdk-host1:
   applied; pending guidance = 
 Updating sdk-host2:
   applied; pending guidance = 
+OK: rolling-pool-update
+```
+
+</details>
+
+## Python
+
+Source: [`python/updates/rolling_pool_update.py`](../../python/updates/rolling_pool_update.py)
+
+```python
+"""Rolling pool update.
+
+Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host in
+turn - coordinator first - apply the updates (evacuating its VMs first only if that turns out to be
+needed), reboot if asked to, and re-enable it — host-by-host orchestration.
+
+Run it::
+
+    rolling_pool_update("https://xenserver", "root", password, "https://repo.ops.xenserver.com/xs9",
+    "https://repo-src.ops.xenserver.com/xs9")
+"""
+
+import XenAPI
+
+from connection import connect
+from helpers import enable_when_booted, introduce_update_repositories, wait_for_restart
+
+
+def rolling_pool_update(url, username, password, repo_url, source_url):
+    """Apply the CDN's updates host-by-host, coordinator first, so the pool never goes fully offline.
+
+    Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
+    for Workload Balancing to be switched off before you start updating - so check both up front and
+    stop rather than disabling either for you; turn them back on again once the update is done.
+    Needs an enabled update repository the same way apply-update does - introduce and attach a
+    throwaway one, forget it again afterwards. Modern xapi (>=23.18.0) doesn't reboot a host for
+    you: it only records pending_guidances, so only reboot (or restart the toolstack) when the
+    applied batch actually asks for it, and only evacuate a host first if applying without doing so
+    fails with HOST_EVACUATION_IS_REQUIRED - most updates don't need it. Guidance that targets VMs
+    instead of hosts (for example restarting a VM) is not handled here."""
+    session = connect(url, username, password)
+    pool = session.xenapi.pool.get_all()[0]
+    if session.xenapi.pool.get_ha_enabled(pool) or session.xenapi.pool.get_wlb_enabled(pool):
+        raise RuntimeError("HA and Workload Balancing must both be off before updating the pool; "
+                            "disable them, run this again, then re-enable them once it finishes")
+    repos = introduce_update_repositories(session, repo_url, source_url)
+    # Remember the pool's own repositories, to put them back afterwards.
+    previous = session.xenapi.pool.get_repositories(pool)
+    session.xenapi.pool.set_repositories(pool, repos)
+    try:
+        hash_ = session.xenapi.pool.sync_updates(pool, False, "", "")
+        print("Synced updates; hash length %d" % len(hash_))
+
+        # The rolling pattern: apply -> evacuate and retry only if that turns out to be needed ->
+        # reboot (only if asked) -> re-enable, one host at a time, coordinator first.
+        hosts = session.xenapi.host.get_all_records()
+        master = session.xenapi.pool.get_master(pool)
+        ordered_refs = [master] + [ref for ref in hosts if ref != master]
+        for host_ref in ordered_refs:
+            host = hosts[host_ref]
+            print("Updating %s:" % host["name_label"])
+            try:
+                session.xenapi.host.apply_updates(host_ref, hash_)  # apply the synced updates
+            except XenAPI.Failure as e:
+                if e.details[0] != "HOST_EVACUATION_IS_REQUIRED":
+                    raise
+                print("  needs evacuating first; evacuating and retrying")
+                session.xenapi.host.disable(host_ref)   # stop new VMs landing here
+                session.xenapi.host.evacuate(host_ref)  # move running guests to the rest of the pool
+                session.xenapi.host.apply_updates(host_ref, hash_)
+                session.xenapi.host.enable(host_ref)
+            guidance = session.xenapi.host.get_pending_guidances(host_ref)
+            print("  applied; pending guidance = [%s]" % ", ".join(guidance))
+            if "reboot_host" in guidance or "restart_toolstack" in guidance:
+                # Either restart returns before it has happened, and if this host is the coordinator
+                # it takes this session with it - so note when the host last started, restart it, and
+                # reconnect until it reports a newer start and is live again.
+                key = "boot_time" if "reboot_host" in guidance else "agent_start_time"
+                before = session.xenapi.host.get_other_config(host_ref).get(key)
+                if key == "boot_time":
+                    session.xenapi.host.reboot(host_ref)       # reboot into the updated software
+                else:
+                    session.xenapi.host.restart_agent(host_ref)
+                session = wait_for_restart(url, username, password, host["uuid"], key, before)
+            enable_when_booted(session.xenapi, host_ref)       # return the host to service
+    finally:
+        session.xenapi.pool.set_repositories(pool, previous)
+        for repo in repos:
+            session.xenapi.Repository.forget(repo)
+    print("OK: rolling-pool-update")
+    session.xenapi.session.logout()
+```
+
+<details><summary>Example output</summary>
+
+```text
+Synced updates; hash length 64
+Updating sdk-host1:
+  applied; pending guidance = []
+Updating sdk-host2:
+  applied; pending guidance = []
+OK: rolling-pool-update
+```
+
+</details>
+
+## C# (.NET)
+
+Source: [`csharp/Updates/RollingPoolUpdate.cs`](../../csharp/Updates/RollingPoolUpdate.cs)
+
+```csharp
+/// <summary>
+/// Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host in
+/// turn - coordinator first - apply the updates (evacuating its VMs first only if that turns out to be
+/// needed), reboot if asked to, and re-enable it — host-by-host orchestration.
+/// </summary>
+/// <example>
+/// <code>
+/// Workflows.RollingPoolUpdate("https://xenserver", "root", password, "https://repo.ops.xenserver.com/xs9",
+/// Workflows."https://repo-src.ops.xenserver.com/xs9");
+/// </code>
+/// </example>
+public static void RollingPoolUpdate(string url, string user, string password, string repoUrl, string sourceUrl)
+{
+    var session = Connect(url, user, password);
+    var pool = Pool.get_all(session)[0].opaque_ref;
+    // Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
+    // for Workload Balancing to be switched off before you start updating - so check both up front
+    // and stop rather than disabling either for you; turn them back on again once the update is done.
+    if (Pool.get_ha_enabled(session, pool) || Pool.get_wlb_enabled(session, pool))
+        throw new Exception("HA and Workload Balancing must both be off before updating the pool; " +
+                             "disable them, run this again, then re-enable them once it finishes");
+    // Needs an enabled update repository the same way apply-update does - introduce and attach a
+    // throwaway one, forget it again afterwards.
+    var repos = IntroduceUpdateRepositories(session, repoUrl, sourceUrl);
+    // Remember the pool's own repositories, to put them back afterwards.
+    var previous = Pool.get_repositories(session, pool);
+    Pool.set_repositories(session, pool, repos);
+    try
+    {
+        // Sync the pool's update metadata; the returned hash identifies the synced set.
+        var hash = Pool.sync_updates(session, pool, false, "", "");
+        Console.WriteLine($"Synced updates; hash length {hash.Length}");
+
+        // Apply them host-by-host, coordinator first, so the pool never goes fully offline (the
+        // rolling pattern): apply -> evacuate and retry only if that turns out to be needed ->
+        // reboot (only if asked) -> re-enable. Modern xapi (>=23.18.0) doesn't reboot a host
+        // for you: it only records pending_guidances, so only reboot (or restart the toolstack)
+        // when the applied batch actually asks for it. (Guidance that targets VMs instead of
+        // hosts, for example restarting a VM, is not handled here.)
+        var hosts = Host.get_all_records(session);
+        var master = Pool.get_master(session, pool);
+        var orderedRefs = new[] { master }.Concat(hosts.Keys.Where(r => r.opaque_ref != master.opaque_ref));
+        foreach (var hostRef in orderedRefs)
+        {
+            var host = hosts[hostRef];
+            var h = hostRef.opaque_ref;
+            Console.WriteLine($"Updating {host.name_label}:");
+            try
+            {
+                Host.apply_updates(session, h, hash);  // apply the synced updates
+            }
+            catch (Failure f) when (f.ErrorDescription[0] == "HOST_EVACUATION_IS_REQUIRED")
+            {
+                Console.WriteLine("  needs evacuating first; evacuating and retrying");
+                Host.disable(session, h);   // stop new VMs landing here
+                Host.evacuate(session, h);  // move running guests to the rest of the pool
+                Host.apply_updates(session, h, hash);
+                Host.enable(session, h);
+            }
+            var guidance = Host.get_pending_guidances(session, h);
+            Console.WriteLine($"  applied; pending guidance = [{string.Join(", ", guidance)}]");
+            if (guidance.Contains(update_guidances.reboot_host) ||
+                guidance.Contains(update_guidances.restart_toolstack))
+            {
+                // Either restart returns before it has happened, and if this host is the coordinator
+                // it takes this session with it - so note when the host last started, restart it, and
+                // reconnect until it reports a newer start and is live again.
+                var rebooting = guidance.Contains(update_guidances.reboot_host);
+                var key = rebooting ? "boot_time" : "agent_start_time";
+                Host.get_other_config(session, h).TryGetValue(key, out var before);
+                if (rebooting) Host.reboot(session, h);           // reboot into the updated software
+                else Host.restart_agent(session, h);
+                session = WaitForRestart(url, user, password, host.uuid, key, before);
+            }
+            EnableWhenBooted(session, h);          // return the host to service
+        }
+    }
+    finally
+    {
+        Pool.set_repositories(session, pool, previous);
+        foreach (var repo in repos) Repository.forget(session, repo.opaque_ref);
+    }
+    Console.WriteLine("OK: rolling-pool-update");
+    session.logout();
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Synced updates; hash length 64
+Updating sdk-host1:
+  applied; pending guidance = []
+Updating sdk-host2:
+  applied; pending guidance = []
+OK: rolling-pool-update
+```
+
+</details>
+
+## Go
+
+Source: [`go/rolling_pool_update.go`](../../go/rolling_pool_update.go)
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"go/xenapi"
+)
+
+// rollingPoolUpdate applies the CDN's updates host-by-host, coordinator first, so the pool never
+// goes fully offline.
+//
+// Host.ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+// Workload Balancing to be switched off before you start updating - so check both up front and stop
+// rather than disabling either for you; turn them back on again once the update is done.
+//
+// Needs an enabled update repository the same way apply-update does - introduce and attach a
+// throwaway one, forget it again afterwards. Modern xapi (>=23.18.0) doesn't reboot a host for you:
+// it only records pending_guidances, so only reboot (or restart the toolstack) when the applied
+// batch actually asks for it, and only evacuate a host first if applying without doing so fails
+// with HOST_EVACUATION_IS_REQUIRED - most updates don't need it. Guidance that targets VMs instead
+// of hosts (for example restarting a VM) is not handled here.
+func rollingPoolUpdate(url, user, password, repoURL, sourceURL string) {
+	session := connect(url, user, password)
+	// Deferred first, so it runs LAST: after the deferred repository restore below, which needs
+	// the session. A closure, so it logs out whichever session is current by then.
+	defer func() { session.Logout() }()
+	pools, err := xenapi.Pool.GetAll(session)
+	check(err)
+	pool := pools[0]
+	haEnabled, err := xenapi.Pool.GetHaEnabled(session, pool)
+	check(err)
+	wlbEnabled, err := xenapi.Pool.GetWlbEnabled(session, pool)
+	check(err)
+	if haEnabled || wlbEnabled {
+		panic("HA and Workload Balancing must both be off before updating the pool; disable them, " +
+			"run this again, then re-enable them once it finishes")
+	}
+	repos := introduceUpdateRepositories(session, repoURL, sourceURL)
+	// Remember the pool's own repositories, to put them back afterwards.
+	previous, perr := xenapi.Pool.GetRepositories(session, pool)
+	check(perr)
+	check(xenapi.Pool.SetRepositories(session, pool, repos))
+	defer func() {
+		check(xenapi.Pool.SetRepositories(session, pool, previous))
+		for _, repo := range repos {
+			check(xenapi.Repository.Forget(session, repo))
+		}
+	}()
+
+	hash, err := xenapi.Pool.SyncUpdates5(session, pool, false, "", "")
+	check(err)
+	fmt.Printf("Synced updates; hash length %d\n", len(hash))
+
+	// The rolling pattern: apply -> evacuate and retry only if that turns out to be needed ->
+	// reboot (only if asked) -> re-enable, one host at a time, coordinator first.
+	hosts, err := xenapi.Host.GetAllRecords(session)
+	check(err)
+	master, err := xenapi.Pool.GetMaster(session, pool)
+	check(err)
+	orderedRefs := []xenapi.HostRef{master}
+	for hostRef := range hosts {
+		if hostRef != master {
+			orderedRefs = append(orderedRefs, hostRef)
+		}
+	}
+	for _, hostRef := range orderedRefs {
+		host := hosts[hostRef]
+		fmt.Printf("Updating %s:\n", host.NameLabel)
+		if _, err := xenapi.Host.ApplyUpdates(session, hostRef, hash); err != nil {
+			if failureCode(err) != xenapi.ErrorHostEvacuationIsRequired {
+				panic(err)
+			}
+			fmt.Println("  needs evacuating first; evacuating and retrying")
+			check(xenapi.Host.Disable(session, hostRef, true)) // stop new VMs landing here
+			check(xenapi.Host.Evacuate2(session, hostRef))     // move running guests to the rest of the pool
+			_, err := xenapi.Host.ApplyUpdates(session, hostRef, hash)
+			check(err)
+			check(xenapi.Host.Enable(session, hostRef))
+		}
+		guidance, _ := xenapi.Host.GetPendingGuidances(session, hostRef)
+		fmt.Printf("  applied; pending guidance = %v\n", guidance)
+		rebootHost := containsGuidance(guidance, xenapi.UpdateGuidancesRebootHost)
+		restartToolstack := containsGuidance(guidance, xenapi.UpdateGuidancesRestartToolstack)
+		if rebootHost || restartToolstack {
+			// Either restart returns before it has happened, and if this host is the coordinator it
+			// takes this session with it - so note when the host last started, restart it, and
+			// reconnect until it reports a newer start and is live again.
+			key := "agent_start_time"
+			if rebootHost {
+				key = "boot_time"
+			}
+			otherConfig, err := xenapi.Host.GetOtherConfig(session, hostRef)
+			check(err)
+			before := otherConfig[key]
+			if rebootHost {
+				check(xenapi.Host.Reboot(session, hostRef)) // reboot into the updated software
+			} else {
+				check(xenapi.Host.RestartAgent(session, hostRef))
+			}
+			session = waitForRestart(url, user, password, host.UUID, key, before)
+		}
+		enableWhenBooted(session, hostRef) // return the host to service
+	}
+	fmt.Println("OK: rolling-pool-update")
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Synced updates; hash length 64
+Updating sdk-host1:
+  applied; pending guidance = []
+Updating sdk-host2:
+  applied; pending guidance = []
+OK: rolling-pool-update
+```
+
+</details>
+
+## Java
+
+Source: [`java/src/main/java/com/xenserver/samples/updates/RollingPoolUpdate.java`](../../java/src/main/java/com/xenserver/samples/updates/RollingPoolUpdate.java)
+
+```java
+package com.xenserver.samples.updates;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.Repository;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.xenserver.samples.Helpers.enableWhenBooted;
+import static com.xenserver.samples.Helpers.introduceUpdateRepositories;
+import static com.xenserver.samples.Helpers.waitForRestart;
+import static com.xenserver.samples.PoolConnection.connect;
+
+public final class RollingPoolUpdate {
+    private RollingPoolUpdate() {
+    }
+
+    /**
+     * Rolling pool update.
+     *
+     * <p>Apply the CDN's updates across the pool with zero downtime: sync the metadata, then for each host
+     * in turn - coordinator first - apply the updates (evacuating its VMs first only if that turns out to
+     * be needed), reboot if asked to, and re-enable it — host-by-host orchestration.
+     *
+     * <p>Host.applyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+     * Workload Balancing to be switched off before you start updating - so check both up front and stop
+     * rather than disabling either for you; turn them back on again once the update is done.
+     *
+     * <p>Needs an enabled update repository the same way apply-update does - introduce and attach a
+     * throwaway one, forget it again afterwards. Modern xapi (&gt;=23.18.0) doesn't reboot a host for you:
+     * it only records pending guidance, so only reboot (or restart the toolstack) when the applied batch
+     * actually asks for it, and only evacuate a host first if applying without doing so fails with
+     * HOST_EVACUATION_IS_REQUIRED - most updates don't need it. Guidance that targets VMs instead of hosts
+     * (for example restarting a VM) is not handled here.
+     *
+     * <p>Run it:
+     *
+     * <pre>{@code
+     * RollingPoolUpdate.run("https://xenserver", "root", password, "https://repo.ops.xenserver.com/xs9",
+     * "https://repo-src.ops.xenserver.com/xs9");
+     * }</pre>
+     */
+    public static void run(String url, String user, String password, String repoUrl,
+            String sourceUrl) throws Exception {
+        Connection conn = connect(url, user, password);
+        Pool pool = Pool.getAll(conn).iterator().next();
+        if (pool.getHaEnabled(conn) || pool.getWlbEnabled(conn)) {
+            throw new RuntimeException("HA and Workload Balancing must both be off before updating the "
+                    + "pool; disable them, run this again, then re-enable them once it finishes");
+        }
+        Set<Repository> repos = introduceUpdateRepositories(conn, repoUrl, sourceUrl);
+        // Remember the pool's own repositories, to put them back afterwards.
+        Set<Repository> previous = pool.getRepositories(conn);
+        pool.setRepositories(conn, repos);
+        try {
+            String hash = pool.syncUpdates(conn, false, "", "");
+            System.out.println("Synced updates; hash length " + hash.length());
+
+            // The rolling pattern: apply -> evacuate and retry only if that turns out to be needed ->
+            // reboot (only if asked) -> re-enable, one host at a time, coordinator first.
+            Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
+            Host master = pool.getMaster(conn);
+            List<Host> ordered = new ArrayList<>();
+            ordered.add(master);
+            for (Host h : hosts.keySet()) {
+                if (!h.equals(master)) ordered.add(h);
+            }
+            for (Host host : ordered) {
+                Host.Record rec = hosts.get(host);
+                System.out.println("Updating " + rec.nameLabel + ":");
+                try {
+                    host.applyUpdates(conn, hash); // apply the synced updates
+                } catch (Types.HostEvacuationIsRequired ex) {
+                    System.out.println("  needs evacuating first; evacuating and retrying");
+                    host.disable(conn);            // stop new VMs landing here
+                    host.evacuate(conn);           // move running guests to the rest of the pool
+                    host.applyUpdates(conn, hash);
+                    host.enable(conn);
+                }
+                Set<Types.UpdateGuidances> guidance = host.getPendingGuidances(conn);
+                System.out.println("  applied; pending guidance = " + guidance);
+                if (guidance.contains(Types.UpdateGuidances.REBOOT_HOST)
+                        || guidance.contains(Types.UpdateGuidances.RESTART_TOOLSTACK)) {
+                    // Either restart returns before it has happened, and if this host is the coordinator
+                    // it takes this connection with it - so note when the host last started, restart it,
+                    // and reconnect until it reports a newer start and is live again.
+                    boolean reboot = guidance.contains(Types.UpdateGuidances.REBOOT_HOST);
+                    String key = reboot ? "boot_time" : "agent_start_time";
+                    String before = host.getOtherConfig(conn).get(key);
+                    if (reboot) {
+                        host.reboot(conn);     // reboot into the updated software
+                    } else {
+                        host.restartAgent(conn);
+                    }
+                    conn = waitForRestart(url, user, password, rec.uuid, key, before);
+                }
+                enableWhenBooted(conn, host);  // return the host to service
+            }
+        } finally {
+            pool.setRepositories(conn, previous);
+            for (Repository repo : repos) repo.forget(conn);
+        }
+        System.out.println("OK: rolling-pool-update");
+        Session.logout(conn);
+    }
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Synced updates; hash length 64
+Updating sdk-host1:
+  applied; pending guidance = []
+Updating sdk-host2:
+  applied; pending guidance = []
 OK: rolling-pool-update
 ```
 

@@ -5,8 +5,8 @@ remote API every XenServer management client uses to manage a pool of XenServer 
 it, you can do it from code.
 
 This guide is deliberately short. It gives you enough to get oriented, then hands you to the
-[workflow examples](workflows/README.md): real, runnable code for 90 common tasks, each in C#, Python,
-Java, Go, PowerShell and the `xe` CLI, side by side, with the output of running it.
+[workflow examples](workflows/README.md): real, runnable code for 90 common tasks, each in PowerShell,
+the `xe` CLI, Python, C#, Go and Java, side by side, with the output of running it.
 
 1. [Getting started](getting-started.md): pick a language, run your first example, the shape of every program.
 2. [Core concepts](concepts.md): records and references, accessors, messages, tasks and events.

@@ -11,8 +11,8 @@ knows about, you can read and (with the right role) change.
 
 ## Pick your language
 
-Bindings are provided for **C#**, **Python**, **Java**, **Go** and **PowerShell** (the
-`XenServerPSModule`, which wraps the .NET binding), plus the **`xe`** command-line tool. Every binding
+You can drive a pool from **PowerShell** (the `XenServerPSModule`, which wraps the .NET binding), the
+**`xe`** command-line tool, or the bindings for **Python**, **C#**, **Go** and **Java**. Every binding
 exposes the same object model and the same messages; only the naming conventions differ, so an example
 in one language reads the same as in another. The [workflow examples](workflows/README.md) show every
 task in all of them side by side, so you can read the one you know and write the one you need. (A C
@@ -21,8 +21,8 @@ binding also exists, but is deprecated.)
 ## Run your first example
 
 Use a **test pool**, not production: several examples change pool-wide state. Build the language you
-want as its README describes ([C#](../csharp), [Java](../java), [PowerShell](../powershell),
-[Python](../python), [Go](../go), [xe CLI](../cli)), then run the
+want as its README describes ([PowerShell](../powershell), [xe CLI](../cli), [Python](../python),
+[C#](../csharp), [Go](../go), [Java](../java)), then run the
 [Connect & inventory](workflows/connect-inventory.md) example against your pool's coordinator:
 
 ```

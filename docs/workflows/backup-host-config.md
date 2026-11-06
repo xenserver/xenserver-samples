@@ -6,126 +6,113 @@ Download a host's configuration backup and hand it back as a restore would — a
 
 Workflow `backup-host-config`. [All workflows](README.md) · [Connecting](connecting.md)
 
-## C# (.NET)
+## PowerShell
 
-Source: [`csharp/HostsAndPools/BackupHostConfig.cs`](../../csharp/HostsAndPools/BackupHostConfig.cs)
+Source: [`powershell/HostsAndPools/Invoke-BackupHostConfig.ps1`](../../powershell/HostsAndPools/Invoke-BackupHostConfig.ps1)
 
-```csharp
-/// <summary>
-/// Download a host's configuration backup and hand it back as a restore would — and watch another host's
-/// backup be refused.
-/// </summary>
-/// <example>
-/// <code>
-/// Workflows.BackupHostConfig("https://xenserver", "root", password);
-/// </code>
-/// </example>
-/// <remarks>
-/// Both /host_backup and /host_restore are served only by whichever host physically accepted the HTTP
-/// connection - the handler is keyed off the connection's own address, not any ref= in the query string.
-/// So backing up/restoring a host means opening the connection to THAT host's own address, not the pool's
-/// (coordinator) url - a restore sent to the wrong host's connection silently restores the WRONG host.
-/// ref= is kept in the query string for readability in the host's logs.
-/// </remarks>
-public static void BackupHostConfig(string url, string user, string password)
-{
-    var session = Connect(url, user, password);
+```powershell
+function Invoke-BackupHostConfig {
+    <#
+    .SYNOPSIS
+        Back up a host's configuration.
+    .DESCRIPTION
+        Download a host's configuration backup and hand it back as a restore would — and watch another
+        host's backup be refused.
+    .EXAMPLE
+        Invoke-BackupHostConfig -Url https://xenserver -UserName root -Password $password
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$UserName,
+        [Parameter(Mandatory = $true)][string]$Password
+    )
+    $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
-    // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-    var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
-    var hosts = Host.get_all(session).Select(h => h.opaque_ref).OrderBy(h => h != host).ToList();
-    var hostUrl = HostUrl(url, Host.get_address(session, host));
-    Console.WriteLine($"Backing up {Host.get_name_label(session, host)}");
+    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    $coordinator = (Get-XenPool).master.opaque_ref
+    $hosts = @(Get-XenHost | Sort-Object { $_.opaque_ref -ne $coordinator })
+    $vmHost = $hosts[0]
+    $hostUrl = Get-HostUrl -Url $Url -Address $vmHost.address
+    Write-Host "Backing up $($vmHost.name_label)"
 
-    // Stream it: a real host's backup can be hundreds of MB, too large to hold in memory (and,
-    // unlike Python's binding, each XenAPI call below opens its own fresh HttpClient - see
-    // RestoreHostConfig - so there's no idle keep-alive connection here that needs dropping first).
-    var path = Path.Combine(Path.GetTempPath(), $"sdk-example-host-{Guid.NewGuid():N}.backup");
-    using (var client = InsecureHttpClient())
-    {
-        using var response = client.GetAsync(
-            $"{hostUrl}/host_backup?session_id={session.opaque_ref}&ref={host}",
-            HttpCompletionOption.ResponseHeadersRead).Result;
-        response.EnsureSuccessStatusCode();
-        using (var httpStream = response.Content.ReadAsStreamAsync().Result)
-        using (var fileStream = File.Create(path))
-            httpStream.CopyTo(fileStream);
-    }
-    Console.WriteLine($"  wrote {new FileInfo(path).Length} bytes to {Path.GetFileName(path)}");
+    # Both halves are served only by whichever host physically accepted the HTTP connection - the
+    # handler ignores any ref= in the query string entirely, there is no forwarding to another pool
+    # member. So backing up/restoring a host means opening the connection to THAT host's own address,
+    # not to the pool's (coordinator) URL - a restore sent to the wrong host's connection silently
+    # restores the WRONG host, not the one named by ref=. ref= is kept in the query string purely for
+    # log-readability (a real host ignores it; it is not what makes this correct). Still pure
+    # PowerShell: Connect-Example has already trusted the server's certificate.
+    #
+    # -OutFile/-InFile below already stream straight to/from disk rather than buffering the whole file,
+    # and there is no idle-connection step to take after the transfer (unlike the Python/Java ports):
+    # this module's cmdlets dispatch through the C# binding's Session/JsonRpcClient, whose
+    # PerformPostRequest opens a brand-new HttpClient per XenAPI call and disposes it immediately
+    # afterwards - there is no kept-alive session connection that a long transfer could leave idle.
+    $path = Join-Path ([IO.Path]::GetTempPath()) "sdk-example-host-$([guid]::NewGuid().Guid).backup"
+    Invoke-WebRequest -UseBasicParsing -OutFile $path -TimeoutSec 10 `
+        -Uri "$hostUrl/host_backup?session_id=$($session.opaque_ref)&ref=$($vmHost.opaque_ref)"
+    Write-Host "  wrote $((Get-Item $path).Length) bytes to $(Split-Path $path -Leaf)"
 
-    Console.WriteLine($"  restoring it to {Host.get_name_label(session, host)}: "
-                      + RestoreHostConfig(session, hostUrl, host, path));
-    if (hosts.Count > 1)
-    {
-        var other = hosts[1];
-        var otherUrl = HostUrl(url, Host.get_address(session, other));
-        string result;
-        try
-        {
-            result = RestoreHostConfig(session, otherUrl, other, path);
+    Write-Host ("  restoring it to {0}: {1}" -f $vmHost.name_label,
+        (Restore-ExampleHostConfig -Session $session -HostUrl $hostUrl -VMHost $vmHost -Path $path))
+    if ($hosts.Count -gt 1) {
+        # A real pool's hosts are all reachable from a management client; guard against a topology
+        # where a second host's address isn't actually routable from the caller, and turn that into an
+        # informative message instead of a crash.
+        $other = $hosts[1]
+        $otherUrl = Get-HostUrl -Url $Url -Address $other.address
+        try {
+            $result = Restore-ExampleHostConfig -Session $session -HostUrl $otherUrl -VMHost $other -Path $path
         }
-        catch (Exception e)
-        {
-            // A real pool's hosts are all reachable from a management client; this only guards an
-            // environment (a host whose address isn't routable from here, say) where that isn't
-            // true, so the example still finishes cleanly.
-            result = $"could not connect to {otherUrl} directly ({e.Message})";
+        catch {
+            $result = "could not connect to $otherUrl directly ($($_.Exception.Message))"
         }
-        Console.WriteLine($"  restoring it to {Host.get_name_label(session, other)}: {result}");
+        Write-Host ("  restoring it to {0}: {1}" -f $other.name_label, $result)
     }
 
-    File.Delete(path);
-    Console.WriteLine("OK: backup-host-config");
-    session.logout();
+    Remove-Item $path
+    Write-Host "OK: backup-host-config"
+    $session | Disconnect-XenServer
 }
 
-/// <summary>
-/// Build the URL for a given host's own address, keeping the scheme and port the caller originally
-/// connected with (a host's management address carries no port of its own).
-/// </summary>
-private static string HostUrl(string url, string address)
-{
-    var uri = new Uri(url);
-    var port = uri.IsDefaultPort ? "" : $":{uri.Port}";
-    return $"{uri.Scheme}://{address}{port}";
+function Get-HostUrl {
+    <#
+    .SYNOPSIS
+        Build the URL for a given host's own address, keeping the scheme and port the caller originally
+        connected with (a host's management address carries no port of its own).
+    #>
+    param([string]$Url, [string]$Address)
+    $uri = [System.Uri]$Url
+    $port = if ($uri.Port -gt 0) { ":$($uri.Port)" } else { "" }
+    return "$($uri.Scheme)://$Address$port"
 }
 
-/// <summary>
-/// Upload a backup to a host - over a connection opened to THAT host's own address - and report
-/// what the task says about it.
-/// </summary>
-/// <remarks>
-/// An upload answers 200 as soon as it has read the request headers, because the client waits for that
-/// before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
-/// a task you create first, name in the URL, and poll once the upload has finished.
-/// </remarks>
-private static string RestoreHostConfig(Session session, string hostUrl, string host, string path)
-{
-    var task = Task.create(session, "host_restore", "restoring a configuration backup").opaque_ref;
-    try
-    {
-        // Stream the upload too, rather than reading the whole backup into memory first. Every
-        // XenAPI call this binding makes (including task.create/get_status below) opens a brand new
-        // HttpClient and tears it down again - unlike Python's single long-lived xmlrpc.client
-        // connection, there is no idle keep-alive connection here left over from the transfer that
-        // would need to be dropped before the next call.
-        using (var client = InsecureHttpClient())
-        using (var fileStream = File.OpenRead(path))
-        {
-            var response = client.PutAsync(
-                $"{hostUrl}/host_restore?session_id={session.opaque_ref}&ref={host}&task_id={task}",
-                new StreamContent(fileStream)).Result;
-            response.EnsureSuccessStatusCode();
-        }
+function Restore-ExampleHostConfig {
+    <#
+    .SYNOPSIS
+        Uploads a backup to a host - over a connection opened to THAT host's own address - and reports what
+        the task says about it.
+    .DESCRIPTION
+        An upload answers 200 as soon as it has read the request headers, because the client waits for that
+        before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
+        a task you create first, name in the URL, and poll once the upload has finished.
+    #>
+    param($Session, [string]$HostUrl, $VMHost, [string]$Path)
 
-        while (Task.get_status(session, task) == task_status_type.pending)
-            System.Threading.Thread.Sleep(500);
-        if (Task.get_status(session, task) == task_status_type.success) return "accepted";
-        return $"refused ({Task.get_error_info(session, task).Last()})";
+    $task = New-XenTask -Label 'host_restore' -Description 'restoring a configuration backup' -PassThru
+    try {
+        # The timeout covers the whole transfer: a backup is hundreds of MB, so allow for a slow network.
+        Invoke-WebRequest -UseBasicParsing -Method Put -InFile $Path -TimeoutSec 1800 `
+            -Uri ("$HostUrl/host_restore?session_id=$($Session.opaque_ref)" +
+                  "&ref=$($VMHost.opaque_ref)&task_id=$($task.opaque_ref)") | Out-Null
+
+        while ((Get-XenTask -Ref $task.opaque_ref).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
+        $finished = Get-XenTask -Ref $task.opaque_ref
+        if ($finished.status -eq 'success') { return 'accepted' }
+        return "refused ($($finished.error_info[-1]))"
     }
-    finally
-    {
-        Task.destroy(session, task);
+    finally {
+        Remove-XenTask -Ref $task.opaque_ref
     }
 }
 ```
@@ -134,9 +121,75 @@ private static string RestoreHostConfig(Session session, string hostUrl, string 
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-61ff127b714c4cbfadd0e962699d86a4.backup
+  wrote 83 bytes to sdk-example-host-2a64b052-3ca0-4549-9929-cd6cc0ff3f68.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:22292 directly (One or more errors occurred. (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:22292)))
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:38882 directly (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:38882))
+OK: backup-host-config
+```
+
+</details>
+
+## xe CLI
+
+Source: [`cli/hosts-and-pools/backup-host-config.sh`](../../cli/hosts-and-pools/backup-host-config.sh)
+
+```bash
+# Back up a host's configuration.
+#
+# Download a host's configuration backup and hand it back as a restore would — and watch another host's backup
+# be refused.
+#
+# Run it:
+#   ./workflows.sh backup-host-config https://xenserver root "$password"
+
+backup_host_config() {
+    # Deliberately not `host`: that is the variable the xe() helper dials, and shadowing it here sent
+    # every later command to a server named after the host's UUID.
+    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    target=$(xe pool-param-get uuid=$(xe pool-list --minimal) param-name=master)
+    echo "Backing up $(xe host-param-get uuid=$target param-name=name-label)"
+
+    # Relative to the working directory: xe.exe and this script must agree on the path, and a Windows
+    # temp directory spelled with backslashes would not survive the trip through both.
+    file="cli-host.backup"
+    rm -f "$file"   # xe refuses to overwrite an existing file rather than clobbering it
+    # xe does the HTTP transfer itself: the server answers the command by telling the client to GET
+    # /host_backup, and xe writes the file. Nothing streams down the CLI connection.
+    xe host-backup uuid=$target file-name="$file"
+    size=$(stat -c %s "$file" 2>/dev/null || wc -c < "$file")
+    echo "  wrote $size bytes to $file"
+
+    xe host-restore uuid=$target file-name="$file"
+    echo "  restoring it to $(xe host-param-get uuid=$target param-name=name-label): accepted"
+
+    other=""
+    for h in $(each_csv "$(xe host-list --minimal)"); do [ "$h" = "$target" ] || { other=$h; break; }; done
+    if [ -n "$other" ]; then
+        # host-backup/host-restore are served only by whichever host physically accepted the connection -
+        # xe's own uri_of_someone already dials that host's address directly by uuid, there is no
+        # forwarding and no ref= to check, so this is not refused on a real pool the way a naive reading of
+        # "restoring one host's config onto another" might suggest. A real pool's hosts are all reachable
+        # from a management client; guard the attempt anyway with a friendly message on any transport
+        # error, for networks where a second host's address isn't routable from here.
+        if err=$(xe host-restore uuid=$other file-name="$file" 2>&1); then
+            echo "  restoring it to $(xe host-param-get uuid=$other param-name=name-label): accepted"
+        else
+            echo "  restoring it to $(xe host-param-get uuid=$other param-name=name-label): could not restore ($err)"
+        fi
+    fi
+
+    rm -f "$file"
+    echo "OK: backup-host-config"
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Backing up sdk-host1
+  wrote 83 bytes to cli-host.backup
+  restoring it to sdk-host1: accepted
+  restoring it to sdk-host2: accepted
 OK: backup-host-config
 ```
 
@@ -269,175 +322,126 @@ OK: backup-host-config
 
 </details>
 
-## Java
+## C# (.NET)
 
-Source: [`java/src/main/java/com/xenserver/samples/hostsandpools/BackupHostConfig.java`](../../java/src/main/java/com/xenserver/samples/hostsandpools/BackupHostConfig.java)
+Source: [`csharp/HostsAndPools/BackupHostConfig.cs`](../../csharp/HostsAndPools/BackupHostConfig.cs)
 
-```java
-package com.xenserver.samples.hostsandpools;
+```csharp
+/// <summary>
+/// Download a host's configuration backup and hand it back as a restore would — and watch another host's
+/// backup be refused.
+/// </summary>
+/// <example>
+/// <code>
+/// Workflows.BackupHostConfig("https://xenserver", "root", password);
+/// </code>
+/// </example>
+/// <remarks>
+/// Both /host_backup and /host_restore are served only by whichever host physically accepted the HTTP
+/// connection - the handler is keyed off the connection's own address, not any ref= in the query string.
+/// So backing up/restoring a host means opening the connection to THAT host's own address, not the pool's
+/// (coordinator) url - a restore sent to the wrong host's connection silently restores the WRONG host.
+/// ref= is kept in the query string for readability in the host's logs.
+/// </remarks>
+public static void BackupHostConfig(string url, string user, string password)
+{
+    var session = Connect(url, user, password);
 
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.JsonRpcClient;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
+    // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+    var host = Pool.get_master(session, Pool.get_all(session)[0].opaque_ref).opaque_ref;
+    var hosts = Host.get_all(session).Select(h => h.opaque_ref).OrderBy(h => h != host).ToList();
+    var hostUrl = HostUrl(url, Host.get_address(session, host));
+    Console.WriteLine($"Backing up {Host.get_name_label(session, host)}");
 
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.classic.methods.HttpPut;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-
-import java.net.URL;
-import java.util.Map;
-
-import static com.xenserver.samples.Helpers.hostUrl;
-import static com.xenserver.samples.PoolConnection.connect;
-import static com.xenserver.samples.PoolConnection.trustingHttpClient;
-
-public final class BackupHostConfig {
-    private BackupHostConfig() {
+    // Stream it: a real host's backup can be hundreds of MB, too large to hold in memory (and,
+    // unlike Python's binding, each XenAPI call below opens its own fresh HttpClient - see
+    // RestoreHostConfig - so there's no idle keep-alive connection here that needs dropping first).
+    var path = Path.Combine(Path.GetTempPath(), $"sdk-example-host-{Guid.NewGuid():N}.backup");
+    using (var client = InsecureHttpClient())
+    {
+        using var response = client.GetAsync(
+            $"{hostUrl}/host_backup?session_id={session.opaque_ref}&ref={host}",
+            HttpCompletionOption.ResponseHeadersRead).Result;
+        response.EnsureSuccessStatusCode();
+        using (var httpStream = response.Content.ReadAsStreamAsync().Result)
+        using (var fileStream = File.Create(path))
+            httpStream.CopyTo(fileStream);
     }
+    Console.WriteLine($"  wrote {new FileInfo(path).Length} bytes to {Path.GetFileName(path)}");
 
-    /**
-     * Back up a host's configuration.
-     *
-     * <p>Download a host's configuration backup and hand it back as a restore would — and watch another
-     * host's backup be refused.
-     *
-     * <p>Both /host_backup and /host_restore are served only by whichever host physically accepted the
-     * HTTP connection - the handler ignores any ref= in the query string entirely, there is no forwarding
-     * to another pool member. So backing up/restoring a host means opening the connection to THAT host's
-     * own address, not to the pool's (coordinator) url - a restore sent to the wrong host's connection
-     * silently restores the WRONG host, not the one named by ref=. ref= is kept in the query string purely
-     * for log-readability (a real host ignores it; it is not what makes this correct).
-     *
-     * <p>Run it:
-     *
-     * <pre>{@code
-     * BackupHostConfig.run("https://xenserver", "root", password);
-     * }</pre>
-     */
-    public static void run(String url, String user, String password) throws Exception {
-        Connection conn = connect(url, user, password);
-        try {
-            // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-            // getAll is a set, in no particular order, so put the coordinator first.
-            Host host = com.xensource.xenapi.Pool.getAll(conn).iterator().next().getMaster(conn);
-            java.util.List<Host> hosts = new java.util.ArrayList<Host>();
-            hosts.add(host);
-            for (Host h : Host.getAll(conn))
-                if (!h.toWireString().equals(host.toWireString())) hosts.add(h);
-            String session = conn.getSessionReference();
-            String hostUrl = hostUrl(url, host.getAddress(conn));
-            System.out.println("Backing up " + host.getNameLabel(conn));
-
-            // Backup and restore are HTTP transfers alongside the API, not API calls, so the session id
-            // travels in the query string.
-            java.io.File file = java.io.File.createTempFile("sdk-example-host", ".backup");
-            HttpGet get = new HttpGet(hostUrl + "/host_backup?session_id=" + session
-                    + "&ref=" + host.toWireString());
-            // Hundreds of MB: stream it to disk rather than holding the whole backup in memory.
-            try (CloseableHttpClient http = trustingHttpClient()) {
-                http.execute(get, resp -> {
-                    try (java.io.InputStream in = resp.getEntity().getContent()) {
-                        java.nio.file.Files.copy(in, file.toPath(),
-                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-                    }
-                    return null;
-                });
-            }
-            System.out.printf("  wrote %d bytes to %s%n", file.length(), file.getName());
-            // The connection's one keep-alive HTTP connection sat idle for as long as the download
-            // took; a network that silently dropped it meanwhile would otherwise leave the next call
-            // (Task.create below) hanging until the socket times out, so get a fresh one for the same
-            // session before making another API call.
-            conn = dropIdleConnection(conn, url);
-
-            Map.Entry<String, Connection> restored = restoreHostConfig(conn, url, hostUrl, session, host, file);
-            conn = restored.getValue();
-            System.out.println("  restoring it to " + host.getNameLabel(conn) + ": " + restored.getKey());
-            if (hosts.size() > 1) {
-                Host other = hosts.get(1);
-                String result;
-                try {
-                    String otherUrl = hostUrl(url, other.getAddress(conn));
-                    Map.Entry<String, Connection> r = restoreHostConfig(conn, url, otherUrl, session, other, file);
-                    conn = r.getValue();
-                    result = r.getKey();
-                } catch (Exception e) {
-                    // A real pool's hosts are all reachable from a management client; this only guards an
-                    // environment (a host whose address isn't routable from here, say) where that isn't
-                    // true, so the example still finishes cleanly.
-                    result = "could not connect directly (" + e + ")";
-                }
-                System.out.println("  restoring it to " + other.getNameLabel(conn) + ": " + result);
-            }
-
-            file.delete();
-            System.out.println("OK: backup-host-config");
-        } finally {
-            Session.logout(conn);
+    Console.WriteLine($"  restoring it to {Host.get_name_label(session, host)}: "
+                      + RestoreHostConfig(session, hostUrl, host, path));
+    if (hosts.Count > 1)
+    {
+        var other = hosts[1];
+        var otherUrl = HostUrl(url, Host.get_address(session, other));
+        string result;
+        try
+        {
+            result = RestoreHostConfig(session, otherUrl, other, path);
         }
-    }
-
-    /**
-     * Close the connection's HTTP connection pool after a long transfer, so the next XenAPI call opens a
-     * fresh one - the previous JsonRpcClient's one keep-alive connection sat idle for as long as the
-     * transfer took, and a network that dropped it meanwhile leaves the next call hanging until the socket
-     * times out. Connection has no public way to discard its pooled connections or to attach a custom
-     * JsonRpcClient to an existing session at the same time, so build a fresh Connection (still trusting
-     * the host's certificate, like connect() does) and set its session reference directly - there is no
-     * public setter for that field.
-     */
-    private static Connection dropIdleConnection(Connection conn, String url) throws Exception {
-        Connection fresh = new Connection(new JsonRpcClient(trustingHttpClient(), new URL(url + "/jsonrpc")));
-        java.lang.reflect.Field sessionField = Connection.class.getDeclaredField("sessionReference");
-        sessionField.setAccessible(true);
-        sessionField.set(fresh, conn.getSessionReference());
-        return fresh;
-    }
-
-    /**
-     * Uploads a backup to a host - over a connection opened to THAT host's own address - and reports what
-     * the task says about it, alongside the (possibly renewed) connection to continue with.
-     *
-     * <p>An upload answers 200 as soon as it has read the request headers, because the client waits for
-     * that before it starts sending the file. The outcome therefore cannot be in the status line: it
-     * arrives on a task you create first, name in the URL, and poll once the upload has finished.
-     */
-    private static Map.Entry<String, Connection> restoreHostConfig(Connection conn, String apiUrl,
-            String hostUrl, String session, Host host, java.io.File file) throws Exception {
-        Task task = Task.create(conn, "host_restore", "restoring a configuration backup");
-        try {
-            HttpPut put = new HttpPut(hostUrl + "/host_restore?session_id=" + session
-                    + "&ref=" + host.toWireString() + "&task_id=" + task.toWireString());
-            // Stream the file rather than reading it into memory first; the entity reports the file's
-            // own length as the Content-Length the server needs up front.
-            put.setEntity(new org.apache.hc.core5.http.io.entity.FileEntity(
-                    file, org.apache.hc.core5.http.ContentType.APPLICATION_OCTET_STREAM));
-            try (CloseableHttpClient http = trustingHttpClient()) {
-                http.execute(put, resp -> EntityUtils.toString(resp.getEntity()));
-            }
-            // As above: the connection sat idle for as long as the upload took. Reconnect to the
-            // coordinator: the upload went to the host itself, but a pool member refuses API calls.
-            conn = dropIdleConnection(conn, apiUrl);
-
-            while (task.getStatus(conn) == Types.TaskStatusType.PENDING) Thread.sleep(500);
-            String result;
-            if (task.getStatus(conn) == Types.TaskStatusType.SUCCESS) {
-                result = "accepted";
-            } else {
-                // error_info is declared as a SET of strings, and the Java binding hands back a real
-                // Set - so there is no "last element" to read the detail from. Print it whole rather
-                // than indexing into something unordered; see the WLB example, where guessing at an
-                // order silently lied.
-                result = "refused " + task.getErrorInfo(conn);
-            }
-            return new java.util.AbstractMap.SimpleEntry<>(result, conn);
-        } finally {
-            task.destroy(conn);
+        catch (Exception e)
+        {
+            // A real pool's hosts are all reachable from a management client; this only guards an
+            // environment (a host whose address isn't routable from here, say) where that isn't
+            // true, so the example still finishes cleanly.
+            result = $"could not connect to {otherUrl} directly ({e.Message})";
         }
+        Console.WriteLine($"  restoring it to {Host.get_name_label(session, other)}: {result}");
+    }
+
+    File.Delete(path);
+    Console.WriteLine("OK: backup-host-config");
+    session.logout();
+}
+
+/// <summary>
+/// Build the URL for a given host's own address, keeping the scheme and port the caller originally
+/// connected with (a host's management address carries no port of its own).
+/// </summary>
+private static string HostUrl(string url, string address)
+{
+    var uri = new Uri(url);
+    var port = uri.IsDefaultPort ? "" : $":{uri.Port}";
+    return $"{uri.Scheme}://{address}{port}";
+}
+
+/// <summary>
+/// Upload a backup to a host - over a connection opened to THAT host's own address - and report
+/// what the task says about it.
+/// </summary>
+/// <remarks>
+/// An upload answers 200 as soon as it has read the request headers, because the client waits for that
+/// before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
+/// a task you create first, name in the URL, and poll once the upload has finished.
+/// </remarks>
+private static string RestoreHostConfig(Session session, string hostUrl, string host, string path)
+{
+    var task = Task.create(session, "host_restore", "restoring a configuration backup").opaque_ref;
+    try
+    {
+        // Stream the upload too, rather than reading the whole backup into memory first. Every
+        // XenAPI call this binding makes (including task.create/get_status below) opens a brand new
+        // HttpClient and tears it down again - unlike Python's single long-lived xmlrpc.client
+        // connection, there is no idle keep-alive connection here left over from the transfer that
+        // would need to be dropped before the next call.
+        using (var client = InsecureHttpClient())
+        using (var fileStream = File.OpenRead(path))
+        {
+            var response = client.PutAsync(
+                $"{hostUrl}/host_restore?session_id={session.opaque_ref}&ref={host}&task_id={task}",
+                new StreamContent(fileStream)).Result;
+            response.EnsureSuccessStatusCode();
+        }
+
+        while (Task.get_status(session, task) == task_status_type.pending)
+            System.Threading.Thread.Sleep(500);
+        if (Task.get_status(session, task) == task_status_type.success) return "accepted";
+        return $"refused ({Task.get_error_info(session, task).Last()})";
+    }
+    finally
+    {
+        Task.destroy(session, task);
     }
 }
 ```
@@ -446,9 +450,9 @@ public final class BackupHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host168748643465404095.backup
+  wrote 83 bytes to sdk-example-host-61ff127b714c4cbfadd0e962699d86a4.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect directly (org.apache.hc.client5.http.HttpHostConnectException: Connect to https://198.51.100.12:39715 [/198.51.100.12] failed: Connection timed out: getsockopt)
+  restoring it to sdk-host2: could not connect to https://198.51.100.12:22292 directly (One or more errors occurred. (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:22292)))
 OK: backup-host-config
 ```
 
@@ -639,113 +643,175 @@ OK: backup-host-config
 
 </details>
 
-## PowerShell
+## Java
 
-Source: [`powershell/HostsAndPools/Invoke-BackupHostConfig.ps1`](../../powershell/HostsAndPools/Invoke-BackupHostConfig.ps1)
+Source: [`java/src/main/java/com/xenserver/samples/hostsandpools/BackupHostConfig.java`](../../java/src/main/java/com/xenserver/samples/hostsandpools/BackupHostConfig.java)
 
-```powershell
-function Invoke-BackupHostConfig {
-    <#
-    .SYNOPSIS
-        Back up a host's configuration.
-    .DESCRIPTION
-        Download a host's configuration backup and hand it back as a restore would — and watch another
-        host's backup be refused.
-    .EXAMPLE
-        Invoke-BackupHostConfig -Url https://xenserver -UserName root -Password $password
-    #>
-    param(
-        [Parameter(Mandatory = $true)][string]$Url,
-        [Parameter(Mandatory = $true)][string]$UserName,
-        [Parameter(Mandatory = $true)][string]$Password
-    )
-    $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
+```java
+package com.xenserver.samples.hostsandpools;
 
-    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-    $coordinator = (Get-XenPool).master.opaque_ref
-    $hosts = @(Get-XenHost | Sort-Object { $_.opaque_ref -ne $coordinator })
-    $vmHost = $hosts[0]
-    $hostUrl = Get-HostUrl -Url $Url -Address $vmHost.address
-    Write-Host "Backing up $($vmHost.name_label)"
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.JsonRpcClient;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
 
-    # Both halves are served only by whichever host physically accepted the HTTP connection - the
-    # handler ignores any ref= in the query string entirely, there is no forwarding to another pool
-    # member. So backing up/restoring a host means opening the connection to THAT host's own address,
-    # not to the pool's (coordinator) URL - a restore sent to the wrong host's connection silently
-    # restores the WRONG host, not the one named by ref=. ref= is kept in the query string purely for
-    # log-readability (a real host ignores it; it is not what makes this correct). Still pure
-    # PowerShell: Connect-Example has already trusted the server's certificate.
-    #
-    # -OutFile/-InFile below already stream straight to/from disk rather than buffering the whole file,
-    # and there is no idle-connection step to take after the transfer (unlike the Python/Java ports):
-    # this module's cmdlets dispatch through the C# binding's Session/JsonRpcClient, whose
-    # PerformPostRequest opens a brand-new HttpClient per XenAPI call and disposes it immediately
-    # afterwards - there is no kept-alive session connection that a long transfer could leave idle.
-    $path = Join-Path ([IO.Path]::GetTempPath()) "sdk-example-host-$([guid]::NewGuid().Guid).backup"
-    Invoke-WebRequest -UseBasicParsing -OutFile $path -TimeoutSec 10 `
-        -Uri "$hostUrl/host_backup?session_id=$($session.opaque_ref)&ref=$($vmHost.opaque_ref)"
-    Write-Host "  wrote $((Get-Item $path).Length) bytes to $(Split-Path $path -Leaf)"
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 
-    Write-Host ("  restoring it to {0}: {1}" -f $vmHost.name_label,
-        (Restore-ExampleHostConfig -Session $session -HostUrl $hostUrl -VMHost $vmHost -Path $path))
-    if ($hosts.Count -gt 1) {
-        # A real pool's hosts are all reachable from a management client; guard against a topology
-        # where a second host's address isn't actually routable from the caller, and turn that into an
-        # informative message instead of a crash.
-        $other = $hosts[1]
-        $otherUrl = Get-HostUrl -Url $Url -Address $other.address
+import java.net.URL;
+import java.util.Map;
+
+import static com.xenserver.samples.Helpers.hostUrl;
+import static com.xenserver.samples.PoolConnection.connect;
+import static com.xenserver.samples.PoolConnection.trustingHttpClient;
+
+public final class BackupHostConfig {
+    private BackupHostConfig() {
+    }
+
+    /**
+     * Back up a host's configuration.
+     *
+     * <p>Download a host's configuration backup and hand it back as a restore would — and watch another
+     * host's backup be refused.
+     *
+     * <p>Both /host_backup and /host_restore are served only by whichever host physically accepted the
+     * HTTP connection - the handler ignores any ref= in the query string entirely, there is no forwarding
+     * to another pool member. So backing up/restoring a host means opening the connection to THAT host's
+     * own address, not to the pool's (coordinator) url - a restore sent to the wrong host's connection
+     * silently restores the WRONG host, not the one named by ref=. ref= is kept in the query string purely
+     * for log-readability (a real host ignores it; it is not what makes this correct).
+     *
+     * <p>Run it:
+     *
+     * <pre>{@code
+     * BackupHostConfig.run("https://xenserver", "root", password);
+     * }</pre>
+     */
+    public static void run(String url, String user, String password) throws Exception {
+        Connection conn = connect(url, user, password);
         try {
-            $result = Restore-ExampleHostConfig -Session $session -HostUrl $otherUrl -VMHost $other -Path $path
+            // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
+            // getAll is a set, in no particular order, so put the coordinator first.
+            Host host = com.xensource.xenapi.Pool.getAll(conn).iterator().next().getMaster(conn);
+            java.util.List<Host> hosts = new java.util.ArrayList<Host>();
+            hosts.add(host);
+            for (Host h : Host.getAll(conn))
+                if (!h.toWireString().equals(host.toWireString())) hosts.add(h);
+            String session = conn.getSessionReference();
+            String hostUrl = hostUrl(url, host.getAddress(conn));
+            System.out.println("Backing up " + host.getNameLabel(conn));
+
+            // Backup and restore are HTTP transfers alongside the API, not API calls, so the session id
+            // travels in the query string.
+            java.io.File file = java.io.File.createTempFile("sdk-example-host", ".backup");
+            HttpGet get = new HttpGet(hostUrl + "/host_backup?session_id=" + session
+                    + "&ref=" + host.toWireString());
+            // Hundreds of MB: stream it to disk rather than holding the whole backup in memory.
+            try (CloseableHttpClient http = trustingHttpClient()) {
+                http.execute(get, resp -> {
+                    try (java.io.InputStream in = resp.getEntity().getContent()) {
+                        java.nio.file.Files.copy(in, file.toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    return null;
+                });
+            }
+            System.out.printf("  wrote %d bytes to %s%n", file.length(), file.getName());
+            // The connection's one keep-alive HTTP connection sat idle for as long as the download
+            // took; a network that silently dropped it meanwhile would otherwise leave the next call
+            // (Task.create below) hanging until the socket times out, so get a fresh one for the same
+            // session before making another API call.
+            conn = dropIdleConnection(conn, url);
+
+            Map.Entry<String, Connection> restored = restoreHostConfig(conn, url, hostUrl, session, host, file);
+            conn = restored.getValue();
+            System.out.println("  restoring it to " + host.getNameLabel(conn) + ": " + restored.getKey());
+            if (hosts.size() > 1) {
+                Host other = hosts.get(1);
+                String result;
+                try {
+                    String otherUrl = hostUrl(url, other.getAddress(conn));
+                    Map.Entry<String, Connection> r = restoreHostConfig(conn, url, otherUrl, session, other, file);
+                    conn = r.getValue();
+                    result = r.getKey();
+                } catch (Exception e) {
+                    // A real pool's hosts are all reachable from a management client; this only guards an
+                    // environment (a host whose address isn't routable from here, say) where that isn't
+                    // true, so the example still finishes cleanly.
+                    result = "could not connect directly (" + e + ")";
+                }
+                System.out.println("  restoring it to " + other.getNameLabel(conn) + ": " + result);
+            }
+
+            file.delete();
+            System.out.println("OK: backup-host-config");
+        } finally {
+            Session.logout(conn);
         }
-        catch {
-            $result = "could not connect to $otherUrl directly ($($_.Exception.Message))"
-        }
-        Write-Host ("  restoring it to {0}: {1}" -f $other.name_label, $result)
     }
 
-    Remove-Item $path
-    Write-Host "OK: backup-host-config"
-    $session | Disconnect-XenServer
-}
-
-function Get-HostUrl {
-    <#
-    .SYNOPSIS
-        Build the URL for a given host's own address, keeping the scheme and port the caller originally
-        connected with (a host's management address carries no port of its own).
-    #>
-    param([string]$Url, [string]$Address)
-    $uri = [System.Uri]$Url
-    $port = if ($uri.Port -gt 0) { ":$($uri.Port)" } else { "" }
-    return "$($uri.Scheme)://$Address$port"
-}
-
-function Restore-ExampleHostConfig {
-    <#
-    .SYNOPSIS
-        Uploads a backup to a host - over a connection opened to THAT host's own address - and reports what
-        the task says about it.
-    .DESCRIPTION
-        An upload answers 200 as soon as it has read the request headers, because the client waits for that
-        before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
-        a task you create first, name in the URL, and poll once the upload has finished.
-    #>
-    param($Session, [string]$HostUrl, $VMHost, [string]$Path)
-
-    $task = New-XenTask -Label 'host_restore' -Description 'restoring a configuration backup' -PassThru
-    try {
-        # The timeout covers the whole transfer: a backup is hundreds of MB, so allow for a slow network.
-        Invoke-WebRequest -UseBasicParsing -Method Put -InFile $Path -TimeoutSec 1800 `
-            -Uri ("$HostUrl/host_restore?session_id=$($Session.opaque_ref)" +
-                  "&ref=$($VMHost.opaque_ref)&task_id=$($task.opaque_ref)") | Out-Null
-
-        while ((Get-XenTask -Ref $task.opaque_ref).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
-        $finished = Get-XenTask -Ref $task.opaque_ref
-        if ($finished.status -eq 'success') { return 'accepted' }
-        return "refused ($($finished.error_info[-1]))"
+    /**
+     * Close the connection's HTTP connection pool after a long transfer, so the next XenAPI call opens a
+     * fresh one - the previous JsonRpcClient's one keep-alive connection sat idle for as long as the
+     * transfer took, and a network that dropped it meanwhile leaves the next call hanging until the socket
+     * times out. Connection has no public way to discard its pooled connections or to attach a custom
+     * JsonRpcClient to an existing session at the same time, so build a fresh Connection (still trusting
+     * the host's certificate, like connect() does) and set its session reference directly - there is no
+     * public setter for that field.
+     */
+    private static Connection dropIdleConnection(Connection conn, String url) throws Exception {
+        Connection fresh = new Connection(new JsonRpcClient(trustingHttpClient(), new URL(url + "/jsonrpc")));
+        java.lang.reflect.Field sessionField = Connection.class.getDeclaredField("sessionReference");
+        sessionField.setAccessible(true);
+        sessionField.set(fresh, conn.getSessionReference());
+        return fresh;
     }
-    finally {
-        Remove-XenTask -Ref $task.opaque_ref
+
+    /**
+     * Uploads a backup to a host - over a connection opened to THAT host's own address - and reports what
+     * the task says about it, alongside the (possibly renewed) connection to continue with.
+     *
+     * <p>An upload answers 200 as soon as it has read the request headers, because the client waits for
+     * that before it starts sending the file. The outcome therefore cannot be in the status line: it
+     * arrives on a task you create first, name in the URL, and poll once the upload has finished.
+     */
+    private static Map.Entry<String, Connection> restoreHostConfig(Connection conn, String apiUrl,
+            String hostUrl, String session, Host host, java.io.File file) throws Exception {
+        Task task = Task.create(conn, "host_restore", "restoring a configuration backup");
+        try {
+            HttpPut put = new HttpPut(hostUrl + "/host_restore?session_id=" + session
+                    + "&ref=" + host.toWireString() + "&task_id=" + task.toWireString());
+            // Stream the file rather than reading it into memory first; the entity reports the file's
+            // own length as the Content-Length the server needs up front.
+            put.setEntity(new org.apache.hc.core5.http.io.entity.FileEntity(
+                    file, org.apache.hc.core5.http.ContentType.APPLICATION_OCTET_STREAM));
+            try (CloseableHttpClient http = trustingHttpClient()) {
+                http.execute(put, resp -> EntityUtils.toString(resp.getEntity()));
+            }
+            // As above: the connection sat idle for as long as the upload took. Reconnect to the
+            // coordinator: the upload went to the host itself, but a pool member refuses API calls.
+            conn = dropIdleConnection(conn, apiUrl);
+
+            while (task.getStatus(conn) == Types.TaskStatusType.PENDING) Thread.sleep(500);
+            String result;
+            if (task.getStatus(conn) == Types.TaskStatusType.SUCCESS) {
+                result = "accepted";
+            } else {
+                // error_info is declared as a SET of strings, and the Java binding hands back a real
+                // Set - so there is no "last element" to read the detail from. Print it whole rather
+                // than indexing into something unordered; see the WLB example, where guessing at an
+                // order silently lied.
+                result = "refused " + task.getErrorInfo(conn);
+            }
+            return new java.util.AbstractMap.SimpleEntry<>(result, conn);
+        } finally {
+            task.destroy(conn);
+        }
     }
 }
 ```
@@ -754,75 +820,9 @@ function Restore-ExampleHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-2a64b052-3ca0-4549-9929-cd6cc0ff3f68.backup
+  wrote 83 bytes to sdk-example-host168748643465404095.backup
   restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:38882 directly (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:38882))
-OK: backup-host-config
-```
-
-</details>
-
-## xe CLI
-
-Source: [`cli/hosts-and-pools/backup-host-config.sh`](../../cli/hosts-and-pools/backup-host-config.sh)
-
-```bash
-# Back up a host's configuration.
-#
-# Download a host's configuration backup and hand it back as a restore would — and watch another host's backup
-# be refused.
-#
-# Run it:
-#   ./workflows.sh backup-host-config https://xenserver root "$password"
-
-backup_host_config() {
-    # Deliberately not `host`: that is the variable the xe() helper dials, and shadowing it here sent
-    # every later command to a server named after the host's UUID.
-    # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-    target=$(xe pool-param-get uuid=$(xe pool-list --minimal) param-name=master)
-    echo "Backing up $(xe host-param-get uuid=$target param-name=name-label)"
-
-    # Relative to the working directory: xe.exe and this script must agree on the path, and a Windows
-    # temp directory spelled with backslashes would not survive the trip through both.
-    file="cli-host.backup"
-    rm -f "$file"   # xe refuses to overwrite an existing file rather than clobbering it
-    # xe does the HTTP transfer itself: the server answers the command by telling the client to GET
-    # /host_backup, and xe writes the file. Nothing streams down the CLI connection.
-    xe host-backup uuid=$target file-name="$file"
-    size=$(stat -c %s "$file" 2>/dev/null || wc -c < "$file")
-    echo "  wrote $size bytes to $file"
-
-    xe host-restore uuid=$target file-name="$file"
-    echo "  restoring it to $(xe host-param-get uuid=$target param-name=name-label): accepted"
-
-    other=""
-    for h in $(each_csv "$(xe host-list --minimal)"); do [ "$h" = "$target" ] || { other=$h; break; }; done
-    if [ -n "$other" ]; then
-        # host-backup/host-restore are served only by whichever host physically accepted the connection -
-        # xe's own uri_of_someone already dials that host's address directly by uuid, there is no
-        # forwarding and no ref= to check, so this is not refused on a real pool the way a naive reading of
-        # "restoring one host's config onto another" might suggest. A real pool's hosts are all reachable
-        # from a management client; guard the attempt anyway with a friendly message on any transport
-        # error, for networks where a second host's address isn't routable from here.
-        if err=$(xe host-restore uuid=$other file-name="$file" 2>&1); then
-            echo "  restoring it to $(xe host-param-get uuid=$other param-name=name-label): accepted"
-        else
-            echo "  restoring it to $(xe host-param-get uuid=$other param-name=name-label): could not restore ($err)"
-        fi
-    fi
-
-    rm -f "$file"
-    echo "OK: backup-host-config"
-}
-```
-
-<details><summary>Example output</summary>
-
-```text
-Backing up sdk-host1
-  wrote 83 bytes to cli-host.backup
-  restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: accepted
+  restoring it to sdk-host2: could not connect directly (org.apache.hc.client5.http.HttpHostConnectException: Connect to https://198.51.100.12:39715 [/198.51.100.12] failed: Connection timed out: getsockopt)
 OK: backup-host-config
 ```
 
