@@ -24,17 +24,17 @@ public final class CreateIscsiSr {
      * Create an iSCSI SR.
      *
      * <p>Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then
-     * the LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array
-     * offers many targets, so name yours with target_iqn; if the target behind it offers more than one
-     * LUN, name yours with scsi_id too.
+     * the LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so
+     * name yours with target_iqn; if the target behind it offers more than one LUN, name yours with
+     * scsi_id too.
      *
-     * <p>Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN the way the New SR
-     * wizard does: a device-config that's missing a piece makes the backend fail on purpose, and the
-     * failure carries an XML fragment listing what it needs next. SR.create formats the chosen LUN -
-     * this is destructive, so pick carefully on a real target: pass targetIqn to name yours (see
-     * chooseTargetIqn), and scsiId too if more than one LUN is offered behind it (see chooseLun). Before
-     * creating, this probes the chosen LUN itself to make sure it is not already in use by another SR -
-     * formatting over one would destroy it.
+     * <p>Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN first: a
+     * device-config that's missing a piece makes the backend fail on purpose, and the failure carries an
+     * XML fragment listing what it needs next. SR.create formats the chosen LUN - this is destructive,
+     * so pick carefully on a real target: pass targetIqn to name yours (see chooseTargetIqn), and scsiId
+     * too if more than one LUN is offered behind it (see chooseLun). Before creating, this probes the
+     * chosen LUN itself to make sure it is not already in use by another SR - formatting over one would
+     * destroy it.
      *
      * <p>The CHAP password (if any) travels as a Secret, not plaintext device-config, as CreateSmbSr
      * already does for its share password.
@@ -128,8 +128,8 @@ public final class CreateIscsiSr {
 
     /**
      * Pick the LUN behind the chosen IQN: the caller's SCSIid, if named (it must be one on offer), else
-     * the one LUN, if that target offers only one. The New SR wizard auto-selects a LUN only when exactly
-     * one is on offer, and otherwise makes the caller choose - picking blindly on a shared target risks
+     * the one LUN, if that target offers only one. Choose a LUN automatically only when exactly one is
+     * on offer, and otherwise make the caller choose - picking blindly on a shared target risks
      * formatting someone else's disk.
      */
     private static org.w3c.dom.Element chooseLun(List<org.w3c.dom.Element> luns, String scsiId) {

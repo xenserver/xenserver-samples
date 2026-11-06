@@ -11,7 +11,7 @@ from helpers import enable_when_booted, host_live
 
 
 def restart_host(url, username, password):
-    """Take a host down and bring it back, the way the host menu does.
+    """Take a host down and bring it back.
 
     Rebooting a host is never just the reboot: anything running on it has to go
     somewhere first, and the host has to stop accepting new VMs while that happens.

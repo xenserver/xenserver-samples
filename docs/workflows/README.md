@@ -22,14 +22,14 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 | Workflow | What it does |
 |---|---|
 | [Create a VM from a template](create-vm.md) | Clone one of the built-in templates and provision the clone into a real, installable VM. |
-| [Create a VM (full workflow)](new-vm-wizard.md) | Create a VM end to end: pick a template, name the VM, choose an installation source and a home server, set CPU & memory, add a disk on a storage repository, attach a network interface and start it — the full sequence, rather than a single clone call. |
+| [Create a VM (full workflow)](create-vm-full.md) | Create a VM end to end: pick a template, name the VM, choose an installation source and a home server, set CPU & memory, add a disk on a storage repository, attach a network interface and start it — the full sequence, rather than a single clone call. |
 | [Clone a VM](clone-vm.md) | Make a fast copy-on-write clone of a VM on the same storage repository — distinct from a full copy — the quick way to stamp out new VMs from a halted "golden" image. |
 | [Copy a VM](copy-vm.md) | Make a full, independent copy of a VM onto a chosen storage repository (a deep copy of its disks) — distinct from a fast, copy-on-write clone. |
 | [Cross-pool copy a VM](cross-pool-copy-vm.md) | Copy a VM from one pool to another: open a session to each pool, obtain a receiver token on the destination, then send a copy of the VM from the source. |
 | [Delete a VM](delete-vm.md) | Remove a VM and its owned disks: deleting a VM leaves its disks behind, so the disks are destroyed explicitly afterward. |
 | [Manage VM groups](manage-vm-groups.md) | Create an anti-affinity VM group, put a VM in it, read the membership back from the group side, then take the VM out again and delete the group. |
 | [Snapshot schedule](snapshot-schedule.md) | Create a scheduled-snapshot policy, attach a VM to it, run it on demand (the xe CLI version only creates and removes the schedule) and watch the retention limit prune the oldest snapshot away. |
-| [Manage VM disks](manage-vm-disks.md) | Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize operations from the VM's Storage tab. |
+| [Manage VM disks](manage-vm-disks.md) | Deactivate a running VM's disk, resize it, reactivate it. |
 | [VM power lifecycle](vm-lifecycle.md) | Drive a VM through its power states — start it, suspend it to memory, resume it and shut it down cleanly. |
 | [Snapshot & revert](snapshot-revert.md) | Take a snapshot of a VM and then revert the VM back to that point-in-time, as you would before a risky change. |
 | [Checkpoint & revert](checkpoint-vm.md) | Take a checkpoint of a running VM (disk AND memory, unlike a plain snapshot) and revert to it, as you would before a risky in-guest change. |
@@ -60,7 +60,7 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 | Workflow | What it does |
 |---|---|
 | [Create an NFS SR](create-nfs-sr.md) | Create a shared NFS storage repository on an NFS export (nfs_server, nfs_path), then detach and forget it. |
-| [Create an iSCSI SR](create-iscsi-sr.md) | Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs behind one, as the New SR wizard does. |
+| [Create an iSCSI SR](create-iscsi-sr.md) | Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs behind one. |
 | [Create an SMB SR](create-smb-sr.md) | Connect a shared storage repository to an SMB/CIFS file share, passing the server, share path and credentials (the password as a secret, never in plain text). |
 | [Create an HBA SR](create-hba-sr.md) | Connect a shared storage repository to a fibre-channel (HBA) LUN: discover the LUNs the host can see with a deliberately failing probe, then create the SR by SCSI ID. |
 | [Create an ISO library SR](create-iso-sr.md) | Connect an ISO-library storage repository to a file share of ISO images (here an NFS export), so the images are available as installation media. |

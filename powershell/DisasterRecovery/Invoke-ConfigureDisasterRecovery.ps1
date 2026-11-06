@@ -19,7 +19,7 @@ function Invoke-ConfigureDisasterRecovery {
     # Only SRs on a LUN - iSCSI or Fibre Channel/SAS (HBA) - can hold the pool's database, and every host
     # must have the SR attached. The server says which qualify: SR.assert_supports_database_replication
     # fails for any that can't (an NFS SR fails SR_OPERATION_NOT_SUPPORTED), so ask each one rather than
-    # guessing from its type, as the Configure DR dialog does. A pool can replicate to up to 8 SRs.
+    # guessing from its type. A pool can replicate to up to 8 SRs.
     #
     # Replication is only useful while it is on. So that the example leaves the pool as it found it, it
     # turns replication off again if it was off to start with; in practice, leave it on.
@@ -41,8 +41,8 @@ function Invoke-ConfigureDisasterRecovery {
     }
     $sr = $candidates[0]
 
-    # The pool's own metadata disk on this SR is what says replication is on (as the Configure DR dialog
-    # decides): a disk of type metadata whose metadata_of_pool is this pool.
+    # The pool's own metadata disk on this SR is what says replication is on: a disk of type metadata whose
+    # metadata_of_pool is this pool.
     $pool = Get-XenPool
     $metadataDisk = {
         Get-XenVDI | Where-Object {

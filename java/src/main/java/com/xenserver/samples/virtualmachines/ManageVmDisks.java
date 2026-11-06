@@ -25,8 +25,7 @@ public final class ManageVmDisks {
     /**
      * Manage VM disks.
      *
-     * <p>Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-     * operations from the VM's Storage tab.
+     * <p>Deactivate a running VM's disk, resize it, reactivate it.
      *
      * <p>Not the VM's root/boot disk: a real VM's system disk is unpluggable=false (only a template's
      * non-system disks default to unpluggable), so VBD.unplug on it fails on a real host with

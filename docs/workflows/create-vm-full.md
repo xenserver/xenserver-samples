@@ -4,14 +4,14 @@
 
 Create a VM end to end: pick a template, name the VM, choose an installation source and a home server, set CPU & memory, add a disk on a storage repository, attach a network interface and start it — the full sequence, rather than a single clone call.
 
-Workflow `new-vm-wizard`. [All workflows](README.md) · [Connecting](connecting.md)
+Workflow `create-vm-full`. [All workflows](README.md) · [Connecting](connecting.md)
 
 ## PowerShell
 
-Source: [`powershell/VirtualMachines/Invoke-NewVmWizard.ps1`](../../powershell/VirtualMachines/Invoke-NewVmWizard.ps1)
+Source: [`powershell/VirtualMachines/Invoke-CreateVmFull.ps1`](../../powershell/VirtualMachines/Invoke-CreateVmFull.ps1)
 
 ```powershell
-function Invoke-NewVmWizard {
+function Invoke-CreateVmFull {
     <#
     .SYNOPSIS
         Create a VM (full workflow).
@@ -20,29 +20,29 @@ function Invoke-NewVmWizard {
         server, set CPU & memory, add a disk on a storage repository, attach a network interface and start
         it — the full sequence, rather than a single clone call.
     .EXAMPLE
-        Invoke-NewVmWizard -Url https://xenserver -UserName root -Password $password -TemplateName 'Rocky Linux 8'
+        Invoke-CreateVmFull -Url https://xenserver -UserName root -Password $password -TemplateName 'Rocky Linux 8'
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$UserName,
         [Parameter(Mandatory = $true)][string]$Password,
         [Parameter(Mandatory = $true)][string]$TemplateName,
-        [string]$NewVmName = "wizard-vm"
+        [string]$NewVmName = "sdk-example-full-vm"
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    # Page 1 - Template.
+    # Step 1 - Template.
     $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
     if (-not $template) { throw "No template named '$TemplateName' was found." }
     Write-Host "Template:      $($template.name_label)"
 
-    # Page 2 - Name and description.
+    # Step 2 - Name and description.
     $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
     $ref = $vm.opaque_ref
-    $vm | Set-XenVM -NameDescription "Created by the full New VM wizard example"
+    $vm | Set-XenVM -NameDescription "Created by the create-vm-full example"
     $vm | Set-XenVM -IsATemplate $false
     Write-Host "Created VM:    $((Get-XenVM -Ref $ref).uuid)"
 
-    # Page 3 - Installation media (a network install repository). Set replaces other_config wholesale,
+    # Step 3 - Installation media (a network install repository). Set replaces other_config wholesale,
     # so merge our key into a copy of the current map.
     $current = (Get-XenVM -Ref $ref).other_config
     $oc = @{}
@@ -51,32 +51,32 @@ function Invoke-NewVmWizard {
     $vm | Set-XenVM -OtherConfig $oc
     Write-Host "Install media: network repository"
 
-    # Page 4 - Home server (affinity).
+    # Step 4 - Home server (affinity).
     $xenHost = Get-XenHost | Select-Object -First 1
     $vm | Set-XenVM -Affinity $xenHost
     Write-Host "Home server:   $($xenHost.name_label)"
 
-    # Page 5 - CPU & Memory. -MemoryLimits takes [static_min, static_max, dynamic_min, dynamic_max].
+    # Step 5 - CPU & Memory. -MemoryLimits takes [static_min, static_max, dynamic_min, dynamic_max].
     $vm | Set-XenVM -VCPUsMax 2 -VCPUsAtStartup 2
     $vm | Set-XenVM -MemoryLimits (512MB, 2GB, 2GB, 2GB)
     Write-Host "CPU/memory:    2 vCPUs, 2 GiB"
 
-    # Page 6 - Storage: add a disk on a (non-ISO) SR.
+    # Step 6 - Storage: add a disk on a (non-ISO) SR.
     $sr = Get-XenSR | Where-Object { $_.content_type -ne 'iso' -and $_.type -notin @('iso', 'udev') } | Select-Object -First 1
     $vbdDevice = (Get-XenVMProperty -Ref $ref -XenProperty AllowedVBDDevices)[0]
-    $vdi = New-XenVDI -NameLabel "$NewVmName disk 0" -NameDescription "System disk created by the wizard example" `
+    $vdi = New-XenVDI -NameLabel "$NewVmName disk 0" -NameDescription "System disk created by the create-vm-full example" `
         -SR $sr -VirtualSize 24GB -Type system -Sharable $false -ReadOnly $false -PassThru
     New-XenVBD -VM (Get-XenVM -Ref $ref) -VDI $vdi -Userdevice $vbdDevice -Bootable $true `
         -Mode RW -Type Disk -Empty $false | Out-Null
     Write-Host "Storage:       24 GiB disk on $($sr.name_label)"
 
-    # Page 7 - Networking: attach a VIF to a network.
+    # Step 7 - Networking: attach a VIF to a network.
     $net = Get-XenNetwork | Select-Object -First 1
     $vifDevice = (Get-XenVMProperty -Ref $ref -XenProperty AllowedVIFDevices)[0]
     New-XenVIF -VM (Get-XenVM -Ref $ref) -Network $net -Device $vifDevice -MAC "" -MTU 1500 | Out-Null
     Write-Host "Networking:    NIC on $($net.name_label)"
 
-    # Page 8 - Finish: start the VM.
+    # Step 8 - Finish: start the VM.
     $vm | Invoke-XenVM -XenAction Start
 
     $started = Get-XenVM -Ref $ref
@@ -89,7 +89,7 @@ function Invoke-NewVmWizard {
     $vm | Invoke-XenVM -XenAction HardShutdown
     $vm | Remove-XenVM
     $vdi | Remove-XenVDI
-    Write-Host "OK: new-vm-wizard"
+    Write-Host "OK: create-vm-full"
     $session | Disconnect-XenServer
 }
 ```
@@ -108,14 +108,14 @@ Networking:    NIC on Pool-wide network associated with eth0
 power state:   Running
 vCPUs:         2
 disks:         1, NICs: 1
-OK: new-vm-wizard
+OK: create-vm-full
 ```
 
 </details>
 
 ## xe CLI
 
-Source: [`cli/virtual-machines/new-vm-wizard.sh`](../../cli/virtual-machines/new-vm-wizard.sh)
+Source: [`cli/virtual-machines/create-vm-full.sh`](../../cli/virtual-machines/create-vm-full.sh)
 
 ```bash
 # Create a VM (full workflow).
@@ -125,17 +125,17 @@ Source: [`cli/virtual-machines/new-vm-wizard.sh`](../../cli/virtual-machines/new
 # sequence, rather than a single clone call.
 #
 # Run it:
-#   ./workflows.sh new-vm-wizard https://xenserver root "$password"
+#   ./workflows.sh create-vm-full https://xenserver root "$password"
 #
 # Optional key=value arguments (default):
 #   template_name (Rocky Linux 8)
 
-new_vm_wizard() {
+create_vm_full() {
     local template=$(param template_name "Rocky Linux 8")
-    vm=$(xe vm-install template="$template" new-name-label=xe-wizard-vm)
+    vm=$(xe vm-install template="$template" new-name-label=xe-example-full-vm)
     xe vm-param-set uuid=$vm VCPUs-max=2 VCPUs-at-startup=2
     xe vm-memory-limits-set uuid=$vm static-min=512MiB static-max=2GiB dynamic-min=2GiB dynamic-max=2GiB
-    vdi=$(xe vdi-create sr-uuid=$(default_sr) name-label="xe-wizard disk" virtual-size=24GiB type=user)
+    vdi=$(xe vdi-create sr-uuid=$(default_sr) name-label="xe-example-full-vm disk" virtual-size=24GiB type=user)
     xe vbd-create vm-uuid=$vm vdi-uuid=$vdi device=1 type=Disk mode=RW >/dev/null
     xe vif-create vm-uuid=$vm network-uuid=$(first_csv "$(xe network-list --minimal)") device=0 >/dev/null
     xe vm-start uuid=$vm
@@ -147,7 +147,7 @@ new_vm_wizard() {
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
     xe vdi-destroy uuid=$vdi
-    echo "OK: new-vm-wizard"
+    echo "OK: create-vm-full"
 }
 ```
 
@@ -156,14 +156,14 @@ new_vm_wizard() {
 ```text
 power-state: running
 vCPUs:       2
-OK: new-vm-wizard
+OK: create-vm-full
 ```
 
 </details>
 
 ## Python
 
-Source: [`python/virtual_machines/new_vm_wizard.py`](../../python/virtual_machines/new_vm_wizard.py)
+Source: [`python/virtual_machines/create_vm_full.py`](../../python/virtual_machines/create_vm_full.py)
 
 ```python
 """Create a VM (full workflow).
@@ -174,16 +174,16 @@ it — the full sequence, rather than a single clone call.
 
 Run it::
 
-    new_vm_wizard("https://xenserver", "root", password, "Rocky Linux 8")
+    create_vm_full("https://xenserver", "root", password, "Rocky Linux 8")
 """
 
 from connection import connect
 from helpers import template_by_name
 
 
-def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm"):
+def create_vm_full(url, username, password, template_name, new_vm_name="sdk-example-full-vm"):
     """
-    Create a VM the way a New VM wizard does, end to end: start from the named template, name the VM,
+    Create a VM end to end: start from the named template, name the VM,
     choose an installation source, a home server, CPU & memory, add a disk, attach a network,
     then start it.
     """
@@ -191,39 +191,39 @@ def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm
     MIB = 1024 * 1024
 
     session = connect(url, username, password)
-    # Page 1 - Template.
+    # Step 1 - Template.
     template_ref = template_by_name(session, template_name)
     print("Template:      %s" % session.xenapi.VM.get_name_label(template_ref))
 
-    # Page 2 - Name and description.
+    # Step 2 - Name and description.
     vm = session.xenapi.VM.clone(template_ref, new_vm_name)
-    session.xenapi.VM.set_name_description(vm, "Created by the full New VM wizard example")
+    session.xenapi.VM.set_name_description(vm, "Created by the create-vm-full example")
     session.xenapi.VM.set_is_a_template(vm, False)
     print("Created VM:    %s" % session.xenapi.VM.get_uuid(vm))
 
-    # Page 3 - Installation media (a network install repository).
+    # Step 3 - Installation media (a network install repository).
     session.xenapi.VM.add_to_other_config(vm, "install-repository",
                                           "http://mirror.example.com/rocky/9/os/x86_64")
     print("Install media: network repository")
 
-    # Page 4 - Home server (affinity).
+    # Step 4 - Home server (affinity).
     host_ref, host = next(iter(session.xenapi.host.get_all_records().items()))
     session.xenapi.VM.set_affinity(vm, host_ref)
     print("Home server:   %s" % host["name_label"])
 
-    # Page 5 - CPU & Memory (memory sizes are passed as strings: they exceed XML-RPC's 32-bit int).
+    # Step 5 - CPU & Memory (memory sizes are passed as strings: they exceed XML-RPC's 32-bit int).
     session.xenapi.VM.set_VCPUs_max(vm, "2")
     session.xenapi.VM.set_VCPUs_at_startup(vm, "2")
     session.xenapi.VM.set_memory_limits(vm, str(512 * MIB), str(2 * GIB), str(2 * GIB), str(2 * GIB))
     print("CPU/memory:    2 vCPUs, 2 GiB")
 
-    # Page 6 - Storage: add a disk on a (non-ISO) SR.
+    # Step 6 - Storage: add a disk on a (non-ISO) SR.
     sr_ref = next(ref for ref, r in session.xenapi.SR.get_all_records().items()
                   if r["content_type"] != "iso" and r["type"] not in ("iso", "udev"))
     vbd_device = session.xenapi.VM.get_allowed_VBD_devices(vm)[0]
     vdi = session.xenapi.VDI.create({
         "name_label": "%s disk 0" % new_vm_name,
-        "name_description": "System disk created by the wizard example",
+        "name_description": "System disk created by the create-vm-full example",
         "SR": sr_ref,
         "virtual_size": str(24 * GIB),
         "type": "system",
@@ -238,7 +238,7 @@ def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm
     })
     print("Storage:       24 GiB disk on %s" % session.xenapi.SR.get_name_label(sr_ref))
 
-    # Page 7 - Networking: attach a VIF to a network.
+    # Step 7 - Networking: attach a VIF to a network.
     net_ref, net = next(iter(session.xenapi.network.get_all_records().items()))
     vif_device = session.xenapi.VM.get_allowed_VIF_devices(vm)[0]
     session.xenapi.VIF.create({
@@ -248,7 +248,7 @@ def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm
     })
     print("Networking:    NIC on %s" % net["name_label"])
 
-    # Page 8 - Finish: start the VM.
+    # Step 8 - Finish: start the VM.
     session.xenapi.VM.start(vm, False, True)
 
     # Report the assembled VM.
@@ -264,7 +264,7 @@ def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm
     session.xenapi.VDI.destroy(vdi)
     print("Cleaned up the example VM.")
 
-    print("OK: new-vm-wizard")
+    print("OK: create-vm-full")
     session.xenapi.session.logout()
 ```
 
@@ -272,7 +272,7 @@ def new_vm_wizard(url, username, password, template_name, new_vm_name="wizard-vm
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f509-000000000000
+Created VM:    00000001-0000-0000-f609-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -283,14 +283,14 @@ power state:   Running
 vCPUs:         2
 disks:         1, NICs: 1
 Cleaned up the example VM.
-OK: new-vm-wizard
+OK: create-vm-full
 ```
 
 </details>
 
 ## C# (.NET)
 
-Source: [`csharp/VirtualMachines/NewVmWizard.cs`](../../csharp/VirtualMachines/NewVmWizard.cs)
+Source: [`csharp/VirtualMachines/CreateVmFull.cs`](../../csharp/VirtualMachines/CreateVmFull.cs)
 
 ```csharp
 /// <summary>
@@ -300,48 +300,48 @@ Source: [`csharp/VirtualMachines/NewVmWizard.cs`](../../csharp/VirtualMachines/N
 /// </summary>
 /// <example>
 /// <code>
-/// Workflows.NewVmWizard("https://xenserver", "root", password, "Rocky Linux 8");
+/// Workflows.CreateVmFull("https://xenserver", "root", password, "Rocky Linux 8");
 /// </code>
 /// </example>
-public static void NewVmWizard(string url, string user, string password,
-    string templateName, string newVmName = "wizard-vm")
+public static void CreateVmFull(string url, string user, string password,
+    string templateName, string newVmName = "sdk-example-full-vm")
 {
     const long GiB = 1024L * 1024 * 1024, MiB = 1024L * 1024;
 
     var session = Connect(url, user, password);
-    // Page 1 - Template.
+    // Step 1 - Template.
     var templateRef = TemplateByName(session, templateName);
     Console.WriteLine($"Template:      {VM.get_name_label(session, templateRef)}");
 
-    // Page 2 - Name and description.
+    // Step 2 - Name and description.
     var vm = VM.clone(session, templateRef, newVmName).opaque_ref;
-    VM.set_name_description(session, vm, "Created by the full New VM wizard example");
+    VM.set_name_description(session, vm, "Created by the create-vm-full example");
     VM.set_is_a_template(session, vm, false);
     Console.WriteLine($"Created VM:    {VM.get_uuid(session, vm)}");
 
-    // Page 3 - Installation media (a network install repository).
+    // Step 3 - Installation media (a network install repository).
     VM.add_to_other_config(session, vm, "install-repository", "http://mirror.example.com/rocky/9/os/x86_64");
     Console.WriteLine("Install media: network repository");
 
-    // Page 4 - Home server (affinity).
+    // Step 4 - Home server (affinity).
     var (hostRef, host) = Host.get_all_records(session).First();
     VM.set_affinity(session, vm, hostRef.opaque_ref);
     Console.WriteLine($"Home server:   {host.name_label}");
 
-    // Page 5 - CPU & Memory.
+    // Step 5 - CPU & Memory.
     VM.set_VCPUs_max(session, vm, 2);
     VM.set_VCPUs_at_startup(session, vm, 2);
     VM.set_memory_limits(session, vm, 512 * MiB, 2 * GiB, 2 * GiB, 2 * GiB);
     Console.WriteLine("CPU/memory:    2 vCPUs, 2 GiB");
 
-    // Page 6 - Storage: add a disk on a (non-ISO) SR.
+    // Step 6 - Storage: add a disk on a (non-ISO) SR.
     var (srRef, sr) = SR.get_all_records(session)
         .First(kv => kv.Value.content_type != "iso" && kv.Value.type != "iso" && kv.Value.type != "udev");
     var vbdDevice = VM.get_allowed_VBD_devices(session, vm)[0];
     var vdi = VDI.create(session, new VDI
     {
         name_label = $"{newVmName} disk 0",
-        name_description = "System disk created by the wizard example",
+        name_description = "System disk created by the create-vm-full example",
         SR = srRef,
         virtual_size = 24 * GiB,
         type = vdi_type.system,
@@ -364,7 +364,7 @@ public static void NewVmWizard(string url, string user, string password,
     });
     Console.WriteLine($"Storage:       24 GiB disk on {sr.name_label}");
 
-    // Page 7 - Networking: attach a VIF to a network.
+    // Step 7 - Networking: attach a VIF to a network.
     var (netRef, net) = Network.get_all_records(session).First();
     var vifDevice = VM.get_allowed_VIF_devices(session, vm)[0];
     VIF.create(session, new VIF
@@ -380,7 +380,7 @@ public static void NewVmWizard(string url, string user, string password,
     });
     Console.WriteLine($"Networking:    NIC on {net.name_label}");
 
-    // Page 8 - Finish: start the VM.
+    // Step 8 - Finish: start the VM.
     VM.start(session, vm, false, true);
 
     Console.WriteLine("--- Result ---");
@@ -394,7 +394,7 @@ public static void NewVmWizard(string url, string user, string password,
     VDI.destroy(session, vdi);
     Console.WriteLine("Cleaned up the example VM.");
 
-    Console.WriteLine("OK: new-vm-wizard");
+    Console.WriteLine("OK: create-vm-full");
     session.logout();
 }
 ```
@@ -403,7 +403,7 @@ public static void NewVmWizard(string url, string user, string password,
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-ed09-000000000000
+Created VM:    00000001-0000-0000-f609-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -414,14 +414,14 @@ power state:   Running
 vCPUs:         2
 disks:         1, NICs: 1
 Cleaned up the example VM.
-OK: new-vm-wizard
+OK: create-vm-full
 ```
 
 </details>
 
 ## Go
 
-Source: [`go/new_vm_wizard.go`](../../go/new_vm_wizard.go)
+Source: [`go/create_vm_full.go`](../../go/create_vm_full.go)
 
 ```go
 package main
@@ -432,7 +432,7 @@ import (
 	"go/xenapi"
 )
 
-// newVMWizard - Create a VM (full workflow).
+// createVMFull - Create a VM (full workflow).
 //
 // Create a VM end to end: pick a template, name the VM, choose an installation source and a home
 // server, set CPU & memory, add a disk on a storage repository, attach a network interface and
@@ -440,31 +440,31 @@ import (
 //
 // Run it:
 //
-//	newVMWizard("https://xenserver", "root", password, "Rocky Linux 8", "wizard-vm")
-func newVMWizard(url, user, password, templateName, newVMName string) {
+//	createVMFull("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-full-vm")
+func createVMFull(url, user, password, templateName, newVMName string) {
 	const GiB = 1024 * 1024 * 1024
 	const MiB = 1024 * 1024
 
 	session := connect(url, user, password)
-	// Page 1 - Template.
+	// Step 1 - Template.
 	templateRef := templateByName(session, templateName)
 	tname, _ := xenapi.VM.GetNameLabel(session, templateRef)
 	fmt.Printf("Template:      %s\n", tname)
 
-	// Page 2 - Name and description.
+	// Step 2 - Name and description.
 	vm, err := xenapi.VM.Clone(session, templateRef, newVMName)
 	check(err)
-	check(xenapi.VM.SetNameDescription(session, vm, "Created by the full New VM wizard example"))
+	check(xenapi.VM.SetNameDescription(session, vm, "Created by the create-vm-full example"))
 	check(xenapi.VM.SetIsATemplate(session, vm, false))
 	uuid, _ := xenapi.VM.GetUUID(session, vm)
 	fmt.Printf("Created VM:    %s\n", uuid)
 
-	// Page 3 - Installation media (a network install repository).
+	// Step 3 - Installation media (a network install repository).
 	check(xenapi.VM.AddToOtherConfig(session, vm, "install-repository",
 		"http://mirror.example.com/rocky/9/os/x86_64"))
 	fmt.Println("Install media: network repository")
 
-	// Page 4 - Home server (affinity).
+	// Step 4 - Home server (affinity).
 	hosts, err := xenapi.Host.GetAllRecords(session)
 	check(err)
 	var hostRef xenapi.HostRef
@@ -476,13 +476,13 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(xenapi.VM.SetAffinity(session, vm, hostRef))
 	fmt.Printf("Home server:   %s\n", hostName)
 
-	// Page 5 - CPU & Memory.
+	// Step 5 - CPU & Memory.
 	check(xenapi.VM.SetVCPUsMax(session, vm, 2))
 	check(xenapi.VM.SetVCPUsAtStartup(session, vm, 2))
 	check(xenapi.VM.SetMemoryLimits(session, vm, 512*MiB, 2*GiB, 2*GiB, 2*GiB))
 	fmt.Println("CPU/memory:    2 vCPUs, 2 GiB")
 
-	// Page 6 - Storage: add a disk on a (non-ISO) SR.
+	// Step 6 - Storage: add a disk on a (non-ISO) SR.
 	srs, err := xenapi.SR.GetAllRecords(session)
 	check(err)
 	var srRef xenapi.SRRef
@@ -497,7 +497,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(err)
 	vdi, err := xenapi.VDI.Create(session, xenapi.VDIRecord{
 		NameLabel:       newVMName + " disk 0",
-		NameDescription: "System disk created by the wizard example",
+		NameDescription: "System disk created by the create-vm-full example",
 		SR:              srRef,
 		VirtualSize:     24 * GiB,
 		Type:            xenapi.VdiTypeSystem,
@@ -514,7 +514,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(err)
 	fmt.Printf("Storage:       24 GiB disk on %s\n", srName)
 
-	// Page 7 - Networking: attach a VIF to a network.
+	// Step 7 - Networking: attach a VIF to a network.
 	nets, err := xenapi.Network.GetAllRecords(session)
 	check(err)
 	var netRef xenapi.NetworkRef
@@ -538,7 +538,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(err)
 	fmt.Printf("Networking:    NIC on %s\n", netName)
 
-	// Page 8 - Finish: start the VM.
+	// Step 8 - Finish: start the VM.
 	check(xenapi.VM.Start(session, vm, false, true))
 
 	fmt.Println("--- Result ---")
@@ -556,7 +556,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(xenapi.VDI.Destroy(session, vdi))
 	fmt.Println("Cleaned up the example VM.")
 
-	fmt.Println("OK: new-vm-wizard")
+	fmt.Println("OK: create-vm-full")
 	session.Logout()
 }
 ```
@@ -569,21 +569,21 @@ Created VM:    00000001-0000-0000-f609-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
-Storage:       24 GiB disk on Shared NFS
-Networking:    NIC on Pool-wide network associated with eth0
+Storage:       24 GiB disk on Local storage
+Networking:    NIC on Pool-wide network associated with eth2
 --- Result ---
 power state:   Running
 vCPUs:         2
 disks:         1, NICs: 1
 Cleaned up the example VM.
-OK: new-vm-wizard
+OK: create-vm-full
 ```
 
 </details>
 
 ## Java
 
-Source: [`java/src/main/java/com/xenserver/samples/virtualmachines/NewVmWizard.java`](../../java/src/main/java/com/xenserver/samples/virtualmachines/NewVmWizard.java)
+Source: [`java/src/main/java/com/xenserver/samples/virtualmachines/CreateVmFull.java`](../../java/src/main/java/com/xenserver/samples/virtualmachines/CreateVmFull.java)
 
 ```java
 package com.xenserver.samples.virtualmachines;
@@ -604,8 +604,8 @@ import java.util.Map;
 import static com.xenserver.samples.Helpers.templateByName;
 import static com.xenserver.samples.PoolConnection.connect;
 
-public final class NewVmWizard {
-    private NewVmWizard() {
+public final class CreateVmFull {
+    private CreateVmFull() {
     }
 
     /**
@@ -618,7 +618,7 @@ public final class NewVmWizard {
      * <p>Run it:
      *
      * <pre>{@code
-     * NewVmWizard.run("https://xenserver", "root", password, "Rocky Linux 8", "wizard-vm");
+     * CreateVmFull.run("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-full-vm");
      * }</pre>
      */
     public static void run(String url, String user, String password,
@@ -626,32 +626,32 @@ public final class NewVmWizard {
         final long GiB = 1024L * 1024 * 1024, MiB = 1024L * 1024;
 
         Connection conn = connect(url, user, password);
-        // Page 1 - Template.
+        // Step 1 - Template.
         VM template = templateByName(conn, templateName);
         System.out.println("Template:      " + template.getNameLabel(conn));
 
-        // Page 2 - Name and description.
+        // Step 2 - Name and description.
         VM vm = template.createClone(conn, newVmName);
-        vm.setNameDescription(conn, "Created by the full New VM wizard example");
+        vm.setNameDescription(conn, "Created by the create-vm-full example");
         vm.setIsATemplate(conn, false);
         System.out.println("Created VM:    " + vm.getUuid(conn));
 
-        // Page 3 - Installation media (a network install repository).
+        // Step 3 - Installation media (a network install repository).
         vm.addToOtherConfig(conn, "install-repository", "http://mirror.example.com/rocky/9/os/x86_64");
         System.out.println("Install media: network repository");
 
-        // Page 4 - Home server (affinity).
+        // Step 4 - Home server (affinity).
         Map.Entry<Host, Host.Record> he = Host.getAllRecords(conn).entrySet().iterator().next();
         vm.setAffinity(conn, he.getKey());
         System.out.println("Home server:   " + he.getValue().nameLabel);
 
-        // Page 5 - CPU & Memory.
+        // Step 5 - CPU & Memory.
         vm.setVCPUsMax(conn, 2L);
         vm.setVCPUsAtStartup(conn, 2L);
         vm.setMemoryLimits(conn, 512 * MiB, 2 * GiB, 2 * GiB, 2 * GiB);
         System.out.println("CPU/memory:    2 vCPUs, 2 GiB");
 
-        // Page 6 - Storage: add a disk on a (non-ISO) SR.
+        // Step 6 - Storage: add a disk on a (non-ISO) SR.
         SR sr = null;
         String srName = null;
         for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet()) {
@@ -664,7 +664,7 @@ public final class NewVmWizard {
         }
         VDI.Record vdiRec = new VDI.Record();
         vdiRec.nameLabel = newVmName + " disk 0";
-        vdiRec.nameDescription = "System disk created by the wizard example";
+        vdiRec.nameDescription = "System disk created by the create-vm-full example";
         vdiRec.SR = sr;
         vdiRec.virtualSize = 24 * GiB;
         vdiRec.type = Types.VdiType.SYSTEM;
@@ -687,7 +687,7 @@ public final class NewVmWizard {
         VBD.create(conn, vbdRec);
         System.out.println("Storage:       24 GiB disk on " + srName);
 
-        // Page 7 - Networking: attach a VIF to a network.
+        // Step 7 - Networking: attach a VIF to a network.
         Map.Entry<Network, Network.Record> ne = Network.getAllRecords(conn).entrySet().iterator().next();
         VIF.Record vifRec = new VIF.Record();
         vifRec.VM = vm;
@@ -706,7 +706,7 @@ public final class NewVmWizard {
         VIF.create(conn, vifRec);
         System.out.println("Networking:    NIC on " + ne.getValue().nameLabel);
 
-        // Page 8 - Finish: start the VM.
+        // Step 8 - Finish: start the VM.
         vm.start(conn, false, true);
 
         System.out.println("--- Result ---");
@@ -720,7 +720,7 @@ public final class NewVmWizard {
         vdi.destroy(conn);
         System.out.println("Cleaned up the example VM.");
 
-        System.out.println("OK: new-vm-wizard");
+        System.out.println("OK: create-vm-full");
         Session.logout(conn);
     }
 }
@@ -730,7 +730,7 @@ public final class NewVmWizard {
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f709-000000000000
+Created VM:    00000001-0000-0000-f209-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -741,7 +741,7 @@ power state:   Running
 vCPUs:         2
 disks:         1, NICs: 1
 Cleaned up the example VM.
-OK: new-vm-wizard
+OK: create-vm-full
 ```
 
 </details>

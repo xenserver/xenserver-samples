@@ -8,8 +8,7 @@ import (
 
 // manageVMDisks - Manage VM disks.
 //
-// Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-// operations from the VM's Storage tab.
+// Deactivate a running VM's disk, resize it, reactivate it.
 //
 // A real VM's root/boot disk is unpluggable=false (only non-system disks from VM.Provision default
 // to unpluggable), and the VM has to be Running for VBD.Unplug to be legal at all

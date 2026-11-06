@@ -11,9 +11,9 @@ internal static partial class Workflows
 {
     /// <summary>
     /// Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the
-    /// LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array offers
-    /// many targets, so name yours with target_iqn; if the target behind it offers more than one LUN, name
-    /// yours with scsi_id too.
+    /// LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so name
+    /// yours with target_iqn; if the target behind it offers more than one LUN, name yours with scsi_id
+    /// too.
     /// </summary>
     /// <example>
     /// <code>
@@ -22,9 +22,9 @@ internal static partial class Workflows
     /// </example>
     /// <remarks>
     /// <para>
-    /// Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN the way the New SR wizard
-    /// does: a device-config that's missing a piece makes the backend fail on purpose, and the failure
-    /// carries an XML fragment listing what it needs next.
+    /// Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN first: a device-config
+    /// that's missing a piece makes the backend fail on purpose, and the failure carries an XML fragment
+    /// listing what it needs next.
     /// </para>
     /// <para>
     /// SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target: pass
@@ -117,8 +117,8 @@ internal static partial class Workflows
 
     /// <summary>
     /// Pick the LUN behind the chosen IQN: the caller's SCSIid, if named (it must be one on offer), else the
-    /// one LUN, if that target offers only one. The New SR wizard auto-selects a LUN only when exactly one is
-    /// on offer, and otherwise makes the caller choose - picking blindly on a shared target risks formatting
+    /// one LUN, if that target offers only one. Choose a LUN automatically only when exactly one is on
+    /// offer, and otherwise make the caller choose - picking blindly on a shared target risks formatting
     /// someone else's disk.
     /// </summary>
     private static XElement ChooseLun(List<XElement> luns, string scsiId)

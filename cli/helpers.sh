@@ -44,11 +44,11 @@ xml_tag_text() {
 }
 
 # Return the XML a backend sends back on its deliberately-failing discovery probe (args: sm-type, then
-# any sr-probe arguments such as host-uuid=/device-config:key=value). The New SR wizard discovers
-# iSCSI/HBA LUNs by asking with an incomplete device-config on purpose: the backend can't create anything
-# from it yet, so it fails with an SR_BACKEND_FAILURE_<n> whose error parameters carry an XML fragment
-# describing what it found - the IQNs on offer, then the LUNs behind one of them, or - for HBA - every
-# LUN visible at all. A probe that unexpectedly succeeds means the device-config was already complete -
+# any sr-probe arguments such as host-uuid=/device-config:key=value). Discover iSCSI/HBA LUNs by
+# asking with an incomplete device-config on purpose: the backend can't create anything from it yet,
+# so it fails with an SR_BACKEND_FAILURE_<n> whose error parameters carry an XML fragment describing
+# what it found - the IQNs on offer, then the LUNs behind one of them, or - for HBA - every LUN
+# visible at all. A probe that unexpectedly succeeds means the device-config was already complete -
 # not the discovery prompt this helper is looking for. Never probe by attempting sr-create instead: on
 # real storage a create that succeeds formats the LUN.
 probe_for_failure() {

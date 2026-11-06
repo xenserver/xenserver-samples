@@ -117,13 +117,13 @@ def xml_from_failure(e):
 def probe_for_failure(session, host, device_config, sm_type):
     """Return the XML a backend sends back on its deliberately-failing discovery probe.
 
-    The New SR wizard discovers iSCSI/HBA LUNs by asking with an incomplete device-config on
-    purpose: the backend can't create anything from it yet, so it fails with an
-    SR_BACKEND_FAILURE_<n> error whose params carry an XML fragment describing what it found (the
-    IQNs on offer, then the LUNs behind one of them, or - for HBA - every LUN visible at all). A
-    probe that unexpectedly *succeeds* means the device-config was already complete - not the
-    discovery prompt this helper is looking for. (Never probe by attempting SR.create instead: on
-    real storage a create that succeeds formats the LUN.)"""
+    Discover iSCSI/HBA LUNs by asking with an incomplete device-config on purpose: the backend can't
+    create anything from it yet, so it fails with an SR_BACKEND_FAILURE_<n> error whose params carry
+    an XML fragment describing what it found (the IQNs on offer, then the LUNs behind one of them,
+    or - for HBA - every LUN visible at all). A probe that unexpectedly *succeeds* means the
+    device-config was already complete - not the discovery prompt this helper is looking for. (Never
+    probe by attempting SR.create instead: on real storage a create that succeeds formats the
+    LUN.)"""
     try:
         session.xenapi.SR.probe(host, device_config, sm_type, {})
     except XenAPI.Failure as e:

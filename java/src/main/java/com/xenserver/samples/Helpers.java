@@ -136,12 +136,12 @@ public final class Helpers {
     }
 
     /**
-     * Return the XML a backend sends back on its deliberately-failing discovery probe. The New SR wizard
-     * discovers iSCSI/HBA LUNs by asking with an incomplete device-config on purpose: the backend can't
-     * create anything from it yet, so it fails with an SR_BACKEND_FAILURE_&lt;n&gt; error whose params
-     * carry an XML fragment describing what it found. A probe that unexpectedly SUCCEEDS means the
-     * device-config was already complete - not the discovery prompt this helper looks for. Never probe by
-     * attempting SR.create instead: on real storage a create that succeeds formats the LUN.
+     * Return the XML a backend sends back on its deliberately-failing discovery probe. Discover iSCSI/HBA
+     * LUNs by asking with an incomplete device-config on purpose: the backend can't create anything from
+     * it yet, so it fails with an SR_BACKEND_FAILURE_&lt;n&gt; error whose params carry an XML fragment
+     * describing what it found. A probe that unexpectedly SUCCEEDS means the device-config was already
+     * complete - not the discovery prompt this helper looks for. Never probe by attempting SR.create
+     * instead: on real storage a create that succeeds formats the LUN.
      */
     public static String probeForFailure(Connection conn, Host host, Map<String, String> deviceConfig,
             String smType) throws Exception {

@@ -30,7 +30,7 @@ def disaster_recovery_failover(url, username, password, target=None, target_iqn=
     and VDI.open_database gives a session onto the metadata replicated there - a separate, read-only
     database, not this pool. Recovering runs on that session and names this pool's session as the place
     to recover into. A test failover (test_failover=True) then removes the recovered VMs and vApps -
-    not their disks, which are the replica's - and detaches and forgets the SRs, as the wizard does."""
+    not their disks, which are the replica's - and detaches and forgets the SRs."""
     if isinstance(test_failover, str):  # from the command line
         test_failover = test_failover.lower() != "false"
     session = connect(url, username, password)

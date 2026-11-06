@@ -8,8 +8,7 @@ namespace XenServerWorkflows;
 internal static partial class Workflows
 {
     /// <summary>
-    /// Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-    /// operations from the VM's Storage tab.
+    /// Deactivate a running VM's disk, resize it, reactivate it.
     /// </summary>
     public static void ManageVmDisks(string url, string user, string password,
         string sourceVm, string srName, string newVmName = "sdk-example-vm-disks")

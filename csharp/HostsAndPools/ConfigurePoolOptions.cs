@@ -19,8 +19,7 @@ internal static partial class Workflows
         var session = Connect(url, user, password);
         var pool = Pool.get_all(session)[0].opaque_ref;
 
-        // None of these is a wizard: they are plain pool settings that a client exposes on a
-        // properties page, and each is a single field. Read them, change them, put them back.
+        // These are plain pool settings, each a single field. Read them, change them, put them back.
         var livePatchingDisabled = Pool.get_live_patching_disabled(session, pool);
         var igmpSnooping = Pool.get_igmp_snooping_enabled(session, pool);
         var migrationCompression = Pool.get_migration_compression(session, pool);

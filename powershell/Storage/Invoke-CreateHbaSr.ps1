@@ -15,8 +15,8 @@ function Invoke-CreateHbaSr {
         [string]$ScsiId = "",
         [string]$SrName = "sdk-example-hba"
     )
-    # Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard does:
-    # probing with no SCSIid fails on purpose and lists every LUN the backend can see.
+    # Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no SCSIid fails on
+    # purpose and lists every LUN the backend can see.
     #
     # SR.create formats the chosen LUN - this is destructive. On shared FC storage a host sees LUNs other
     # hosts are using, so name the one that is yours (-ScsiId); with none, the first LUN listed is taken,

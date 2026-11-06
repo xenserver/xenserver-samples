@@ -14,8 +14,7 @@ from connection import connect
 def configure_pool_options(url, username, password):
     """Read and change the pool-wide options that govern how the pool behaves.
 
-    None of these is a wizard: they are plain pool settings that a client exposes on a
-    properties page, and each is a single field. Read them, change them, put them back."""
+    These are plain pool settings, each a single field. Read them, change them, put them back."""
     session = connect(url, username, password)
     x = session.xenapi
     pool = x.pool.get_all()[0]

@@ -25,7 +25,7 @@
 # database: option (database:vdi-uuid=<metadata disk>) runs a command against the metadata replicated there
 # - a separate, read-only database - instead of this pool, and vm-recover/appliance-recover recover out of
 # it into this pool. A test failover then removes the recovered VMs and vApps - not their disks, which are
-# the replica's - and detaches and forgets the SRs, as the wizard does.
+# the replica's - and detaches and forgets the SRs.
 disaster_recovery_failover() {
     local sr_type test_failover task sr vdi line uuid name has_metadata pool_name master vapp vm reason
     local -a dc uuids=() introduced=() recovered_vms=() recovered_vapps=() in_recovered_vapp=()

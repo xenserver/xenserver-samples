@@ -20,8 +20,8 @@ internal static partial class Workflows
     /// </example>
     /// <remarks>
     /// <para>
-    /// Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard does:
-    /// probing with no SCSIid fails on purpose and lists every LUN the backend can see.
+    /// Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no SCSIid fails
+    /// on purpose and lists every LUN the backend can see.
     /// </para>
     /// <para>
     /// SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target.

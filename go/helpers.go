@@ -159,12 +159,12 @@ func waitForGuestAgent(session *xenapi.Session, vm xenapi.VMRef) {
 }
 
 // probeForFailure runs SR.probe's deliberately-incomplete discovery call and returns the XML
-// fragment its failure carries describing what it found. The New SR wizard discovers iSCSI/HBA
-// LUNs by asking with an incomplete device-config on purpose: the backend can't create anything
-// from it yet, so it fails with an error whose params carry an XML fragment describing what it
-// found. A probe that unexpectedly succeeds means the device-config was already complete - not the
-// discovery prompt this helper is looking for. Never fall back to SR.create instead: on real
-// storage a create that unexpectedly succeeds formats the LUN.
+// fragment its failure carries describing what it found. Discover iSCSI/HBA LUNs by asking with an
+// incomplete device-config on purpose: the backend can't create anything from it yet, so it fails
+// with an error whose params carry an XML fragment describing what it found. A probe that
+// unexpectedly succeeds means the device-config was already complete - not the discovery prompt
+// this helper is looking for. Never fall back to SR.create instead: on real storage a create that
+// unexpectedly succeeds formats the LUN.
 func probeForFailure(session *xenapi.Session, host xenapi.HostRef, deviceConfig map[string]string, smType string) string {
 	_, err := xenapi.SR.Probe(session, host, deviceConfig, smType, map[string]string{})
 	if err == nil {

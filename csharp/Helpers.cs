@@ -73,11 +73,11 @@ internal static partial class Workflows
             .FirstOrDefault(d => !string.IsNullOrEmpty(d) && d.TrimStart().StartsWith("<"));
 
     /// <summary>
-    /// Return the XML a backend sends back on its deliberately-failing discovery probe. The New SR wizard
-    /// discovers iSCSI/HBA LUNs by asking with an incomplete device-config on purpose: the backend can't
-    /// create anything from it yet, so it fails with an SR_BACKEND_FAILURE_&lt;n&gt; error whose params carry
-    /// an XML fragment describing what it found. Never probe by attempting SR.create instead: on real storage
-    /// a create that unexpectedly succeeds formats the LUN.
+    /// Return the XML a backend sends back on its deliberately-failing discovery probe. Discover iSCSI/HBA
+    /// LUNs by asking with an incomplete device-config on purpose: the backend can't create anything from it
+    /// yet, so it fails with an SR_BACKEND_FAILURE_&lt;n&gt; error whose params carry an XML fragment
+    /// describing what it found. Never probe by attempting SR.create instead: on real storage a create that
+    /// unexpectedly succeeds formats the LUN.
     /// </summary>
     internal static string ProbeForFailure(Session session, string host,
         Dictionary<string, string> deviceConfig, string smType)

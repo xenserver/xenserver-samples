@@ -11,8 +11,8 @@ from helpers import probe_for_failure
 
 
 def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"):
-    """Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard
-    does: probing with no SCSIid fails on purpose and lists every LUN the backend can see.
+    """Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no
+    SCSIid fails on purpose and lists every LUN the backend can see.
 
     SR.create formats the chosen LUN - this is destructive. On shared FC storage a host sees LUNs
     other hosts are using, so name the one that is yours (scsi_id); with none, the first LUN listed

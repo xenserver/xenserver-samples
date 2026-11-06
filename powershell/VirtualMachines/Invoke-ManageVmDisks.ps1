@@ -3,8 +3,7 @@ function Invoke-ManageVmDisks {
     .SYNOPSIS
         Manage VM disks.
     .DESCRIPTION
-        Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-        operations from the VM's Storage tab.
+        Deactivate a running VM's disk, resize it, reactivate it.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Url,

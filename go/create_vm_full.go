@@ -6,7 +6,7 @@ import (
 	"go/xenapi"
 )
 
-// newVMWizard - Create a VM (full workflow).
+// createVMFull - Create a VM (full workflow).
 //
 // Create a VM end to end: pick a template, name the VM, choose an installation source and a home
 // server, set CPU & memory, add a disk on a storage repository, attach a network interface and
@@ -14,31 +14,31 @@ import (
 //
 // Run it:
 //
-//	newVMWizard("https://xenserver", "root", password, "Rocky Linux 8", "wizard-vm")
-func newVMWizard(url, user, password, templateName, newVMName string) {
+//	createVMFull("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-full-vm")
+func createVMFull(url, user, password, templateName, newVMName string) {
 	const GiB = 1024 * 1024 * 1024
 	const MiB = 1024 * 1024
 
 	session := connect(url, user, password)
-	// Page 1 - Template.
+	// Step 1 - Template.
 	templateRef := templateByName(session, templateName)
 	tname, _ := xenapi.VM.GetNameLabel(session, templateRef)
 	fmt.Printf("Template:      %s\n", tname)
 
-	// Page 2 - Name and description.
+	// Step 2 - Name and description.
 	vm, err := xenapi.VM.Clone(session, templateRef, newVMName)
 	check(err)
-	check(xenapi.VM.SetNameDescription(session, vm, "Created by the full New VM wizard example"))
+	check(xenapi.VM.SetNameDescription(session, vm, "Created by the create-vm-full example"))
 	check(xenapi.VM.SetIsATemplate(session, vm, false))
 	uuid, _ := xenapi.VM.GetUUID(session, vm)
 	fmt.Printf("Created VM:    %s\n", uuid)
 
-	// Page 3 - Installation media (a network install repository).
+	// Step 3 - Installation media (a network install repository).
 	check(xenapi.VM.AddToOtherConfig(session, vm, "install-repository",
 		"http://mirror.example.com/rocky/9/os/x86_64"))
 	fmt.Println("Install media: network repository")
 
-	// Page 4 - Home server (affinity).
+	// Step 4 - Home server (affinity).
 	hosts, err := xenapi.Host.GetAllRecords(session)
 	check(err)
 	var hostRef xenapi.HostRef
@@ -50,13 +50,13 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(xenapi.VM.SetAffinity(session, vm, hostRef))
 	fmt.Printf("Home server:   %s\n", hostName)
 
-	// Page 5 - CPU & Memory.
+	// Step 5 - CPU & Memory.
 	check(xenapi.VM.SetVCPUsMax(session, vm, 2))
 	check(xenapi.VM.SetVCPUsAtStartup(session, vm, 2))
 	check(xenapi.VM.SetMemoryLimits(session, vm, 512*MiB, 2*GiB, 2*GiB, 2*GiB))
 	fmt.Println("CPU/memory:    2 vCPUs, 2 GiB")
 
-	// Page 6 - Storage: add a disk on a (non-ISO) SR.
+	// Step 6 - Storage: add a disk on a (non-ISO) SR.
 	srs, err := xenapi.SR.GetAllRecords(session)
 	check(err)
 	var srRef xenapi.SRRef
@@ -71,7 +71,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(err)
 	vdi, err := xenapi.VDI.Create(session, xenapi.VDIRecord{
 		NameLabel:       newVMName + " disk 0",
-		NameDescription: "System disk created by the wizard example",
+		NameDescription: "System disk created by the create-vm-full example",
 		SR:              srRef,
 		VirtualSize:     24 * GiB,
 		Type:            xenapi.VdiTypeSystem,
@@ -88,7 +88,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(err)
 	fmt.Printf("Storage:       24 GiB disk on %s\n", srName)
 
-	// Page 7 - Networking: attach a VIF to a network.
+	// Step 7 - Networking: attach a VIF to a network.
 	nets, err := xenapi.Network.GetAllRecords(session)
 	check(err)
 	var netRef xenapi.NetworkRef
@@ -112,7 +112,7 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(err)
 	fmt.Printf("Networking:    NIC on %s\n", netName)
 
-	// Page 8 - Finish: start the VM.
+	// Step 8 - Finish: start the VM.
 	check(xenapi.VM.Start(session, vm, false, true))
 
 	fmt.Println("--- Result ---")
@@ -130,6 +130,6 @@ func newVMWizard(url, user, password, templateName, newVMName string) {
 	check(xenapi.VDI.Destroy(session, vdi))
 	fmt.Println("Cleaned up the example VM.")
 
-	fmt.Println("OK: new-vm-wizard")
+	fmt.Println("OK: create-vm-full")
 	session.Logout()
 }

@@ -23,7 +23,7 @@ internal static partial class Workflows
     /// Only SRs on a LUN - iSCSI or Fibre Channel/SAS (HBA) - can hold the pool's database, and every host
     /// must have the SR attached. The server says which qualify: SR.assert_supports_database_replication
     /// fails for any that can't (an NFS SR fails SR_OPERATION_NOT_SUPPORTED), so ask each one rather than
-    /// guessing from its type, as the Configure DR dialog does. A pool can replicate to up to 8 SRs.
+    /// guessing from its type. A pool can replicate to up to 8 SRs.
     /// </para>
     /// <para>
     /// Replication is only useful while it is on. So that the example leaves the pool as it found it, it
@@ -52,8 +52,8 @@ internal static partial class Workflows
         var chosen = candidates[0];
         var name = SR.get_name_label(session, chosen);
 
-        // The pool's own metadata disk on this SR is what says replication is on (as the Configure DR
-        // dialog decides): a disk of type metadata whose metadata_of_pool is this pool.
+        // The pool's own metadata disk on this SR is what says replication is on: a disk of type metadata
+        // whose metadata_of_pool is this pool.
         var pool = Pool.get_all(session)[0].opaque_ref;
         string MetadataDisk() => SR.get_VDIs(session, chosen).Select(v => v.opaque_ref).FirstOrDefault(v =>
             VDI.get_type(session, v) == vdi_type.metadata && VDI.get_metadata_of_pool(session, v).opaque_ref == pool);

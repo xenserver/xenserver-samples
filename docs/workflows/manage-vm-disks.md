@@ -2,7 +2,7 @@
 
 # Manage VM disks
 
-Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize operations from the VM's Storage tab.
+Deactivate a running VM's disk, resize it, reactivate it.
 
 Workflow `manage-vm-disks`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -16,8 +16,7 @@ function Invoke-ManageVmDisks {
     .SYNOPSIS
         Manage VM disks.
     .DESCRIPTION
-        Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-        operations from the VM's Storage tab.
+        Deactivate a running VM's disk, resize it, reactivate it.
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Url,
@@ -106,8 +105,7 @@ Source: [`cli/virtual-machines/manage-vm-disks.sh`](../../cli/virtual-machines/m
 ```bash
 # Manage VM disks.
 #
-# Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize operations
-# from the VM's Storage tab.
+# Deactivate a running VM's disk, resize it, reactivate it.
 #
 # Run it:
 #   ./workflows.sh manage-vm-disks https://xenserver root "$password"
@@ -195,8 +193,7 @@ Source: [`python/virtual_machines/manage_vm_disks.py`](../../python/virtual_mach
 ```python
 """Manage VM disks.
 
-Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-operations from the VM's Storage tab.
+Deactivate a running VM's disk, resize it, reactivate it.
 """
 
 from connection import connect
@@ -287,8 +284,7 @@ Source: [`csharp/VirtualMachines/ManageVmDisks.cs`](../../csharp/VirtualMachines
 
 ```csharp
 /// <summary>
-/// Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-/// operations from the VM's Storage tab.
+/// Deactivate a running VM's disk, resize it, reactivate it.
 /// </summary>
 public static void ManageVmDisks(string url, string user, string password,
     string sourceVm, string srName, string newVmName = "sdk-example-vm-disks")
@@ -398,8 +394,7 @@ import (
 
 // manageVMDisks - Manage VM disks.
 //
-// Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-// operations from the VM's Storage tab.
+// Deactivate a running VM's disk, resize it, reactivate it.
 //
 // A real VM's root/boot disk is unpluggable=false (only non-system disks from VM.Provision default
 // to unpluggable), and the VM has to be Running for VBD.Unplug to be legal at all
@@ -536,8 +531,7 @@ public final class ManageVmDisks {
     /**
      * Manage VM disks.
      *
-     * <p>Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize
-     * operations from the VM's Storage tab.
+     * <p>Deactivate a running VM's disk, resize it, reactivate it.
      *
      * <p>Not the VM's root/boot disk: a real VM's system disk is unpluggable=false (only a template's
      * non-system disks default to unpluggable), so VBD.unplug on it fails on a real host with

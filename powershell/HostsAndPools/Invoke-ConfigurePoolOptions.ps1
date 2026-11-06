@@ -16,8 +16,7 @@ function Invoke-ConfigurePoolOptions {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
 
-    # None of these is a wizard: they are plain pool settings that a client exposes on a properties
-    # page, and each is a single field. Read them, change them, put them back.
+    # These are plain pool settings, each a single field. Read them, change them, put them back.
     $before = [ordered]@{
         "live patching disabled" = $pool.live_patching_disabled
         "IGMP snooping"          = $pool.igmp_snooping_enabled

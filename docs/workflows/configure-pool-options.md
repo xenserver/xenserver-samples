@@ -29,8 +29,7 @@ function Invoke-ConfigurePoolOptions {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
 
-    # None of these is a wizard: they are plain pool settings that a client exposes on a properties
-    # page, and each is a single field. Read them, change them, put them back.
+    # These are plain pool settings, each a single field. Read them, change them, put them back.
     $before = [ordered]@{
         "live patching disabled" = $pool.live_patching_disabled
         "IGMP snooping"          = $pool.igmp_snooping_enabled
@@ -158,8 +157,7 @@ from connection import connect
 def configure_pool_options(url, username, password):
     """Read and change the pool-wide options that govern how the pool behaves.
 
-    None of these is a wizard: they are plain pool settings that a client exposes on a
-    properties page, and each is a single field. Read them, change them, put them back."""
+    These are plain pool settings, each a single field. Read them, change them, put them back."""
     session = connect(url, username, password)
     x = session.xenapi
     pool = x.pool.get_all()[0]
@@ -227,8 +225,7 @@ public static void ConfigurePoolOptions(string url, string user, string password
     var session = Connect(url, user, password);
     var pool = Pool.get_all(session)[0].opaque_ref;
 
-    // None of these is a wizard: they are plain pool settings that a client exposes on a
-    // properties page, and each is a single field. Read them, change them, put them back.
+    // These are plain pool settings, each a single field. Read them, change them, put them back.
     var livePatchingDisabled = Pool.get_live_patching_disabled(session, pool);
     var igmpSnooping = Pool.get_igmp_snooping_enabled(session, pool);
     var migrationCompression = Pool.get_migration_compression(session, pool);
@@ -302,8 +299,7 @@ func configurePoolOptions(url, user, password string) {
 	check(err)
 	pool := pools[0]
 
-	// None of these is a wizard: they are plain pool settings that a client exposes on a properties
-	// page, and each is a single field. Read them, change them, put them back.
+	// These are plain pool settings, each a single field. Read them, change them, put them back.
 	livePatching, err := xenapi.Pool.GetLivePatchingDisabled(session, pool)
 	check(err)
 	igmp, err := xenapi.Pool.GetIgmpSnoopingEnabled(session, pool)
@@ -385,8 +381,7 @@ public final class ConfigurePoolOptions {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         try {
-            // None of these is a wizard: they are plain pool settings that a client exposes on a
-            // properties page, and each is a single field. Read them, change them, put them back.
+            // These are plain pool settings, each a single field. Read them, change them, put them back.
             Pool pool = Pool.getAll(conn).iterator().next();
 
             boolean beforeLivePatching = pool.getLivePatchingDisabled(conn);

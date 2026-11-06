@@ -67,7 +67,7 @@ case "$workflow" in
     create-network)       create_network ;;
     edit-vm-properties)   edit_vm_properties ;;
     events)               events ;;
-    new-vm-wizard)        new_vm_wizard ;;
+    create-vm-full)       create_vm_full ;;
     live-migrate)         live_migrate ;;
     host-maintenance)     host_maintenance ;;
     configure-ha)         configure_ha ;;

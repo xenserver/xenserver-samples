@@ -22,8 +22,7 @@ func configurePoolOptions(url, user, password string) {
 	check(err)
 	pool := pools[0]
 
-	// None of these is a wizard: they are plain pool settings that a client exposes on a properties
-	// page, and each is a single field. Read them, change them, put them back.
+	// These are plain pool settings, each a single field. Read them, change them, put them back.
 	livePatching, err := xenapi.Pool.GetLivePatchingDisabled(session, pool)
 	check(err)
 	igmp, err := xenapi.Pool.GetIgmpSnoopingEnabled(session, pool)

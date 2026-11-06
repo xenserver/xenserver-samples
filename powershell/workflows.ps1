@@ -88,7 +88,7 @@ $WORKFLOWS = @{
     "create-network"                 = @{ Function = "Invoke-CreateNetwork";                Defaults = @{} }
     "edit-vm-properties"             = @{ Function = "Invoke-EditVmProperties";             Defaults = @{ VmName = "web-01" } }
     "events"                         = @{ Function = "Invoke-Events";                       Defaults = @{ VmName = "web-01" } }
-    "new-vm-wizard"                  = @{ Function = "Invoke-NewVmWizard";                  Defaults = @{ TemplateName = "Rocky Linux 8" } }
+    "create-vm-full"                 = @{ Function = "Invoke-CreateVmFull";                 Defaults = @{ TemplateName = "Rocky Linux 8" } }
     "live-migrate"                   = @{ Function = "Invoke-LiveMigrate";                  Defaults = @{ SourceVm = "web-01"; SrName = "Shared NFS" } }
     "host-maintenance"               = @{ Function = "Invoke-HostMaintenance";              Defaults = @{ SourceVm = "web-01"; SrName = "Shared NFS" } }
     "configure-ha"                   = @{ Function = "Invoke-ConfigureHa";                  Defaults = @{ HeartbeatSrName = "Shared NFS" } }

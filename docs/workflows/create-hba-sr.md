@@ -32,8 +32,8 @@ function Invoke-CreateHbaSr {
         [string]$ScsiId = "",
         [string]$SrName = "sdk-example-hba"
     )
-    # Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard does:
-    # probing with no SCSIid fails on purpose and lists every LUN the backend can see.
+    # Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no SCSIid fails on
+    # purpose and lists every LUN the backend can see.
     #
     # SR.create formats the chosen LUN - this is destructive. On shared FC storage a host sees LUNs other
     # hosts are using, so name the one that is yours (-ScsiId); with none, the first LUN listed is taken,
@@ -182,8 +182,8 @@ from helpers import probe_for_failure
 
 
 def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"):
-    """Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard
-    does: probing with no SCSIid fails on purpose and lists every LUN the backend can see.
+    """Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no
+    SCSIid fails on purpose and lists every LUN the backend can see.
 
     SR.create formats the chosen LUN - this is destructive. On shared FC storage a host sees LUNs
     other hosts are using, so name the one that is yours (scsi_id); with none, the first LUN listed
@@ -233,7 +233,7 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-f20a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-e40a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -255,8 +255,8 @@ Source: [`csharp/Storage/CreateHbaSr.cs`](../../csharp/Storage/CreateHbaSr.cs)
 /// </example>
 /// <remarks>
 /// <para>
-/// Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard does:
-/// probing with no SCSIid fails on purpose and lists every LUN the backend can see.
+/// Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no SCSIid fails
+/// on purpose and lists every LUN the backend can see.
 /// </para>
 /// <para>
 /// SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target.
@@ -309,7 +309,7 @@ public static void CreateHbaSr(string url, string user, string password, string 
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-770a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-be0a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -335,10 +335,10 @@ import (
 // see with a deliberately failing probe, then create the SR by SCSI ID. Creating the SR formats the
 // LUN.
 //
-// Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard does:
-// probing with no SCSIid fails on purpose and lists every LUN the backend can see. The failure's
-// XML root element name and error code both vary between XenServer versions, so parse by tag name
-// BlockDevice wherever it occurs.
+// Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no SCSIid
+// fails on purpose and lists every LUN the backend can see. The failure's XML root element name
+// and error code both vary between XenServer versions, so parse by tag name BlockDevice wherever
+// it occurs.
 //
 // SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target.
 func createHbaSr(url, user, password, scsiID, srName string) {
@@ -392,7 +392,7 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-f50a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-e70a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -428,9 +428,9 @@ public final class CreateHbaSr {
      * see with a deliberately failing probe, then create the SR by SCSI ID. Creating the SR formats the
      * LUN.
      *
-     * <p>Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard does:
-     * probing with no SCSIid fails on purpose and lists every LUN the backend can see. SR.create formats
-     * the chosen LUN - this is destructive, so pick carefully on a real target.
+     * <p>Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no SCSIid
+     * fails on purpose and lists every LUN the backend can see. SR.create formats the chosen LUN - this
+     * is destructive, so pick carefully on a real target.
      *
      * <p>Run it:
      *
@@ -498,7 +498,7 @@ public final class CreateHbaSr {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-9d0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-c10a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 

@@ -2,7 +2,7 @@
 
 # Create an iSCSI SR
 
-Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array offers many targets, so name yours with target_iqn.
+Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so name yours with target_iqn.
 
 **Requires:** an iSCSI target.
 
@@ -21,9 +21,8 @@ function Invoke-CreateIscsiSr {
         Create an iSCSI SR.
     .DESCRIPTION
         Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the
-        LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array
-        offers many targets, so name yours with target_iqn; if the target behind it offers more than one
-        LUN, name yours with ScsiId too.
+        LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so name
+        yours with target_iqn; if the target behind it offers more than one LUN, name yours with ScsiId too.
     .EXAMPLE
         Invoke-CreateIscsiSr -Url https://xenserver -UserName root -Password $password
     #>
@@ -39,9 +38,9 @@ function Invoke-CreateIscsiSr {
         [string]$ScsiId,
         [string]$SrName = "sdk-example-iscsi"
     )
-    # Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN the way the New SR
-    # wizard does: a device-config that's missing a piece makes the backend fail on purpose, and the
-    # failure carries an XML fragment listing what it needs next.
+    # Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN first: a device-config
+    # that's missing a piece makes the backend fail on purpose, and the failure carries an XML fragment
+    # listing what it needs next.
     #
     # SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target: pass
     # TargetIqn to name yours (see Select-TargetIqn), and ScsiId too if more than one LUN is offered
@@ -131,8 +130,8 @@ function Select-Lun {
         Pick the LUN behind the chosen IQN.
     .DESCRIPTION
         The caller's SCSIid, if named (it must be one on offer), else the one LUN, if that target offers
-        only one. The New SR wizard auto-selects a LUN only when exactly one is on offer, and otherwise
-        makes the caller choose - picking blindly on a shared target risks formatting someone else's disk.
+        only one. Choose a LUN automatically only when exactly one is on offer, and otherwise make the
+        caller choose - picking blindly on a shared target risks formatting someone else's disk.
     #>
     param(
         [Parameter(Mandatory = $true)][array]$Luns,
@@ -171,9 +170,8 @@ Source: [`cli/storage/create-iscsi-sr.sh`](../../cli/storage/create-iscsi-sr.sh)
 # Create an iSCSI SR.
 #
 # Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs
-# behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array offers many
-# targets, so name yours with target_iqn; if the target behind it offers more than one LUN, name yours with
-# scsi_id too.
+# behind one. Creating the SR formats the LUN, and a shared array offers many targets, so name yours with
+# target_iqn; if the target behind it offers more than one LUN, name yours with scsi_id too.
 #
 # Run it:
 #   ./workflows.sh create-iscsi-sr https://xenserver root "$password"
@@ -187,12 +185,12 @@ Source: [`cli/storage/create-iscsi-sr.sh`](../../cli/storage/create-iscsi-sr.sh)
 #   chap_password ("")
 #   sr_name (xe-example-iscsi)
 
-# Discover the IQN and the LUN the way the New SR wizard does, instead of a hard-coded target: a
-# device-config that's missing a piece makes the backend fail on purpose, and the failure carries an XML
-# fragment listing what it needs next. sr-create formats the chosen LUN - this is destructive, so pick
-# carefully on a real target: pass target_iqn to name yours (see choose_target_iqn), and scsi_id too if
-# more than one LUN is offered behind it (see choose_lun). Before creating, this probes the chosen LUN
-# itself to make sure it is not already in use by another SR - formatting over one would destroy it.
+# Discover the IQN and the LUN rather than hard-coding a target: a device-config that's missing a piece
+# makes the backend fail on purpose, and the failure carries an XML fragment listing what it needs next.
+# sr-create formats the chosen LUN - this is destructive, so pick carefully on a real target: pass
+# target_iqn to name yours (see choose_target_iqn), and scsi_id too if more than one LUN is offered
+# behind it (see choose_lun). Before creating, this probes the chosen LUN itself to make sure it is not
+# already in use by another SR - formatting over one would destroy it.
 #
 # The CHAP password (if any) travels as a Secret, not plaintext device-config, as create_smb_sr already
 # does for its share password.
@@ -274,9 +272,9 @@ choose_target_iqn() {
 }
 
 # Pick the LUN behind the chosen IQN: the caller's SCSIid, if named (it must be one on offer), else the one
-# LUN, if that target offers only one. The New SR wizard auto-selects a LUN only when exactly one is on
-# offer, and otherwise makes the caller choose - picking blindly on a shared target risks formatting
-# someone else's disk. Echoes the chosen <LUN>...</LUN> fragment.
+# LUN, if that target offers only one. Choose a LUN automatically only when exactly one is on offer, and
+# otherwise make the caller choose - picking blindly on a shared target risks formatting someone else's
+# disk. Echoes the chosen <LUN>...</LUN> fragment.
 choose_lun() {
     local xml=$1 wanted=$2 rest=$xml block scsi_id
     local -a blocks=()
@@ -309,7 +307,7 @@ choose_lun() {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created iSCSI SR: 00000001-0000-0000-b60a-000000000000 (200 GiB)
+Created iSCSI SR: 00000001-0000-0000-7e0a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 
@@ -323,9 +321,9 @@ Source: [`python/storage/create_iscsi_sr.py`](../../python/storage/create_iscsi_
 """Create an iSCSI SR.
 
 Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the
-LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array
-offers many targets, so name yours with target_iqn; if the target behind it offers more than one
-LUN, name yours with scsi_id too.
+LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so name
+yours with target_iqn; if the target behind it offers more than one LUN, name yours with scsi_id
+too.
 """
 
 import xml.etree.ElementTree as ET
@@ -336,9 +334,9 @@ from helpers import probe_for_failure
 
 def create_iscsi_sr(url, username, password, target, port=None, chap_user=None, chap_password=None,
                      target_iqn=None, scsi_id=None, sr_name="sdk-example-iscsi"):
-    """Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN the way the New
-    SR wizard does: a device-config that's missing a piece makes the backend fail on purpose, and
-    the failure carries an XML fragment listing what it needs next.
+    """Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN first: a
+    device-config that's missing a piece makes the backend fail on purpose, and the failure carries
+    an XML fragment listing what it needs next.
 
     SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target:
     pass target_iqn to name yours (see _choose_target_iqn), and scsi_id too if more than one LUN
@@ -414,9 +412,9 @@ def _choose_target_iqn(iqn_xml, target, target_iqn):
 
 def _choose_lun(luns, scsi_id):
     """Pick the LUN behind the chosen IQN: the caller's SCSIid, if named (it must be one on offer),
-    else the one LUN, if that target offers only one. The New SR wizard auto-selects a LUN only when
-    exactly one is on offer, and otherwise makes the caller choose - picking blindly on a shared
-    target risks formatting someone else's disk."""
+    else the one LUN, if that target offers only one. Choose a LUN automatically only when exactly
+    one is on offer, and otherwise make the caller choose - picking blindly on a shared target risks
+    formatting someone else's disk."""
     if scsi_id:
         for lun in luns:
             if lun.find("SCSIid").text == scsi_id:
@@ -434,7 +432,7 @@ def _choose_lun(luns, scsi_id):
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-690a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-7b0a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 
@@ -447,9 +445,9 @@ Source: [`csharp/Storage/CreateIscsiSr.cs`](../../csharp/Storage/CreateIscsiSr.c
 ```csharp
 /// <summary>
 /// Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the
-/// LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array offers
-/// many targets, so name yours with target_iqn; if the target behind it offers more than one LUN, name
-/// yours with scsi_id too.
+/// LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so name
+/// yours with target_iqn; if the target behind it offers more than one LUN, name yours with scsi_id
+/// too.
 /// </summary>
 /// <example>
 /// <code>
@@ -458,9 +456,9 @@ Source: [`csharp/Storage/CreateIscsiSr.cs`](../../csharp/Storage/CreateIscsiSr.c
 /// </example>
 /// <remarks>
 /// <para>
-/// Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN the way the New SR wizard
-/// does: a device-config that's missing a piece makes the backend fail on purpose, and the failure
-/// carries an XML fragment listing what it needs next.
+/// Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN first: a device-config
+/// that's missing a piece makes the backend fail on purpose, and the failure carries an XML fragment
+/// listing what it needs next.
 /// </para>
 /// <para>
 /// SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target: pass
@@ -553,8 +551,8 @@ private static string ChooseTargetIqn(XDocument iqnXml, string target, string ta
 
 /// <summary>
 /// Pick the LUN behind the chosen IQN: the caller's SCSIid, if named (it must be one on offer), else the
-/// one LUN, if that target offers only one. The New SR wizard auto-selects a LUN only when exactly one is
-/// on offer, and otherwise makes the caller choose - picking blindly on a shared target risks formatting
+/// one LUN, if that target offers only one. Choose a LUN automatically only when exactly one is on
+/// offer, and otherwise make the caller choose - picking blindly on a shared target risks formatting
 /// someone else's disk.
 /// </summary>
 private static XElement ChooseLun(List<XElement> luns, string scsiId)
@@ -578,7 +576,7 @@ private static XElement ChooseLun(List<XElement> luns, string scsiId)
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-b30a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-b00a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 
@@ -602,13 +600,13 @@ import (
 // createIscsiSr - Create an iSCSI SR.
 //
 // Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then
-// the LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared
-// array offers many targets, so name yours with target_iqn; if the target behind it offers more
-// than one LUN, name yours with scsi_id too.
+// the LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so
+// name yours with target_iqn; if the target behind it offers more than one LUN, name yours with
+// scsi_id too.
 //
-// Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN the way the New SR
-// wizard does: a device-config that's missing a piece makes the backend fail on purpose, and the
-// failure carries an XML fragment listing what it needs next.
+// Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN first: a device-config that's
+// missing a piece makes the backend fail on purpose, and the failure carries an XML fragment listing what it
+// needs next.
 //
 // SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target: pass
 // targetIQN to name yours (see chooseTargetIQN), and scsiID too if more than one LUN is offered
@@ -765,9 +763,9 @@ func chooseTargetIQN(xmlText, target, targetIQN string) string {
 }
 
 // chooseLUN picks the LUN behind the chosen IQN: the caller's SCSIid, if named (it must be one on
-// offer), else the one LUN, if that target offers only one. The New SR wizard auto-selects a LUN
-// only when exactly one is on offer, and otherwise makes the caller choose - picking blindly on a
-// shared target risks formatting someone else's disk.
+// offer), else the one LUN, if that target offers only one. Choose a LUN automatically only when
+// exactly one is on offer, and otherwise make the caller choose - picking blindly on a shared
+// target risks formatting someone else's disk.
 func chooseLUN(luns []map[string]string, scsiID string) map[string]string {
 	if scsiID != "" {
 		for _, lun := range luns {
@@ -798,7 +796,7 @@ func chooseLUN(luns []map[string]string, scsiID string) map[string]string {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-6c0a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-b30a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 
@@ -835,17 +833,17 @@ public final class CreateIscsiSr {
      * Create an iSCSI SR.
      *
      * <p>Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then
-     * the LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array
-     * offers many targets, so name yours with target_iqn; if the target behind it offers more than one
-     * LUN, name yours with scsi_id too.
+     * the LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so
+     * name yours with target_iqn; if the target behind it offers more than one LUN, name yours with
+     * scsi_id too.
      *
-     * <p>Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN the way the New SR
-     * wizard does: a device-config that's missing a piece makes the backend fail on purpose, and the
-     * failure carries an XML fragment listing what it needs next. SR.create formats the chosen LUN -
-     * this is destructive, so pick carefully on a real target: pass targetIqn to name yours (see
-     * chooseTargetIqn), and scsiId too if more than one LUN is offered behind it (see chooseLun). Before
-     * creating, this probes the chosen LUN itself to make sure it is not already in use by another SR -
-     * formatting over one would destroy it.
+     * <p>Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN first: a
+     * device-config that's missing a piece makes the backend fail on purpose, and the failure carries an
+     * XML fragment listing what it needs next. SR.create formats the chosen LUN - this is destructive,
+     * so pick carefully on a real target: pass targetIqn to name yours (see chooseTargetIqn), and scsiId
+     * too if more than one LUN is offered behind it (see chooseLun). Before creating, this probes the
+     * chosen LUN itself to make sure it is not already in use by another SR - formatting over one would
+     * destroy it.
      *
      * <p>The CHAP password (if any) travels as a Secret, not plaintext device-config, as CreateSmbSr
      * already does for its share password.
@@ -939,8 +937,8 @@ public final class CreateIscsiSr {
 
     /**
      * Pick the LUN behind the chosen IQN: the caller's SCSIid, if named (it must be one on offer), else
-     * the one LUN, if that target offers only one. The New SR wizard auto-selects a LUN only when exactly
-     * one is on offer, and otherwise makes the caller choose - picking blindly on a shared target risks
+     * the one LUN, if that target offers only one. Choose a LUN automatically only when exactly one is
+     * on offer, and otherwise make the caller choose - picking blindly on a shared target risks
      * formatting someone else's disk.
      */
     private static org.w3c.dom.Element chooseLun(List<org.w3c.dom.Element> luns, String scsiId) {
@@ -967,7 +965,7 @@ public final class CreateIscsiSr {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-080b-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-5a0a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 

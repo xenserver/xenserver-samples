@@ -48,7 +48,7 @@
           "description": "Clone one of the built-in templates and provision the clone into a real, installable VM."
         },
         {
-          "id": "new-vm-wizard",
+          "id": "create-vm-full",
           "title": "Create a VM (full workflow)",
           "description": "Create a VM end to end: pick a template, name the VM, choose an installation source and a home server, set CPU & memory, add a disk on a storage repository, attach a network interface and start it — the full sequence, rather than a single clone call."
         },
@@ -86,7 +86,7 @@
         {
           "id": "manage-vm-disks",
           "title": "Manage VM disks",
-          "description": "Deactivate a running VM's disk, resize it, reactivate it — the Activate/Deactivate and Resize operations from the VM's Storage tab."
+          "description": "Deactivate a running VM's disk, resize it, reactivate it."
         },
         {
           "id": "vm-lifecycle",
@@ -204,7 +204,7 @@
         {
           "id": "create-iscsi-sr",
           "title": "Create an iSCSI SR",
-          "description": "Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array offers many targets, so name yours with target_iqn.",
+          "description": "Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so name yours with target_iqn.",
           "requires": "an iSCSI target",
           "caution": "formats the LUN it uses (name it with scsi_id; it refuses a LUN that already holds an SR) and destroys the new SR again afterwards"
         },

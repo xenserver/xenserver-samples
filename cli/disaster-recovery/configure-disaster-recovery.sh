@@ -43,9 +43,8 @@ configure_disaster_recovery() {
     fi
     name=$(xe sr-param-get uuid=$sr param-name=name-label)
 
-    # The pool's own metadata disk on this SR is what says replication is on (as the Configure DR dialog
-    # decides): a disk of type metadata whose metadata-of-pool is this pool. xe shows the type as
-    # "Metadata", so compare it case-insensitively.
+    # The pool's own metadata disk on this SR is what says replication is on: a disk of type metadata whose
+    # metadata-of-pool is this pool. xe shows the type as "Metadata", so compare it case-insensitively.
     pool=$(xe pool-list --minimal)
     metadata_disk() {
         local v

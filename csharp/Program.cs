@@ -96,10 +96,10 @@ internal static class Program
             var d = Merge(new() { ["vm_name"] = "web-01" }, ov);
             Events(u, n, p, d["vm_name"]);
         },
-        ["new-vm-wizard"] = (u, n, p, ov) =>
+        ["create-vm-full"] = (u, n, p, ov) =>
         {
-            var d = Merge(new() { ["template_name"] = "Rocky Linux 8", ["new_vm_name"] = "wizard-vm" }, ov);
-            NewVmWizard(u, n, p, d["template_name"], d["new_vm_name"]);
+            var d = Merge(new() { ["template_name"] = "Rocky Linux 8", ["new_vm_name"] = "sdk-example-full-vm" }, ov);
+            CreateVmFull(u, n, p, d["template_name"], d["new_vm_name"]);
         },
         ["live-migrate"] = (u, n, p, ov) =>
         {

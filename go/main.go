@@ -69,8 +69,8 @@ var workflows = map[string]workflow{
 		func(u, n, p string, m map[string]string) { editVMProperties(u, n, p, m["vm_name"]) }),
 	"events": wf(map[string]string{"vm_name": "web-01"},
 		func(u, n, p string, m map[string]string) { events(u, n, p, m["vm_name"]) }),
-	"new-vm-wizard": wf(map[string]string{"template_name": "Rocky Linux 8", "new_vm_name": "wizard-vm"},
-		func(u, n, p string, m map[string]string) { newVMWizard(u, n, p, m["template_name"], m["new_vm_name"]) }),
+	"create-vm-full": wf(map[string]string{"template_name": "Rocky Linux 8", "new_vm_name": "sdk-example-full-vm"},
+		func(u, n, p string, m map[string]string) { createVMFull(u, n, p, m["template_name"], m["new_vm_name"]) }),
 	"live-migrate": wf(map[string]string{
 		"source_vm": "web-01", "sr_name": "Shared NFS", "new_vm_name": "sdk-example-migrate",
 	}, func(u, n, p string, m map[string]string) {

@@ -1,9 +1,9 @@
 """Create an iSCSI SR.
 
 Connect a storage repository to a LUN on an iSCSI target, discovering the target's IQNs and then the
-LUNs behind one, as the New SR wizard does. Creating the SR formats the LUN, and a shared array
-offers many targets, so name yours with target_iqn; if the target behind it offers more than one
-LUN, name yours with scsi_id too.
+LUNs behind one. Creating the SR formats the LUN, and a shared array offers many targets, so name
+yours with target_iqn; if the target behind it offers more than one LUN, name yours with scsi_id
+too.
 """
 
 import xml.etree.ElementTree as ET
@@ -14,9 +14,9 @@ from helpers import probe_for_failure
 
 def create_iscsi_sr(url, username, password, target, port=None, chap_user=None, chap_password=None,
                      target_iqn=None, scsi_id=None, sr_name="sdk-example-iscsi"):
-    """Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN the way the New
-    SR wizard does: a device-config that's missing a piece makes the backend fail on purpose, and
-    the failure carries an XML fragment listing what it needs next.
+    """Connect an SR to a LUN on the iSCSI target, discovering the IQN and the LUN first: a
+    device-config that's missing a piece makes the backend fail on purpose, and the failure carries
+    an XML fragment listing what it needs next.
 
     SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target:
     pass target_iqn to name yours (see _choose_target_iqn), and scsi_id too if more than one LUN
@@ -92,9 +92,9 @@ def _choose_target_iqn(iqn_xml, target, target_iqn):
 
 def _choose_lun(luns, scsi_id):
     """Pick the LUN behind the chosen IQN: the caller's SCSIid, if named (it must be one on offer),
-    else the one LUN, if that target offers only one. The New SR wizard auto-selects a LUN only when
-    exactly one is on offer, and otherwise makes the caller choose - picking blindly on a shared
-    target risks formatting someone else's disk."""
+    else the one LUN, if that target offers only one. Choose a LUN automatically only when exactly
+    one is on offer, and otherwise make the caller choose - picking blindly on a shared target risks
+    formatting someone else's disk."""
     if scsi_id:
         for lun in luns:
             if lun.find("SCSIid").text == scsi_id:

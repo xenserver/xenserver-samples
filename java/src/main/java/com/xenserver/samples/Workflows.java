@@ -102,7 +102,7 @@ import com.xenserver.samples.virtualmachines.ManageVmDisks;
 import com.xenserver.samples.virtualmachines.ManageVmGroups;
 import com.xenserver.samples.virtualmachines.ManageVmMedia;
 import com.xenserver.samples.virtualmachines.ManageVtpm;
-import com.xenserver.samples.virtualmachines.NewVmWizard;
+import com.xenserver.samples.virtualmachines.CreateVmFull;
 import com.xenserver.samples.virtualmachines.RenameObject;
 import com.xenserver.samples.virtualmachines.SnapshotRevert;
 import com.xenserver.samples.virtualmachines.SnapshotSchedule;
@@ -144,7 +144,7 @@ public final class Workflows {
         d.put("create-network", mapOf("network_name", "sdk-example-net"));
         d.put("edit-vm-properties", mapOf("vm_name", "web-01"));
         d.put("events", mapOf("vm_name", "web-01"));
-        d.put("new-vm-wizard", mapOf("template_name", "Rocky Linux 8", "new_vm_name", "wizard-vm"));
+        d.put("create-vm-full", mapOf("template_name", "Rocky Linux 8", "new_vm_name", "sdk-example-full-vm"));
         d.put("live-migrate", mapOf("source_vm", "web-01", "sr_name", "Shared NFS",
                 "new_vm_name", "sdk-example-migrate"));
         d.put("host-maintenance", mapOf("source_vm", "web-01", "sr_name", "Shared NFS",
@@ -302,7 +302,7 @@ public final class Workflows {
             case "create-network": CreateNetwork.run(url, user, password, p.get("network_name")); break;
             case "edit-vm-properties": EditVmProperties.run(url, user, password, p.get("vm_name")); break;
             case "events": Events.run(url, user, password, p.get("vm_name")); break;
-            case "new-vm-wizard": NewVmWizard.run(url, user, password, p.get("template_name"), p.get("new_vm_name")); break;
+            case "create-vm-full": CreateVmFull.run(url, user, password, p.get("template_name"), p.get("new_vm_name")); break;
             case "live-migrate": LiveMigrate.run(url, user, password, p.get("source_vm"), p.get("sr_name"), p.get("new_vm_name")); break;
             case "host-maintenance":
                 HostMaintenance.run(url, user, password, p.get("source_vm"), p.get("sr_name"), p.get("new_vm_name")); break;

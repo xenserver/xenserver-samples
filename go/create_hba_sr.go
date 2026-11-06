@@ -13,10 +13,10 @@ import (
 // see with a deliberately failing probe, then create the SR by SCSI ID. Creating the SR formats the
 // LUN.
 //
-// Connect a shared SR to a fibre-channel (HBA) LUN, discovering it the way the New SR wizard does:
-// probing with no SCSIid fails on purpose and lists every LUN the backend can see. The failure's
-// XML root element name and error code both vary between XenServer versions, so parse by tag name
-// BlockDevice wherever it occurs.
+// Connect a shared SR to a fibre-channel (HBA) LUN, discovering it first: probing with no SCSIid
+// fails on purpose and lists every LUN the backend can see. The failure's XML root element name
+// and error code both vary between XenServer versions, so parse by tag name BlockDevice wherever
+// it occurs.
 //
 // SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target.
 func createHbaSr(url, user, password, scsiID, srName string) {

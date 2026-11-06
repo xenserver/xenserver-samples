@@ -40,7 +40,7 @@ from virtual_machines.snapshot_schedule import snapshot_schedule
 from virtual_machines.manage_vm_groups import manage_vm_groups
 from virtual_machines.snapshot_revert import snapshot_revert
 from virtual_machines.edit_vm_properties import edit_vm_properties
-from virtual_machines.new_vm_wizard import new_vm_wizard
+from virtual_machines.create_vm_full import create_vm_full
 from virtual_machines.copy_vm import copy_vm
 from virtual_machines.create_vm_with_vgpu import create_vm_with_vgpu
 from virtual_machines.clone_vm import clone_vm
@@ -151,7 +151,7 @@ WORKFLOWS = {
     "create-network": _wf(create_network),
     "edit-vm-properties": _wf(edit_vm_properties, vm_name="web-01"),
     "events": _wf(events, vm_name="web-01"),
-    "new-vm-wizard": _wf(new_vm_wizard, template_name="Rocky Linux 8"),
+    "create-vm-full": _wf(create_vm_full, template_name="Rocky Linux 8"),
     "live-migrate": _wf(live_migrate, source_vm="web-01", sr_name="Shared NFS"),
     "host-maintenance": _wf(host_maintenance, source_vm="web-01", sr_name="Shared NFS"),
     "configure-ha": _wf(configure_ha, heartbeat_sr_name="Shared NFS"),

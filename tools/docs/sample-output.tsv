@@ -9,7 +9,7 @@ cli	checkpoint-vm	c11a5416dc25	Created checkpoint: 00000001-0000-0000-600a-00000
 cli	clone-vm	616210def72e	Cloned VM: 00000001-0000-0000-f909-000000000000\nOK: clone-vm
 cli	configure-clustering	2e44bf5dbab3	Stack:      corosync\nQuorate:    true\nOne member out, quorate: false\nResynced,   quorate: true\nCluster removed again.\nOK: configure-clustering
 cli	configure-console-access	d46acb619821	  VM console idle timeout    0s\n  limit console sessions     false\n  host console idle timeout  0s\n  host https only            false\nafter tightening:\n  VM console idle timeout    600s\n  limit console sessions     true\n  host console idle timeout  300s\n  host https only            true\n  restored\nOK: configure-console-access
-cli	configure-disaster-recovery	44962bc5d7bf	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-470b-000000000000), 3804 MiB, up to date: true\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
+cli	configure-disaster-recovery	268c28080a1d	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-570b-000000000000), 3804 MiB, up to date: true\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
 cli	configure-dynamic-memory	13d5ca3f11b9	db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB\n  dynamic range now 3.0 GiB-4.0 GiB\n  refused a dynamic_max above static_max\nOK: configure-dynamic-memory
 cli	configure-ha	dbea54c075e2	Max failures: 1\nHA enabled: true\nweb-01 priority: '' -> 'restart'\nRestart on internal shutdown: true\nHA enabled: false\nOK: configure-ha
 cli	configure-host-storage	87bc8ef5302e	sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing false\n  IQN now:      iqn.2026-01.com.example:sdk-host1\n  multipathing: true\n  restored\nOK: configure-host-storage
@@ -26,17 +26,18 @@ cli	convert-to-template	bb64d9db9ccd	is-a-template after install: false\nis-a-te
 cli	copy-vm	3d64a89b3455	Copied VM: 00000001-0000-0000-020a-000000000000\nOK: copy-vm
 cli	create-bond	8ebfe465cdf1	Bonding:      00000001-0000-0000-2700-000000000000,00000001-0000-0000-2900-000000000000\nBond master:  bond0\nMode:         balance-slb\nBonds left:   0\nOK: create-bond
 cli	create-hba-sr	5b63d6d8ddda	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated HBA SR: 00000001-0000-0000-7a0a-000000000000 (512 GiB)\nOK: create-hba-sr
-cli	create-iscsi-sr	5e8757f75974	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated iSCSI SR: 00000001-0000-0000-b60a-000000000000 (200 GiB)\nOK: create-iscsi-sr
+cli	create-iscsi-sr	7eac9a1b002c	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated iSCSI SR: 00000001-0000-0000-7e0a-000000000000 (200 GiB)\nOK: create-iscsi-sr
 cli	create-iso-sr	87eef9186da9	Created ISO SR: 00000001-0000-0000-e00a-000000000000\nOK: create-iso-sr
 cli	create-network	99b128a3a5c9	Created network: 00000001-0000-0000-6f0a-000000000000\nMTU now:         9000\nOK: create-network
 cli	create-nfs-sr	27941c9292c4	Created SR: 00000001-0000-0000-8a0a-000000000000\nOK: create-nfs-sr
 cli	create-smb-sr	44b81e37035b	Created SMB SR: 00000001-0000-0000-be0a-000000000000 (512 GiB)\nOK: create-smb-sr
 cli	create-vm	f5010ca0dbc1	Created VM: 00000001-0000-0000-f209-000000000000\nis-a-template = false\nOK: create-vm
+cli	create-vm-full	d540508a1dd5	power-state: running\nvCPUs:       2\nOK: create-vm-full
 cli	create-vm-with-vgpu	e3fe9f7cac7c	Created vGPU: 00000001-0000-0000-890a-000000000000 of type GRID K100\nOK: create-vm-with-vgpu
 cli	cross-pool-copy-vm	d29cc80128f2	Sent 'db-01' to localhost (copy); source still present: True\n  the copy on the destination: not found (nothing to tidy up)\nOK: cross-pool-copy-vm
 cli	custom-fields	731b15e58b41	Field defined: true\nOwner = Platform Team\nOK: custom-fields
 cli	delete-vm	c654240a7e75	VM still present: false\nOK: delete-vm
-cli	disaster-recovery-failover	63b80f8c0e58	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: You attempted to run a VM on a host which doesn't have access to an SR needed by the VM. The VM has at least one VBD attached to a VDI in the SR.\napp-01 is halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
+cli	disaster-recovery-failover	2a326dd6a385	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: You attempted to run a VM on a host which doesn't have access to an SR needed by the VM. The VM has at least one VBD attached to a VDI in the SR.\napp-01 is halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
 cli	dismiss-alerts	2268b157a321	Alerts:         0\nNo alerts to dismiss.\nOK: dismiss-alerts
 cli	edit-vm-properties	936d87572eee	New description: Edited by the xe example\nother-config[xe_example] = true\nOK: edit-vm-properties
 cli	error-handling	5a03368ed9c8	Caught expected failure:\nThe uuid you supplied was invalid.\ntype: VM\nuuid: this-uuid-does-not-exist\n[ERROR] Command Exit 1\nOK: error-handling
@@ -61,11 +62,10 @@ cli	manage-sr-lifecycle	fa3ef6c18a25	xe-example-lifecycle: connected on 2 of 2 h
 cli	manage-ssh-access	176e6783f57e	sdk-host1: ssh enabled=true, expires 20260101T10:00:00Z\nsdk-host2: ssh enabled=true, expires 20260101T10:00:00Z\nAfter disable: sdk-host1=false, sdk-host2=false\nOK: manage-ssh-access
 cli	manage-vapp	8d863fdc1141	Started:        running\nShut down:      halted\nOK: manage-vapp
 cli	manage-vif	f42dd2081fb5	Attached a VIF; VM now has 0 NIC(s)\nOK: manage-vif
-cli	manage-vm-disks	44df179e8110	Disk attached:  true\nAfter unplug:   false\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     true\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
+cli	manage-vm-disks	a53ceb82b184	Disk attached:  true\nAfter unplug:   false\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     true\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
 cli	manage-vm-groups	692da674fd5a	Created group:  00000001-0000-0000-160a-000000000000\nGroup members:  0\nOK: manage-vm-groups
 cli	manage-vm-media	812d7dda5828	Adding a DVD drive to db-01\n  drive 1 is empty: true\n  inserting ubuntu-22.04.4-live-server-amd64.iso\n  drive now holds ubuntu-22.04.4-live-server-amd64.iso (empty=false)\n  after eject, empty=true\nOK: manage-vm-media
 cli	manage-vtpm	ad61d97f5181	Attaching a vTPM to secure-01\n  unique to this VM:   false\n  protected:           false\n  VM now has 1 vTPM(s)\n  can add another:     false\n  after removal:       0 vTPM(s)\nOK: manage-vtpm
-cli	new-vm-wizard	47b66eae9d74	power-state: running\nvCPUs:       2\nOK: new-vm-wizard
 cli	pool-properties	075f9da1770e	Pool: 'sdk-pool'\nRenamed to: 'xe-pool-renamed'\nOK: pool-properties
 cli	pool-tags	330f7951a026	Pool tags: sdk-managed\nOK: pool-tags
 cli	pvs-accelerator	e5da69b5abcd	Site: Provisioning Services\n  cache:  sdk-host1  20 GiB on Local storage\n  cache:  sdk-host2  20 GiB on Local storage\n  server: 203.0.113.50  ports 6910-6930\n  server: 203.0.113.51  ports 6910-6930\n  1 of 4 VM(s) accelerated\nOK: pvs-accelerator
@@ -103,13 +103,13 @@ csharp	checkpoint-vm	e50cd0cf8a58	Created checkpoint: 00000001-0000-0000-6f0a-00
 csharp	clone-vm	0c76d758acab	Cloned 'db-01'  sdk-example-clone\nClone has 1 VBD(s)\nOK: clone-vm
 csharp	configure-clustering	4eac34027d11	Stack:      corosync\nQuorate:    True (2/2 needed)\nOne member out, quorate: False\nResynced,   quorate: True\nCluster removed again.\nOK: configure-clustering
 csharp	configure-console-access	7ad19f0e80a1	  VM console idle timeout    0s\n  limit console sessions     False\n  host console idle timeout  0s\n  host https only            False\nafter tightening:\n  VM console idle timeout    600s\n  limit console sessions     True\n  host console idle timeout  300s\n  host https only            True\n  restored\nOK: configure-console-access
-csharp	configure-disaster-recovery	0b51e43f62d5	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-060b-000000000000), 3804 MiB, up to date: True\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
+csharp	configure-disaster-recovery	3f79136fdf24	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-530b-000000000000), 3804 MiB, up to date: True\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
 csharp	configure-dynamic-memory	7289cd96e741	db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB\n  dynamic range now 3.0 GiB-4.0 GiB\n  refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER\nOK: configure-dynamic-memory
 csharp	configure-ha	ed7a9900561d	Heartbeat SR:  Shared NFS\nMax failures:  1\nHA enabled:    True\nweb-01 priority: '' -> 'restart'\nRestart on internal shutdown: True\nHA enabled:    False\nOK: configure-ha
 csharp	configure-host-storage	fde17eafdc81	sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing False\n  IQN now:      iqn.2026-01.com.example:sdk-host1\n  multipathing: True\n  restored\nOK: configure-host-storage
 csharp	configure-nrpe	55cd033fb657	sdk-host1: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nsdk-host2: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nOK: configure-nrpe
 csharp	configure-offline-updates	92738482605b	Pool repositories: sdk-example-offline\nNo bundle given: pass bundle_path to upload one\nOK: configure-offline-updates
-csharp	configure-pool-options	f88d390de349	  live patching disabled False\n  IGMP snooping          False\n  migration compression  False\nafter changing:\n  live patching disabled True\n  IGMP snooping          True\n  migration compression  True\n  restored\nOK: configure-pool-options
+csharp	configure-pool-options	f78f21db92d7	  live patching disabled False\n  IGMP snooping          False\n  migration compression  False\nafter changing:\n  live patching disabled True\n  IGMP snooping          True\n  migration compression  True\n  restored\nOK: configure-pool-options
 csharp	configure-pvs-accelerator	08e0225f73ba	Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)\n  db-01: stopped\nOK: configure-pvs-accelerator
 csharp	configure-snmp	7f148552c947	sdk-host1: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nsdk-host2: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nOK: configure-snmp
 csharp	configure-syslog	5e4316455777	sdk-host1 logging: (local only)\n  now logging to: 192.0.2.50\n  restored: (local only)\nOK: configure-syslog
@@ -119,18 +119,19 @@ csharp	control-domain-memory	681112aad33a	sdk-host1 dom0: 2.0 GiB\n  now 3.0 GiB
 csharp	convert-to-template	dfd30268de42	is_a_template after provision: False\nis_a_template after convert:  True\nOK: convert-to-template
 csharp	copy-vm	6af0782b1369	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-000a-000000000000\nCopy has 1 VBD(s), is_a_template = False\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 csharp	create-bond	0a44748c94ff	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance_slb\nBonds left:   0\nOK: create-bond
-csharp	create-hba-sr	2104c0db2a5b	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-770a-000000000000 (512 GiB)\nOK: create-hba-sr
-csharp	create-iscsi-sr	f2055272051a	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-b30a-000000000000 (200 GiB)\nOK: create-iscsi-sr
+csharp	create-hba-sr	a8743b8eab86	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-be0a-000000000000 (512 GiB)\nOK: create-hba-sr
+csharp	create-iscsi-sr	899ae46ac89a	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-b00a-000000000000 (200 GiB)\nOK: create-iscsi-sr
 csharp	create-iso-sr	9c6e08e1991c	Created ISO SR: 00000001-0000-0000-d20a-000000000000\nOK: create-iso-sr
 csharp	create-network	59ad844ddc1e	Created network: 00000001-0000-0000-c30a-000000000000\nMTU now:         9000\nOK: create-network
 csharp	create-nfs-sr	df27329d8ffa	Created SR: 00000001-0000-0000-a90a-000000000000\nOK: create-nfs-sr
 csharp	create-smb-sr	dae249f0260c	Created SR: 00000001-0000-0000-700a-000000000000 (512 GiB)\nOK: create-smb-sr
 csharp	create-vm	1e1a0da34dd9	Using template: Rocky Linux 8\nCloned new VM: 00000001-0000-0000-ee09-000000000000\nProvisioned. is_a_template = False\nCleaned up the example VM.\nOK: create-vm
+csharp	create-vm-full	3e76193bb090	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f609-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nCleaned up the example VM.\nOK: create-vm-full
 csharp	create-vm-with-vgpu	4414d3a0dbc4	Using vGPU type: GRID K100 (256 MB framebuffer)\nCreated vGPU: 00000001-0000-0000-540a-000000000000\nVM now has 1 vGPU(s); type = GRID K100\nCleaned up the example VM and its vGPU.\nOK: create-vm-with-vgpu
 csharp	cross-pool-copy-vm	a24184f28187	Sent 'db-01' to the destination pool (copy); source still present: True\n  the copy on the destination: db-01 (00000001-0000-0000-080a-000000000000)\nOK: cross-pool-copy-vm
 csharp	custom-fields	91a3fcc0653d	Field defined: True\nCustom field Owner = Platform Team\nOK: custom-fields
 csharp	delete-vm	549ebc1df81d	Deleting VM 00000001-0000-0000-160a-000000000000 with 1 disk(s)\nVM still present: False\nOK: delete-vm
-csharp	disaster-recovery-failover	9df586da42eb	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VM_REQUIRES_SR\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
+csharp	disaster-recovery-failover	d8c45ea60821	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VM_REQUIRES_SR\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
 csharp	dismiss-alerts	f2acef96fc1c	Alerts:         0\nNo alerts to dismiss.\nOK: dismiss-alerts
 csharp	edit-vm-properties	53cf432f9273	New description: Edited by the SDK example\nother_config[sdk_example] = true\nOK: edit-vm-properties
 csharp	error-handling	92183019801b	Caught expected failure: UUID_INVALID\nShort message: The uuid you supplied was invalid.\nOK: error-handling
@@ -156,11 +157,10 @@ csharp	manage-sr-lifecycle	bd4f9352e552	sdk-example-lifecycle: connected on 2 of
 csharp	manage-ssh-access	bee36a8a856b	sdk-host1: ssh enabled=True, expires 2026-01-01 09:00:00Z\nsdk-host2: ssh enabled=True, expires 2026-01-01 09:00:00Z\nAfter disable: sdk-host1=False, sdk-host2=False\nOK: manage-ssh-access
 csharp	manage-vapp	42f690b9c7dd	Started:        Running\nShut down:      Halted\nOK: manage-vapp
 csharp	manage-vif	3eae0310da36	Attached a VIF on device 0; VM now has 1 NIC(s)\nOK: manage-vif
-csharp	manage-vm-disks	ea38433e371c	Disk attached:  True\nAfter unplug:   False\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     True\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
+csharp	manage-vm-disks	1c476c1de707	Disk attached:  True\nAfter unplug:   False\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     True\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
 csharp	manage-vm-groups	51d9dcc0193b	Created group:  00000001-0000-0000-050a-000000000000\nGroup members:  1\n  web-01\nOK: manage-vm-groups
 csharp	manage-vm-media	5b2672a0f798	Adding a DVD drive to db-01\n  drive 1 is empty: True\n  inserting debian-12.5.0-amd64-netinst.iso\n  drive now holds debian-12.5.0-amd64-netinst.iso (empty=False)\n  after eject, empty=True\nOK: manage-vm-media
 csharp	manage-vtpm	4a79d80ceefe	Attaching a vTPM to secure-01\n  persistence backend: xapi\n  unique to this VM:   False\n  VM now has 1 vTPM(s)\n  can add another:     False\n  after removal:       0 vTPM(s)\nOK: manage-vtpm
-csharp	new-vm-wizard	d71fb802d322	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-ed09-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nCleaned up the example VM.\nOK: new-vm-wizard
 csharp	pool-properties	3d34786494a5	Pool:       'sdk-pool'\nDefault SR: Shared NFS\nRenamed to: 'sdk-pool-renamed'\nOK: pool-properties
 csharp	pool-tags	90d21a3cdf61	Pool tags: sdk-managed\nOK: pool-tags
 csharp	pvs-accelerator	b7f299de912b	Site: Provisioning Services\n  cache:  sdk-host1  20 GiB on Local storage\n  cache:  sdk-host2  20 GiB on Local storage\n  server: 203.0.113.50  ports 6910-6930\n  server: 203.0.113.51  ports 6910-6930\n  1 of 4 VM(s) accelerated\nOK: pvs-accelerator
@@ -198,13 +198,13 @@ go	checkpoint-vm	4a081ff05c11	Created checkpoint: 00000001-0000-0000-890a-000000
 go	clone-vm	22569633305b	Cloned 'db-01' -> sdk-example-clone\nClone has 1 VBD(s)\nOK: clone-vm
 go	configure-clustering	22e4645cdd23	Stack:      corosync\nQuorate:    true (2/2 needed)\nOne member out, quorate: false\nResynced,   quorate: true\nCluster removed again.\nOK: configure-clustering
 go	configure-console-access	66f43d0f761e	  VM console idle timeout    0s\n  limit console sessions     false\n  host console idle timeout  0s\n  host https only            false\nafter tightening:\n  VM console idle timeout    600s\n  limit console sessions     true\n  host console idle timeout  300s\n  host https only            true\n  restored\nOK: configure-console-access
-go	configure-disaster-recovery	2e9380ad70d2	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-0a0b-000000000000), 3804 MiB, up to date: true\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
+go	configure-disaster-recovery	90938f58aed2	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-4d0b-000000000000), 3804 MiB, up to date: true\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
 go	configure-dynamic-memory	5fcab34e3093	secure-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB\n  dynamic range now 3.0 GiB-4.0 GiB\n  refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER\nOK: configure-dynamic-memory
 go	configure-ha	cc0829bafc3a	Heartbeat SR:  Shared NFS\nMax failures:  1\nHA enabled:    true\ncache-01 priority: "" -> "restart"\nRestart on internal shutdown: true\nHA enabled:    false\nOK: configure-ha
 go	configure-host-storage	e181ac5efb95	sdk-host1: iSCSI IQN "iqn.2026-10.com.example:00000001", multipathing false\n  IQN now:      iqn.2026-01.com.example:sdk-host1\n  multipathing: true\n  restored\nOK: configure-host-storage
 go	configure-nrpe	82d0bf6a459f	sdk-host1: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nsdk-host2: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nOK: configure-nrpe
 go	configure-offline-updates	e8154b8c3ccb	Pool repositories: sdk-example-offline\nNo bundle given: pass bundle_path to upload one\nOK: configure-offline-updates
-go	configure-pool-options	74afd8e58f7e	  live patching disabled false\n  IGMP snooping          false\n  migration compression  false\nafter changing:\n  live patching disabled true\n  IGMP snooping          true\n  migration compression  true\n  restored\nOK: configure-pool-options
+go	configure-pool-options	9c91bca1d5c6	  live patching disabled false\n  IGMP snooping          false\n  migration compression  false\nafter changing:\n  live patching disabled true\n  IGMP snooping          true\n  migration compression  true\n  restored\nOK: configure-pool-options
 go	configure-pvs-accelerator	3b37bbbc3e57	Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)\n  db-01: stopped\nOK: configure-pvs-accelerator
 go	configure-snmp	ad4122cc7396	sdk-host1: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nsdk-host2: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nOK: configure-snmp
 go	configure-syslog	d9fd0e7dea62	sdk-host1 logging: (local only)\n  now logging to: 192.0.2.50\n  restored: (local only)\nOK: configure-syslog
@@ -214,18 +214,19 @@ go	control-domain-memory	518937649c3a	sdk-host1 dom0: 2.0 GiB\n  now 3.0 GiB (st
 go	convert-to-template	15af374db569	is_a_template after provision: false\nis_a_template after convert:  true\nOK: convert-to-template
 go	copy-vm	7b97b601f336	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-0a0a-000000000000\nCopy has 1 VBD(s), is_a_template = false\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 go	create-bond	f0c3f0322867	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance-slb\nBonds left:   0\nOK: create-bond
-go	create-hba-sr	b24373680333	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f50a-000000000000 (512 GiB)\nOK: create-hba-sr
-go	create-iscsi-sr	4753bf81b447	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-6c0a-000000000000 (200 GiB)\nOK: create-iscsi-sr
+go	create-hba-sr	dc75953dc516	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-e70a-000000000000 (512 GiB)\nOK: create-hba-sr
+go	create-iscsi-sr	a395e2f15da0	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-b30a-000000000000 (200 GiB)\nOK: create-iscsi-sr
 go	create-iso-sr	0bcc8d8b398a	Created ISO SR: 00000001-0000-0000-030b-000000000000\nOK: create-iso-sr
 go	create-network	b6c0675f9bf1	Created network: 00000001-0000-0000-cb0a-000000000000\nMTU now:         9000\nOK: create-network
 go	create-nfs-sr	44a07ea926da	Created SR: 00000001-0000-0000-4b0a-000000000000\nOK: create-nfs-sr
 go	create-smb-sr	fef04776710e	Created SR: 00000001-0000-0000-100b-000000000000 (512 GiB)\nOK: create-smb-sr
 go	create-vm	eb681628829f	Using template: Rocky Linux 8\nCloned new VM: 00000001-0000-0000-eb09-000000000000\nProvisioned. is_a_template = false\nCleaned up the example VM.\nOK: create-vm
+go	create-vm-full	420dac7844a3	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f609-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Local storage\nNetworking:    NIC on Pool-wide network associated with eth2\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nCleaned up the example VM.\nOK: create-vm-full
 go	create-vm-with-vgpu	565e18dee787	Using vGPU type: GRID K100 (256 MB framebuffer)\nCreated vGPU: 00000001-0000-0000-800a-000000000000\nVM now has 1 vGPU(s); type = GRID K100\nCleaned up the example VM and its vGPU.\nOK: create-vm-with-vgpu
 go	cross-pool-copy-vm	a03bff308ae7	Sent 'db-01' to the destination pool (copy); source still present: true\n  the copy on the destination: db-01 (00000001-0000-0000-fe09-000000000000)\nOK: cross-pool-copy-vm
 go	custom-fields	c100d46ed98a	Field defined: true\nCustom field Owner = Platform Team\nOK: custom-fields
 go	delete-vm	454d49036b26	Deleting VM 00000001-0000-0000-1e0a-000000000000 with 1 disk(s)\nVM still present: false\nOK: delete-vm
-go	disaster-recovery-failover	aef10da12992	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VM_REQUIRES_SR\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
+go	disaster-recovery-failover	9327cbe79376	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VM_REQUIRES_SR\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
 go	dismiss-alerts	8c947b640f81	Alerts:         0\nNo alerts to dismiss.\nOK: dismiss-alerts
 go	edit-vm-properties	3f0944fdd6dd	New description: Edited by the SDK example\nother_config[sdk_example] = true\nOK: edit-vm-properties
 go	error-handling	486fd28e60dd	Caught expected failure: API error: code 1, message UUID_INVALID, data [host this-uuid-does-not-exist]\nOK: error-handling
@@ -251,11 +252,10 @@ go	manage-sr-lifecycle	ff8b98156e51	sdk-example-lifecycle: connected on 2 of 2 h
 go	manage-ssh-access	ffac8894f4e7	sdk-host1: ssh enabled=true, expires 20260101T09:00:00Z\nsdk-host2: ssh enabled=true, expires 20260101T09:00:00Z\nAfter disable: sdk-host1=false, sdk-host2=false\nOK: manage-ssh-access
 go	manage-vapp	c0ffe87c4f02	Started:        Running\nShut down:      Halted\nOK: manage-vapp
 go	manage-vif	7b2dfa88ecfb	Attached a VIF on device 0; VM now has 1 NIC(s)\nOK: manage-vif
-go	manage-vm-disks	de55f6d4d730	Disk attached:  true\nAfter unplug:   false\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     true\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
+go	manage-vm-disks	e87d0aeb85f0	Disk attached:  true\nAfter unplug:   false\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     true\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
 go	manage-vm-groups	a08550b9e622	Created group:  00000001-0000-0000-1a0a-000000000000\nGroup members:  1\n  web-01\nOK: manage-vm-groups
 go	manage-vm-media	5d94b7c803db	Adding a DVD drive to db-01\n  drive 1 is empty: true\n  inserting Windows_Server_2022.iso\n  drive now holds Windows_Server_2022.iso (empty=false)\n  after eject, empty=true\nOK: manage-vm-media
 go	manage-vtpm	253fc0e7f16a	Attaching a vTPM to secure-01\n  persistence backend: xapi\n  unique to this VM:   false\n  VM now has 1 vTPM(s)\n  can add another:     false\n  after removal:       0 vTPM(s)\nOK: manage-vtpm
-go	new-vm-wizard	873e13ac27dd	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f609-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nCleaned up the example VM.\nOK: new-vm-wizard
 go	pool-properties	9abb4fa2fb99	Pool:       'sdk-pool'\nDefault SR: Shared NFS\nRenamed to: 'sdk-pool-renamed'\nOK: pool-properties
 go	pool-tags	15247f5d3d97	Pool tags: sdk-managed\nOK: pool-tags
 go	pvs-accelerator	397fa10de1ae	Site: Provisioning Services\n  cache:  sdk-host1  20 GiB on Local storage\n  cache:  sdk-host2  20 GiB on Local storage\n  server: 203.0.113.50  ports 6910-6930\n  server: 203.0.113.51  ports 6910-6930\n  1 of 4 VM(s) accelerated\nOK: pvs-accelerator
@@ -293,13 +293,13 @@ java	checkpoint-vm	3f390bdf6f00	Created checkpoint: 00000001-0000-0000-560a-0000
 java	clone-vm	f9ca40b85fbc	Cloned 'db-01' ? sdk-example-clone\nClone has 1 VBD(s)\nOK: clone-vm
 java	configure-clustering	65abbe82c9d4	Stack:      corosync\nQuorate:    true (2/2 needed)\nOne member out, quorate: false\nResynced,   quorate: true\nCluster removed again.\nOK: configure-clustering
 java	configure-console-access	9febfd9b44bc	  VM console idle timeout    0s\n  limit console sessions     false\n  host console idle timeout  0s\n  host https only            false\nafter tightening:\n  VM console idle timeout    600s\n  limit console sessions     true\n  host console idle timeout  300s\n  host https only            true\n  restored\nOK: configure-console-access
-java	configure-disaster-recovery	6e244355c01e	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-a30b-000000000000), 3804 MiB, up to date: true\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
+java	configure-disaster-recovery	d18d6293f912	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-300b-000000000000), 3804 MiB, up to date: true\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
 java	configure-dynamic-memory	4f93461b097e	db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB\n  dynamic range now 3.0 GiB-4.0 GiB\n  refused a dynamic_max above static_max: The dynamic memory range violates constraint static_min &lt;= dynamic_min &lt;= dynamic_max &lt;= static_max.\nOK: configure-dynamic-memory
 java	configure-ha	ecbf0d8b8e79	Heartbeat SR:  Shared NFS\nMax failures:  1\nHA enabled:    true\nweb-01 priority: '' -> 'restart'\nRestart on internal shutdown: true\nHA enabled:    false\nOK: configure-ha
 java	configure-host-storage	861cbb05b0ec	sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing false\n  IQN now:      iqn.2026-01.com.example:sdk-host1\n  multipathing: true\n  restored\nOK: configure-host-storage
 java	configure-nrpe	70c720b76fb5	sdk-host2: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nsdk-host1: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nOK: configure-nrpe
 java	configure-offline-updates	a57948ef0056	Pool repositories: sdk-example-offline\nNo bundle given: pass bundle_path to upload one\nOK: configure-offline-updates
-java	configure-pool-options	b7ad4448d779	  live patching disabled false\n  IGMP snooping          false\n  migration compression  false\nafter changing:\n  live patching disabled true\n  IGMP snooping          true\n  migration compression  true\n  restored\nOK: configure-pool-options
+java	configure-pool-options	c7de3fd3e362	  live patching disabled false\n  IGMP snooping          false\n  migration compression  false\nafter changing:\n  live patching disabled true\n  IGMP snooping          true\n  migration compression  true\n  restored\nOK: configure-pool-options
 java	configure-pvs-accelerator	ea8f1204a1da	Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)\n  db-01: stopped\nOK: configure-pvs-accelerator
 java	configure-snmp	b5fb6d5bfcc2	sdk-host2: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nsdk-host1: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nOK: configure-snmp
 java	configure-syslog	fcb1ca1f7f58	sdk-host1 logging: (local only)\n  now logging to: 192.0.2.50\n  restored: (local only)\nOK: configure-syslog
@@ -309,18 +309,19 @@ java	control-domain-memory	c7b76f94408c	sdk-host2 dom0: 2.0 GiB\n  now 3.0 GiB (
 java	convert-to-template	855aedb3bf62	is_a_template after provision: false\nis_a_template after convert:  true\nOK: convert-to-template
 java	copy-vm	5c2280439c5a	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-0a0a-000000000000\nCopy has 1 VBD(s), is_a_template = false\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 java	create-bond	8a12c2f24735	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance-slb\nBonds left:   0\nOK: create-bond
-java	create-hba-sr	236eed484145	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-9d0a-000000000000 (512 GiB)\nOK: create-hba-sr
-java	create-iscsi-sr	751a0cc8a808	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-080b-000000000000 (200 GiB)\nOK: create-iscsi-sr
+java	create-hba-sr	6aae30fd0483	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-c10a-000000000000 (512 GiB)\nOK: create-hba-sr
+java	create-iscsi-sr	20cc68aca33d	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-5a0a-000000000000 (200 GiB)\nOK: create-iscsi-sr
 java	create-iso-sr	8b27b309687c	Created ISO SR: 00000001-0000-0000-540a-000000000000\nOK: create-iso-sr
 java	create-network	cc8bb283f0e4	Created network: 00000001-0000-0000-150b-000000000000\nMTU now:         9000\nOK: create-network
 java	create-nfs-sr	76ae835e8f08	Created SR: 00000001-0000-0000-ac0a-000000000000\nOK: create-nfs-sr
 java	create-smb-sr	4d2234f94e12	Created SR: 00000001-0000-0000-740a-000000000000 (512 GiB)\nOK: create-smb-sr
 java	create-vm	2d5d5dd3dfdb	Using template: Rocky Linux 8\nCloned new VM: 00000001-0000-0000-eb09-000000000000\nProvisioned. is_a_template = false\nCleaned up the example VM.\nOK: create-vm
+java	create-vm-full	536ffb0d3770	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f209-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nCleaned up the example VM.\nOK: create-vm-full
 java	create-vm-with-vgpu	4238162c9b7f	Using vGPU type: GRID K100 (256 MB framebuffer)\nCreated vGPU: 00000001-0000-0000-520a-000000000000\nVM now has 1 vGPU(s); type = GRID K100\nCleaned up the example VM and its vGPU.\nOK: create-vm-with-vgpu
 java	cross-pool-copy-vm	7ad5b7c32990	Sent 'db-01' to the destination pool (copy); source still present: true\n  the copy on the destination: db-01 (00000001-0000-0000-110a-000000000000)\nOK: cross-pool-copy-vm
 java	custom-fields	2c2fed394755	Field defined: true\nCustom field Owner = Platform Team\nOK: custom-fields
 java	delete-vm	0cc3f76cc487	Deleting VM 00000001-0000-0000-120a-000000000000 with 1 disk(s)\nVM still present: false\nOK: delete-vm
-java	disaster-recovery-failover	55c6646347c4	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VmRequiresSr\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
+java	disaster-recovery-failover	a0de13e8fa44	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VmRequiresSr\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
 java	dismiss-alerts	b0fa630228ec	Alerts:         0\nNo alerts to dismiss.\nOK: dismiss-alerts
 java	edit-vm-properties	b48ae5a5982c	New description: Edited by the SDK example\nother_config[sdk_example] = true\nOK: edit-vm-properties
 java	error-handling	9c9ce89acc4d	Caught expected failure: UuidInvalid\nShort message: The uuid you supplied was invalid.\nOK: error-handling
@@ -346,11 +347,10 @@ java	manage-sr-lifecycle	98b2bf14e70d	sdk-example-lifecycle: connected on 2 of 2
 java	manage-ssh-access	505b2946e010	sdk-host1: ssh enabled=true, expires 2026-01-01T09:00:00Z\nsdk-host2: ssh enabled=true, expires 2026-01-01T09:00:00Z\nAfter disable: sdk-host1=false, sdk-host2=false\nOK: manage-ssh-access
 java	manage-vapp	919bdd24ea1b	Started:        Running\nShut down:      Halted\nOK: manage-vapp
 java	manage-vif	ad41df2ba1dd	Attached a VIF on device 0; VM now has 1 NIC(s)\nOK: manage-vif
-java	manage-vm-disks	d026d2e21842	Disk attached:  true\nAfter unplug:   false\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     true\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
+java	manage-vm-disks	28e0c02be75f	Disk attached:  true\nAfter unplug:   false\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     true\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
 java	manage-vm-groups	5d996e8be825	Created group:  00000001-0000-0000-120a-000000000000\nGroup members:  1\n  web-01\nOK: manage-vm-groups
 java	manage-vm-media	7c94fafa18d7	Adding a DVD drive to db-01\n  drive 11 is empty: true\n  inserting Windows_Server_2022.iso\n  drive now holds Windows_Server_2022.iso (empty=false)\n  after eject, empty=true\nOK: manage-vm-media
 java	manage-vtpm	6d603bf932ab	Attaching a vTPM to secure-01\n  persistence backend: xapi\n  unique to this VM:   false\n  VM now has 1 vTPM(s)\n  can add another:     false\n  after removal:       0 vTPM(s)\nOK: manage-vtpm
-java	new-vm-wizard	851339a7ed41	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f709-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nCleaned up the example VM.\nOK: new-vm-wizard
 java	pool-properties	8ccee6a1128d	Pool:       'sdk-pool'\nDefault SR: Shared NFS\nRenamed to: 'sdk-pool-renamed'\nOK: pool-properties
 java	pool-tags	80a3b9c142ba	Pool tags: sdk-managed\nOK: pool-tags
 java	pvs-accelerator	1f1e06988777	Site: Provisioning Services\n  cache:  sdk-host2  20 GiB on Local storage\n  cache:  sdk-host1  20 GiB on Local storage\n  server: 203.0.113.50  ports 6910-6930\n  server: 203.0.113.51  ports 6910-6930\n  1 of 4 VM(s) accelerated\nOK: pvs-accelerator
@@ -387,13 +387,13 @@ powershell	checkpoint-vm	4a25d78184bf	Created checkpoint: 00000001-0000-0000-6e0
 powershell	clone-vm	426c33027f1b	Cloned 'db-01' -> sdk-example-clone\nClone has 1 VBD(s)\nOK: clone-vm
 powershell	configure-clustering	c10abc5626e0	Stack:      corosync\nQuorate:    True (2/2 needed)\nOne member out, quorate: False\nResynced,   quorate: True\nCluster removed again.\nOK: configure-clustering
 powershell	configure-console-access	adbfc021757a	  VM console idle timeout    0s\n  limit console sessions     False\n  host console idle timeout  0s\n  host https only            False\nafter tightening:\n  VM console idle timeout    600s\n  limit console sessions     True\n  host console idle timeout  300s\n  host https only            True\n  restored\nOK: configure-console-access
-powershell	configure-disaster-recovery	a676e63db221	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-530b-000000000000), 3804 MiB, up to date: True\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
+powershell	configure-disaster-recovery	b93ac86b268b	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-530b-000000000000), 3804 MiB, up to date: True\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
 powershell	configure-dynamic-memory	5b578026fa96	db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB\n  dynamic range now 3.0 GiB-4.0 GiB\n  refused a dynamic_max above static_max: The dynamic memory range violates constraint static_min <= dynamic_min <= dynamic_max <= static_max.\nOK: configure-dynamic-memory
 powershell	configure-ha	f5b431a8331c	Heartbeat SR:  Shared NFS\nMax failures:  1\nHA enabled:    True\nweb-01 priority: '' -> 'restart'\nRestart on internal shutdown: True\nHA enabled:    False\nOK: configure-ha
 powershell	configure-host-storage	53f8705f1827	sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing False\n  IQN now:      iqn.2026-01.com.example:sdk-host1\n  multipathing: True\n  restored\nOK: configure-host-storage
 powershell	configure-nrpe	f2ce82738e6d	sdk-host1: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nsdk-host2: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nOK: configure-nrpe
 powershell	configure-offline-updates	0ce751e777c1	Pool repositories: sdk-example-offline\nNo bundle given: pass bundle_path to upload one\nOK: configure-offline-updates
-powershell	configure-pool-options	784bfd5af32c	  live patching disabled False\n  IGMP snooping          False\n  migration compression  False\nafter changing:\n  live patching disabled True\n  IGMP snooping          True\n  migration compression  True\n  restored\nOK: configure-pool-options
+powershell	configure-pool-options	026c875ca161	  live patching disabled False\n  IGMP snooping          False\n  migration compression  False\nafter changing:\n  live patching disabled True\n  IGMP snooping          True\n  migration compression  True\n  restored\nOK: configure-pool-options
 powershell	configure-pvs-accelerator	b2725abf2ff5	Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)\n  db-01: stopped\nOK: configure-pvs-accelerator
 powershell	configure-snmp	d6357d298713	sdk-host1: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nsdk-host2: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nOK: configure-snmp
 powershell	configure-syslog	49ad8077afec	sdk-host1 logging: (local only)\n  now logging to: 192.0.2.50\n  restored: (local only)\nOK: configure-syslog
@@ -403,18 +403,19 @@ powershell	control-domain-memory	a235ea5a986d	sdk-host1 dom0: 2.0 GiB\n  now 3.0
 powershell	convert-to-template	1319c403cee2	is_a_template after provision: False\nis_a_template after convert:  True\nOK: convert-to-template
 powershell	copy-vm	9d047be89169	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-080a-000000000000\nCopy has 1 VBD(s), is_a_template = False\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 powershell	create-bond	1791f390e06e	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance_slb\nBonds left:   0\nOK: create-bond
-powershell	create-hba-sr	7b88630261a5	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-e20a-000000000000 (512 GiB)\nOK: create-hba-sr
-powershell	create-iscsi-sr	9412c2ae724c	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-db0a-000000000000 (200 GiB)\nOK: create-iscsi-sr
+powershell	create-hba-sr	03d813d60a0d	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-e20a-000000000000 (512 GiB)\nOK: create-hba-sr
+powershell	create-iscsi-sr	d331db94293a	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-db0a-000000000000 (200 GiB)\nOK: create-iscsi-sr
 powershell	create-iso-sr	ad2725197fb2	Created ISO SR: 00000001-0000-0000-e50a-000000000000\nOK: create-iso-sr
 powershell	create-network	5c1cfd49b688	Created network: 00000001-0000-0000-1a0b-000000000000\nMTU now:         9000\nOK: create-network
 powershell	create-nfs-sr	5ba7fbe8e7fa	Created SR: 00000001-0000-0000-d80a-000000000000\nOK: create-nfs-sr
 powershell	create-smb-sr	5f0a983f5d9b	Created SR: 00000001-0000-0000-df0a-000000000000 (512 GiB)\nOK: create-smb-sr
 powershell	create-vm	6d8470b52a68	Using template: Rocky Linux 8\nCloned new VM: 00000001-0000-0000-ee09-000000000000\nProvisioned. is_a_template = False\nCleaned up the example VM.\nOK: create-vm
+powershell	create-vm-full	43bd2a2d9c59	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f509-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nOK: create-vm-full
 powershell	create-vm-with-vgpu	f71360a9f483	Using vGPU type: GRID K100 (256 MB framebuffer)\nCreated vGPU: 00000001-0000-0000-8c0a-000000000000\nVM now has 1 vGPU(s); type = GRID K100\nCleaned up the example VM and its vGPU.\nOK: create-vm-with-vgpu
 powershell	cross-pool-copy-vm	cfc5386d9ba7	Sent 'db-01' to the destination pool (copy); source still present: True\n  the copy on the destination: db-01 (00000001-0000-0000-080a-000000000000)\nOK: cross-pool-copy-vm
 powershell	custom-fields	7880bdacc117	Field defined: True\nCustom field Owner = Platform Team\nOK: custom-fields
 powershell	delete-vm	2a88587b4148	Deleting VM 00000001-0000-0000-110a-000000000000 with 1 disk(s)\nVM still present: False\nOK: delete-vm
-powershell	disaster-recovery-failover	a7b7d961fbcf	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VM_REQUIRES_SR\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
+powershell	disaster-recovery-failover	6a575a6f86bc	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VM_REQUIRES_SR\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
 powershell	dismiss-alerts	f4dac4d491a5	Alerts:         0\nNo alerts to dismiss.\nOK: dismiss-alerts
 powershell	edit-vm-properties	df3329dbc5e6	New description: Edited by the SDK example\nother_config[sdk_example] = true\nOK: edit-vm-properties
 powershell	error-handling	63abe5e355d7	Caught expected failure: UUID_INVALID\nOK: error-handling
@@ -440,11 +441,10 @@ powershell	manage-sr-lifecycle	a22e629063c0	sdk-example-lifecycle: connected on 
 powershell	manage-ssh-access	2398d6268e9b	sdk-host1: ssh enabled=True, expires 20260101T09:00:00Z\nsdk-host2: ssh enabled=True, expires 20260101T09:00:00Z\nAfter disable: sdk-host1=False, sdk-host2=False\nOK: manage-ssh-access
 powershell	manage-vapp	d9002e0f966f	Started:        Running\nShut down:      Halted\nOK: manage-vapp
 powershell	manage-vif	fcd75e794672	Attached a VIF on device 0; VM now has 1 NIC(s)\nOK: manage-vif
-powershell	manage-vm-disks	240c733bc1f1	Disk attached:  True\nAfter unplug:   False\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     True\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
+powershell	manage-vm-disks	115c17c45af6	Disk attached:  True\nAfter unplug:   False\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     True\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
 powershell	manage-vm-groups	392382441240	Created group:  00000001-0000-0000-180a-000000000000\nGroup members:  1\n  web-01\nOK: manage-vm-groups
 powershell	manage-vm-media	5deb4820e096	Adding a DVD drive to db-01\n  drive 1 is empty: True\n  inserting debian-12.5.0-amd64-netinst.iso\n  drive now holds debian-12.5.0-amd64-netinst.iso (empty=False)\n  after eject, empty=True\nOK: manage-vm-media
 powershell	manage-vtpm	448391bb506a	Attaching a vTPM to secure-01\n  persistence backend: xapi\n  unique to this VM:   False\n  VM now has 1 vTPM(s)\n  can add another:     False\n  after removal:       0 vTPM(s)\nOK: manage-vtpm
-powershell	new-vm-wizard	bd3c1c1c3181	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f509-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nOK: new-vm-wizard
 powershell	pool-properties	d3a210c86933	Pool:       'sdk-pool'\nDefault SR: Shared NFS\nRenamed to: 'sdk-pool-renamed'\nOK: pool-properties
 powershell	pool-tags	1a7b5a55cdf4	Pool tags: sdk-managed\nOK: pool-tags
 powershell	pvs-accelerator	239378cc4466	Site: Provisioning Services\n  cache:  sdk-host1  20 GiB on Local storage\n  cache:  sdk-host2  20 GiB on Local storage\n  server: 203.0.113.50  ports 6910-6930\n  server: 203.0.113.51  ports 6910-6930\n  1 of 4 VM(s) accelerated\nOK: pvs-accelerator
@@ -482,13 +482,13 @@ python	checkpoint-vm	f6645071f2e4	Created checkpoint: 00000001-0000-0000-460a-00
 python	clone-vm	9c01504037e8	Cloned 'db-01' -> sdk-example-clone\nClone has 1 VBD(s)\nOK: clone-vm
 python	configure-clustering	30fd915e599b	Stack:      corosync\nQuorate:    True (2/2 needed)\nOne member out, quorate: False\nResynced,   quorate: True\nCluster removed again.\nOK: configure-clustering
 python	configure-console-access	bad4cd20e85b	  VM console idle timeout    0s\n  limit console sessions     False\n  host console idle timeout  0s\n  host https only            False\nafter tightening:\n  VM console idle timeout    600s\n  limit console sessions     True\n  host console idle timeout  300s\n  host https only            True\n  restored\nOK: configure-console-access
-python	configure-disaster-recovery	d0546b5d9ade	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-b80a-000000000000), 3804 MiB, up to date: True\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
+python	configure-disaster-recovery	61bd1464ca9a	SRs that can hold the pool metadata: iSCSI storage\nReplicating the pool metadata to iSCSI storage\n  metadata disk: Metadata for DR (00000001-0000-0000-b30a-000000000000), 3804 MiB, up to date: True\nTurned replication off again, as it was before\nOK: configure-disaster-recovery
 python	configure-dynamic-memory	124697171556	db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB\n  dynamic range now 3.0 GiB-4.0 GiB\n  refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER\nOK: configure-dynamic-memory
 python	configure-ha	3251b4c1f317	Heartbeat SR:  Shared NFS\nMax failures:  1\nHA enabled:    True\nweb-01 priority: '' -> 'restart'\nRestart on internal shutdown: True\nHA enabled:    False\nOK: configure-ha
 python	configure-host-storage	2e84f776d36b	sdk-host1: iSCSI IQN 'iqn.2026-10.com.example:00000001', multipathing False\n  IQN now:      iqn.2026-01.com.example:sdk-host1\n  multipathing: True\n  restored\nOK: configure-host-storage
 python	configure-nrpe	2acf253659ed	sdk-host1: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nsdk-host2: NRPE status before: inactive disabled\n  status after:  active enabled\n  allowed hosts: 127.0.0.1,::1,192.0.2.60\nOK: configure-nrpe
 python	configure-offline-updates	729e76d0c374	Pool repositories: sdk-example-offline\nNo bundle given: pass bundle_path to upload one\nOK: configure-offline-updates
-python	configure-pool-options	0ea226358d10	  live patching disabled False\n  IGMP snooping          False\n  migration compression  False\nafter changing:\n  live patching disabled True\n  IGMP snooping          True\n  migration compression  True\n  restored\nOK: configure-pool-options
+python	configure-pool-options	892a0186744e	  live patching disabled False\n  IGMP snooping          False\n  migration compression  False\nafter changing:\n  live patching disabled True\n  IGMP snooping          True\n  migration compression  True\n  restored\nOK: configure-pool-options
 python	configure-pvs-accelerator	d821206e4a11	Site 'sdk-example-pvs' with 2 cache(s) and 1 server(s)\n  db-01: stopped\nOK: configure-pvs-accelerator
 python	configure-snmp	a306e81d978f	sdk-host1: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nsdk-host2: SNMP enabled: enabled / active\n  community: sdk-community, trap destination: 192.0.2.50\nOK: configure-snmp
 python	configure-syslog	689ceddd7d5e	sdk-host1 logging: (local only)\n  now logging to: 192.0.2.50\n  restored: (local only)\nOK: configure-syslog
@@ -498,18 +498,19 @@ python	control-domain-memory	fe1e2b0c9864	sdk-host1 dom0: 2.0 GiB\n  now 3.0 GiB
 python	convert-to-template	22f0bc901ff3	is_a_template after provision: False\nis_a_template after convert:  True\nOK: convert-to-template
 python	copy-vm	48126636e686	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-050a-000000000000\nCopy has 1 VBD(s), is_a_template = False\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 python	create-bond	41a67d365f8f	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance-slb\nBonds left:   0\nOK: create-bond
-python	create-hba-sr	7ff2101e048c	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f20a-000000000000 (512 GiB)\nOK: create-hba-sr
-python	create-iscsi-sr	cb96b92ca37d	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-690a-000000000000 (200 GiB)\nOK: create-iscsi-sr
+python	create-hba-sr	43e5e2345c43	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-e40a-000000000000 (512 GiB)\nOK: create-hba-sr
+python	create-iscsi-sr	bd3042d2e511	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-7b0a-000000000000 (200 GiB)\nOK: create-iscsi-sr
 python	create-iso-sr	9ea14e72f7e5	Created ISO SR: 00000001-0000-0000-dd0a-000000000000\nOK: create-iso-sr
 python	create-network	006c69cb2cda	Created network: 00000001-0000-0000-6e0a-000000000000\nMTU now:         9000\nOK: create-network
-python	create-nfs-sr	404d8bdc40dc	Created SR: 00000001-0000-0000-bb0a-000000000000\nOK: create-nfs-sr
+python	create-nfs-sr	22cfea541be4	Created SR: 00000001-0000-0000-aa0a-000000000000\nOK: create-nfs-sr
 python	create-smb-sr	aa42179d019a	Created SR: 00000001-0000-0000-0c0b-000000000000 (512 GiB)\nOK: create-smb-sr
 python	create-vm	0452b63703b0	Using template: Rocky Linux 8\nCloned new VM: 00000001-0000-0000-f009-000000000000\nProvisioned. is_a_template = False\nCleaned up the example VM.\nOK: create-vm
+python	create-vm-full	b767232f44f9	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f609-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nCleaned up the example VM.\nOK: create-vm-full
 python	create-vm-with-vgpu	15c489410541	Using vGPU type: GRID K100 (256 MB framebuffer)\nCreated vGPU: 00000001-0000-0000-780a-000000000000\nVM now has 1 vGPU(s); type = GRID K100\nCleaned up the example VM and its vGPU.\nOK: create-vm-with-vgpu
 python	cross-pool-copy-vm	9923dbde8481	Sent 'db-01' to the destination pool (copy); source still present: True\n  the copy on the destination: db-01 (00000001-0000-0000-ea09-000000000000)\nOK: cross-pool-copy-vm
 python	custom-fields	2d9bda58ef38	Field defined: True\nCustom field Owner = Platform Team\nOK: custom-fields
 python	delete-vm	04b7880ef7ed	Deleting VM 00000001-0000-0000-f809-000000000000 with 1 disk(s)\nVM still present: False\nOK: delete-vm
-python	disaster-recovery-failover	448a24574d0a	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VM_REQUIRES_SR\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
+python	disaster-recovery-failover	1018cedf7277	Found SR DR storage (000003e9-0000-0000-0600-000000000000), with pool metadata\nAttached DR storage\n  pool metadata of protected-pool\n  recovered app-01\n  cannot recover db-01: VM_REQUIRES_SR\napp-01 is Halted\nTest failover: removed the recovered VMs and detached the replica\nOK: disaster-recovery-failover
 python	dismiss-alerts	4d28f6315f1e	Alerts:         0\nNo alerts to dismiss.\nOK: dismiss-alerts
 python	edit-vm-properties	a07939ed2ea7	New description: Edited by the SDK example\nother_config[sdk_example] = true\nOK: edit-vm-properties
 python	error-handling	1ccc31f890a7	Caught expected failure: UUID_INVALID\nError parameters: ['host', 'this-uuid-does-not-exist']\nOK: error-handling
@@ -535,11 +536,10 @@ python	manage-sr-lifecycle	b1086d8d3bae	sdk-example-lifecycle: connected on 2 of
 python	manage-ssh-access	3dc72ff33470	sdk-host1: ssh enabled=True, expires 20260101T09:00:00Z\nsdk-host2: ssh enabled=True, expires 20260101T09:00:00Z\nAfter disable: sdk-host1=False, sdk-host2=False\nOK: manage-ssh-access
 python	manage-vapp	a1f8975dba6c	Started:        Running\nShut down:      Halted\nOK: manage-vapp
 python	manage-vif	1e4f09bdd8bf	Attached a VIF on device 0; VM now has 1 NIC(s)\nOK: manage-vif
-python	manage-vm-disks	a6aa2a5b106b	Disk attached:  True\nAfter unplug:   False\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     True\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
+python	manage-vm-disks	fdea962a4216	Disk attached:  True\nAfter unplug:   False\nResized:        4294967296 -> 8589934592 bytes\nAfter plug:     True\nGrown online:   not supported by nfs storage; unplug, resize, plug as above\nOK: manage-vm-disks
 python	manage-vm-groups	cdd43e9fabca	Created group:  00000001-0000-0000-150a-000000000000\nGroup members:  1\n  web-01\nOK: manage-vm-groups
 python	manage-vm-media	67240df17dfd	Adding a DVD drive to db-01\n  drive 1 is empty: True\n  inserting Windows_Server_2022.iso\n  drive now holds Windows_Server_2022.iso (empty=False)\n  after eject, empty=True\nOK: manage-vm-media
 python	manage-vtpm	8762f0326a1b	Attaching a vTPM to secure-01\n  persistence backend: xapi\n  unique to this VM:   False\n  VM now has 1 vTPM(s)\n  can add another:     False\n  after removal:       0 vTPM(s)\nOK: manage-vtpm
-python	new-vm-wizard	c39ff195c25c	Template:      Rocky Linux 8\nCreated VM:    00000001-0000-0000-f509-000000000000\nInstall media: network repository\nHome server:   sdk-host1\nCPU/memory:    2 vCPUs, 2 GiB\nStorage:       24 GiB disk on Shared NFS\nNetworking:    NIC on Pool-wide network associated with eth0\n--- Result ---\npower state:   Running\nvCPUs:         2\ndisks:         1, NICs: 1\nCleaned up the example VM.\nOK: new-vm-wizard
 python	pool-properties	7e170fb6f26f	Pool:       'sdk-pool'\nDefault SR: Shared NFS\nRenamed to: 'sdk-pool-renamed'\nOK: pool-properties
 python	pool-tags	ac96dc675472	Pool tags: sdk-managed\nOK: pool-tags
 python	pvs-accelerator	520199ed2d82	Site: Provisioning Services\n  cache:  sdk-host1  20 GiB on Local storage\n  cache:  sdk-host2  20 GiB on Local storage\n  server: 203.0.113.50  ports 6910-6930\n  server: 203.0.113.51  ports 6910-6930\n  1 of 4 VM(s) accelerated\nOK: pvs-accelerator
@@ -547,7 +547,7 @@ python	read-metrics	2a8cec0767ae	Host sdk-host1: 65536 MiB total, 57344 MiB free
 python	reclaim-space	0faf31020a09	  reclaimed freed space on iSCSI storage: True\nOK: reclaim-space
 python	reconnect-sr-storage	484b7cc8cd2a	sdk-host1: now reaches 192.0.2.10:/export/spare\nsdk-host2: now reaches 192.0.2.10:/export/spare\nOK: reconnect-sr-storage
 python	rename-object	70510910857a	Renamed 'web-01' -> 'sdk-renamed'\nOK: rename-object
-python	restart-host	d3ec7ae617cc	Restarting sdk-host2\n  enabled=True, guests=0\n  disabled:   enabled=False\n  evacuated:  guests=0\n  rebooted, re-enabled: enabled=True\n  skipping shutdown/power-on: no out-of-band power-on mode is configured on this host\nOK: restart-host
+python	restart-host	90376e28e411	Restarting sdk-host2\n  enabled=True, guests=0\n  disabled:   enabled=False\n  evacuated:  guests=0\n  rebooted, re-enabled: enabled=True\n  skipping shutdown/power-on: no out-of-band power-on mode is configured on this host\nOK: restart-host
 python	rolling-pool-update	48e36faf54bb	Synced updates; hash length 64\nUpdating sdk-host1:\n  applied; pending guidance = []\nUpdating sdk-host2:\n  applied; pending guidance = []\nOK: rolling-pool-update
 python	rotate-pool-secret	eb08ee56ef93	Pool:           sdk-pool\nRotated. Still connected: True\nOK: rotate-pool-secret
 python	rrd-metrics	a90a1b4cbb74	  sdk-host1: peak PVS cache utilisation 94%\nOK: rrd-metrics

@@ -25,8 +25,7 @@ public final class ConfigurePoolOptions {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         try {
-            // None of these is a wizard: they are plain pool settings that a client exposes on a
-            // properties page, and each is a single field. Read them, change them, put them back.
+            // These are plain pool settings, each a single field. Read them, change them, put them back.
             Pool pool = Pool.getAll(conn).iterator().next();
 
             boolean beforeLivePatching = pool.getLivePatchingDisabled(conn);
