@@ -48,7 +48,7 @@ wlb_recommendations() {
 
     # Disconnect from the appliance however the rest of this goes, or the pool stays attached to it. This
     # script dispatches to exactly one workflow and then exits, so an EXIT trap is bash's try/finally.
-    trap 'xe pool-deconfigure-wlb; [ -z "$wlb_cert_name" ] || xe pool-certificate-uninstall name="$wlb_cert_name"' EXIT
+    trap 'xe_try pool-deconfigure-wlb; [ -z "$wlb_cert_name" ] || xe_try pool-certificate-uninstall name="$wlb_cert_name"' EXIT
 
     # Initializing connects the pool to the appliance but leaves balancing off: every WLB call after this
     # would fail WLB_DISABLED until it's switched on.
@@ -67,7 +67,7 @@ wlb_recommendations() {
     vm=$(vm_uuid "$vm_name")
     deadline=$((SECONDS + 600))
     while true; do
-        if out=$(xe vm-retrieve-wlb-recommendations uuid=$vm 2>&1); then break; fi
+        if out=$(xe_try vm-retrieve-wlb-recommendations uuid=$vm 2>&1); then break; fi
         case "$out" in
             *4024*|*4025*|*"Pool discovery has not been"*|*4016*|*"does not have current metrics"*) ;;
             *) echo "$out" >&2; exit 1 ;;
@@ -82,5 +82,5 @@ wlb_recommendations() {
     xe pool-send-wlb-configuration config:ReportingCronString="0 3 * * *"
     echo "  appliance configuration: $(xe pool-retrieve-wlb-configuration)"
 
-    echo "OK: wlb-recommendations"
+    ok wlb-recommendations
 }

@@ -11,5 +11,5 @@ rename_object() {
     xe vm-param-set uuid=$vm name-label=xe-renamed
     echo "Renamed '$original' -> '$(xe vm-param-get uuid=$vm param-name=name-label)'"
     xe vm-param-set uuid=$vm name-label="$original"   # restore so the example is repeatable
-    echo "OK: rename-object"
+    ok rename-object
 }

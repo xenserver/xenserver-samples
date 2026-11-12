@@ -12,14 +12,16 @@ manage_vtpm() {
     # UEFI one (HVM-boot-params:firmware = uefi), so pick one of those rather than any halted VM.
     vm=""
     for v in $(each_csv "$(xe vm-list power-state=halted --minimal)"); do
-        [ -z "$(xe vm-param-get uuid=$v param-name=vtpms)" ] &&
-        [ "$(xe vm-param-get uuid=$v param-name=HVM-boot-params param-key=firmware 2>/dev/null)" = "uefi" ] &&
-            { vm=$v; break; }
+        # Deliberately xe_try: a BIOS-mode VM has no "firmware" key at all, not even an empty one.
+        firmware=$(xe_try vm-param-get uuid=$v param-name=HVM-boot-params param-key=firmware 2>/dev/null) || firmware=""
+        [ -z "$(xe vm-param-get uuid=$v param-name=vtpms)" ] && [ "$firmware" = "uefi" ] && { vm=$v; break; }
     done
     [ -n "$vm" ] || { echo "no halted UEFI VM without a vTPM already attached was found" >&2; exit 1; }
     echo "Attaching a vTPM to $(xe vm-param-get uuid=$vm param-name=name-label)"
 
     vtpm=$(xe vtpm-create vm-uuid=$vm is-unique=false)
+    # xe has no field for the vTPM's persistence backend (unlike the SDKs, which read it straight off the
+    # VTPM record) - is_protected is the closest it offers: whether the secrets are hardware-sealed.
     echo "  unique to this VM:   $(xe vtpm-param-get uuid=$vtpm param-name=is_unique)"
     echo "  protected:           $(xe vtpm-param-get uuid=$vtpm param-name=is_protected)"
     echo "  VM now has $(count_csv "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=vtpms)")") vTPM(s)"
@@ -32,5 +34,5 @@ manage_vtpm() {
 
     xe vtpm-destroy uuid=$vtpm --force       # xe insists: the vTPM's secrets are destroyed with it
     echo "  after removal:       $(count_csv "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=vtpms)")") vTPM(s)"
-    echo "OK: manage-vtpm"
+    ok manage-vtpm
 }

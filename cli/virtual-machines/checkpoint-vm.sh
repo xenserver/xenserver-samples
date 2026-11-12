@@ -31,5 +31,5 @@ checkpoint_vm() {
     xe snapshot-uninstall snapshot-uuid=$cp force=true
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: checkpoint-vm"
+    ok checkpoint-vm
 }

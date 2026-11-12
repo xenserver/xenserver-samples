@@ -16,7 +16,7 @@ manage_crash_dumps() {
     done
     if [ -z "$target" ]; then
         echo "No crash dumps in this pool - nothing to clear."
-        echo "OK: manage-crash-dumps"
+        ok manage-crash-dumps
         return
     fi
 
@@ -33,5 +33,5 @@ manage_crash_dumps() {
     # Deleting a dump frees the space on the host; the host itself is untouched.
     for d in $(each_csv "$dumps"); do xe host-crashdump-destroy uuid=$d; done
     echo "  cleared:  $(xe host-param-get uuid=$target param-name=name-label) now has $(count_csv "$(xe host-crashdump-list host-uuid=$target --minimal)")"
-    echo "OK: manage-crash-dumps"
+    ok manage-crash-dumps
 }

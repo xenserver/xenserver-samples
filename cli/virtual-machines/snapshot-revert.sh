@@ -23,5 +23,5 @@ snapshot_revert() {
     # A snapshot owns its own snapshot disks; snapshot-uninstall removes them with it (the VM's disks are
     # untouched - they are not the snapshot's).
     xe snapshot-uninstall snapshot-uuid=$snap force=true
-    echo "OK: snapshot-revert"
+    ok snapshot-revert
 }

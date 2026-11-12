@@ -15,5 +15,5 @@ create_network() {
     xe network-param-set uuid=$net MTU=9000
     echo "MTU now:         $(xe network-param-get uuid=$net param-name=MTU)"
     xe network-destroy uuid=$net
-    echo "OK: create-network"
+    ok create-network
 }

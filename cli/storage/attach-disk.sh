@@ -21,5 +21,5 @@ attach_disk() {
     # sets on the template's disks) - not the one just attached, so destroy that too.
     xe vm-uninstall uuid=$vm force=true
     xe vdi-destroy uuid=$vdi
-    echo "OK: attach-disk"
+    ok attach-disk
 }

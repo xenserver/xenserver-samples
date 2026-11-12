@@ -38,7 +38,7 @@ manage_pool_membership() {
     echo "Restoring:   $original_name (reconnecting again)"
     reconnect_after_master_change "$original"
     echo "Restored:    $original_name"
-    echo "OK: manage-pool-membership"
+    ok manage-pool-membership
 }
 
 # Wait out a pool-wide xapi restart (pool-designate-new-master) and find the new coordinator's address,
@@ -54,7 +54,7 @@ reconnect_after_master_change() {
     while [ $SECONDS -lt $deadline ]; do
         # Called as an if-condition, so set -e does not end the script when one of its xe calls fails -
         # and while xapi restarts across the pool, any of them can.
-        if probe=$(xe pool-list --minimal 2>&1) && pool_settled_under "$new_master_uuid" "$probe"; then
+        if probe=$(xe_try pool-list --minimal 2>&1) && pool_settled_under "$new_master_uuid" "$probe"; then
             return 0
         fi
         if [[ $probe =~ (Master|Coordinator)\ IP\ address:\ ([0-9A-Fa-f.:]+) ]]; then
@@ -71,10 +71,10 @@ reconnect_after_master_change() {
 # operation's own task) - hence the second half.
 pool_settled_under() {
     local master h
-    master=$(xe pool-param-get uuid="$(first_csv "$2")" param-name=master) || return 1
+    master=$(xe_try pool-param-get uuid="$(first_csv "$2")" param-name=master) || return 1
     [ "$master" = "$1" ] || return 1
-    for h in $(each_csv "$(xe host-list --minimal)"); do
-        [ "$(xe host-param-get uuid=$h param-name=enabled)" = "true" ] || return 1
+    for h in $(each_csv "$(xe_try host-list --minimal)"); do
+        [ "$(xe_try host-param-get uuid=$h param-name=enabled)" = "true" ] || return 1
         [ "$(host_live "$h")" = "true" ] || return 1
     done
 }

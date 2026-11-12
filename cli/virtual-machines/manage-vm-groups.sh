@@ -14,10 +14,14 @@ manage_vm_groups() {
 
     # Membership is written from the VM side, and read back from the group side.
     xe vm-param-set uuid=$vm groups=$group
-    echo "Group members:  $(count_csv "$(set_to_csv "$(xe vm-group-param-get uuid=$group param-name=vm-uuids)")")"
+    members=$(set_to_csv "$(xe vm-group-param-get uuid=$group param-name=vm-uuids)")
+    echo "Group members:  $(count_csv "$members")"
+    for m in $(each_csv "$members"); do
+        echo "  $(xe vm-param-get uuid=$m param-name=name-label)"
+    done
 
     # vm-group-destroy already clears the group from every member VM on its own - no need to remove
     # membership ourselves first.
     xe vm-group-destroy uuid=$group
-    echo "OK: manage-vm-groups"
+    ok manage-vm-groups
 }

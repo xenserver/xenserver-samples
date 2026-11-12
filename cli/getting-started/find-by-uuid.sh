@@ -9,5 +9,5 @@
 find_by_uuid() {
     vm=$(vm_uuid web-01)
     echo "UUID $vm resolves to $(xe vm-param-get uuid=$vm param-name=name-label)"
-    echo "OK: find-by-uuid"
+    ok find-by-uuid
 }

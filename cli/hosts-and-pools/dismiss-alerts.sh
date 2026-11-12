@@ -10,11 +10,12 @@ dismiss_alerts() {
     # Sorted, for a deterministic choice of which one to dismiss (message-list's own order is not).
     msg=$(xe message-list --minimal | tr ',' '\n' | sort | head -n 1)
     if [ -n "$msg" ]; then
-        echo "Dismissing:     $(xe message-param-get uuid=$msg param-name=name)"
+        echo "Dismissing:     $(xe message-param-get uuid=$msg param-name=name)" \
+             "(priority $(xe message-param-get uuid=$msg param-name=priority))"
         xe message-destroy uuid=$msg
         echo "Alerts left:    $(count_csv "$(xe message-list --minimal)")"
     else
         echo "No alerts to dismiss."
     fi
-    echo "OK: dismiss-alerts"
+    ok dismiss-alerts
 }

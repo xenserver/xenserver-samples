@@ -26,5 +26,5 @@ configure_host_storage() {
     [ -n "$before_iqn" ] && xe host-param-set uuid=$host_uuid iscsi_iqn="$before_iqn"
     xe host-param-set uuid=$host_uuid multipathing=$before_multipathing
     echo "  restored"
-    echo "OK: configure-host-storage"
+    ok configure-host-storage
 }

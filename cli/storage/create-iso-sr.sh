@@ -18,5 +18,5 @@ create_iso_sr() {
         device-config:location="$location" device-config:type=nfs_iso shared=true)
     echo "Created ISO SR: $sr"
     detach_and_forget_sr $sr
-    echo "OK: create-iso-sr"
+    ok create-iso-sr
 }

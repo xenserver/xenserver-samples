@@ -29,5 +29,5 @@ create_smb_sr() {
     echo "Created SMB SR: $sr ($(( $(xe sr-param-get uuid=$sr param-name=physical-size) / 1024 / 1024 / 1024 )) GiB)"
     detach_and_forget_sr $sr
     xe secret-destroy uuid=$secret
-    echo "OK: create-smb-sr"
+    ok create-smb-sr
 }

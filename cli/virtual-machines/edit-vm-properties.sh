@@ -14,5 +14,5 @@ edit_vm_properties() {
     echo "other-config[xe_example] = $(xe vm-param-get uuid=$vm param-name=other-config param-key=xe_example)"
     xe vm-param-set uuid=$vm name-description="$original"
     xe vm-param-remove uuid=$vm param-name=other-config param-key=xe_example
-    echo "OK: edit-vm-properties"
+    ok edit-vm-properties
 }

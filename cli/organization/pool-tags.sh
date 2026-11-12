@@ -10,5 +10,5 @@ pool_tags() {
     xe pool-param-add uuid=$pool param-name=tags param-key=sdk-managed
     echo "Pool tags: $(xe pool-param-get uuid=$pool param-name=tags)"
     xe pool-param-remove uuid=$pool param-name=tags param-key=sdk-managed
-    echo "OK: pool-tags"
+    ok pool-tags
 }

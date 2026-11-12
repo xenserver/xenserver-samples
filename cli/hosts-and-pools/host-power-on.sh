@@ -15,5 +15,5 @@ host_power_on() {
     echo "Power-on mode:  $(xe host-param-get uuid=$h param-name=power-on-mode)"
 
     xe host-set-power-on-mode uuid=$h power-on-mode=
-    echo "OK: host-power-on"
+    ok host-power-on
 }

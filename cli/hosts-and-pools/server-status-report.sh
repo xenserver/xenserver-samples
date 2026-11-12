@@ -62,7 +62,7 @@ server_status_report() {
     fi
 
     rm -f cli-status-all.tar cli-status-config.tar
-    echo "OK: server-status-report"
+    ok server-status-report
 }
 
 # The value of a named attribute in an XML element, using parameter expansion only - no xmllint, and no

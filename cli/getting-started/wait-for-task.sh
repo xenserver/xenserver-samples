@@ -11,5 +11,5 @@ wait_for_task() {
     # to poll; the API's tasks are listed here for reference.
     echo "Current tasks: $(count_csv "$(xe task-list params=uuid --minimal)")"
     echo "xe waits for each command to finish, so no async polling is needed."
-    echo "OK: wait-for-task"
+    ok wait-for-task
 }

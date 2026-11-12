@@ -31,9 +31,10 @@ live_migrate() {
     xe vm-migrate uuid=$vm host-uuid=$dest live=true
     now=$(xe vm-param-get uuid=$vm param-name=resident-on)
     echo "Migrated to: $(xe host-param-get uuid=$now param-name=name-label)"
+    echo "Still running: $(xe vm-param-get uuid=$vm param-name=power-state)"
     # Tidy up so the example is repeatable: stop the VM, then vm-uninstall destroys it and the disks it
     # owns (vm-destroy would leave the disks behind).
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: live-migrate"
+    ok live-migrate
 }

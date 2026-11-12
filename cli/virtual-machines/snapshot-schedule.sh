@@ -22,5 +22,5 @@ snapshot_schedule() {
     # A schedule with VMs still on it cannot be destroyed, so take the VM off it first.
     xe vm-param-set uuid=$vm snapshot-schedule=
     xe vmss-destroy uuid=$vmss
-    echo "OK: snapshot-schedule"
+    ok snapshot-schedule
 }

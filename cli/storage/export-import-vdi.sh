@@ -23,7 +23,8 @@ export_import_vdi() {
 
     # Relative to the working directory: xe.exe and this script must agree on the path, and a Windows
     # temp directory spelled with backslashes would not survive the trip through both.
-    local data=cli-raw-source.bin exported=cli-raw-exported.bin
+    # Not local: the EXIT trap below reads them after this function has returned.
+    data=cli-raw-source.bin exported=cli-raw-exported.bin
     trap 'rm -f "$data" "$exported"' EXIT
     head -c $((8 * 1024 * 1024)) /dev/urandom > "$data"
 
@@ -47,5 +48,5 @@ export_import_vdi() {
 
     xe vdi-destroy uuid=$original
     xe vdi-destroy uuid=$copy
-    echo "OK: export-import-vdi"
+    ok export-import-vdi
 }

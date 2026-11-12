@@ -17,7 +17,14 @@
 # arguments after the password, overriding that workflow's default for the named parameter (e.g.
 # `create-iscsi-sr <url> <user> <pw> target=192.0.2.30`). cross-pool-copy-vm keeps its own positional
 # form instead (<src> <user> <pw> <destUrl> [<destUser> <destPassword> [<vmName>]]).
-set -e
+# -u and pipefail catch a mistyped variable or a failure hidden behind a pipe; inherit_errexit keeps -e
+# in force inside a `$(...)` that runs more than one command, so an early failure there stops that
+# command substitution rather than running on to report a wrong result. Together with xe() (connection.sh)
+# returning a failed call's real exit status, a plain `xe ...` or a `var=$(xe ...)` assignment now stops
+# the whole script instead of letting a later line act on nothing or print it blank. xe_try is the
+# explicit, non-fatal form for a call site that is deliberately checking whether xe succeeds.
+set -euo pipefail
+shopt -s inherit_errexit
 
 # Under Git Bash/MSYS, an argument that looks like a Unix path (e.g. serverpath=/export/vol1) gets
 # rewritten to a Windows path before xe sees it. These are all *remote* paths (NFS exports, folders),

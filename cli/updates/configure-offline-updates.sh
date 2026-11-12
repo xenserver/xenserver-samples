@@ -42,5 +42,5 @@ configure_offline_updates() {
     # Forgetting a repository the pool still has enabled fails: restore the pool's own first.
     xe pool-param-set uuid=$pool repositories="$(set_to_csv "$before")"
     [ -n "$existing" ] || xe repository-forget uuid=$repo
-    echo "OK: configure-offline-updates"
+    ok configure-offline-updates
 }

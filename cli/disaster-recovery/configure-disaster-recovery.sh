@@ -75,5 +75,5 @@ configure_disaster_recovery() {
         xe sr-disable-database-replication uuid=$sr
         echo "Turned replication off again, as it was before"
     fi
-    echo "OK: configure-disaster-recovery"
+    ok configure-disaster-recovery
 }

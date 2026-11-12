@@ -11,6 +11,16 @@ nth_csv()    { local n=$2 IFS=,; set -- $1; shift $((n - 1)); echo "$1"; }  # Nt
 # helpers above work on both.
 set_to_csv() { echo "${1//; /,}"; }
 
+# The last line of every workflow: "OK: <workflow>", but only when no xe call failed along the way (see xe()
+# in connection.sh).
+ok() {
+    local failed; failed=$(<"$_xe_failures"); rm -f "$_xe_failures"
+    if [ -n "$failed" ]; then printf 'FAILED: %s - these xe calls failed:
+%s
+' "$1" "$failed" >&2; exit 1; fi
+    echo "OK: $1"
+}
+
 # The pool's default SR: where xe vm-install puts a template's disks when no SR is named.
 default_sr() { xe pool-param-get uuid=$(xe pool-list --minimal) param-name=default-SR; }
 # The (first) SR with this name, or a message saying there is none.
@@ -54,7 +64,8 @@ xml_tag_text() {
 probe_for_failure() {
     local sm_type=$1 out line xml=""
     shift
-    if out=$(xe sr-probe type="$sm_type" "$@" 2>&1); then
+    # Deliberately xe_try: the probe is expected to fail (that's how it reports what it found).
+    if out=$(xe_try sr-probe type="$sm_type" "$@" 2>&1); then
         echo "SR.probe for $sm_type succeeded without asking for more information;" \
              "check the target address" >&2
         return 1
@@ -88,7 +99,9 @@ wait_for_restart() {
     local host_uuid=$1 key=$2 before=$3 timeout=${4:-1800} interval=${5:-10} probe
     local deadline=$((SECONDS + timeout))
     while true; do
-        if probe=$(xe host-param-get uuid=$host_uuid param-name=other-config param-key=$key 2>&1); then
+        # Deliberately xe_try: the host is down or restarting for some of this wait, and any call can
+        # fail while that happens.
+        if probe=$(xe_try host-param-get uuid=$host_uuid param-name=other-config param-key=$key 2>&1); then
             if [ "$probe" != "$before" ] && [ "$(host_live "$host_uuid")" = "true" ]; then
                 return 0
             fi
@@ -109,7 +122,8 @@ enable_when_booted() {
     local h=$1 timeout=600 interval=10 err
     local deadline=$((SECONDS + timeout))
     while true; do
-        if err=$(xe host-enable uuid=$h 2>&1); then return 0; fi
+        # Deliberately xe_try: HOST_STILL_BOOTING is the expected failure while this waits.
+        if err=$(xe_try host-enable uuid=$h 2>&1); then return 0; fi
         # xe prints the error's message, not its code: HOST_STILL_BOOTING reads "The host toolstack is
         # still initialising".
         case "$err" in
@@ -148,10 +162,13 @@ copy_of_guest() {
 wait_for_guest_agent() {
     local vm=$1 timeout=${2:-300} interval=${3:-2}
     local deadline=$((SECONDS + timeout))
+    local pv
     while true; do
         case "$(xe vm-param-get uuid=$vm param-name=allowed-operations)" in
             *clean_shutdown*)
-                [ "$(xe vm-param-get uuid=$vm param-name=PV-drivers-detected 2>/dev/null)" = true ] && return 0 ;;
+                # Deliberately xe_try: the guest metrics this reads are not there yet on every round.
+                pv=$(xe_try vm-param-get uuid=$vm param-name=PV-drivers-detected 2>/dev/null) || pv=""
+                [ "$pv" = true ] && return 0 ;;
         esac
         if [ $SECONDS -gt $deadline ]; then
             echo "the guest's PV drivers did not report in within ${timeout}s; does the source VM have" \
@@ -200,4 +217,4 @@ first_disk_vdi() {
     done
 }
 
-host_live() { xe host-param-get uuid=$1 param-name=host-metrics-live; }
+host_live() { xe_try host-param-get uuid=$1 param-name=host-metrics-live; }

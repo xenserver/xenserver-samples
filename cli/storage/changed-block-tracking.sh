@@ -46,5 +46,5 @@ changed_block_tracking() {
     xe snapshot-uninstall snapshot-uuid=$second force=true
     xe vdi-destroy uuid=$vdi_from
     [ "$was_enabled" = "true" ] || xe vdi-disable-cbt uuid=$live
-    echo "OK: changed-block-tracking"
+    ok changed-block-tracking
 }

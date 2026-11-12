@@ -18,5 +18,5 @@ clone_vm() {
     [ "$was_running" = true ] && xe vm-start uuid=$vm
     # Tidy up: vm-uninstall destroys the clone and the disks it owns (vm-destroy would leave them).
     xe vm-uninstall uuid=$clone force=true
-    echo "OK: clone-vm"
+    ok clone-vm
 }

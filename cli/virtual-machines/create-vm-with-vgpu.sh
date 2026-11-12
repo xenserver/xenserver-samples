@@ -30,5 +30,5 @@ create_vm_with_vgpu() {
     # Tidy up so the example is repeatable: the vGPU, then the VM and the disks it owns.
     xe vgpu-destroy uuid=$vgpu
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: create-vm-with-vgpu"
+    ok create-vm-with-vgpu
 }

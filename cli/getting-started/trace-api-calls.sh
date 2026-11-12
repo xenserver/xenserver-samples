@@ -20,5 +20,5 @@ trace_api_calls() {
     local hosts
     hosts=$(xe host-list --minimal)
     echo "The pool has $(count_csv "$hosts") hosts"
-    echo "OK: trace-api-calls"
+    ok trace-api-calls
 }

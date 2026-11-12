@@ -17,7 +17,7 @@ change_root_password() {
     # it needs the NEW password - including the command that changes it back. And restore it however the
     # script ends (set -e exits on the first failure), or root would be left on the temporary password.
     pass=$temporary
-    trap 'pass=$temporary; xe user-password-change old=$temporary new="$original" >/dev/null 2>&1' EXIT
+    trap 'pass=$temporary; xe_try user-password-change old=$temporary new="$original" >/dev/null 2>&1' EXIT
 
     echo "New logins work with the new password: $(count_csv "$(xe pool-list --minimal)") pool"
 
@@ -25,5 +25,5 @@ change_root_password() {
     pass=$original
     trap - EXIT
     echo "Password restored."
-    echo "OK: change-root-password"
+    ok change-root-password
 }

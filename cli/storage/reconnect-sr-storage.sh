@@ -43,5 +43,5 @@ reconnect_sr_storage() {
 
     # Tidy up: detach the SR from every host and forget it, leaving the storage itself untouched.
     detach_and_forget_sr $sr
-    echo "OK: reconnect-sr-storage"
+    ok reconnect-sr-storage
 }

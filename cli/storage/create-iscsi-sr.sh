@@ -44,7 +44,7 @@ create_iscsi_sr() {
     secret=""
     if [ -n "$chap_user" ]; then
         secret=$(xe secret-create value="$chap_password")
-        trap 'xe secret-destroy uuid=$secret >/dev/null 2>&1' EXIT
+        trap 'xe_try secret-destroy uuid=$secret >/dev/null 2>&1' EXIT
         dc+=(device-config:chapuser="$chap_user" device-config:chappassword_secret="$secret")
     fi
 
@@ -85,7 +85,7 @@ create_iscsi_sr() {
         trap - EXIT
         secret=""
     fi
-    echo "OK: create-iscsi-sr"
+    ok create-iscsi-sr
 }
 
 # Pick the IQN from an iSCSI discovery probe's XML: the caller's, if named (it must be one the target

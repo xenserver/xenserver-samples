@@ -27,9 +27,10 @@ attach_existing_disk() {
     device=$(first_csv "$(set_to_csv "$(xe vm-param-get uuid=$second param-name=allowed-VBD-devices)")")
     vbd2=$(xe vbd-create vm-uuid=$second vdi-uuid=$vdi device=$device type=Disk mode=RW)
     echo "  attached to $(xe vm-param-get uuid=$second param-name=name-label)"
-    echo "  the disk is on $(count_csv "$(set_to_csv "$(xe vdi-param-get uuid=$vdi param-name=vbds)")") VM(s)"
+    vbds=$(xe vdi-param-get uuid=$vdi param-name=vbd-uuids)
+    echo "  the disk is on $(count_csv "$(set_to_csv "$vbds")") VM(s)"
 
     xe vbd-destroy uuid=$vbd2
     xe vdi-destroy uuid=$vdi
-    echo "OK: attach-existing-disk"
+    ok attach-existing-disk
 }

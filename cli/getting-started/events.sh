@@ -18,5 +18,5 @@ events() {
     echo "Observed web-01's name-description change via event-wait"
 
     xe vm-param-set uuid=$vm name-description="$original"  # put it back
-    echo "OK: events"
+    ok events
 }

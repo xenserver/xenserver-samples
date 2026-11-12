@@ -48,5 +48,5 @@ host_maintenance() {
     # owns (vm-destroy would leave the disks behind).
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: host-maintenance"
+    ok host-maintenance
 }

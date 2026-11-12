@@ -38,7 +38,7 @@ set_default_sr() {
     for pbd in $(each_csv "$(xe pbd-list sr-uuid=$sr --minimal)"); do xe pbd-unplug uuid=$pbd; done
     xe sr-forget uuid=$sr
     echo "  restored to:    $(sr_label "$(xe pool-param-get uuid=$pool param-name=default-SR)")"
-    echo "OK: set-default-sr"
+    ok set-default-sr
 }
 
 # An SR's name from its UUID, tolerating the empty value an unset pool setting prints.

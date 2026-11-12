@@ -55,5 +55,5 @@ create_hba_sr() {
         xe pbd-unplug uuid=$pbd
     done
     xe sr-destroy uuid=$sr
-    echo "OK: create-hba-sr"
+    ok create-hba-sr
 }

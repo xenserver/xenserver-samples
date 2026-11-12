@@ -28,5 +28,5 @@ manage_vm_media() {
     echo "  after eject, empty=$(xe vbd-param-get uuid=$drive param-name=empty)"
 
     xe vbd-destroy uuid=$drive
-    echo "OK: manage-vm-media"
+    ok manage-vm-media
 }

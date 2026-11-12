@@ -9,7 +9,7 @@ attach_usb_device() {
     local vm_uuid pusb_uuid group_uuid vusb_uuid
     vm_uuid=$(xe vm-list name-label=web-01 --minimal)
     pusb_uuid=$(first_csv "$(xe pusb-list --minimal)")
-    echo "Device:         $(xe pusb-list uuid="$pusb_uuid" params=product-desc --minimal)"
+    echo "Device:         $(xe pusb-list uuid="$pusb_uuid" params=description --minimal)"
 
     # Passthrough is off until an administrator releases the device: attaching one that has not been
     # released fails rather than silently doing nothing.
@@ -26,5 +26,5 @@ attach_usb_device() {
     fi
     xe vusb-destroy uuid="$vusb_uuid"
     xe pusb-param-set uuid="$pusb_uuid" passthrough-enabled=false
-    echo "OK: attach-usb-device"
+    ok attach-usb-device
 }

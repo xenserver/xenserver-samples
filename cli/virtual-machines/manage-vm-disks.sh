@@ -50,7 +50,7 @@ manage_vm_disks() {
     # SR's driver (its SM record's features) first.
     sr_type=$(xe sr-param-get uuid=$sr param-name=type)
     sm=$(first_csv "$(xe sm-list type=$sr_type --minimal)")
-    if [ -n "$sm" ] && xe sm-param-get uuid=$sm param-name=features param-key=VDI_RESIZE_ONLINE >/dev/null 2>&1; then
+    if [ -n "$sm" ] && xe_try sm-param-get uuid=$sm param-name=features param-key=VDI_RESIZE_ONLINE >/dev/null 2>&1; then
         grown=$(( $(xe vdi-param-get uuid=$vdi param-name=virtual-size) + 1073741824 ))
         xe vdi-resize uuid=$vdi disk-size=$grown online=true
         echo "Grown online:   $(xe vdi-param-get uuid=$vdi param-name=virtual-size) bytes"
@@ -64,5 +64,5 @@ manage_vm_disks() {
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
     xe vdi-destroy uuid=$vdi
-    echo "OK: manage-vm-disks"
+    ok manage-vm-disks
 }

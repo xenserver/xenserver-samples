@@ -41,5 +41,5 @@ configure_clustering() {
         for pif in "${!was[@]}"; do xe pif-param-set uuid="$pif" disallow-unplug="${was[$pif]}"; done
         echo "Cluster removed again."
     fi
-    echo "OK: configure-clustering"
+    ok configure-clustering
 }

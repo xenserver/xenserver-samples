@@ -35,5 +35,5 @@ configure_updates() {
     xe pool-set-update-sync-enabled value=false
     xe pool-param-set uuid=$pool repositories="${before//; /,}"
     for r in $repos; do xe repository-forget uuid=$r; done
-    echo "OK: configure-updates"
+    ok configure-updates
 }

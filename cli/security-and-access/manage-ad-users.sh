@@ -51,9 +51,14 @@ manage_ad_users() {
 
     # Revoking access does not end sessions the user already has: logging the subject out is a
     # separate act, and the one that actually gets them off the pool now rather than at next login.
+    # This subject has not logged in during this example, so there is normally nothing to log out.
     sid=$(xe subject-param-get uuid=$subj param-name=subject-identifier)
-    xe session-subject-identifier-logout subject-identifier=$sid
-    echo "  logged out $name"
+    if xe session-subject-identifier-list --minimal | tr , '\n' | grep -qx "$sid"; then
+        xe session-subject-identifier-logout subject-identifier=$sid
+        echo "  logged out $name"
+    else
+        echo "  $name has no active session to log out"
+    fi
 
     xe subject-remove subject-uuid=$subj
     if [ "$already_joined" = false ]; then
@@ -61,5 +66,5 @@ manage_ad_users() {
         # accounts from the directory; without them they stay behind in AD.
         xe pool-disable-external-auth uuid=$pool config:user="$admin_user" config:pass="$admin_password"
     fi
-    echo "OK: manage-ad-users"
+    ok manage-ad-users
 }

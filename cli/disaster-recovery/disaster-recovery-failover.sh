@@ -71,18 +71,20 @@ disaster_recovery_failover() {
             [ "${t,,}" = metadata ] || continue
             db=database:vdi-uuid=$vdi
 
-            # A pool often has no name of its own; show its coordinator's name instead.
+            # A pool often has no name of its own; show its coordinator's name instead - and if even that
+            # is unnamed, its uuid, so this line is never blank.
             pool_name=$(xe pool-list $db params=name-label --minimal)
             if [ -z "$pool_name" ]; then
                 master=$(xe pool-list $db params=master --minimal)
                 pool_name=$(xe host-list $db uuid=$master params=name-label --minimal)
+                [ -n "$pool_name" ] || pool_name="pool $master"
             fi
             echo "  pool metadata of $pool_name"
 
             in_recovered_vapp=()
             for vapp in $(each_csv "$(xe appliance-list $db --minimal)"); do
                 name=$(xe appliance-list $db uuid=$vapp params=name-label --minimal)
-                if ! reason=$(xe appliance-assert-can-be-recovered uuid=$vapp $db 2>&1); then
+                if ! reason=$(xe_try appliance-assert-can-be-recovered uuid=$vapp $db 2>&1); then
                     echo "  cannot recover vApp $name: ${reason%%$'\n'*}"
                     continue
                 fi
@@ -97,7 +99,7 @@ disaster_recovery_failover() {
             while IFS=$'\t' read -r name vm; do
                 [ -n "$vm" ] || continue
                 [[ " ${in_recovered_vapp[*]} " == *" $vm "* ]] && continue
-                if ! reason=$(xe vm-assert-can-be-recovered uuid=$vm $db 2>&1); then
+                if ! reason=$(xe_try vm-assert-can-be-recovered uuid=$vm $db 2>&1); then
                     echo "  cannot recover $name: ${reason%%$'\n'*}"
                     continue
                 fi
@@ -134,5 +136,5 @@ disaster_recovery_failover() {
     else
         echo "Recovered VMs are halted: start them when you are ready"
     fi
-    echo "OK: disaster-recovery-failover"
+    ok disaster-recovery-failover
 }

@@ -21,5 +21,5 @@ copy_vm() {
     [ "$was_running" = true ] && xe vm-start uuid=$vm
     # Tidy up: vm-uninstall destroys the copy and its disks, leaving the source VM intact.
     xe vm-uninstall uuid=$copy force=true
-    echo "OK: copy-vm"
+    ok copy-vm
 }

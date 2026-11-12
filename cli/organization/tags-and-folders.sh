@@ -17,5 +17,5 @@ tags_and_folders() {
     xe vm-param-remove uuid=$vm param-name=tags param-key=web
     xe host-param-remove uuid=$h param-name=tags param-key=gold
     xe vm-param-remove uuid=$vm param-name=other-config param-key=folder
-    echo "OK: tags-and-folders"
+    ok tags-and-folders
 }

@@ -48,7 +48,7 @@ manage_certificates() {
     echo "TLS verification: $(xe pool-param-get uuid=$p param-name=tls-verification-enabled)"
     xe pool-enable-tls-verification
     echo "  after enabling: $(xe pool-param-get uuid=$p param-name=tls-verification-enabled)"
-    echo "OK: manage-certificates"
+    ok manage-certificates
 }
 
 # A throwaway self-signed certificate and private key (PEM). bash has no native crypto library, so

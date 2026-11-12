@@ -19,17 +19,31 @@ case "${XE_EXE:-xe}" in *.exe | *.EXE) xe_opts+=(-no-warn-new-certificates -no-w
 
 # --- connect ---
 # The one place the connection details live: every example just calls `xe <command> ...`.
-xe() {
-    # xe reports a failure on stdout. Captured by $(...), that text would land in the variable and set -e
-    # would then stop the script without saying why, so pass a failure's output on to stderr instead.
+#
+# xe reports a failure on stdout. Captured by $(...), that text would land in the variable and set -e
+# would then stop the script without saying why, so pass a failure's output on to stderr instead, and
+# return the real exit status - which workflows.sh's `set -euo pipefail` plus `inherit_errexit` then
+# acts on: a plain `xe ...` or a `var=$(xe ...)` assignment stops the whole script. That does not reach
+# a failure a `$(...)` only USES - an argument to echo/printf, a `[ ]` test, ... - because the shell
+# never looks at that exit status at all; xe_try is this same wrapper under its own name, for a call
+# site that is deliberately checking whether xe succeeds (so the distinct name documents the intent,
+# even though the function is identical).
+xe_try() {
     local out rc=0
     # `command`: when XE_EXE is unset, plain "xe" would be this function calling itself, without end.
     out=$(command "${XE_EXE:-xe}" -s "$host" "${xe_opts[@]}" -u "$user" -pw "$pass" "$@") || rc=$?
     if [ $rc -ne 0 ]; then [ -z "$out" ] || printf '%s\n' "$out" >&2; return $rc; fi
     [ -z "$out" ] || printf '%s\n' "$out"
 }
+# A `$(xe ...)` used inside another command (an argument to echo, a `[ ]` test, ...) is beyond set -e's
+# reach: the shell never looks at its exit status. So xe() also notes every failed call in a file - a
+# variable would not survive the `$(...)` subshell - and ok() (helpers.sh) refuses to report success when
+# any call failed, even one set -e could not see.
+_xe_failures=$(mktemp)
+xe() { xe_try "$@" || { local rc=$?; echo "xe $1 (exit $rc)" >> "$_xe_failures"; return $rc; }; }
 
 # A pool member refuses every command with HOST_IS_SLAVE, naming the coordinator's address; send
-# everything there instead (assuming the coordinator is up).
-_probe=$(xe pool-list --minimal 2>&1) || true
+# everything there instead (assuming the coordinator is up). Deliberately xe_try: HOST_IS_SLAVE is
+# reported as a failure, and is the expected outcome here as often as not.
+_probe=$(xe_try pool-list --minimal 2>&1) || true
 if [[ $_probe =~ (Master|Coordinator)\ IP\ address:\ ([0-9A-Fa-f.:]+) ]]; then host=${BASH_REMATCH[2]}; fi

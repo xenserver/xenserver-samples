@@ -23,16 +23,16 @@ configure_dynamic_memory() {
     echo "  dynamic range now $(gib $(xe vm-param-get uuid=$vm param-name=memory-dynamic-min))-$(gib $(xe vm-param-get uuid=$vm param-name=memory-dynamic-max))"
 
     # The ordering is enforced, not advisory: a range wider than the static bounds is refused rather than
-    # quietly clamped.
-    # Both streams: xe prints a XenAPI failure on stdout, so 2>/dev/null alone still shows it.
-    if xe vm-memory-dynamic-range-set uuid=$vm min=$floor max=$((static_max * 2)) >/dev/null 2>&1; then
+    # quietly clamped. Deliberately xe_try: this call is expected to fail, and xe's own explanation of
+    # why is worth showing rather than swallowing.
+    if err=$(xe_try vm-memory-dynamic-range-set uuid=$vm min=$floor max=$((static_max * 2)) 2>&1); then
         echo "  ERROR: an out-of-range maximum was accepted"
     else
-        echo "  refused a dynamic_max above static_max"
+        echo "  refused a dynamic_max above static_max: $err"
     fi
 
     xe vm-memory-dynamic-range-set uuid=$vm min=$dyn_min max=$dyn_max
-    echo "OK: configure-dynamic-memory"
+    ok configure-dynamic-memory
 }
 
 # Bytes as GiB to one decimal place, using shell arithmetic only - there is no floating point here, so

@@ -16,5 +16,5 @@ delete_vm() {
     # and leave its disks behind.
     xe vm-uninstall uuid=$vm force=true
     echo "VM still present: $([ -z "$(xe vm-list uuid=$vm --minimal)" ] && echo false || echo true)"
-    echo "OK: delete-vm"
+    ok delete-vm
 }

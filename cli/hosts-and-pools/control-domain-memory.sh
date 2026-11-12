@@ -20,5 +20,6 @@ control_domain_memory() {
     echo "  now $(( $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min) / 1024 / 1024 / 1024 )) GiB (static $(xe vm-param-get uuid=$dom0 param-name=memory-static-min)-$(xe vm-param-get uuid=$dom0 param-name=memory-static-max), dynamic $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min)-$(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-max))"
 
     xe vm-memory-set uuid=$dom0 memory=$original    # leave the pool as we found it
-    echo "OK: control-domain-memory"
+    echo "  restored to $(( $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min) / 1024 / 1024 / 1024 )) GiB"
+    ok control-domain-memory
 }
