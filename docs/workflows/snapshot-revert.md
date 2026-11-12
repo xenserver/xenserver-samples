@@ -121,14 +121,14 @@ snapshot_revert() {
     # A snapshot owns its own snapshot disks; snapshot-uninstall removes them with it (the VM's disks are
     # untouched - they are not the snapshot's).
     xe snapshot-uninstall snapshot-uuid=$snap force=true
-    echo "OK: snapshot-revert"
+    ok snapshot-revert
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Created snapshot: 00000001-0000-0000-570a-000000000000
+Created snapshot: 00000001-0000-0000-500a-000000000000
 Reverted to the snapshot.
 OK: snapshot-revert
 ```
@@ -208,7 +208,7 @@ def snapshot_revert(url, username, password, vm_name, snapshot_name="sdk-example
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-740a-000000000000
+Created snapshot: 00000001-0000-0000-490a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -285,7 +285,7 @@ public static void SnapshotRevert(string url, string user, string password,
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-570a-000000000000
+Created snapshot: 00000001-0000-0000-250a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -386,7 +386,7 @@ func snapshotRevert(url, user, password, vmName, snapshotName string) {
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-460a-000000000000
+Created snapshot: 00000001-0000-0000-590a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -488,7 +488,7 @@ public final class SnapshotRevert {
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-160a-000000000000
+Created snapshot: 00000001-0000-0000-240a-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).

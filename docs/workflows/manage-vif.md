@@ -77,19 +77,21 @@ manage_vif() {
     net=$(first_csv "$(xe network-list --minimal)")
     device=$(first_csv "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=allowed-VIF-devices)")")
     vif=$(xe vif-create vm-uuid=$vm network-uuid=$net device=$device)
-    echo "Attached a VIF; VM now has $(count_csv "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=VIFs)")") NIC(s)"
+    # VMs have no "VIFs" field in xe (only the SDKs expose VM.VIFs directly) - count the VIF objects instead.
+    vifs=$(xe vif-list vm-uuid=$vm --minimal)
+    echo "Attached a VIF; VM now has $(count_csv "$vifs") NIC(s)"
     xe vif-destroy uuid=$vif
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy
     # would leave the disks behind).
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: manage-vif"
+    ok manage-vif
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Attached a VIF; VM now has 0 NIC(s)
+Attached a VIF; VM now has 1 NIC(s)
 OK: manage-vif
 ```
 

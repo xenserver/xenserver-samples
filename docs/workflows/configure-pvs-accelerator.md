@@ -180,7 +180,7 @@ configure_pvs_accelerator() {
         xe pvs-server-forget uuid="$srv"
     done
     xe pvs-site-forget uuid="$site"
-    echo "OK: configure-pvs-accelerator"
+    ok configure-pvs-accelerator
 }
 
 # The VIF with the lowest device number on a VM. (vif-list --minimal prints only uuids even when params=

@@ -74,10 +74,11 @@ vbd_inventory() {
     for vbd in ${vbds//,/ }; do
         if [ "$(xe vbd-param-get uuid=$vbd param-name=type)" = "Disk" ]; then
             vdi=$(xe vbd-param-get uuid=$vbd param-name=vdi-uuid)
-            echo "  - device $(xe vbd-param-get uuid=$vbd param-name=userdevice): $(xe vdi-param-get uuid=$vdi param-name=virtual-size) bytes"
+            size=$(xe vdi-param-get uuid=$vdi param-name=virtual-size)
+            echo "  - device $(xe vbd-param-get uuid=$vbd param-name=userdevice): $((size / 1073741824)) GiB"
         fi
     done
-    echo "OK: vbd-inventory"
+    ok vbd-inventory
 }
 ```
 
@@ -85,7 +86,7 @@ vbd_inventory() {
 
 ```text
 Disks of db-01:
-  - device 0: 26843545600 bytes
+  - device 0: 25 GiB
 OK: vbd-inventory
 ```
 

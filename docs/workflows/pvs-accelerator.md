@@ -89,7 +89,7 @@ Source: [`cli/hosts-and-pools/pvs-accelerator.sh`](../../cli/hosts-and-pools/pvs
 
 pvs_accelerator() {
     sites=$(xe pvs-site-list --minimal)
-    if [ -z "$sites" ]; then echo "No PVS Accelerator sites are configured."; echo "OK: pvs-accelerator"; return; fi
+    if [ -z "$sites" ]; then echo "No PVS Accelerator sites are configured."; ok pvs-accelerator; return; fi
     for site in ${sites//,/ }; do
         echo "Site: $(xe pvs-site-param-get uuid=$site param-name=name-label)"
         cslist=$(xe pvs-cache-storage-list --minimal)
@@ -108,7 +108,7 @@ pvs_accelerator() {
         total=$(count_csv "$(xe vm-list is-control-domain=false --minimal)")
         echo "  $accelerated of $total VM(s) accelerated"
     done
-    echo "OK: pvs-accelerator"
+    ok pvs-accelerator
 }
 ```
 
@@ -416,8 +416,8 @@ public final class PvsAccelerator {
 
 ```text
 Site: Provisioning Services
-  cache:  sdk-host2  20 GiB on Local storage
   cache:  sdk-host1  20 GiB on Local storage
+  cache:  sdk-host2  20 GiB on Local storage
   server: 203.0.113.50  ports 6910-6930
   server: 203.0.113.51  ports 6910-6930
   1 of 4 VM(s) accelerated

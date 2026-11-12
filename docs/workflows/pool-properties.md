@@ -68,11 +68,17 @@ Source: [`cli/hosts-and-pools/pool-properties.sh`](../../cli/hosts-and-pools/poo
 pool_properties() {
     pool=$(xe pool-list --minimal)
     original=$(xe pool-param-get uuid=$pool param-name=name-label)
+    default_sr_uuid=$(xe pool-param-get uuid=$pool param-name=default-SR)
     echo "Pool: '$original'"
+    if [ -z "$default_sr_uuid" ]; then
+        echo "Default SR: (none)"
+    else
+        echo "Default SR: $(xe sr-param-get uuid=$default_sr_uuid param-name=name-label)"
+    fi
     xe pool-param-set uuid=$pool name-label=xe-pool-renamed
     echo "Renamed to: '$(xe pool-param-get uuid=$pool param-name=name-label)'"
     xe pool-param-set uuid=$pool name-label="$original"
-    echo "OK: pool-properties"
+    ok pool-properties
 }
 ```
 
@@ -80,6 +86,7 @@ pool_properties() {
 
 ```text
 Pool: 'sdk-pool'
+Default SR: Shared NFS
 Renamed to: 'xe-pool-renamed'
 OK: pool-properties
 ```

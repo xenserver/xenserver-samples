@@ -98,7 +98,7 @@ vm_boot_config() {
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy
     # would leave the disks behind).
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: vm-boot-config"
+    ok vm-boot-config
 }
 ```
 

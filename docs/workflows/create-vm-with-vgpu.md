@@ -31,15 +31,17 @@ function Invoke-CreateVmWithVgpu {
         [string]$NewVmName = "sdk-example-vgpu-vm"
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    # Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type.
+    # Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type. Picked by the
+    # type's model name, not simply the first one iteration happens to return - supported_VGPU_types is
+    # a set server-side, so its order isn't something to rely on.
     $group = $null; $vgpuType = $null
     foreach ($g in Get-XenGPUGroup) {
         if (-not $g.PGPUs) { continue }
         foreach ($tRef in $g.supported_VGPU_types) {
             $t = Get-XenVGPUType -Ref $tRef
-            if ($t.model_name -ne 'passthrough') { $group = $g; $vgpuType = $t; break }
+            if ($t.model_name -eq 'passthrough') { continue }
+            if (-not $vgpuType -or $t.model_name -lt $vgpuType.model_name) { $group = $g; $vgpuType = $t }
         }
-        if ($vgpuType) { break }
     }
     if (-not $vgpuType) { throw "No GPU group offers a vGPU type." }
     Write-Host "Using vGPU type: $($vgpuType.model_name) ($([int]($vgpuType.framebuffer_size / 1MB)) MB framebuffer)"
@@ -118,14 +120,14 @@ create_vm_with_vgpu() {
     # Tidy up so the example is repeatable: the vGPU, then the VM and the disks it owns.
     xe vgpu-destroy uuid=$vgpu
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: create-vm-with-vgpu"
+    ok create-vm-with-vgpu
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Created vGPU: 00000001-0000-0000-890a-000000000000 of type GRID K100
+Created vGPU: 00000001-0000-0000-6d0a-000000000000 of type GRID K100
 OK: create-vm-with-vgpu
 ```
 
@@ -182,21 +184,29 @@ def create_vm_with_vgpu(url, username, password, template_name, new_vm_name="sdk
 
 
 def gpu_group_with_vgpu_type(session):
-    """Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU type."""
+    """Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU type.
+
+    Picked by the type's model name, not simply the first one iteration happens to return -
+    supported_VGPU_types is a set server-side, so its order isn't something to rely on."""
+    candidates = []
     for group, r in session.xenapi.GPU_group.get_all_records().items():
         if not r["PGPUs"]:
             continue
         for type_ref in r["supported_VGPU_types"]:
-            if session.xenapi.VGPU_type.get_model_name(type_ref) != "passthrough":
-                return group, type_ref
-    raise RuntimeError("no GPU group offers a vGPU type")
+            model_name = session.xenapi.VGPU_type.get_model_name(type_ref)
+            if model_name != "passthrough":
+                candidates.append((model_name, group, type_ref))
+    if not candidates:
+        raise RuntimeError("no GPU group offers a vGPU type")
+    _, group, type_ref = min(candidates)
+    return group, type_ref
 ```
 
 <details><summary>Example output</summary>
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-780a-000000000000
+Created vGPU: 00000001-0000-0000-670a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu
@@ -249,18 +259,25 @@ public static void CreateVmWithVgpu(string url, string user, string password,
     session.logout();
 }
 
-/// <summary>Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU
-/// type.</summary>
+/// <summary>Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU type.
+/// Picked by the type's model name, not simply the first one iteration happens to return -
+/// supported_VGPU_types is a set server-side, so its order isn't something to rely on.</summary>
 private static (XenRef<GPU_group>, XenRef<VGPU_type>) GpuGroupWithVgpuType(Session session)
 {
+    var candidates = new List<(string ModelName, XenRef<GPU_group> Group, XenRef<VGPU_type> Type)>();
     foreach (var (groupRef, group) in GPU_group.get_all_records(session))
     {
         if (group.PGPUs.Count == 0) continue;
         foreach (var typeRef in group.supported_VGPU_types)
-            if (VGPU_type.get_model_name(session, typeRef) != "passthrough")
-                return (groupRef, typeRef);
+        {
+            var modelName = VGPU_type.get_model_name(session, typeRef);
+            if (modelName != "passthrough")
+                candidates.Add((modelName, groupRef, typeRef));
+        }
     }
-    throw new Exception("no GPU group offers a vGPU type");
+    if (candidates.Count == 0) throw new Exception("no GPU group offers a vGPU type");
+    var best = candidates.OrderBy(c => c.ModelName).First();
+    return (best.Group, best.Type);
 }
 ```
 
@@ -268,7 +285,7 @@ private static (XenRef<GPU_group>, XenRef<VGPU_type>) GpuGroupWithVgpuType(Sessi
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-6b0a-000000000000
+Created vGPU: 00000001-0000-0000-650a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu
@@ -331,22 +348,32 @@ func createVMWithVgpu(url, user, password, templateName, newVMName string) {
 	session.Logout()
 }
 
-// gpuGroupWithVgpuType finds a (GPU_group, VGPU_type) pair where the group offers a non-passthrough type.
+// gpuGroupWithVgpuType finds a (GPU_group, VGPU_type) pair where the group offers a non-passthrough
+// type. Picked by the type's model name, not simply the first one iteration happens to return -
+// SupportedVGPUTypes is a set server-side, so its order isn't something to rely on.
 func gpuGroupWithVgpuType(session *xenapi.Session) (xenapi.GPUGroupRef, xenapi.VGPUTypeRef) {
 	groups, err := xenapi.GPUGroup.GetAllRecords(session)
 	check(err)
+	var bestModel string
+	var bestGroup xenapi.GPUGroupRef
+	var bestType xenapi.VGPUTypeRef
+	found := false
 	for ref, r := range groups {
 		if len(r.PGPUs) == 0 {
 			continue
 		}
 		for _, typeRef := range r.SupportedVGPUTypes {
-			model, _ := xenapi.VGPUType.GetModelName(session, typeRef)
-			if model != "passthrough" {
-				return ref, typeRef
+			model, err := xenapi.VGPUType.GetModelName(session, typeRef)
+			check(err)
+			if model != "passthrough" && (!found || model < bestModel) {
+				bestModel, bestGroup, bestType, found = model, ref, typeRef, true
 			}
 		}
 	}
-	panic("no GPU group offers a vGPU type")
+	if !found {
+		panic("no GPU group offers a vGPU type")
+	}
+	return bestGroup, bestType
 }
 ```
 
@@ -354,7 +381,7 @@ func gpuGroupWithVgpuType(session *xenapi.Session) (xenapi.GPUGroupRef, xenapi.V
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-800a-000000000000
+Created vGPU: 00000001-0000-0000-6f0a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu
@@ -404,17 +431,20 @@ public final class CreateVmWithVgpu {
     public static void run(String url, String user, String password,
             String templateName, String newVmName) throws Exception {
         Connection conn = connect(url, user, password);
-        // Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type.
+        // Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type. Picked by
+        // the type's model name, not simply the first one iteration happens to return -
+        // supportedVGPUTypes is a set server-side, so its order isn't something to rely on.
         GPUGroup group = null;
         VGPUType vgpuType = null;
-        outer:
+        String bestModel = null;
         for (Map.Entry<GPUGroup, GPUGroup.Record> e : GPUGroup.getAllRecords(conn).entrySet()) {
             if (e.getValue().PGPUs.isEmpty()) continue;
             for (VGPUType t : e.getValue().supportedVGPUTypes) {
-                if (!"passthrough".equals(t.getModelName(conn))) {
+                String modelName = t.getModelName(conn);
+                if (!"passthrough".equals(modelName) && (vgpuType == null || modelName.compareTo(bestModel) < 0)) {
                     group = e.getKey();
                     vgpuType = t;
-                    break outer;
+                    bestModel = modelName;
                 }
             }
         }
@@ -450,7 +480,7 @@ public final class CreateVmWithVgpu {
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-520a-000000000000
+Created vGPU: 00000001-0000-0000-650a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu

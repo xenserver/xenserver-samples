@@ -2,7 +2,7 @@
 
 # Get a VM's IP address
 
-Read a running VM's IP address from its guest metrics, as reported by the in-guest agent.
+Read a VM's IP address (name it with vm_name) from its guest metrics, as reported by the in-guest agent, waiting a while for the agent to report one.
 
 Workflow `vm-ip-address`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -16,7 +16,7 @@ function Invoke-VmIpAddress {
     .SYNOPSIS
         Get a VM's IP address.
     .DESCRIPTION
-        Read a running VM's IP address from its guest metrics, as reported by the in-guest agent.
+        Read a named VM's IP address from its guest metrics, as reported by the in-guest agent.
     .EXAMPLE
         Invoke-VmIpAddress -Url https://xenserver -UserName root -Password $password
     #>
@@ -24,37 +24,35 @@ function Invoke-VmIpAddress {
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$UserName,
         [Parameter(Mandatory = $true)][string]$Password,
+        [string]$VmName = 'web-01',
         [int]$TimeoutSeconds = 60,
         [int]$IntervalSeconds = 2
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
+    $vm = Get-XenVM -Name $VmName |
+        Where-Object { -not $_.is_a_template -and -not $_.is_control_domain -and -not $_.is_a_snapshot } | Select-Object -First 1
+    if (-not $vm) { throw "No VM named '$VmName' was found." }
     # A VM that has only just started may not have reported in yet (no guest_metrics at all, or an empty
-    # networks map) - retry for a while rather than giving up on the first look.
+    # networks map) - retry for a while before concluding it has no guest agent reporting.
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    $ip = $null
     while ($true) {
-        # A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip"). Not every
-        # running VM has one (no guest tools, no NIC, still booting), so look at each until one does.
-        $vm = $null
+        # An IP only shows up once the guest's tools report in, keyed "<vif device>/ip" (e.g. "0/ip").
+        $current = Get-XenVM -Ref $vm.opaque_ref
         $ip = $null
-        foreach ($candidate in Get-XenVM | Where-Object {
-                $_.power_state -eq 'Running' -and -not $_.is_a_template -and -not $_.is_control_domain -and
-                $_.guest_metrics -ne 'OpaqueRef:NULL'
-            }) {
-            $networks = (Get-XenVMGuestMetrics -Ref $candidate.guest_metrics).networks
+        if ($current.power_state -eq 'Running' -and $current.guest_metrics -ne 'OpaqueRef:NULL') {
+            $networks = (Get-XenVMGuestMetrics -Ref $current.guest_metrics).networks
             if ($networks.ContainsKey("0/ip") -and $networks["0/ip"]) {
-                $vm = $candidate
                 $ip = $networks["0/ip"]
-                break
             }
         }
-        if ($ip) {
-            Write-Host "  $($vm.name_label): $ip"
-            break
-        }
-        if ((Get-Date) -gt $deadline) {
-            throw "no running guest reported an IP address within ${TimeoutSeconds}s"
-        }
+        if ($ip -or (Get-Date) -gt $deadline) { break }
         Start-Sleep -Seconds $IntervalSeconds
+    }
+    if ($ip) {
+        Write-Host "  $($VmName): $ip"
+    } else {
+        Write-Host "  $($VmName): no IP address reported yet (no guest agent running?)"
     }
     Write-Host "OK: vm-ip-address"
     $session | Disconnect-XenServer
@@ -77,39 +75,41 @@ Source: [`cli/virtual-machines/vm-ip-address.sh`](../../cli/virtual-machines/vm-
 ```bash
 # Get a VM's IP address.
 #
-# Read a running VM's IP address from its guest metrics, as reported by the in-guest agent.
+# Read a named VM's IP address from its guest metrics, as reported by the in-guest agent.
 #
 # Run it:
 #   ./workflows.sh vm-ip-address https://xenserver root "$password"
 #
 # Optional key=value arguments (default):
-#   timeout (60), interval (2)
+#   vm_name (web-01), timeout (60), interval (2)
 
 vm_ip_address() {
     # A VM that has only just started may not have reported in yet (freshly-created VMs and guests
-    # without tools report no address) - retry for a while rather than giving up on the first look.
-    local timeout interval deadline running vm ip
+    # without tools report no address) - retry for a while before concluding it has no guest agent
+    # reporting.
+    local vm_name timeout interval deadline vm power ip
+    vm_name=$(param vm_name web-01)
     timeout=$(param timeout 60)
     interval=$(param interval 2)
+    vm=$(vm_uuid "$vm_name")
     deadline=$((SECONDS + timeout))
     while true; do
-        # A running guest's tools report its IPs in the VM's networks parameter, keyed "<vif device>/ip".
-        running=$(xe vm-list power-state=running is-control-domain=false --minimal)
-        vm=""; ip=""
-        for u in $(each_csv "$running"); do
-            ip=$(xe vm-param-get uuid=$u param-name=networks param-key=0/ip 2>/dev/null) || continue
-            vm=$u; break
-        done
+        # An IP only shows up once the guest's tools report in, keyed "<vif device>/ip" (e.g. "0/ip").
+        power=$(xe vm-param-get uuid=$vm param-name=power-state)
+        ip=""
+        if [ "$power" = running ]; then
+            ip=$(xe_try vm-param-get uuid=$vm param-name=networks param-key=0/ip 2>/dev/null) || ip=""
+        fi
         [ -n "$ip" ] && break
         [ $SECONDS -gt $deadline ] && break
         sleep "$interval"
     done
-    if [ -z "$ip" ]; then
-        echo "no running guest reported an IP address within ${timeout}s" >&2
-        exit 1
+    if [ -n "$ip" ]; then
+        echo "  $vm_name: $ip"
+    else
+        echo "  $vm_name: no IP address reported yet (no guest agent running?)"
     fi
-    echo "  $(xe vm-param-get uuid=$vm param-name=name-label): $ip"
-    echo "OK: vm-ip-address"
+    ok vm-ip-address
 }
 ```
 
@@ -129,41 +129,44 @@ Source: [`python/virtual_machines/vm_ip_address.py`](../../python/virtual_machin
 ```python
 """Get a VM's IP address.
 
-Read a running VM's IP address from its guest metrics, as reported by the in-guest agent.
+Read a named VM's IP address from its guest metrics, as reported by the in-guest agent.
+
+Run it::
+
+    vm_ip_address("https://xenserver", "root", password, "web-01")
 """
 
 import time
 
 from connection import connect
-from helpers import is_set
+from helpers import is_set, vm_by_name
 
 
-def vm_ip_address(url, username, password, timeout=60, interval=2):
-    """Read a running VM's IP from its guest metrics (VM_guest_metrics.networks).
+def vm_ip_address(url, username, password, vm_name="web-01", timeout=60, interval=2):
+    """Read the named VM's IP from its guest metrics (VM_guest_metrics.networks).
 
     A VM that has only just started may not have reported in yet (no guest_metrics at all, or an
-    empty networks map) - retry for a while rather than giving up on the first look."""
+    empty networks map) - retry for a while before concluding it has no guest agent reporting."""
     session = connect(url, username, password)
+    vm_ref = vm_by_name(session, vm_name)
     deadline = time.time() + timeout
+    ip = None
     while True:
-        # A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip"). Not every
-        # running VM has one (no guest tools, no NIC, still booting), so look at each until one does.
-        vm, ip = None, None
-        for v in session.xenapi.VM.get_all_records().values():
-            if (v["power_state"] == "Running" and not v["is_a_template"] and not v["is_control_domain"]
-                    and is_set(v["guest_metrics"])):
-                ip = session.xenapi.VM_guest_metrics.get_record(v["guest_metrics"])["networks"].get("0/ip")
-                if ip:
-                    vm = v
-                    break
-        if ip:
-            print("  %s: %s" % (vm["name_label"], ip))
-            break
+        # An IP only shows up once the guest's tools report in, keyed "<vif device>/ip" (e.g. "0/ip").
+        record = session.xenapi.VM.get_record(vm_ref)
+        if record["power_state"] == "Running" and is_set(record["guest_metrics"]):
+            ip = session.xenapi.VM_guest_metrics.get_record(record["guest_metrics"])["networks"].get("0/ip")
+            if ip:
+                break
         if time.time() > deadline:
-            raise RuntimeError("no running guest reported an IP address within %ds" % timeout)
+            break
         time.sleep(interval)
+    if ip:
+        print("  %s: %s" % (vm_name, ip))
+    else:
+        print("  %s: no IP address reported yet (no guest agent running?)" % vm_name)
     print("OK: vm-ip-address")
-    session.logout()
+    session.xenapi.session.logout()
 ```
 
 <details><summary>Example output</summary>
@@ -181,48 +184,40 @@ Source: [`csharp/VirtualMachines/VmIpAddress.cs`](../../csharp/VirtualMachines/V
 
 ```csharp
 /// <summary>
-/// Read a running VM's IP address from its guest metrics, as reported by the in-guest agent.
+/// Read a named VM's IP address from its guest metrics, as reported by the in-guest agent.
 /// </summary>
 /// <example>
 /// <code>
-/// Workflows.VmIpAddress("https://xenserver", "root", password);
+/// Workflows.VmIpAddress("https://xenserver", "root", password, "web-01");
 /// </code>
 /// </example>
 /// <remarks>
 /// A VM that has only just started may not have reported in yet (no guest_metrics at all, or an empty
-/// networks map) - retry for a while rather than giving up on the first look.
+/// networks map) - retry for a while before concluding it has no guest agent reporting.
 /// </remarks>
-public static void VmIpAddress(string url, string user, string password,
+public static void VmIpAddress(string url, string user, string password, string vmName = "web-01",
     int timeoutSeconds = 60, int intervalSeconds = 2)
 {
     var session = Connect(url, user, password);
+    var vm = VmByName(session, vmName);
     var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+    string ip = null;
     while (true)
     {
-        // A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip"). Not every
-        // running VM has one (no guest tools, no NIC, still booting), so look at each until one does.
-        VM vm = null;
-        string ip = null;
-        foreach (var v in VM.get_all_records(session).Values.Where(v =>
-                     v.power_state == vm_power_state.Running && !v.is_a_template && !v.is_control_domain
-                     && !Helper.IsNullOrEmptyOpaqueRef(v.guest_metrics)))
-        {
-            if (VM_guest_metrics.get_record(session, v.guest_metrics).networks.TryGetValue("0/ip", out ip)
-                && !string.IsNullOrEmpty(ip))
-            {
-                vm = v;
-                break;
-            }
-        }
-        if (vm != null)
-        {
-            Console.WriteLine($"  {vm.name_label}: {ip}");
+        // An IP only shows up once the guest's tools report in, keyed "<vif device>/ip" (e.g. "0/ip").
+        var record = VM.get_record(session, vm);
+        if (record.power_state == vm_power_state.Running && !Helper.IsNullOrEmptyOpaqueRef(record.guest_metrics)
+            && VM_guest_metrics.get_record(session, record.guest_metrics).networks.TryGetValue("0/ip", out ip)
+            && !string.IsNullOrEmpty(ip))
             break;
-        }
+        ip = null;
         if (DateTime.UtcNow > deadline)
-            throw new Exception($"no running guest reported an IP address within {timeoutSeconds}s");
+            break;
         System.Threading.Thread.Sleep(intervalSeconds * 1000);
     }
+    Console.WriteLine(ip != null
+        ? $"  {vmName}: {ip}"
+        : $"  {vmName}: no IP address reported yet (no guest agent running?)");
     Console.WriteLine("OK: vm-ip-address");
     session.logout();
 }
@@ -254,47 +249,41 @@ import (
 
 // vmIpAddress - Get a VM's IP address.
 //
-// Read a running VM's IP address from its guest metrics, as reported by the in-guest agent.
+// Read a named VM's IP address from its guest metrics, as reported by the in-guest agent.
 //
 // A VM that has only just started may not have reported in yet (no guest_metrics at all, or an
-// empty networks map) - retry for a while rather than giving up on the first look. timeoutStr and
-// intervalStr take seconds, as decimal strings (Go's dispatcher passes key=value arguments as strings).
-func vmIpAddress(url, user, password, timeoutStr, intervalStr string) {
+// empty networks map) - retry for a while before concluding it has no guest agent reporting.
+// timeoutStr and intervalStr take seconds, as decimal strings (Go's dispatcher passes key=value
+// arguments as strings).
+func vmIpAddress(url, user, password, vmName, timeoutStr, intervalStr string) {
 	timeout, err := strconv.Atoi(timeoutStr)
 	check(err)
 	interval, err := strconv.Atoi(intervalStr)
 	check(err)
 	session := connect(url, user, password)
+	vm := vmByName(session, vmName)
 
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
+	var ip string
 	for {
-		// A running guest reports its IP in VM_guest_metrics.networks, keyed "<vif device>/ip".
-		vms, err := xenapi.VM.GetAllRecords(session)
+		// An IP only shows up once the guest's tools report in, keyed "<vif device>/ip" (e.g. "0/ip").
+		record, err := xenapi.VM.GetRecord(session, vm)
 		check(err)
-		// Not every running VM has one (no guest tools, no NIC, still booting), so look at each until one
-		// does.
-		var vm xenapi.VMRecord
-		var ip string
-		for _, r := range vms {
-			if r.PowerState != xenapi.VMPowerStateRunning || r.IsATemplate || r.IsControlDomain ||
-				!isSet(r.GuestMetrics) {
-				continue
-			}
-			gm, err := xenapi.VMGuestMetrics.GetRecord(session, r.GuestMetrics)
+		ip = ""
+		if record.PowerState == xenapi.VMPowerStateRunning && isSet(record.GuestMetrics) {
+			gm, err := xenapi.VMGuestMetrics.GetRecord(session, record.GuestMetrics)
 			check(err)
-			if ip = gm.Networks["0/ip"]; ip != "" {
-				vm = r
-				break
-			}
+			ip = gm.Networks["0/ip"]
 		}
-		if ip != "" {
-			fmt.Printf("  %s: %s\n", vm.NameLabel, ip)
+		if ip != "" || time.Now().After(deadline) {
 			break
 		}
-		if time.Now().After(deadline) {
-			panic(fmt.Sprintf("no running guest reported an IP address within %ds", timeout))
-		}
 		time.Sleep(time.Duration(interval) * time.Second)
+	}
+	if ip != "" {
+		fmt.Printf("  %s: %s\n", vmName, ip)
+	} else {
+		fmt.Printf("  %s: no IP address reported yet (no guest agent running?)\n", vmName)
 	}
 	fmt.Println("OK: vm-ip-address")
 	session.Logout()
@@ -324,6 +313,7 @@ import com.xensource.xenapi.VM;
 
 import java.util.Map;
 
+import static com.xenserver.samples.Helpers.vmByName;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class VmIpAddress {
@@ -333,43 +323,39 @@ public final class VmIpAddress {
     /**
      * Get a VM's IP address.
      *
-     * <p>Read a running VM's IP address from its guest metrics, as reported by the in-guest agent.
+     * <p>Read a named VM's IP address from its guest metrics, as reported by the in-guest agent.
      *
      * <p>A VM that has only just started may not have reported in yet (no guest_metrics at all, or an
-     * empty networks map) - retry for a while rather than giving up on the first look.
+     * empty networks map) - retry for a while before concluding it has no guest agent reporting.
      *
      * <p>Run it:
      *
      * <pre>{@code
-     * VmIpAddress.run("https://xenserver", "root", password, 60_000, 2_000);
+     * VmIpAddress.run("https://xenserver", "root", password, "web-01", 60_000, 2_000);
      * }</pre>
      */
-    public static void run(String url, String user, String password,
+    public static void run(String url, String user, String password, String vmName,
             long timeoutMs, long intervalMs) throws Exception {
         Connection conn = connect(url, user, password);
         try {
+            VM vm = vmByName(conn, vmName);
             long deadline = System.currentTimeMillis() + timeoutMs;
+            String ip = null;
             while (true) {
-                // A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip"). Not
-                // every running VM has one (no guest tools, no NIC, still booting), so look at each until
-                // one does.
-                VM.Record vm = null;
-                String ip = null;
-                for (VM.Record r : VM.getAllRecords(conn).values()) {
-                    if (r.powerState != Types.VmPowerState.RUNNING || r.isATemplate || r.isControlDomain
-                            || r.guestMetrics.isNull()) continue;
-                    Map<String, String> networks = r.guestMetrics.getRecord(conn).networks;
+                // An IP only shows up once the guest's tools report in, keyed "<vif device>/ip" (e.g. "0/ip").
+                VM.Record record = vm.getRecord(conn);
+                ip = null;
+                if (record.powerState == Types.VmPowerState.RUNNING && !record.guestMetrics.isNull()) {
+                    Map<String, String> networks = record.guestMetrics.getRecord(conn).networks;
                     ip = networks.get("0/ip");
-                    if (ip != null && !ip.isEmpty()) { vm = r; break; }
                 }
-                if (vm != null) {
-                    System.out.println("  " + vm.nameLabel + ": " + ip);
-                    break;
-                }
-                if (System.currentTimeMillis() > deadline)
-                    throw new RuntimeException("no running guest reported an IP address within "
-                            + (timeoutMs / 1000) + "s");
+                if ((ip != null && !ip.isEmpty()) || System.currentTimeMillis() > deadline) break;
                 Thread.sleep(intervalMs);
+            }
+            if (ip != null && !ip.isEmpty()) {
+                System.out.println("  " + vmName + ": " + ip);
+            } else {
+                System.out.println("  " + vmName + ": no IP address reported yet (no guest agent running?)");
             }
             System.out.println("OK: vm-ip-address");
         } finally {

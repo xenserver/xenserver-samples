@@ -47,8 +47,9 @@ BUILD_DIRS = {"bin", "obj", "build", "target", ".gradle"}
 
 # Any section header comment, such as "// --- connect ---": headers only delimit blocks.
 MARKER_RE = re.compile(r"^\s*(//|#)\s*-{3,}\s*\S")
-# The "OK: <workflow>" line every example prints on success: it ties a file to its workflow.
-OK_LINE_RE = re.compile(r"OK:\s*([a-z0-9][a-z0-9-]*)")
+# The "OK: <workflow>" line every example prints on success: it ties a file to its workflow. (The xe
+# examples print it through their ok helper: `ok <workflow>`.)
+OK_LINE_RE = re.compile(r"(?:OK:\s*|^[ \t]*ok[ \t]+)([a-z0-9][a-z0-9-]*)", re.MULTILINE)
 # The marker a file uses to say "the connect example starts here".
 CONNECT_MARKER_RE = re.compile(r"^\s*(//|#)\s*-{3,}\s*connect\s*-*\s*$", re.IGNORECASE)
 

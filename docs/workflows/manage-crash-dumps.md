@@ -98,7 +98,7 @@ manage_crash_dumps() {
     done
     if [ -z "$target" ]; then
         echo "No crash dumps in this pool - nothing to clear."
-        echo "OK: manage-crash-dumps"
+        ok manage-crash-dumps
         return
     fi
 
@@ -115,19 +115,19 @@ manage_crash_dumps() {
     # Deleting a dump frees the space on the host; the host itself is untouched.
     for d in $(each_csv "$dumps"); do xe host-crashdump-destroy uuid=$d; done
     echo "  cleared:  $(xe host-param-get uuid=$target param-name=name-label) now has $(count_csv "$(xe host-crashdump-list host-uuid=$target --minimal)")"
-    echo "OK: manage-crash-dumps"
+    ok manage-crash-dumps
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-sdk-host1 has 3 crash dump(s)
+sdk-host2 has 3 crash dump(s)
   20260101T09:00:00Z  256 MiB
   20260101T09:00:00Z  256 MiB
   20260101T09:00:00Z  256 MiB
   768 MiB in total
-  cleared:  sdk-host1 now has 0
+  cleared:  sdk-host2 now has 0
 OK: manage-crash-dumps
 ```
 
@@ -159,7 +159,7 @@ def manage_crash_dumps(url, username, password):
     # Crash dumps belong to the host that wrote them, so clear them a host at a time.
     host = next((h for h in x.host.get_all() if x.host.get_crashdumps(h)), None)
     if host is None:
-        print("No crash dumps in this pool -- nothing to clear.")
+        print("No crash dumps in this pool - nothing to clear.")
         print("OK: manage-crash-dumps")
         session.logout()
         return
@@ -222,7 +222,7 @@ public static void ManageCrashDumps(string url, string user, string password)
         .FirstOrDefault(h => Host.get_crashdumps(session, h).Count > 0);
     if (host == null)
     {
-        Console.WriteLine("No crash dumps in this pool — nothing to clear.");
+        Console.WriteLine("No crash dumps in this pool - nothing to clear.");
         Console.WriteLine("OK: manage-crash-dumps");
         session.logout();
         return;
@@ -420,12 +420,12 @@ public final class ManageCrashDumps {
 <details><summary>Example output</summary>
 
 ```text
-sdk-host2 has 3 crash dump(s)
+sdk-host1 has 3 crash dump(s)
   20260101T09:00:00Z  256 MiB
   20260101T09:00:00Z  256 MiB
   20260101T09:00:00Z  256 MiB
   768 MiB in total
-  cleared:  sdk-host2 now has 0
+  cleared:  sdk-host1 now has 0
 OK: manage-crash-dumps
 ```
 

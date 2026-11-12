@@ -154,7 +154,7 @@ manage_certificates() {
     echo "TLS verification: $(xe pool-param-get uuid=$p param-name=tls-verification-enabled)"
     xe pool-enable-tls-verification
     echo "  after enabling: $(xe pool-param-get uuid=$p param-name=tls-verification-enabled)"
-    echo "OK: manage-certificates"
+    ok manage-certificates
 }
 
 # A throwaway self-signed certificate and private key (PEM). bash has no native crypto library, so
@@ -170,7 +170,6 @@ self_signed_cert() {
 
 ```text
 Certificates:   5
-00000001-0000-0000-d70a-000000000000
 After CA add:   6
 Host certificate replaced with a real, generated certificate.
 Host certificate reset (a fresh self-signed identity).

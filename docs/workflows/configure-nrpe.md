@@ -118,6 +118,8 @@ configure_nrpe() {
             args:allowed_hosts=127.0.0.1,::1,192.0.2.60 args:debug=0 args:ssl_logging=0x00 >/dev/null
         xe host-call-plugin host-uuid=$h plugin=nrpe fn=restart >/dev/null
         echo "  status after:  $(xe host-call-plugin host-uuid=$h plugin=nrpe fn=status)"
+        config_after=$(xe host-call-plugin host-uuid=$h plugin=nrpe fn=get-config)
+        echo "  allowed hosts: $(echo "$config_after" | sed -n 's/^allowed_hosts: *//p')"
 
         # Restore exactly what was found, rather than always disabling: a host that already had NRPE
         # enabled and configured should not be left changed.
@@ -129,7 +131,7 @@ configure_nrpe() {
             xe host-call-plugin host-uuid=$h plugin=nrpe fn=disable >/dev/null
         fi
     done
-    echo "OK: configure-nrpe"
+    ok configure-nrpe
 }
 ```
 
@@ -138,8 +140,10 @@ configure_nrpe() {
 ```text
 sdk-host1: NRPE status before: active disabled
   status after:  active enabled
+  allowed hosts: 127.0.0.1,::1,192.0.2.60
 sdk-host2: NRPE status before: active disabled
   status after:  active enabled
+  allowed hosts: 127.0.0.1,::1,192.0.2.60
 OK: configure-nrpe
 ```
 
@@ -469,10 +473,10 @@ public final class ConfigureNrpe {
 <details><summary>Example output</summary>
 
 ```text
-sdk-host2: NRPE status before: inactive disabled
+sdk-host1: NRPE status before: inactive disabled
   status after:  active enabled
   allowed hosts: 127.0.0.1,::1,192.0.2.60
-sdk-host1: NRPE status before: inactive disabled
+sdk-host2: NRPE status before: inactive disabled
   status after:  active enabled
   allowed hosts: 127.0.0.1,::1,192.0.2.60
 OK: configure-nrpe

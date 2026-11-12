@@ -77,14 +77,14 @@ create_iso_sr() {
         device-config:location="$location" device-config:type=nfs_iso shared=true)
     echo "Created ISO SR: $sr"
     detach_and_forget_sr $sr
-    echo "OK: create-iso-sr"
+    ok create-iso-sr
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-e00a-000000000000
+Created ISO SR: 00000001-0000-0000-b80a-000000000000
 OK: create-iso-sr
 ```
 
@@ -122,7 +122,7 @@ def create_iso_sr(url, username, password, location):
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-dd0a-000000000000
+Created ISO SR: 00000001-0000-0000-e40a-000000000000
 OK: create-iso-sr
 ```
 
@@ -162,7 +162,7 @@ public static void CreateIsoSr(string url, string user, string password, string 
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-080b-000000000000
+Created ISO SR: 00000001-0000-0000-b20a-000000000000
 OK: create-iso-sr
 ```
 
@@ -207,7 +207,7 @@ func createIsoSr(url, user, password, location string) {
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-030b-000000000000
+Created ISO SR: 00000001-0000-0000-b50a-000000000000
 OK: create-iso-sr
 ```
 
@@ -271,7 +271,7 @@ public final class CreateIsoSr {
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-540a-000000000000
+Created ISO SR: 00000001-0000-0000-e70a-000000000000
 OK: create-iso-sr
 ```
 

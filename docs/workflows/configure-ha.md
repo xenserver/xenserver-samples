@@ -126,7 +126,9 @@ configure_ha() {
     echo "Max failures: $ntol"
     xe pool-param-set uuid=$pool ha-host-failures-to-tolerate=$ntol
 
-    xe pool-ha-enable heartbeat-sr-uuids=$(sr_by_name "$(param heartbeat_sr_name "Shared NFS")")
+    heartbeat_sr=$(sr_by_name "$(param heartbeat_sr_name "Shared NFS")")
+    echo "Heartbeat SR: $(xe sr-param-get uuid=$heartbeat_sr param-name=name-label)"
+    xe pool-ha-enable heartbeat-sr-uuids=$heartbeat_sr
     echo "HA enabled: $(xe pool-param-get uuid=$pool param-name=ha-enabled)"
 
     was=$(xe vm-param-get uuid=$guest param-name=ha-restart-priority)
@@ -140,7 +142,7 @@ configure_ha() {
 
     xe pool-ha-disable
     echo "HA enabled: $(xe pool-param-get uuid=$pool param-name=ha-enabled)"
-    echo "OK: configure-ha"
+    ok configure-ha
 }
 ```
 
@@ -148,6 +150,7 @@ configure_ha() {
 
 ```text
 Max failures: 1
+Heartbeat SR: Shared NFS
 HA enabled: true
 web-01 priority: '' -> 'restart'
 Restart on internal shutdown: true

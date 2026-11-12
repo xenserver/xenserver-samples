@@ -62,7 +62,7 @@ list_roles() {
     # role-list shows the roles a user can be granted, not the permissions they are made of. Its field
     # is `name`: a role has no name-label, and asking for one prints nothing.
     echo "Roles: $(xe role-list params=name --minimal)"
-    echo "OK: list-roles"
+    ok list-roles
 }
 ```
 
@@ -197,7 +197,7 @@ func listRoles(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Roles (7): pool-operator, vm-operator, read-only, pool-admin, vm-power-admin, client-cert, vm-admin
+Roles (7): vm-admin, read-only, vm-operator, client-cert, vm-power-admin, pool-operator, pool-admin
 OK: list-roles
 ```
 

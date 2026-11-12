@@ -82,14 +82,14 @@ create_vm() {
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy
     # would leave the disks behind).
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: create-vm"
+    ok create-vm
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Created VM: 00000001-0000-0000-f209-000000000000
+Created VM: 00000001-0000-0000-f009-000000000000
 is-a-template = false
 OK: create-vm
 ```
@@ -139,7 +139,7 @@ def create_vm(url, username, password, template_name, new_vm_name="sdk-example-v
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-f009-000000000000
+Cloned new VM: 00000001-0000-0000-eb09-000000000000
 Provisioned. is_a_template = False
 Cleaned up the example VM.
 OK: create-vm
@@ -185,7 +185,7 @@ public static void CreateVm(string url, string user, string password,
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-eb09-000000000000
+Cloned new VM: 00000001-0000-0000-ea09-000000000000
 Provisioned. is_a_template = False
 Cleaned up the example VM.
 OK: create-vm
@@ -240,7 +240,7 @@ func createVM(url, user, password, templateName, newVMName string) {
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-eb09-000000000000
+Cloned new VM: 00000001-0000-0000-ef09-000000000000
 Provisioned. is_a_template = false
 Cleaned up the example VM.
 OK: create-vm
@@ -304,7 +304,7 @@ public final class CreateVm {
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-eb09-000000000000
+Cloned new VM: 00000001-0000-0000-ef09-000000000000
 Provisioned. is_a_template = false
 Cleaned up the example VM.
 OK: create-vm

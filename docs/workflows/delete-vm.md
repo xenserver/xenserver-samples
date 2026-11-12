@@ -86,7 +86,7 @@ delete_vm() {
     # and leave its disks behind.
     xe vm-uninstall uuid=$vm force=true
     echo "VM still present: $([ -z "$(xe vm-list uuid=$vm --minimal)" ] && echo false || echo true)"
-    echo "OK: delete-vm"
+    ok delete-vm
 }
 ```
 
@@ -141,7 +141,7 @@ def delete_vm(url, username, password, template_name, new_vm_name="sdk-example-d
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-f809-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-0b0a-000000000000 with 1 disk(s)
 VM still present: False
 OK: delete-vm
 ```
@@ -187,7 +187,7 @@ public static void DeleteVm(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-000a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-0f0a-000000000000 with 1 disk(s)
 VM still present: False
 OK: delete-vm
 ```
@@ -249,7 +249,7 @@ func deleteVM(url, user, password, templateName, newVMName string) {
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-1e0a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-0f0a-000000000000 with 1 disk(s)
 VM still present: false
 OK: delete-vm
 ```
@@ -318,7 +318,7 @@ public final class DeleteVm {
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-120a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-050a-000000000000 with 1 disk(s)
 VM still present: false
 OK: delete-vm
 ```

@@ -2,7 +2,9 @@
 
 # Back up a host's configuration
 
-Download a host's configuration backup and hand it back as a restore would — and watch another host's backup be refused.
+Download a host's configuration backup and check it is not empty; optionally stage it back onto that same host's backup partition, ready for a restore done from the installer.
+
+**Caution:** with restore=true, overwrites the host's backup partition with the downloaded configuration.
 
 Workflow `backup-host-config`. [All workflows](README.md) · [Connecting](connecting.md)
 
@@ -16,32 +18,30 @@ function Invoke-BackupHostConfig {
     .SYNOPSIS
         Back up a host's configuration.
     .DESCRIPTION
-        Download a host's configuration backup and hand it back as a restore would — and watch another
-        host's backup be refused.
+        Download a host's configuration backup and verify it downloaded; optionally stage it back onto
+        that same host's backup partition, ready for a restore done from the installer.
     .EXAMPLE
         Invoke-BackupHostConfig -Url https://xenserver -UserName root -Password $password
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$UserName,
-        [Parameter(Mandatory = $true)][string]$Password
+        [Parameter(Mandatory = $true)][string]$Password,
+        [bool]$Restore = $false
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-    $coordinator = (Get-XenPool).master
-    $hosts = @(Get-XenHost | Sort-Object { $coordinator -ne $_ })
-    $vmHost = $hosts[0]
+    $vmHost = Get-XenHost -Ref (Get-XenPool).master
     $hostUrl = Get-HostUrl -Url $Url -Address $vmHost.address
     Write-Host "Backing up $($vmHost.name_label)"
 
     # Both halves are served only by whichever host physically accepted the HTTP connection - the
     # handler ignores any ref= in the query string entirely, there is no forwarding to another pool
     # member. So backing up/restoring a host means opening the connection to THAT host's own address,
-    # not to the pool's (coordinator) URL - a restore sent to the wrong host's connection silently
-    # restores the WRONG host, not the one named by ref=. ref= is kept in the query string purely for
-    # log-readability (a real host ignores it; it is not what makes this correct). Still pure
-    # PowerShell: Connect-Example has already trusted the server's certificate.
+    # not to the pool's (coordinator) URL. ref= is kept in the query string purely for log-readability
+    # (a real host ignores it). Still pure PowerShell: Connect-Example has already trusted the server's
+    # certificate.
     #
     # -OutFile/-InFile below already stream straight to/from disk rather than buffering the whole file,
     # and there is no idle-connection step to take after the transfer (unlike the Python/Java ports):
@@ -51,23 +51,20 @@ function Invoke-BackupHostConfig {
     $path = Join-Path ([IO.Path]::GetTempPath()) "sdk-example-host-$([guid]::NewGuid().Guid).backup"
     Invoke-WebRequest -UseBasicParsing -OutFile $path -TimeoutSec 10 `
         -Uri "$hostUrl/host_backup?session_id=$($session.opaque_ref)&ref=$($vmHost.opaque_ref)"
-    Write-Host "  wrote $((Get-Item $path).Length) bytes to $(Split-Path $path -Leaf)"
+    $size = (Get-Item $path).Length
+    if ($size -eq 0) { throw "$path came back empty" }
+    Write-Host "  wrote $size bytes to $(Split-Path $path -Leaf)"
 
-    Write-Host ("  restoring it to {0}: {1}" -f $vmHost.name_label,
-        (Restore-ExampleHostConfig -Session $session -HostUrl $hostUrl -VMHost $vmHost -Path $path))
-    if ($hosts.Count -gt 1) {
-        # A real pool's hosts are all reachable from a management client; guard against a topology
-        # where a second host's address isn't actually routable from the caller, and turn that into an
-        # informative message instead of a crash.
-        $other = $hosts[1]
-        $otherUrl = Get-HostUrl -Url $Url -Address $other.address
-        try {
-            $result = Restore-ExampleHostConfig -Session $session -HostUrl $otherUrl -VMHost $other -Path $path
-        }
-        catch {
-            $result = "could not connect to $otherUrl directly ($($_.Exception.Message))"
-        }
-        Write-Host ("  restoring it to {0}: {1}" -f $other.name_label, $result)
+    if ($Restore) {
+        # host-restore does not restore the host there and then: it only writes the archive over that
+        # host's currently inactive backup partition, ready for the next boot. It takes effect only once
+        # that host is booted from the installer and Restore is chosen there.
+        Restore-ExampleHostConfig -Session $session -HostUrl $hostUrl -VMHost $vmHost -Path $path
+        Write-Host ("  staged it on $($vmHost.name_label)'s backup partition - it takes effect only after " +
+            "booting that host from the installer and choosing Restore")
+    }
+    else {
+        Write-Host "  not restoring it (pass -Restore `$true to stage it on $($vmHost.name_label)'s backup partition)"
     }
 
     Remove-Item $path
@@ -90,8 +87,8 @@ function Get-HostUrl {
 function Restore-ExampleHostConfig {
     <#
     .SYNOPSIS
-        Uploads a backup to a host - over a connection opened to THAT host's own address - and reports what
-        the task says about it.
+        Uploads a backup to a host - over a connection opened to THAT host's own address - and raises if
+        the task reports it was refused.
     .DESCRIPTION
         An upload answers 200 as soon as it has read the request headers, because the client waits for that
         before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
@@ -108,8 +105,9 @@ function Restore-ExampleHostConfig {
 
         while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
         $finished = Get-XenTask -Ref $task
-        if ($finished.status -eq 'success') { return 'accepted' }
-        return "refused ($($finished.error_info[-1]))"
+        if ($finished.status -ne 'success') {
+            throw "refused ($($finished.error_info[-1]))"
+        }
     }
     finally {
         Remove-XenTask -Ref $task
@@ -121,9 +119,8 @@ function Restore-ExampleHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-0d4e262c-9668-4ea8-931b-4e40d4f45a8e.backup
-  restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:40800 directly (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:40800))
+  wrote 83 bytes to sdk-example-host-6351d19d-c747-45d6-b558-b5b3b72623bf.backup
+  not restoring it (pass -Restore $true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
 
@@ -136,13 +133,19 @@ Source: [`cli/hosts-and-pools/backup-host-config.sh`](../../cli/hosts-and-pools/
 ```bash
 # Back up a host's configuration.
 #
-# Download a host's configuration backup and hand it back as a restore would — and watch another host's backup
-# be refused.
+# Download a host's configuration backup and verify it downloaded. With restore=true, stage it back onto
+# the same host's backup partition: host-restore does not restore the host there and then, it only writes
+# the archive over that host's (currently inactive) backup partition, ready for the next boot.
 #
 # Run it:
 #   ./workflows.sh backup-host-config https://xenserver root "$password"
+#
+# Optional key=value arguments (default):
+#   restore (false)
 
 backup_host_config() {
+    local restore
+    restore=$(param restore false)
     # Deliberately not `host`: that is the variable the xe() helper dials, and shadowing it here sent
     # every later command to a server named after the host's UUID.
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
@@ -157,29 +160,22 @@ backup_host_config() {
     # /host_backup, and xe writes the file. Nothing streams down the CLI connection.
     xe host-backup uuid=$target file-name="$file"
     size=$(stat -c %s "$file" 2>/dev/null || wc -c < "$file")
+    [ "$size" -gt 0 ] || { echo "backup-host-config: $file came back empty" >&2; exit 1; }
     echo "  wrote $size bytes to $file"
 
-    xe host-restore uuid=$target file-name="$file"
-    echo "  restoring it to $(xe host-param-get uuid=$target param-name=name-label): accepted"
-
-    other=""
-    for h in $(each_csv "$(xe host-list --minimal)"); do [ "$h" = "$target" ] || { other=$h; break; }; done
-    if [ -n "$other" ]; then
-        # host-backup/host-restore are served only by whichever host physically accepted the connection -
-        # xe's own uri_of_someone already dials that host's address directly by uuid, there is no
-        # forwarding and no ref= to check, so this is not refused on a real pool the way a naive reading of
-        # "restoring one host's config onto another" might suggest. A real pool's hosts are all reachable
-        # from a management client; guard the attempt anyway with a friendly message on any transport
-        # error, for networks where a second host's address isn't routable from here.
-        if err=$(xe host-restore uuid=$other file-name="$file" 2>&1); then
-            echo "  restoring it to $(xe host-param-get uuid=$other param-name=name-label): accepted"
-        else
-            echo "  restoring it to $(xe host-param-get uuid=$other param-name=name-label): could not restore ($err)"
-        fi
+    if [ "$restore" = true ]; then
+        # host-restore writes the archive over the host's own backup partition - the inactive one, never
+        # the partition it is currently running from. It only takes effect once you boot that host from
+        # the installer and choose Restore there.
+        xe host-restore uuid=$target file-name="$file"
+        echo "  staged it on $(xe host-param-get uuid=$target param-name=name-label)'s backup partition" \
+             "- it takes effect only after booting that host from the installer and choosing Restore"
+    else
+        echo "  not restoring it (pass restore=true to stage it on $(xe host-param-get uuid=$target param-name=name-label)'s backup partition)"
     fi
 
     rm -f "$file"
-    echo "OK: backup-host-config"
+    ok backup-host-config
 }
 ```
 
@@ -188,8 +184,7 @@ backup_host_config() {
 ```text
 Backing up sdk-host1
   wrote 83 bytes to cli-host.backup
-  restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: accepted
+  not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
 
@@ -202,8 +197,8 @@ Source: [`python/hosts_and_pools/backup_host_config.py`](../../python/hosts_and_
 ```python
 """Back up a host's configuration.
 
-Download a host's configuration backup and hand it back as a restore would — and watch another
-host's backup be refused.
+Download a host's configuration backup and verify it downloaded; optionally stage it back onto that
+same host's backup partition, ready for a restore done from the installer.
 """
 
 import os
@@ -217,8 +212,8 @@ import urllib.request
 from connection import connect
 
 
-def backup_host_config(url, username, password):
-    """Download a host's configuration backup and offer it back, as a restore would.
+def backup_host_config(url, username, password, restore=False):
+    """Download a host's configuration backup and verify it, then optionally stage it back as a restore.
 
     Both halves are HTTP transfers alongside the API rather than API calls, and the upload
     has a convention worth knowing: the server answers 200 as soon as it has read the
@@ -229,16 +224,21 @@ def backup_host_config(url, username, password):
     Both halves are served only by whichever host physically accepted the HTTP connection - the
     handler ignores any ref= in the query string entirely, there is no forwarding to another pool
     member. So backing up/restoring a host means opening the connection to THAT host's own
-    address, not to the pool's (coordinator) url - a restore sent to the wrong host's connection
-    silently restores the WRONG host, not the one named by ref=. ref= is kept in the query string
-    purely for log-readability (a real host ignores it; it is not what makes this correct)."""
+    address, not to the pool's (coordinator) url. ref= is kept in the query string purely for
+    log-readability (a real host ignores it).
+
+    restore=True stages the backup onto the SAME host's backup partition (restore=true from the
+    command line, or the Python bool). host-restore does not restore the host there and then: it only
+    writes the archive over that host's currently inactive backup partition, ready for the next boot.
+    It takes effect only once that host is booted from the installer and Restore is chosen there."""
+    if isinstance(restore, str):  # from the command line
+        restore = restore.lower() == "true"
     session = connect(url, username, password)
     x = session.xenapi
     ctx = ssl._create_unverified_context()
 
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
     host = x.pool.get_master(x.pool.get_all()[0])
-    hosts = [host] + [h for h in x.host.get_all() if h != host]
     host_url = _host_url(url, x.host.get_address(host))
     print("Backing up %s" % x.host.get_name_label(host))
 
@@ -247,23 +247,19 @@ def backup_host_config(url, username, password):
             "%s/host_backup?session_id=%s&ref=%s" % (host_url, session._session, host),
             context=ctx, timeout=1800) as response, open(path, "wb") as out:   # the host packs it first
         shutil.copyfileobj(response, out)       # hundreds of MB: stream it, don't hold it in memory
-    print("  wrote %d bytes to %s" % (os.path.getsize(path), os.path.basename(path)))
+    size = os.path.getsize(path)
+    if size == 0:
+        raise RuntimeError("%s came back empty" % path)
+    print("  wrote %d bytes to %s" % (size, os.path.basename(path)))
     _drop_idle_connection(session)
 
-    print("  restoring it to %s: %s"
-          % (x.host.get_name_label(host), restore_host_config(session, ctx, host_url, host, path)))
-
-    if len(hosts) > 1:
-        other = hosts[1]
-        other_url = _host_url(url, x.host.get_address(other))
-        try:
-            result = restore_host_config(session, ctx, other_url, other, path)
-        except Exception as e:
-            # A real pool's hosts are all reachable from a management client; this only guards an
-            # environment (a host whose address isn't routable from here, say) where that isn't
-            # true, so the example still finishes cleanly.
-            result = "could not connect to %s directly (%s)" % (other_url, e)
-        print("  restoring it to %s: %s" % (x.host.get_name_label(other), result))
+    name = x.host.get_name_label(host)
+    if restore:
+        restore_host_config(session, ctx, host_url, host, path)
+        print("  staged it on %s's backup partition - it takes effect only after booting that host "
+              "from the installer and choosing Restore" % name)
+    else:
+        print("  not restoring it (pass restore=true to stage it on %s's backup partition)" % name)
 
     os.remove(path)
     print("OK: backup-host-config")
@@ -287,8 +283,8 @@ def _drop_idle_connection(session):
 
 
 def restore_host_config(session, ctx, host_url, host, path):
-    """Upload a backup to a host - over a connection opened to THAT host's own address - and
-    report what the task says about it."""
+    """Upload a backup to a host - over a connection opened to THAT host's own address - and raise
+    if the task reports it was refused."""
     x = session.xenapi
     task = x.task.create("host_restore", "restoring a configuration backup")
     try:
@@ -303,9 +299,8 @@ def restore_host_config(session, ctx, host_url, host, path):
 
         while x.task.get_status(task) == "pending":
             time.sleep(0.5)
-        if x.task.get_status(task) == "success":
-            return "accepted"
-        return "refused (%s)" % x.task.get_error_info(task)[-1]
+        if x.task.get_status(task) != "success":
+            raise RuntimeError("refused (%s)" % x.task.get_error_info(task)[-1])
     finally:
         x.task.destroy(task)
 ```
@@ -315,8 +310,7 @@ def restore_host_config(session, ctx, host_url, host, path):
 ```text
 Backing up sdk-host1
   wrote 83 bytes to sdk-example-host.backup
-  restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:40566 directly (<urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>)
+  not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
 
@@ -328,8 +322,8 @@ Source: [`csharp/HostsAndPools/BackupHostConfig.cs`](../../csharp/HostsAndPools/
 
 ```csharp
 /// <summary>
-/// Download a host's configuration backup and hand it back as a restore would — and watch another host's
-/// backup be refused.
+/// Download a host's configuration backup and verify it downloaded; optionally stage it back onto that
+/// same host's backup partition, ready for a restore done from the installer.
 /// </summary>
 /// <example>
 /// <code>
@@ -340,16 +334,14 @@ Source: [`csharp/HostsAndPools/BackupHostConfig.cs`](../../csharp/HostsAndPools/
 /// Both /host_backup and /host_restore are served only by whichever host physically accepted the HTTP
 /// connection - the handler is keyed off the connection's own address, not any ref= in the query string.
 /// So backing up/restoring a host means opening the connection to THAT host's own address, not the pool's
-/// (coordinator) url - a restore sent to the wrong host's connection silently restores the WRONG host.
-/// ref= is kept in the query string for readability in the host's logs.
+/// (coordinator) url. ref= is kept in the query string for readability in the host's logs.
 /// </remarks>
-public static void BackupHostConfig(string url, string user, string password)
+public static void BackupHostConfig(string url, string user, string password, bool restore = false)
 {
     var session = Connect(url, user, password);
 
     // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
     var host = Pool.get_master(session, Pool.get_all(session)[0]);
-    var hosts = Host.get_all(session).OrderBy(h => !h.Equals(host)).ToList();
     var hostUrl = HostUrl(url, Host.get_address(session, host));
     Console.WriteLine($"Backing up {Host.get_name_label(session, host)}");
 
@@ -367,27 +359,23 @@ public static void BackupHostConfig(string url, string user, string password)
         using (var fileStream = File.Create(path))
             httpStream.CopyTo(fileStream);
     }
-    Console.WriteLine($"  wrote {new FileInfo(path).Length} bytes to {Path.GetFileName(path)}");
+    var size = new FileInfo(path).Length;
+    if (size == 0) throw new InvalidOperationException($"{path} came back empty");
+    Console.WriteLine($"  wrote {size} bytes to {Path.GetFileName(path)}");
 
-    Console.WriteLine($"  restoring it to {Host.get_name_label(session, host)}: "
-                      + RestoreHostConfig(session, hostUrl, host, path));
-    if (hosts.Count > 1)
+    var name = Host.get_name_label(session, host);
+    if (restore)
     {
-        var other = hosts[1];
-        var otherUrl = HostUrl(url, Host.get_address(session, other));
-        string result;
-        try
-        {
-            result = RestoreHostConfig(session, otherUrl, other, path);
-        }
-        catch (Exception e)
-        {
-            // A real pool's hosts are all reachable from a management client; this only guards an
-            // environment (a host whose address isn't routable from here, say) where that isn't
-            // true, so the example still finishes cleanly.
-            result = $"could not connect to {otherUrl} directly ({e.Message})";
-        }
-        Console.WriteLine($"  restoring it to {Host.get_name_label(session, other)}: {result}");
+        // host-restore does not restore the host there and then: it only writes the archive over that
+        // host's currently inactive backup partition, ready for the next boot. It takes effect only
+        // once that host is booted from the installer and Restore is chosen there.
+        RestoreHostConfig(session, hostUrl, host, path);
+        Console.WriteLine($"  staged it on {name}'s backup partition - it takes effect only after "
+                          + "booting that host from the installer and choosing Restore");
+    }
+    else
+    {
+        Console.WriteLine($"  not restoring it (pass restore=true to stage it on {name}'s backup partition)");
     }
 
     File.Delete(path);
@@ -407,15 +395,15 @@ private static string HostUrl(string url, string address)
 }
 
 /// <summary>
-/// Upload a backup to a host - over a connection opened to THAT host's own address - and report
-/// what the task says about it.
+/// Upload a backup to a host - over a connection opened to THAT host's own address - and throw if
+/// the task reports it was refused.
 /// </summary>
 /// <remarks>
 /// An upload answers 200 as soon as it has read the request headers, because the client waits for that
 /// before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
 /// a task you create first, name in the URL, and poll once the upload has finished.
 /// </remarks>
-private static string RestoreHostConfig(Session session, string hostUrl, XenRef<Host> host, string path)
+private static void RestoreHostConfig(Session session, string hostUrl, XenRef<Host> host, string path)
 {
     var task = Task.create(session, "host_restore", "restoring a configuration backup").opaque_ref;
     try
@@ -436,8 +424,8 @@ private static string RestoreHostConfig(Session session, string hostUrl, XenRef<
 
         while (Task.get_status(session, task) == task_status_type.pending)
             System.Threading.Thread.Sleep(500);
-        if (Task.get_status(session, task) == task_status_type.success) return "accepted";
-        return $"refused ({Task.get_error_info(session, task).Last()})";
+        if (Task.get_status(session, task) != task_status_type.success)
+            throw new InvalidOperationException($"refused ({Task.get_error_info(session, task).Last()})");
     }
     finally
     {
@@ -450,9 +438,8 @@ private static string RestoreHostConfig(Session session, string hostUrl, XenRef<
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-9244441c72b042f1abcdd370b636a048.backup
-  restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:37992 directly (One or more errors occurred. (A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond. (198.51.100.12:37992)))
+  wrote 83 bytes to sdk-example-host-6799973db71a4a3e809e0f1979211545.backup
+  not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
 
@@ -479,21 +466,25 @@ import (
 
 // backupHostConfig - Back up a host's configuration.
 //
-// Download a host's configuration backup and hand it back as a restore would — and watch another
-// host's backup be refused.
+// Download a host's configuration backup and verify it downloaded; optionally stage it back onto that
+// same host's backup partition, ready for a restore done from the installer.
 //
 // Both /host_backup and /host_restore are served only by whichever host physically accepted the
 // HTTP connection - the handler ignores any ref= in the query string entirely, there is no
 // forwarding to another pool member. So backing up/restoring a host means opening the connection
-// to THAT host's own address, not to the pool's (coordinator) url - a restore sent to the wrong
-// host's connection silently restores the WRONG host, not the one named by ref=. ref= is kept in
-// the query string purely for log-readability (a real host ignores it).
+// to THAT host's own address, not to the pool's (coordinator) url. ref= is kept in the query string
+// purely for log-readability (a real host ignores it).
 //
 // Both halves are hundreds of MB on a real host, so they stream to/from a temp file rather than
 // holding the backup in memory. A transfer takes long enough on a slow link for the network to drop
 // an API connection left idle meanwhile, and the next call would then hang on it until the socket
 // timed out - so this session sends "Connection: close", giving every API call its own connection.
-func backupHostConfig(url, user, password string) {
+//
+// restore stages the backup onto the SAME host's backup partition. host-restore does not restore the
+// host there and then: it only writes the archive over that host's currently inactive backup
+// partition, ready for the next boot. It takes effect only once that host is booted from the
+// installer and Restore is chosen there.
+func backupHostConfig(url, user, password string, restore bool) {
 	session := xenapi.NewSession(&xenapi.ClientOpts{URL: url, Headers: map[string]string{"Connection": "close"}})
 	_, err := session.LoginWithPassword(user, password, "1.0", "sdk-examples")
 	check(err)
@@ -502,17 +493,8 @@ func backupHostConfig(url, user, password string) {
 	// The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
-	coordinator, err := xenapi.Pool.GetMaster(session, pools[0])
+	host, err := xenapi.Pool.GetMaster(session, pools[0])
 	check(err)
-	all, err := xenapi.Host.GetAll(session)
-	check(err)
-	hosts := []xenapi.HostRef{coordinator}
-	for _, h := range all {
-		if h != coordinator {
-			hosts = append(hosts, h)
-		}
-	}
-	host := hosts[0]
 	name, err := xenapi.Host.GetNameLabel(session, host)
 	check(err)
 	address, err := xenapi.Host.GetAddress(session, host)
@@ -537,23 +519,17 @@ func backupHostConfig(url, user, password string) {
 	check(temp.Close())
 	info, err := os.Stat(path)
 	check(err)
+	if info.Size() == 0 {
+		panic(fmt.Sprintf("%s came back empty", path))
+	}
 	fmt.Printf("  wrote %d bytes to %s\n", info.Size(), filepath.Base(path))
 
-	fmt.Printf("  restoring it to %s: %s\n", name, restoreHostConfig(session, hostAddr, sid, host, path))
-	if len(hosts) > 1 {
-		other := hosts[1]
-		otherName, err := xenapi.Host.GetNameLabel(session, other)
-		check(err)
-		otherAddress, err := xenapi.Host.GetAddress(session, other)
-		check(err)
-		otherURL := hostURL(url, otherAddress)
-		// The refusal is the half worth rehearsing: restoring one host's configuration onto another is
-		// destructive and unrecoverable, so the pool checks rather than trusting the caller. Guard
-		// against a transport error with a friendly message instead of letting the whole example fail
-		// - a real pool's hosts are all reachable from a management client, so this only matters in
-		// topologies where a second host's address isn't actually routable from the caller.
-		fmt.Printf("  restoring it to %s: %s\n", otherName,
-			safeRestoreHostConfig(session, otherURL, sid, other, path))
+	if restore {
+		restoreHostConfig(session, hostAddr, sid, host, path)
+		fmt.Printf("  staged it on %s's backup partition - it takes effect only after booting that host "+
+			"from the installer and choosing Restore\n", name)
+	} else {
+		fmt.Printf("  not restoring it (pass restore=true to stage it on %s's backup partition)\n", name)
 	}
 
 	check(os.Remove(path))
@@ -573,28 +549,13 @@ func hostURL(rawURL, address string) string {
 	return u.Scheme + "://" + host
 }
 
-// safeRestoreHostConfig calls restoreHostConfig but turns any transport error into a friendly
-// message instead of letting the whole example fail.
-func safeRestoreHostConfig(session *xenapi.Session, hostURL, sid string, host xenapi.HostRef, path string) (result string) {
-	defer func() {
-		if r := recover(); r != nil {
-			// A transport error quotes the whole request, session id and all: report only what went wrong.
-			if e, ok := r.(*url.Error); ok {
-				r = e.Err
-			}
-			result = fmt.Sprintf("could not connect to %s directly (%v)", hostURL, r)
-		}
-	}()
-	return restoreHostConfig(session, hostURL, sid, host, path)
-}
-
 // restoreHostConfig uploads a backup to a host - over a connection opened to THAT host's own
-// address - and reports what the task says about it.
+// address - and panics if the task reports it was refused.
 //
 // An upload answers 200 as soon as it has read the request headers, because the client waits for that
 // before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on a
 // task you create first, name in the URL, and poll once the upload has finished.
-func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.HostRef, path string) string {
+func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.HostRef, path string) {
 	task, err := xenapi.Task.Create(session, "host_restore", "restoring a configuration backup")
 	check(err)
 	defer xenapi.Task.Destroy(session, task)
@@ -624,11 +585,11 @@ func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.Hos
 		check(err)
 		if status != xenapi.TaskStatusTypePending {
 			if status == xenapi.TaskStatusTypeSuccess {
-				return "accepted"
+				return
 			}
 			info, err := xenapi.Task.GetErrorInfo(session, task)
 			check(err)
-			return fmt.Sprintf("refused (%s)", info[len(info)-1])
+			panic(fmt.Sprintf("refused (%s)", info[len(info)-1]))
 		}
 		time.Sleep(500 * time.Millisecond)
 	}
@@ -639,9 +600,8 @@ func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.Hos
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-2185826082.backup
-  restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect to https://198.51.100.12:24722 directly (dial tcp 198.51.100.12:24722: connectex: A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond.)
+  wrote 83 bytes to sdk-example-host-3105155136.backup
+  not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
 
@@ -667,7 +627,6 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import java.net.URL;
-import java.util.Map;
 
 import static com.xenserver.samples.Helpers.hostUrl;
 import static com.xenserver.samples.PoolConnection.connect;
@@ -680,32 +639,31 @@ public final class BackupHostConfig {
     /**
      * Back up a host's configuration.
      *
-     * <p>Download a host's configuration backup and hand it back as a restore would — and watch another
-     * host's backup be refused.
+     * <p>Download a host's configuration backup and verify it downloaded; optionally stage it back onto
+     * that same host's backup partition, ready for a restore done from the installer.
      *
      * <p>Both /host_backup and /host_restore are served only by whichever host physically accepted the
      * HTTP connection - the handler ignores any ref= in the query string entirely, there is no forwarding
      * to another pool member. So backing up/restoring a host means opening the connection to THAT host's
-     * own address, not to the pool's (coordinator) url - a restore sent to the wrong host's connection
-     * silently restores the WRONG host, not the one named by ref=. ref= is kept in the query string purely
-     * for log-readability (a real host ignores it; it is not what makes this correct).
+     * own address, not to the pool's (coordinator) url. ref= is kept in the query string purely for
+     * log-readability (a real host ignores it).
+     *
+     * <p>restore=true stages the backup onto the SAME host's backup partition. host-restore does not
+     * restore the host there and then: it only writes the archive over that host's currently inactive
+     * backup partition, ready for the next boot. It takes effect only once that host is booted from the
+     * installer and Restore is chosen there.
      *
      * <p>Run it:
      *
      * <pre>{@code
-     * BackupHostConfig.run("https://xenserver", "root", password);
+     * BackupHostConfig.run("https://xenserver", "root", password, false);
      * }</pre>
      */
-    public static void run(String url, String user, String password) throws Exception {
+    public static void run(String url, String user, String password, boolean restore) throws Exception {
         Connection conn = connect(url, user, password);
         try {
             // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-            // getAll is a set, in no particular order, so put the coordinator first.
             Host host = com.xensource.xenapi.Pool.getAll(conn).iterator().next().getMaster(conn);
-            java.util.List<Host> hosts = new java.util.ArrayList<Host>();
-            hosts.add(host);
-            for (Host h : Host.getAll(conn))
-                if (!h.toWireString().equals(host.toWireString())) hosts.add(h);
             String session = conn.getSessionReference();
             String hostUrl = hostUrl(url, host.getAddress(conn));
             System.out.println("Backing up " + host.getNameLabel(conn));
@@ -725,6 +683,7 @@ public final class BackupHostConfig {
                     return null;
                 });
             }
+            if (file.length() == 0) throw new IllegalStateException(file + " came back empty");
             System.out.printf("  wrote %d bytes to %s%n", file.length(), file.getName());
             // The connection's one keep-alive HTTP connection sat idle for as long as the download
             // took; a network that silently dropped it meanwhile would otherwise leave the next call
@@ -732,24 +691,14 @@ public final class BackupHostConfig {
             // session before making another API call.
             conn = dropIdleConnection(conn, url);
 
-            Map.Entry<String, Connection> restored = restoreHostConfig(conn, url, hostUrl, session, host, file);
-            conn = restored.getValue();
-            System.out.println("  restoring it to " + host.getNameLabel(conn) + ": " + restored.getKey());
-            if (hosts.size() > 1) {
-                Host other = hosts.get(1);
-                String result;
-                try {
-                    String otherUrl = hostUrl(url, other.getAddress(conn));
-                    Map.Entry<String, Connection> r = restoreHostConfig(conn, url, otherUrl, session, other, file);
-                    conn = r.getValue();
-                    result = r.getKey();
-                } catch (Exception e) {
-                    // A real pool's hosts are all reachable from a management client; this only guards an
-                    // environment (a host whose address isn't routable from here, say) where that isn't
-                    // true, so the example still finishes cleanly.
-                    result = "could not connect directly (" + e + ")";
-                }
-                System.out.println("  restoring it to " + other.getNameLabel(conn) + ": " + result);
+            String name = host.getNameLabel(conn);
+            if (restore) {
+                conn = restoreHostConfig(conn, url, hostUrl, session, host, file);
+                System.out.println("  staged it on " + name + "'s backup partition - it takes effect only "
+                        + "after booting that host from the installer and choosing Restore");
+            } else {
+                System.out.println("  not restoring it (pass restore=true to stage it on "
+                        + name + "'s backup partition)");
             }
 
             file.delete();
@@ -777,14 +726,14 @@ public final class BackupHostConfig {
     }
 
     /**
-     * Uploads a backup to a host - over a connection opened to THAT host's own address - and reports what
-     * the task says about it, alongside the (possibly renewed) connection to continue with.
+     * Uploads a backup to a host - over a connection opened to THAT host's own address - and throws if
+     * the task reports it was refused. Returns the (possibly renewed) connection to continue with.
      *
      * <p>An upload answers 200 as soon as it has read the request headers, because the client waits for
      * that before it starts sending the file. The outcome therefore cannot be in the status line: it
      * arrives on a task you create first, name in the URL, and poll once the upload has finished.
      */
-    private static Map.Entry<String, Connection> restoreHostConfig(Connection conn, String apiUrl,
+    private static Connection restoreHostConfig(Connection conn, String apiUrl,
             String hostUrl, String session, Host host, java.io.File file) throws Exception {
         Task task = Task.create(conn, "host_restore", "restoring a configuration backup");
         try {
@@ -802,17 +751,14 @@ public final class BackupHostConfig {
             conn = dropIdleConnection(conn, apiUrl);
 
             while (task.getStatus(conn) == Types.TaskStatusType.PENDING) Thread.sleep(500);
-            String result;
-            if (task.getStatus(conn) == Types.TaskStatusType.SUCCESS) {
-                result = "accepted";
-            } else {
+            if (task.getStatus(conn) != Types.TaskStatusType.SUCCESS) {
                 // error_info is declared as a SET of strings, and the Java binding hands back a real
                 // Set - so there is no "last element" to read the detail from. Print it whole rather
                 // than indexing into something unordered; see the WLB example, where guessing at an
                 // order silently lied.
-                result = "refused " + task.getErrorInfo(conn);
+                throw new IllegalStateException("refused " + task.getErrorInfo(conn));
             }
-            return new java.util.AbstractMap.SimpleEntry<>(result, conn);
+            return conn;
         } finally {
             task.destroy(conn);
         }
@@ -824,9 +770,8 @@ public final class BackupHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host168748643465404095.backup
-  restoring it to sdk-host1: accepted
-  restoring it to sdk-host2: could not connect directly (org.apache.hc.client5.http.HttpHostConnectException: Connect to https://198.51.100.12:39715 [/198.51.100.12] failed: Connection timed out: getsockopt)
+  wrote 83 bytes to sdk-example-host13708682020405307100.backup
+  not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
 

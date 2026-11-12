@@ -49,7 +49,9 @@ function Invoke-ChangedBlockTracking {
     $vdiTo = Get-FirstDisk -Snapshot (Get-XenVM -Ref $second)
 
     # One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
-    # only those blocks, over NBD.
+    # only those blocks, over NBD. Nothing writes to this disk between the two snapshots taken here, so
+    # expect zero changed blocks - that's CBT correctly reporting no work to do, not a failure. In real
+    # use it's the guest's own writes between snapshots that show up here.
     # BOTH disks go in the dynamic parameters. -Ref only names the object the confirmation prompt talks
     # about; the call itself is made from -VdiFrom and -VdiTo, so passing only one sends a null for the
     # other and the server answers HANDLE_INVALID with an empty reference. (Dynamic parameters are keyed
@@ -63,9 +65,13 @@ function Invoke-ChangedBlockTracking {
         $b = $byte
         while ($b) { $changed += $b -band 1; $b = $b -shr 1 }
     }
-    $size = (Get-XenVDI -Ref $vdiTo).virtual_size
-    Write-Host ("  {0} blocks of {1} changed ({2:N1} MiB to copy, not {3:N1} MiB)" -f
-        $changed, ($bitmap.Length * 8), ($changed * 64 / 1024), ($size / 1MB))
+    if ($changed -gt 0) {
+        $size = (Get-XenVDI -Ref $vdiTo).virtual_size
+        Write-Host ("  {0} blocks of {1} changed ({2:N1} MiB to copy, not {3:N1} MiB)" -f
+            $changed, ($bitmap.Length * 8), ($changed * 64 / 1024), ($size / 1MB))
+    } else {
+        Write-Host "  0 blocks of $($bitmap.Length * 8) changed: nothing was written to the disk between the snapshots"
+    }
 
     # Release the older snapshot's blocks but keep its change metadata, so the next incremental can
     # still diff against it. DataDestroy refuses a disk that a VM still uses (VDI_IN_USE), so remove the
@@ -102,7 +108,7 @@ function Get-FirstDisk {
 
 ```text
 Backing up web-01
-  12743 blocks of 409600 changed (796.4 MiB to copy, not 25,600.0 MiB)
+  0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt_enabled=True
 OK: changed-block-tracking
 ```
@@ -162,7 +168,7 @@ changed_block_tracking() {
     xe snapshot-uninstall snapshot-uuid=$second force=true
     xe vdi-destroy uuid=$vdi_from
     [ "$was_enabled" = "true" ] || xe vdi-disable-cbt uuid=$live
-    echo "OK: changed-block-tracking"
+    ok changed-block-tracking
 }
 ```
 
@@ -222,12 +228,18 @@ def changed_block_tracking(url, username, password):
     vdi_from, vdi_to = first_disk(x, first), first_disk(x, second)
 
     # One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup
-    # reads only those blocks, over NBD.
+    # reads only those blocks, over NBD. Nothing writes to this disk between the two snapshots
+    # taken here, so expect zero changed blocks - that's CBT correctly reporting no work to do,
+    # not a failure. In real use it's the guest's own writes between snapshots that show up here.
     bitmap = base64.b64decode(x.VDI.list_changed_blocks(vdi_from, vdi_to))
     changed = sum(bin(byte).count("1") for byte in bitmap)
-    print("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)"
-          % (changed, len(bitmap) * 8, changed * 64 / 1024.0,
-             int(x.VDI.get_virtual_size(vdi_to)) / (1024.0 ** 2)))
+    if changed:
+        print("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)"
+              % (changed, len(bitmap) * 8, changed * 64 / 1024.0,
+                 int(x.VDI.get_virtual_size(vdi_to)) / (1024.0 ** 2)))
+    else:
+        print("  0 blocks of %d changed: nothing was written to the disk between the snapshots"
+              % (len(bitmap) * 8))
 
     # Release the older snapshot's blocks but keep its change metadata, so the next incremental can
     # still diff against it. data_destroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the
@@ -259,7 +271,7 @@ def first_disk(x, vm):
 
 ```text
 Backing up web-01
-  12832 blocks of 409600 changed (802.0 MiB to copy, not 25600.0 MiB)
+  0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt_enabled=True
 OK: changed-block-tracking
 ```
@@ -302,12 +314,18 @@ public static void ChangedBlockTracking(string url, string user, string password
     var vdiTo = FirstDisk(session, second);
 
     // One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
-    // only those blocks, over NBD.
+    // only those blocks, over NBD. Nothing writes to this disk between the two snapshots taken here,
+    // so expect zero changed blocks - that's CBT correctly reporting no work to do, not a failure.
+    // In real use it's the guest's own writes between snapshots that show up here.
     var bitmap = Convert.FromBase64String(VDI.list_changed_blocks(session, vdiFrom, vdiTo));
     var changed = bitmap.Sum(b => System.Numerics.BitOperations.PopCount(b));
-    Console.WriteLine($"  {changed} blocks of {bitmap.Length * 8} changed "
-                      + $"({changed * 64 / 1024.0:F1} MiB to copy, not "
-                      + $"{VDI.get_virtual_size(session, vdiTo) / (1024.0 * 1024):F1} MiB)");
+    if (changed > 0)
+        Console.WriteLine($"  {changed} blocks of {bitmap.Length * 8} changed "
+                          + $"({changed * 64 / 1024.0:F1} MiB to copy, not "
+                          + $"{VDI.get_virtual_size(session, vdiTo) / (1024.0 * 1024):F1} MiB)");
+    else
+        Console.WriteLine($"  0 blocks of {bitmap.Length * 8} changed: "
+                          + "nothing was written to the disk between the snapshots");
 
     // Release the older snapshot's blocks but keep its change metadata, so the next incremental can
     // still diff against it. data_destroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the
@@ -340,7 +358,7 @@ private static XenRef<VDI> FirstDisk(Session session, XenRef<VM> vmRef)
 
 ```text
 Backing up web-01
-  12711 blocks of 409600 changed (794.4 MiB to copy, not 25600.0 MiB)
+  0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt_enabled=True
 OK: changed-block-tracking
 ```
@@ -399,7 +417,9 @@ func changedBlockTracking(url, user, password string) {
 	vdiFrom, vdiTo := firstDisk(session, first), firstDisk(session, second)
 
 	// One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
-	// only those blocks, over NBD.
+	// only those blocks, over NBD. Nothing writes to this disk between the two snapshots taken here,
+	// so expect zero changed blocks - that's CBT correctly reporting no work to do, not a failure. In
+	// real use it's the guest's own writes between snapshots that show up here.
 	encoded, err := xenapi.VDI.ListChangedBlocks(session, vdiFrom, vdiTo)
 	check(err)
 	bitmap, err := base64.StdEncoding.DecodeString(encoded)
@@ -408,10 +428,15 @@ func changedBlockTracking(url, user, password string) {
 	for _, b := range bitmap {
 		changed += bits.OnesCount8(b)
 	}
-	size, err := xenapi.VDI.GetVirtualSize(session, vdiTo)
-	check(err)
-	fmt.Printf("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)\n",
-		changed, len(bitmap)*8, float64(changed)*64/1024, float64(size)/(1024*1024))
+	if changed > 0 {
+		size, err := xenapi.VDI.GetVirtualSize(session, vdiTo)
+		check(err)
+		fmt.Printf("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)\n",
+			changed, len(bitmap)*8, float64(changed)*64/1024, float64(size)/(1024*1024))
+	} else {
+		fmt.Printf("  0 blocks of %d changed: nothing was written to the disk between the snapshots\n",
+			len(bitmap)*8)
+	}
 
 	// Release the older snapshot's blocks but keep its change metadata, so the next incremental can
 	// still diff against it. DataDestroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the
@@ -455,7 +480,7 @@ func firstDisk(session *xenapi.Session, vm xenapi.VMRef) xenapi.VDIRef {
 
 ```text
 Backing up db-01
-  12542 blocks of 409600 changed (783.9 MiB to copy, not 25600.0 MiB)
+  0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt_enabled=true
 OK: changed-block-tracking
 ```
@@ -524,13 +549,20 @@ public final class ChangedBlockTracking {
             VDI vdiTo = firstDisk(conn, second);
 
             // One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup
-            // reads only those blocks, over NBD.
+            // reads only those blocks, over NBD. Nothing writes to this disk between the two snapshots
+            // taken here, so expect zero changed blocks - that's CBT correctly reporting no work to do,
+            // not a failure. In real use it's the guest's own writes between snapshots that show up here.
             byte[] bitmap = java.util.Base64.getDecoder().decode(vdiFrom.listChangedBlocks(conn, vdiTo));
             int changed = 0;
             for (byte b : bitmap) changed += Integer.bitCount(b & 0xFF);
-            System.out.printf("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)%n",
-                changed, bitmap.length * 8, changed * 64 / 1024.0,
-                vdiTo.getVirtualSize(conn) / (1024.0 * 1024));
+            if (changed > 0) {
+                System.out.printf("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)%n",
+                    changed, bitmap.length * 8, changed * 64 / 1024.0,
+                    vdiTo.getVirtualSize(conn) / (1024.0 * 1024));
+            } else {
+                System.out.printf("  0 blocks of %d changed: nothing was written to the disk "
+                    + "between the snapshots%n", bitmap.length * 8);
+            }
 
             // Release the older snapshot's blocks but keep its change metadata, so the next incremental
             // can still diff against it. data_destroy refuses a disk that a VM still uses (VDI_IN_USE), so
@@ -568,7 +600,7 @@ public final class ChangedBlockTracking {
 
 ```text
 Backing up web-01
-  12962 blocks of 409600 changed (810.1 MiB to copy, not 25600.0 MiB)
+  0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt_enabled=true
 OK: changed-block-tracking
 ```

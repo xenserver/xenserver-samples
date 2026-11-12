@@ -38,7 +38,7 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 | [VM boot configuration](vm-boot-config.md) | Set a VM's vCPU counts and boot order, then read them back. |
 | [Rename an object](rename-object.md) | Change an object's name and read it back — how any object is renamed. |
 | [Create a VM with a vGPU](create-vm-with-vgpu.md) | Provision a VM from a template and assign it a virtual GPU: find a GPU group that offers a vGPU type, attach it, and read the assignment back. |
-| [Get a VM's IP address](vm-ip-address.md) | Read a running VM's IP address from its guest metrics, as reported by the in-guest agent. |
+| [Get a VM's IP address](vm-ip-address.md) | Read a VM's IP address (name it with vm_name) from its guest metrics, as reported by the in-guest agent, waiting a while for the agent to report one. |
 | [List templates](list-templates.md) | Enumerate the pool's VM templates, both built-in and custom. |
 | [Manage a virtual TPM](manage-vtpm.md) | Attach a virtual TPM to a halted VM, read it back and remove it again. |
 | [Export and import a VM](export-import-vm.md) | Export a VM to an XVA file and import it back as a new one. |
@@ -106,7 +106,7 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 | [Configure SNMP monitoring](configure-snmp.md) | Configure a host's SNMP agent through the monitoring plugin: read its configuration, enable it with a community string, then read the configuration and running status back. |
 | [Manage SSH access](manage-ssh-access.md) | Open the pool's SSH service with an automatic cut-off, read back when it lapses, then close it again — the pool-level call fans out to every host. |
 | [Change control domain memory](control-domain-memory.md) | Read and change a host's control domain (dom0) memory, then put it back. |
-| [Back up a host's configuration](backup-host-config.md) | Download a host's configuration backup and hand it back as a restore would — and watch another host's backup be refused. |
+| [Back up a host's configuration](backup-host-config.md) | Download a host's configuration backup and check it is not empty; optionally stage it back onto that same host's backup partition, ready for a restore done from the installer. |
 | [Collect a server status report](server-status-report.md) | Gather a host's diagnostic bundle: read the catalogue of sections it can report on, download the whole bundle, then download a smaller one covering only the sections you pick. |
 | [Restart a host](restart-host.md) | Take a host down and bring it back: stop it accepting new VMs, move the ones it is running elsewhere, reboot it, then power it right off and back on again. |
 | [Clear a host's crash dumps](manage-crash-dumps.md) | Find the crash dumps a host kept after a failure, report how big and how old they are, then delete them to free the space. |

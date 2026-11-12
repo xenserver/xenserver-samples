@@ -37,14 +37,15 @@ function Invoke-HostPowerOn {
     # modes were removed from the real power-on plugin and fail the moment host.power_on is actually
     # called ("{mode} script has been removed").
     Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @(
-        $xenHost.opaque_ref, 'wake-on-lan', @{})
+        $xenHost.opaque_ref, 'wake-on-lan', @{}) | Out-Null
     $updated = Get-XenHost -Ref $xenHost
     Write-Host "Power-on mode:  $($updated.power_on_mode)"
     foreach ($k in ($updated.power_on_config.Keys | Sort-Object)) {
         Write-Host "  $k = $($updated.power_on_config[$k])"
     }
 
-    Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @($xenHost.opaque_ref, '', @{})
+    Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @($xenHost.opaque_ref, '', @{}) |
+        Out-Null
     Write-Host "OK: host-power-on"
     Disconnect-XenServer -Session $session
 }
@@ -81,7 +82,7 @@ host_power_on() {
     echo "Power-on mode:  $(xe host-param-get uuid=$h param-name=power-on-mode)"
 
     xe host-set-power-on-mode uuid=$h power-on-mode=
-    echo "OK: host-power-on"
+    ok host-power-on
 }
 ```
 

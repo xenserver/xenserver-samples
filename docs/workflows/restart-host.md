@@ -183,7 +183,7 @@ restart_host() {
     else
         echo "  skipping shutdown/power-on: no out-of-band power-on mode is configured on this host"
     fi
-    echo "OK: restart-host"
+    ok restart-host
 }
 
 # Poll host_metrics.live until it matches, rather than issuing the next power command immediately - real
@@ -203,8 +203,9 @@ wait_for_host_live() {
 
 # Resident VMs excluding the control domain, which never moves.
 count_host_guest() {
-    local n=0
-    for vm in $(each_csv "$(set_to_csv "$(xe host-param-get uuid=$1 param-name=resident-VMs)")"); do
+    local n=0 resident
+    resident=$(xe host-param-get uuid=$1 param-name=resident-vms)
+    for vm in $(each_csv "$(set_to_csv "$resident")"); do
         if [ "$(xe vm-param-get uuid=$vm param-name=is-control-domain)" != "true" ]; then n=$((n + 1)); fi
     done
     echo $n

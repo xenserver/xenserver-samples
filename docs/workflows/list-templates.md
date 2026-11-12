@@ -74,13 +74,13 @@ list_templates() {
     echo "Templates ($(count_csv "$(xe template-list --minimal)")):"
     for t in $(each_csv "$(xe template-list --minimal)"); do
         name=$(xe template-param-get uuid=$t param-name=name-label)
-        if xe template-param-get uuid=$t param-name=other-config param-key=default_template >/dev/null 2>&1; then
+        if xe_try template-param-get uuid=$t param-name=other-config param-key=default_template >/dev/null 2>&1; then
             printf '%s\t  - %s [built-in]\n' "$name" "$name"
         else
             printf '%s\t  - %s\n' "$name" "$name"
         fi
     done | sort | head -8 | cut -f2-
-    echo "OK: list-templates"
+    ok list-templates
 }
 ```
 

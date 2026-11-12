@@ -113,16 +113,16 @@ configure_dynamic_memory() {
     echo "  dynamic range now $(gib $(xe vm-param-get uuid=$vm param-name=memory-dynamic-min))-$(gib $(xe vm-param-get uuid=$vm param-name=memory-dynamic-max))"
 
     # The ordering is enforced, not advisory: a range wider than the static bounds is refused rather than
-    # quietly clamped.
-    # Both streams: xe prints a XenAPI failure on stdout, so 2>/dev/null alone still shows it.
-    if xe vm-memory-dynamic-range-set uuid=$vm min=$floor max=$((static_max * 2)) >/dev/null 2>&1; then
+    # quietly clamped. Deliberately xe_try: this call is expected to fail, and xe's own explanation of
+    # why is worth showing rather than swallowing.
+    if err=$(xe_try vm-memory-dynamic-range-set uuid=$vm min=$floor max=$((static_max * 2)) 2>&1); then
         echo "  ERROR: an out-of-range maximum was accepted"
     else
-        echo "  refused a dynamic_max above static_max"
+        echo "  refused a dynamic_max above static_max: $err"
     fi
 
     xe vm-memory-dynamic-range-set uuid=$vm min=$dyn_min max=$dyn_max
-    echo "OK: configure-dynamic-memory"
+    ok configure-dynamic-memory
 }
 
 # Bytes as GiB to one decimal place, using shell arithmetic only - there is no floating point here, so
@@ -140,7 +140,8 @@ gib() {
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
   dynamic range now 3.0 GiB-4.0 GiB
-  refused a dynamic_max above static_max
+  refused a dynamic_max above static_max: The dynamic memory range violates constraint static_min <= dynamic_min <= dynamic_max <= static_max.
+[ERROR] Command Exit 1
 OK: configure-dynamic-memory
 ```
 
@@ -357,7 +358,7 @@ func gib(size int64) string {
 <details><summary>Example output</summary>
 
 ```text
-secure-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
+db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
   dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER
 OK: configure-dynamic-memory

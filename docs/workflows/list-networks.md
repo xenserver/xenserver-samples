@@ -62,27 +62,27 @@ Source: [`cli/networking/list-networks.sh`](../../cli/networking/list-networks.s
 #   ./workflows.sh list-networks https://xenserver root "$password"
 
 list_networks() {
-    echo "Networks:"
-    xe network-list params=name-label,bridge
-    echo "OK: list-networks"
+    nets=$(xe network-list --minimal)
+    echo "Networks ($(count_csv "$nets")):"
+    for n in $(each_csv "$nets"); do
+        printf '%s\t  - %s: %s PIF(s), %s VIF(s)\n' \
+            "$(xe network-param-get uuid=$n param-name=name-label)" \
+            "$(xe network-param-get uuid=$n param-name=name-label)" \
+            "$(count_csv "$(set_to_csv "$(xe network-param-get uuid=$n param-name=PIF-uuids)")")" \
+            "$(count_csv "$(set_to_csv "$(xe network-param-get uuid=$n param-name=VIF-uuids)")")"
+    done | sort | cut -f2-
+    ok list-networks
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Networks:
-name-label ( RW): Pool-wide network associated with eth0
-    bridge ( RO): xenbr0
-
-name-label ( RW): Pool-wide network associated with eth1
-    bridge ( RO): xenbr1
-
-name-label ( RW): Pool-wide network associated with eth2
-    bridge ( RO): xenbr2
-
-name-label ( RW): Host internal management network
-    bridge ( RO): xenapi
+Networks (4):
+  - Host internal management network: 0 PIF(s), 0 VIF(s)
+  - Pool-wide network associated with eth0: 2 PIF(s), 5 VIF(s)
+  - Pool-wide network associated with eth1: 2 PIF(s), 0 VIF(s)
+  - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
 OK: list-networks
 ```
 
@@ -122,7 +122,7 @@ def list_networks(url, username, password):
 ```text
 Networks (4):
   - Host internal management network: 0 PIF(s), 0 VIF(s)
-  - Pool-wide network associated with eth0: 2 PIF(s), 4 VIF(s)
+  - Pool-wide network associated with eth0: 2 PIF(s), 5 VIF(s)
   - Pool-wide network associated with eth1: 2 PIF(s), 0 VIF(s)
   - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
 OK: list-networks
@@ -260,7 +260,7 @@ public final class ListNetworks {
 ```text
 Networks (4):
   - Host internal management network: 0 PIF(s), 0 VIF(s)
-  - Pool-wide network associated with eth0: 2 PIF(s), 5 VIF(s)
+  - Pool-wide network associated with eth0: 2 PIF(s), 4 VIF(s)
   - Pool-wide network associated with eth1: 2 PIF(s), 0 VIF(s)
   - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
 OK: list-networks

@@ -113,7 +113,7 @@ configure_pool_options() {
     xe pool-param-set uuid=$pool igmp-snooping-enabled=$igmp
     xe pool-param-set uuid=$pool migration-compression=$migration_compression
     echo "  restored"
-    echo "OK: configure-pool-options"
+    ok configure-pool-options
 }
 
 # The opposite of a "true"/"false" string, for toggling a boolean field and restoring it.

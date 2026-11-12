@@ -153,14 +153,14 @@ cross_pool_copy_vm() {
     dest_opts=()
     if [ "$dest_hp" != "$dest_host" ] && [ "${dest_hp##*:}" != 443 ]; then dest_opts=(-p $((${dest_hp##*:} + 1))); fi
     case "${XE_EXE:-xe}" in *.exe | *.EXE) dest_opts+=(-no-warn-new-certificates -no-warn-certificates) ;; esac
-    # Like xe() (connection.sh), but for the destination pool - and like it, pass a failure's output on to
-    # stderr: captured by $(...), it would otherwise vanish and set -e would stop the script silently.
-    xe_dest() {
+    # Like xe()/xe_try() (connection.sh), but for the destination pool.
+    xe_dest_try() {
         local out rc=0
         out=$(command "${XE_EXE:-xe}" -s "$dest_host" "${dest_opts[@]}" -u "$destuser" -pw "$destpass" "$@") || rc=$?
         if [ $rc -ne 0 ]; then [ -z "$out" ] || printf '%s\n' "$out" >&2; return $rc; fi
         [ -z "$out" ] || printf '%s\n' "$out"
     }
+    xe_dest() { xe_dest_try "$@"; }
     vm=$(vm_uuid "$copy_vm")
     # Map every NIC to the destination coordinator's management network, one both pools can certainly
     # reach. Left unmapped, a real pool refuses the VIF ("not mapped to a destination Network") unless it
@@ -204,7 +204,7 @@ cross_pool_copy_vm() {
         # No new VM on the destination: the copy did not arrive, so there is nothing to tidy up.
         echo "  the copy on the destination: not found (nothing to tidy up)"
     fi
-    echo "OK: cross-pool-copy-vm"
+    ok cross-pool-copy-vm
 }
 ```
 
@@ -295,7 +295,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-eb09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-f509-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -505,7 +505,7 @@ func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, 
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-fe09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-ec09-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -627,7 +627,7 @@ public final class CrossPoolCopyVm {
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-110a-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-070a-000000000000)
 OK: cross-pool-copy-vm
 ```
 

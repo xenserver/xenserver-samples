@@ -150,7 +150,7 @@ create_hba_sr() {
         xe pbd-unplug uuid=$pbd
     done
     xe sr-destroy uuid=$sr
-    echo "OK: create-hba-sr"
+    ok create-hba-sr
 }
 ```
 
@@ -158,7 +158,7 @@ create_hba_sr() {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created HBA SR: 00000001-0000-0000-7a0a-000000000000 (512 GiB)
+Created HBA SR: 00000001-0000-0000-9a0a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -233,7 +233,7 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-e40a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-ac0a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -392,7 +392,7 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-e70a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-af0a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -498,7 +498,7 @@ public final class CreateHbaSr {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-c10a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-e10a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 

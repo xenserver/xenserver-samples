@@ -120,15 +120,17 @@ storage_migrate() {
             dest=$sr; break
         fi
     done
-    # vdi-pool-migrate moves the disk in place: the copy on the destination SR replaces the original.
-    xe vdi-pool-migrate uuid=$vdi sr-uuid=$dest
-    echo "Disk moved to: $(xe sr-param-get uuid=$(xe vdi-param-get uuid=$vdi param-name=sr-uuid) param-name=name-label)"
+    # vdi-pool-migrate moves the disk in place, but under a NEW uuid - the old one stops existing, so read
+    # back the one it prints rather than the one passed in.
+    new_vdi=$(xe vdi-pool-migrate uuid=$vdi sr-uuid=$dest)
+    new_sr=$(xe vdi-param-get uuid=$new_vdi param-name=sr-uuid)
+    echo "Disk moved to: $(xe sr-param-get uuid=$new_sr param-name=name-label)"
 
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it now owns
     # (vm-destroy would leave the disks behind).
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: storage-migrate"
+    ok storage-migrate
 }
 ```
 
@@ -353,7 +355,7 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 
 ```text
 Disk is on SR: Shared NFS
-Disk moved to:  Local storage
+Disk moved to:  iSCSI storage
 OK: storage-migrate
 ```
 

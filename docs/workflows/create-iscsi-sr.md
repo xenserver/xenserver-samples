@@ -213,7 +213,7 @@ create_iscsi_sr() {
     secret=""
     if [ -n "$chap_user" ]; then
         secret=$(xe secret-create value="$chap_password")
-        trap 'xe secret-destroy uuid=$secret >/dev/null 2>&1' EXIT
+        trap 'xe_try secret-destroy uuid=$secret >/dev/null 2>&1' EXIT
         dc+=(device-config:chapuser="$chap_user" device-config:chappassword_secret="$secret")
     fi
 
@@ -254,7 +254,7 @@ create_iscsi_sr() {
         trap - EXIT
         secret=""
     fi
-    echo "OK: create-iscsi-sr"
+    ok create-iscsi-sr
 }
 
 # Pick the IQN from an iSCSI discovery probe's XML: the caller's, if named (it must be one the target
@@ -307,7 +307,7 @@ choose_lun() {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created iSCSI SR: 00000001-0000-0000-7e0a-000000000000 (200 GiB)
+Created iSCSI SR: 00000001-0000-0000-be0a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 
@@ -432,7 +432,7 @@ def _choose_lun(luns, scsi_id):
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-7b0a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-9b0a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 
@@ -576,7 +576,7 @@ private static XElement ChooseLun(List<XElement> luns, string scsiId)
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-850a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-bb0a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 
@@ -796,7 +796,7 @@ func chooseLUN(luns []map[string]string, scsiID string) map[string]string {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-b30a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-9e0a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 
@@ -965,7 +965,7 @@ public final class CreateIscsiSr {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-5a0a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-8c0a-000000000000 (200 GiB)
 OK: create-iscsi-sr
 ```
 

@@ -114,7 +114,7 @@ create_bond() {
     xe bond-destroy uuid="$bond"
     xe network-destroy uuid="$network"
     echo "Bonds left:   $(count_csv "$(xe bond-list --minimal)")"
-    echo "OK: create-bond"
+    ok create-bond
 }
 ```
 

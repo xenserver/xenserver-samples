@@ -109,14 +109,14 @@ checkpoint_vm() {
     xe snapshot-uninstall snapshot-uuid=$cp force=true
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: checkpoint-vm"
+    ok checkpoint-vm
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-600a-000000000000
+Created checkpoint: 00000001-0000-0000-560a-000000000000
 Reverted to the checkpoint; power-state now: suspended
 OK: checkpoint-vm
 ```
@@ -179,7 +179,7 @@ def checkpoint_vm(url, username, password, source_vm, new_vm_name="sdk-example-c
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-460a-000000000000
+Created checkpoint: 00000001-0000-0000-3c0a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -239,7 +239,7 @@ public static void CheckpointVm(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-480a-000000000000
+Created checkpoint: 00000001-0000-0000-3d0a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -304,7 +304,7 @@ func checkpointVM(url, user, password, sourceVM, newVMName string) {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-890a-000000000000
+Created checkpoint: 00000001-0000-0000-580a-000000000000
 is_a_snapshot = true
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -382,7 +382,7 @@ public final class CheckpointVm {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-560a-000000000000
+Created checkpoint: 00000001-0000-0000-720a-000000000000
 is_a_snapshot = true
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm

@@ -96,7 +96,7 @@ vm_from_snapshot() {
     xe vm-uninstall uuid=$newvm force=true
     xe template-uninstall template-uuid=$tmpl force=true
     xe snapshot-uninstall snapshot-uuid=$snap force=true
-    echo "OK: vm-from-snapshot"
+    ok vm-from-snapshot
 }
 ```
 

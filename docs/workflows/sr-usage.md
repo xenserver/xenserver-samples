@@ -66,13 +66,21 @@ Source: [`cli/storage/sr-usage.sh`](../../cli/storage/sr-usage.sh)
 
 sr_usage() {
     echo "Storage:"
-    xe sr-list params=name-label,physical-size,physical-utilisation
-    # Scan the first SR that has any capacity (the DVD and removable-media SRs have none).
+    # Built up here rather than piped straight from the loop, so scan_me survives it - every stage of a
+    # pipeline runs in its own subshell, and a plain `for ... | sort` would lose it.
+    scan_me="" lines=""
     for sr in $(each_csv "$(xe sr-list --minimal)"); do
-        [ "$(xe sr-param-get uuid=$sr param-name=physical-size)" -gt 0 ] && break
+        size=$(xe sr-param-get uuid=$sr param-name=physical-size)
+        [ "$size" -gt 0 ] || continue   # skip ISO/DVD pseudo-SRs, which report no capacity
+        [ -n "$scan_me" ] || scan_me=$sr
+        util=$(xe sr-param-get uuid=$sr param-name=physical-utilisation)
+        name=$(xe sr-param-get uuid=$sr param-name=name-label)
+        lines+="$name"$'\t'"  $name: $((util / 1073741824)) / $((size / 1073741824)) GiB used"$'\n'
     done
-    xe sr-scan uuid=$sr
-    echo "OK: sr-usage"
+    printf '%s' "$lines" | sort | cut -f2-
+    # A rescan refreshes an SR's utilisation from its backend.
+    xe sr-scan uuid=$scan_me
+    ok sr-usage
 }
 ```
 
@@ -80,25 +88,11 @@ sr_usage() {
 
 ```text
 Storage:
-name-label ( RW)          : Shared NFS
-       physical-size ( RO): 549755813888
-physical-utilisation ( RO): 31138512896
-
-name-label ( RW)          : iSCSI storage
-       physical-size ( RO): 214748364800
-physical-utilisation ( RO): 26843545600
-
-name-label ( RW)          : ISO library
-       physical-size ( RO): 107374182400
-physical-utilisation ( RO): 4000000000
-
-name-label ( RW)          : Local storage
-       physical-size ( RO): 549755813888
-physical-utilisation ( RO): 26843545600
-
-name-label ( RW)          : Local storage
-       physical-size ( RO): 549755813888
-physical-utilisation ( RO): 26843545600
+  ISO library: 3 / 100 GiB used
+  Local storage: 25 / 512 GiB used
+  Local storage: 25 / 512 GiB used
+  Shared NFS: 25 / 512 GiB used
+  iSCSI storage: 25 / 200 GiB used
 OK: sr-usage
 ```
 
@@ -147,7 +141,7 @@ def sr_usage(url, username, password):
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 50 / 512 GiB used
+  Shared NFS: 54 / 512 GiB used
   iSCSI storage: 25 / 200 GiB used
 OK: sr-usage
 ```
@@ -191,7 +185,7 @@ public static void SrUsage(string url, string user, string password)
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 50 / 512 GiB used
+  Shared NFS: 58 / 512 GiB used
 OK: sr-usage
 ```
 
@@ -206,6 +200,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 
 	"go/xenapi"
 )
@@ -223,15 +218,26 @@ func srUsage(url, user, password string) {
 	session := connect(url, user, password)
 	srs, err := xenapi.SR.GetAllRecords(session)
 	check(err)
+
+	type namedSR struct {
+		ref xenapi.SRRef
+		rec xenapi.SRRecord
+	}
+	ordered := make([]namedSR, 0, len(srs))
+	for ref, sr := range srs {
+		ordered = append(ordered, namedSR{ref, sr})
+	}
+	sort.Slice(ordered, func(i, j int) bool { return ordered[i].rec.NameLabel < ordered[j].rec.NameLabel })
+
 	var scanMe xenapi.SRRef
 	haveScan := false
-	for ref, sr := range srs {
-		if sr.PhysicalSize <= 0 { // skip ISO/DVD pseudo-SRs
+	for _, sr := range ordered {
+		if sr.rec.PhysicalSize <= 0 { // skip ISO/DVD pseudo-SRs
 			continue
 		}
-		fmt.Printf("  %s: %d / %d GiB used\n", sr.NameLabel, sr.PhysicalUtilisation/GiB, sr.PhysicalSize/GiB)
+		fmt.Printf("  %s: %d / %d GiB used\n", sr.rec.NameLabel, sr.rec.PhysicalUtilisation/GiB, sr.rec.PhysicalSize/GiB)
 		if !haveScan {
-			scanMe, haveScan = ref, true
+			scanMe, haveScan = sr.ref, true
 		}
 	}
 	// A rescan refreshes an SR's utilisation from its backend.
@@ -246,11 +252,11 @@ func srUsage(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-  Shared NFS: 50 / 512 GiB used
-  iSCSI storage: 25 / 200 GiB used
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
+  Shared NFS: 58 / 512 GiB used
+  iSCSI storage: 25 / 200 GiB used
 OK: sr-usage
 ```
 

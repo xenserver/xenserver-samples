@@ -78,11 +78,16 @@ function Invoke-ManageAdUsers {
     Write-Host "Added subject $($info.'subject-displayname') ($($info.'subject-name')) as pool-admin"
 
     # Revoking access does not end sessions the user already has: logging the subject out is a separate
-    # act, and the one that actually gets them off the pool now rather than at next login.
+    # act, and the one that actually gets them off the pool now rather than at next login. This subject
+    # has not logged in during this example, so there is normally nothing to log out.
     $loggedIn = @(Rpc "session.get_all_subject_identifiers" @())
     Write-Host "Logged-in subjects: $($loggedIn.Count)"
-    Rpc "session.logout_subject_identifier" @($sid) | Out-Null
-    Write-Host "  logged out $($info.'subject-name')"
+    if ($loggedIn -contains $sid) {
+        Rpc "session.logout_subject_identifier" @($sid) | Out-Null
+        Write-Host "  logged out $($info.'subject-name')"
+    } else {
+        Write-Host "  $($info.'subject-name') has no active session to log out"
+    }
 
     # Tidy up (remove the role assignment, then the subject).
     Rpc "subject.remove_from_roles" @($subject, $adminRole.opaque_ref) | Out-Null
@@ -103,7 +108,7 @@ function Invoke-ManageAdUsers {
 Joined domain: (none given)
 Added subject Alice Admin (alice) as pool-admin
 Logged-in subjects: 0
-  logged out alice
+  alice has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -167,9 +172,14 @@ manage_ad_users() {
 
     # Revoking access does not end sessions the user already has: logging the subject out is a
     # separate act, and the one that actually gets them off the pool now rather than at next login.
+    # This subject has not logged in during this example, so there is normally nothing to log out.
     sid=$(xe subject-param-get uuid=$subj param-name=subject-identifier)
-    xe session-subject-identifier-logout subject-identifier=$sid
-    echo "  logged out $name"
+    if xe session-subject-identifier-list --minimal | tr , '\n' | grep -qx "$sid"; then
+        xe session-subject-identifier-logout subject-identifier=$sid
+        echo "  logged out $name"
+    else
+        echo "  $name has no active session to log out"
+    fi
 
     xe subject-remove subject-uuid=$subj
     if [ "$already_joined" = false ]; then
@@ -177,7 +187,7 @@ manage_ad_users() {
         # accounts from the directory; without them they stay behind in AD.
         xe pool-disable-external-auth uuid=$pool config:user="$admin_user" config:pass="$admin_password"
     fi
-    echo "OK: manage-ad-users"
+    ok manage-ad-users
 }
 ```
 
@@ -186,7 +196,7 @@ manage_ad_users() {
 ```text
 Joined domain: (none given)
 Added subject Alice Admin with role pool-admin
-  logged out Alice Admin
+  Alice Admin has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -247,9 +257,14 @@ def manage_ad_users(url, username, password, domain="", admin_user="alice",
 
     # Revoking access does not end sessions the user already has: logging the subject out is a
     # separate act, and the one that actually gets them off the pool now rather than at next login.
-    print("Logged-in subjects: %d" % len(session.xenapi.session.get_all_subject_identifiers()))
-    session.xenapi.session.logout_subject_identifier(sid)
-    print("  logged out %s" % info["subject-name"])
+    # This subject has not logged in during this example, so there is normally nothing to log out.
+    logged_in = session.xenapi.session.get_all_subject_identifiers()
+    print("Logged-in subjects: %d" % len(logged_in))
+    if sid in logged_in:
+        session.xenapi.session.logout_subject_identifier(sid)
+        print("  logged out %s" % info["subject-name"])
+    else:
+        print("  %s has no active session to log out" % info["subject-name"])
 
     session.xenapi.subject.remove_from_roles(subject, admin_role)
     session.xenapi.subject.destroy(subject)
@@ -267,7 +282,7 @@ def manage_ad_users(url, username, password, domain="", admin_user="alice",
 Joined domain: (none given)
 Added subject Alice Admin (alice) as pool-admin
 Logged-in subjects: 0
-  logged out alice
+  alice has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -341,9 +356,18 @@ public static void ManageAdUsers(string url, string user, string password, strin
 
     // Revoking access does not end sessions the user already has: logging the subject out is a
     // separate act, and the one that actually gets them off the pool now rather than at next login.
-    Console.WriteLine($"Logged-in subjects: {Session.get_all_subject_identifiers(session).Length}");
-    Session.logout_subject_identifier(session, sid);
-    Console.WriteLine($"  logged out {info["subject-name"]}");
+    // This subject has not logged in during this example, so there is normally nothing to log out.
+    var loggedIn = Session.get_all_subject_identifiers(session);
+    Console.WriteLine($"Logged-in subjects: {loggedIn.Length}");
+    if (loggedIn.Contains(sid))
+    {
+        Session.logout_subject_identifier(session, sid);
+        Console.WriteLine($"  logged out {info["subject-name"]}");
+    }
+    else
+    {
+        Console.WriteLine($"  {info["subject-name"]} has no active session to log out");
+    }
 
     Subject.remove_from_roles(session, subject, adminRole);
     Subject.destroy(session, subject);
@@ -365,7 +389,7 @@ public static void ManageAdUsers(string url, string user, string password, strin
 Joined domain: (none given)
 Added subject Alice Admin (alice) as pool-admin
 Logged-in subjects: 0
-  logged out alice
+  alice has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -448,12 +472,24 @@ func manageAdUsers(url, user, password, domain, adminUser, adminPassword, newUse
 		info["subject-displayname"], info["subject-name"], strings.TrimSpace(names))
 
 	// Revoking access does not end sessions the user already has: logging the subject out is a separate
-	// act, and the one that actually gets them off the pool now rather than at next login.
+	// act, and the one that actually gets them off the pool now rather than at next login. This subject
+	// has not logged in during this example, so there is normally nothing to log out.
 	loggedIn, err := session.GetAllSubjectIdentifiers()
 	check(err)
 	fmt.Printf("Logged-in subjects: %d\n", len(loggedIn))
-	check(session.LogoutSubjectIdentifier(sid))
-	fmt.Printf("  logged out %s\n", info["subject-name"])
+	hasSession := false
+	for _, s := range loggedIn {
+		if s == sid {
+			hasSession = true
+			break
+		}
+	}
+	if hasSession {
+		check(session.LogoutSubjectIdentifier(sid))
+		fmt.Printf("  logged out %s\n", info["subject-name"])
+	} else {
+		fmt.Printf("  %s has no active session to log out\n", info["subject-name"])
+	}
 
 	check(xenapi.Subject.RemoveFromRoles(session, subject, admin))
 	check(xenapi.Subject.Destroy(session, subject))
@@ -474,7 +510,7 @@ func manageAdUsers(url, user, password, domain, adminUser, adminPassword, newUse
 Joined domain: (none given)
 Added subject Alice Admin (alice) as pool-admin
 Logged-in subjects: 0
-  logged out alice
+  alice has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -567,9 +603,15 @@ public final class ManageAdUsers {
 
             // Revoking access does not end sessions the user already has: logging the subject out is a
             // separate act, and the one that actually gets them off the pool now rather than at next login.
-            System.out.println("Logged-in subjects: " + Session.getAllSubjectIdentifiers(conn).size());
-            Session.logoutSubjectIdentifier(conn, sid);
-            System.out.println("  logged out " + info.get("subject-name"));
+            // This subject has not logged in during this example, so there is normally nothing to log out.
+            java.util.Set<String> loggedIn = Session.getAllSubjectIdentifiers(conn);
+            System.out.println("Logged-in subjects: " + loggedIn.size());
+            if (loggedIn.contains(sid)) {
+                Session.logoutSubjectIdentifier(conn, sid);
+                System.out.println("  logged out " + info.get("subject-name"));
+            } else {
+                System.out.println("  " + info.get("subject-name") + " has no active session to log out");
+            }
 
             subject.removeFromRoles(conn, admin);
             subject.destroy(conn);
@@ -595,7 +637,7 @@ public final class ManageAdUsers {
 Joined domain: (none given)
 Added subject Alice Admin (alice) as pool-admin
 Logged-in subjects: 0
-  logged out alice
+  alice has no active session to log out
 OK: manage-ad-users
 ```
 

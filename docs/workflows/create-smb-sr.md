@@ -102,14 +102,14 @@ create_smb_sr() {
     echo "Created SMB SR: $sr ($(( $(xe sr-param-get uuid=$sr param-name=physical-size) / 1024 / 1024 / 1024 )) GiB)"
     detach_and_forget_sr $sr
     xe secret-destroy uuid=$secret
-    echo "OK: create-smb-sr"
+    ok create-smb-sr
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Created SMB SR: 00000001-0000-0000-be0a-000000000000 (512 GiB)
+Created SMB SR: 00000001-0000-0000-a60a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -156,7 +156,7 @@ def create_smb_sr(url, username, password, server, share, smb_username, smb_pass
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-0c0b-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-900a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -212,7 +212,7 @@ public static void CreateSmbSr(string url, string user, string password, string 
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-8c0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-a20a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -272,7 +272,7 @@ func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, s
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-100b-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-940a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 
@@ -348,7 +348,7 @@ public final class CreateSmbSr {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-740a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-a90a-000000000000 (512 GiB)
 OK: create-smb-sr
 ```
 

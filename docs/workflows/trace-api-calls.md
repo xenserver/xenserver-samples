@@ -51,7 +51,7 @@ function Invoke-TraceApiCalls {
 <details><summary>Example output</summary>
 
 ```text
-Trace 7761d093613966b82fa8a8239108d292: each call sends traceparent: 00-7761d093613966b82fa8a8239108d292-854317b408969807-01
+Trace 3c3308ecb2f16543bc9a82cc8dbf4bb3: each call sends traceparent: 00-3c3308ecb2f16543bc9a82cc8dbf4bb3-ffe696fd714bc7d5-03
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -85,14 +85,14 @@ trace_api_calls() {
     local hosts
     hosts=$(xe host-list --minimal)
     echo "The pool has $(count_csv "$hosts") hosts"
-    echo "OK: trace-api-calls"
+    ok trace-api-calls
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Trace de205208637d0267ebfae7cfffc6f470: each command sends traceparent: 00-de205208637d0267ebfae7cfffc6f470-c3e12413edaafc5c-01
+Trace 1b8fedf717d8be621744c2d46dbc44ef: each command sends traceparent: 00-1b8fedf717d8be621744c2d46dbc44ef-8320e94359857060-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -160,7 +160,7 @@ def trace_api_calls(url, username, password):
 <details><summary>Example output</summary>
 
 ```text
-Trace 213b2deac2907d2abfdc181389a532d6: each call sends traceparent: 00-213b2deac2907d2abfdc181389a532d6-ee4b958a607e54aa-01
+Trace 81e42ad6162038beeb45311c0c206acd: each call sends traceparent: 00-81e42ad6162038beeb45311c0c206acd-517c3cbfc531ad4f-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -207,7 +207,7 @@ public static void TraceApiCalls(string url, string user, string password)
 <details><summary>Example output</summary>
 
 ```text
-Trace c7d6c8c4757591d3b39ca0204ab6e628: each call sends traceparent: 00-c7d6c8c4757591d3b39ca0204ab6e628-0fb930a535e012b3-01
+Trace 6e64bf6e63cee61ec19f67ad2a05bc81: each call sends traceparent: 00-6e64bf6e63cee61ec19f67ad2a05bc81-4f73b99f7cf26784-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -271,7 +271,7 @@ func traceAPICalls(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Trace d24631276129d78059e091797492351f: each call sends traceparent: 00-d24631276129d78059e091797492351f-104ebffa847b6f01-01
+Trace bc2f15c9c771c9f06ca9e38e38ab52ed: each call sends traceparent: 00-bc2f15c9c771c9f06ca9e38e38ab52ed-a4436b819782fa68-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```

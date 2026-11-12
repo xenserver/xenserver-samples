@@ -177,7 +177,7 @@ apply_update() {
         [ "$h" = "$master" ] || ordered="$ordered $h"
     done
     for h in $ordered; do
-        if ! err=$(xe host-apply-updates uuid=$h hash=$hash 2>&1); then
+        if ! err=$(xe_try host-apply-updates uuid=$h hash=$hash 2>&1); then
             case "$err" in
                 *[Ee]vacuat*)
                     echo "  $(xe host-param-get uuid=$h param-name=name-label): needs evacuating first; evacuating and retrying"
@@ -199,7 +199,7 @@ apply_update() {
             *,reboot_host,*)
                 # As in rolling-pool-update: the reboot returns before it has happened, and the
                 # coordinator's takes the connection with it - so wait for a newer boot time.
-                before_key=$(xe host-param-get uuid=$h param-name=other-config param-key=boot_time 2>/dev/null) || true
+                before_key=$(xe_try host-param-get uuid=$h param-name=other-config param-key=boot_time 2>/dev/null) || true
                 xe host-reboot uuid=$h
                 wait_for_restart "$h" boot_time "$before_key"
                 ;;
@@ -211,7 +211,7 @@ apply_update() {
     done
     xe pool-param-set uuid=$pool repositories="${before//; /,}"
     for r in $repos; do xe repository-forget uuid=$r; done
-    echo "OK: apply-update"
+    ok apply-update
 }
 ```
 

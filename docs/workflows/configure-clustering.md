@@ -77,8 +77,8 @@ function Invoke-ConfigureClustering {
 
 ```text
 Stack:      corosync
-Quorate:    True (2/2 needed)
-One member out, quorate: False
+Quorate:    True (2/1 needed)
+One member out, quorate: True
 Resynced,   quorate: True
 Cluster removed again.
 OK: configure-clustering
@@ -134,7 +134,7 @@ configure_clustering() {
         for pif in "${!was[@]}"; do xe pif-param-set uuid="$pif" disallow-unplug="${was[$pif]}"; done
         echo "Cluster removed again."
     fi
-    echo "OK: configure-clustering"
+    ok configure-clustering
 }
 ```
 
@@ -143,7 +143,7 @@ configure_clustering() {
 ```text
 Stack:      corosync
 Quorate:    true
-One member out, quorate: false
+One member out, quorate: true
 Resynced,   quorate: true
 Cluster removed again.
 OK: configure-clustering
@@ -223,8 +223,8 @@ def configure_clustering(url, username, password):
 
 ```text
 Stack:      corosync
-Quorate:    True (2/2 needed)
-One member out, quorate: False
+Quorate:    True (2/1 needed)
+One member out, quorate: True
 Resynced,   quorate: True
 Cluster removed again.
 OK: configure-clustering
@@ -305,8 +305,8 @@ public static void ConfigureClustering(string url, string user, string password)
 
 ```text
 Stack:      corosync
-Quorate:    True (2/2 needed)
-One member out, quorate: False
+Quorate:    True (2/1 needed)
+One member out, quorate: True
 Resynced,   quorate: True
 Cluster removed again.
 OK: configure-clustering
@@ -407,8 +407,8 @@ func configureClustering(url, user, password string) {
 
 ```text
 Stack:      corosync
-Quorate:    true (2/2 needed)
-One member out, quorate: false
+Quorate:    true (2/1 needed)
+One member out, quorate: true
 Resynced,   quorate: true
 Cluster removed again.
 OK: configure-clustering
@@ -514,8 +514,8 @@ public final class ConfigureClustering {
 
 ```text
 Stack:      corosync
-Quorate:    true (2/2 needed)
-One member out, quorate: false
+Quorate:    true (2/1 needed)
+One member out, quorate: true
 Resynced,   quorate: true
 Cluster removed again.
 OK: configure-clustering

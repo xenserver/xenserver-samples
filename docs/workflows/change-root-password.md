@@ -93,7 +93,7 @@ change_root_password() {
     # it needs the NEW password - including the command that changes it back. And restore it however the
     # script ends (set -e exits on the first failure), or root would be left on the temporary password.
     pass=$temporary
-    trap 'pass=$temporary; xe user-password-change old=$temporary new="$original" >/dev/null 2>&1' EXIT
+    trap 'pass=$temporary; xe_try user-password-change old=$temporary new="$original" >/dev/null 2>&1' EXIT
 
     echo "New logins work with the new password: $(count_csv "$(xe pool-list --minimal)") pool"
 
@@ -101,7 +101,7 @@ change_root_password() {
     pass=$original
     trap - EXIT
     echo "Password restored."
-    echo "OK: change-root-password"
+    ok change-root-password
 }
 ```
 
@@ -345,10 +345,12 @@ public final class ChangeRootPassword {
             // The existing session stays valid afterwards - only NEW connections need the new password.
             System.out.println("Session still usable: " + (Pool.getAll(conn).size() == 1));
 
-            // Not demonstrated: a "wrong old password is rejected" check. session.change_password on a
-            // ROOT session ignores old_pwd entirely (see xapi's xapi_session.ml) - the call
-            // succeeds regardless of what's passed as the old password. The real gate is that only a
-            // session with is_local_superuser may call this at all.
+            // changePassword on a ROOT session ignores the old password entirely: the call succeeds
+            // whatever old_pwd is, so there is no wrong-old-password failure to demonstrate here. The
+            // real gate is who may call this at all: only a local superuser session.
+            Session self = new Session(conn.getSessionReference());
+            System.out.println("Is local superuser (may call change_password): "
+                + self.getIsLocalSuperuser(conn));
         } finally {
             // Put the original password back however the above went, so a failure part-way through
             // doesn't leave root on the temporary one.
@@ -366,6 +368,7 @@ public final class ChangeRootPassword {
 ```text
 Password changed.
 Session still usable: true
+Is local superuser (may call change_password): true
 Password restored.
 OK: change-root-password
 ```

@@ -69,18 +69,22 @@ Source: [`cli/hosts-and-pools/read-metrics.sh`](../../cli/hosts-and-pools/read-m
 read_metrics() {
     h=$(first_host)
     # On the CLI, a host's and a VM's metrics read as parameters of the host and VM themselves.
-    echo "Host $(xe host-param-get uuid=$h param-name=name-label): free memory $(xe host-compute-free-memory uuid=$h), live=$(xe host-param-get uuid=$h param-name=host-metrics-live)"
+    total=$(xe host-param-get uuid=$h param-name=memory-total)
+    free=$(xe host-compute-free-memory uuid=$h)
+    echo "Host $(xe host-param-get uuid=$h param-name=name-label): $((total / 1048576)) MiB total," \
+         "$((free / 1048576)) MiB free, live=$(xe host-param-get uuid=$h param-name=host-metrics-live)"
     vm=$(vm_uuid web-01)
-    echo "VM web-01: $(xe vm-param-get uuid=$vm param-name=VCPUs-number) vCPU(s)"
-    echo "OK: read-metrics"
+    mem=$(xe vm-param-get uuid=$vm param-name=memory-actual)
+    echo "VM web-01: $(xe vm-param-get uuid=$vm param-name=VCPUs-number) vCPU(s), $((mem / 1048576)) MiB"
+    ok read-metrics
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Host sdk-host1: free memory , live=true
-VM web-01: 2 vCPU(s)
+Host sdk-host1: 65536 MiB total, 57344 MiB free, live=true
+VM web-01: 2 vCPU(s), 4096 MiB
 OK: read-metrics
 ```
 

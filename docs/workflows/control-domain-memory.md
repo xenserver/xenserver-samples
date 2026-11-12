@@ -45,6 +45,8 @@ function Invoke-ControlDomainMemory {
         $updated.memory_dynamic_min, $updated.memory_dynamic_max)
 
     Set-XenVM -VM $dom0 -Memory $original   # leave the pool as we found it
+    $restored = (Get-XenVM -Ref $dom0).memory_dynamic_min
+    Write-Host ("  restored to {0:N1} GiB" -f ($restored / 1GB))
     Write-Host "OK: control-domain-memory"
     $session | Disconnect-XenServer
 }
@@ -55,6 +57,7 @@ function Invoke-ControlDomainMemory {
 ```text
 sdk-host1 dom0: 2.0 GiB
   now 3.0 GiB (static 2147483648-3221225472, dynamic 3221225472-3221225472)
+  restored to 2.0 GiB
 OK: control-domain-memory
 ```
 
@@ -87,7 +90,8 @@ control_domain_memory() {
     echo "  now $(( $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min) / 1024 / 1024 / 1024 )) GiB (static $(xe vm-param-get uuid=$dom0 param-name=memory-static-min)-$(xe vm-param-get uuid=$dom0 param-name=memory-static-max), dynamic $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min)-$(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-max))"
 
     xe vm-memory-set uuid=$dom0 memory=$original    # leave the pool as we found it
-    echo "OK: control-domain-memory"
+    echo "  restored to $(( $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min) / 1024 / 1024 / 1024 )) GiB"
+    ok control-domain-memory
 }
 ```
 
@@ -96,6 +100,7 @@ control_domain_memory() {
 ```text
 sdk-host1 dom0: 2 GiB
   now 3 GiB (static 2147483648-3221225472, dynamic 3221225472-3221225472)
+  restored to 2 GiB
 OK: control-domain-memory
 ```
 
@@ -142,6 +147,8 @@ def control_domain_memory(url, username, password):
              record["memory_dynamic_min"], record["memory_dynamic_max"]))
 
     x.VM.set_memory(dom0, str(original))     # leave the pool as we found it
+    restored = int(x.VM.get_memory_dynamic_min(dom0))
+    print("  restored to %.1f GiB" % (restored / float(1024 ** 3)))
     print("OK: control-domain-memory")
     session.logout()
 ```
@@ -151,6 +158,7 @@ def control_domain_memory(url, username, password):
 ```text
 sdk-host1 dom0: 2.0 GiB
   now 3.0 GiB (static 2147483648-3221225472, dynamic 3221225472-3221225472)
+  restored to 2.0 GiB
 OK: control-domain-memory
 ```
 
@@ -191,6 +199,8 @@ public static void ControlDomainMemory(string url, string user, string password)
                       + $"dynamic {record.memory_dynamic_min}-{record.memory_dynamic_max})");
 
     VM.set_memory(session, dom0, original);   // leave the pool as we found it
+    var restored = VM.get_memory_dynamic_min(session, dom0);
+    Console.WriteLine($"  restored to {restored / (double)(1024 * 1024 * 1024):F1} GiB");
     Console.WriteLine("OK: control-domain-memory");
     session.logout();
 }
@@ -201,6 +211,7 @@ public static void ControlDomainMemory(string url, string user, string password)
 ```text
 sdk-host1 dom0: 2.0 GiB
   now 3.0 GiB (static 2147483648-3221225472, dynamic 3221225472-3221225472)
+  restored to 2.0 GiB
 OK: control-domain-memory
 ```
 
@@ -251,6 +262,9 @@ func controlDomainMemory(url, user, password string) {
 		record.MemoryDynamicMin, record.MemoryDynamicMax)
 
 	check(xenapi.VM.SetMemory(session, dom0, original)) // leave the pool as we found it
+	restored, err := xenapi.VM.GetMemoryDynamicMin(session, dom0)
+	check(err)
+	fmt.Printf("  restored to %.1f GiB\n", float64(restored)/(1024*1024*1024))
 	fmt.Println("OK: control-domain-memory")
 }
 
@@ -273,6 +287,7 @@ func controlDomainOf(session *xenapi.Session, host xenapi.HostRef) (xenapi.VMRef
 ```text
 sdk-host1 dom0: 2.0 GiB
   now 3.0 GiB (static 2147483648-3221225472, dynamic 3221225472-3221225472)
+  restored to 2.0 GiB
 OK: control-domain-memory
 ```
 
@@ -332,6 +347,8 @@ public final class ControlDomainMemory {
                 record.memoryDynamicMin, record.memoryDynamicMax);
 
             dom0.setMemory(conn, original);   // leave the pool as we found it
+            long restored = dom0.getMemoryDynamicMin(conn);
+            System.out.printf("  restored to %.1f GiB%n", restored / (double) (1024L * 1024 * 1024));
             System.out.println("OK: control-domain-memory");
         } finally {
             Session.logout(conn);
@@ -343,8 +360,9 @@ public final class ControlDomainMemory {
 <details><summary>Example output</summary>
 
 ```text
-sdk-host2 dom0: 2.0 GiB
+sdk-host1 dom0: 2.0 GiB
   now 3.0 GiB (static 2147483648-3221225472, dynamic 3221225472-3221225472)
+  restored to 2.0 GiB
 OK: control-domain-memory
 ```
 

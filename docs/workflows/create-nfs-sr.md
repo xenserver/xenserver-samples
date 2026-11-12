@@ -77,14 +77,14 @@ create_nfs_sr() {
         device-config:server="$nfs_server" device-config:serverpath="$nfs_path" device-config:nfsversion=3 shared=true)
     echo "Created SR: $sr"
     detach_and_forget_sr $sr
-    echo "OK: create-nfs-sr"
+    ok create-nfs-sr
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-8a0a-000000000000
+Created SR: 00000001-0000-0000-a50a-000000000000
 OK: create-nfs-sr
 ```
 
@@ -129,7 +129,7 @@ def create_nfs_sr(url, username, password, nfs_server, nfs_path, sr_name="sdk-ex
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-aa0a-000000000000
+Created SR: 00000001-0000-0000-b80a-000000000000
 OK: create-nfs-sr
 ```
 
@@ -175,7 +175,7 @@ public static void CreateNfsSr(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-cd0a-000000000000
+Created SR: 00000001-0000-0000-a20a-000000000000
 OK: create-nfs-sr
 ```
 
@@ -233,7 +233,7 @@ func createNfsSR(url, user, password, nfsServer, nfsPath, srName string) {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-4b0a-000000000000
+Created SR: 00000001-0000-0000-980a-000000000000
 OK: create-nfs-sr
 ```
 
@@ -296,7 +296,7 @@ public final class CreateNfsSr {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-ac0a-000000000000
+Created SR: 00000001-0000-0000-890a-000000000000
 OK: create-nfs-sr
 ```
 

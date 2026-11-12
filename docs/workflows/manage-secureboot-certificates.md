@@ -45,17 +45,17 @@ function Invoke-ManageSecurebootCertificates {
     Write-Host "Pool Secure Boot readiness: $(Get-XenPoolProperty -Ref $pool -XenProperty GuestSecurebootReadiness)"
     Write-Host "  pool holds certificates:  $([bool]$pool.uefi_certificates)"
 
-    # A guest whose certificates have gone stale. Its state is what a client gates the flag/unflag actions
-    # on, so it is the field to watch.
+    # A guest whose certificates have gone stale. secureboot_certificates_state is set on every VM
+    # regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of "disabled"
+    # or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it for a refresh
+    # would prove nothing.
     $vm = Get-XenVM | Where-Object {
         -not $_.is_a_template -and -not $_.is_control_domain -and -not $_.is_a_snapshot -and
-        $_.secureboot_certificates_state -eq 'update_available'
+        $_.secureboot_certificates_state -eq 'update_available' -and
+        (Get-XenVMProperty -Ref $_ -XenProperty SecurebootReadiness) -notin @('disabled', 'not_supported')
     } | Select-Object -First 1
     if (-not $vm) {
-        # This state only occurs on a VM whose UEFI certificates are out of date, not on a normally
-        # provisioned pool. Report cleanly instead of letting a bare "no such element" lookup error
-        # propagate.
-        Write-Host "No guest needs a Secure Boot certificate refresh right now."
+        Write-Host "No Secure Boot guest needs a certificate refresh right now."
         Write-Host "OK: manage-secureboot-certificates"
         $session | Disconnect-XenServer
         return
@@ -114,17 +114,25 @@ manage_secureboot_certificates() {
     if [ -n "$(xe pool-param-get uuid=$pool param-name=uefi-certificates)" ]; then holds=true; else holds=false; fi
     echo "  pool holds certificates:  $holds"
 
-    # A guest whose certificates have gone stale. The state is a plain field, so it filters like any other.
-    # This is a deliberately-seeded state, not one an ordinarily-provisioned pool is ever in - report and
-    # stop cleanly when no VM needs it, rather than operating on an empty uuid.
+    # A guest whose certificates have gone stale. secureboot-certificates-state is set on every VM
+    # regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of "disabled"
+    # or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it for a refresh
+    # would prove nothing.
     #
     # Caution: updating a guest's certificates changes its TPM PCR7 measurements, which can trigger
     # BitLocker recovery on a Windows guest at its next boot. Keep BitLocker recovery keys to hand,
     # suspend BitLocker on affected VMs first, and do the refresh in a monitored maintenance window.
-    vm=$(first_csv "$(xe vm-list secureboot-certificates-state=update_available --minimal)")
+    vm=""
+    for candidate in $(each_csv "$(xe vm-list secureboot-certificates-state=update_available --minimal)"); do
+        ready=$(xe vm-get-secureboot-readiness uuid=$candidate)
+        if [ "$ready" != disabled ] && [ "$ready" != not_supported ]; then
+            vm=$candidate
+            break
+        fi
+    done
     if [ -z "$vm" ]; then
-        echo "No guest needs a Secure Boot certificate refresh right now."
-        echo "OK: manage-secureboot-certificates"
+        echo "No Secure Boot guest needs a certificate refresh right now."
+        ok manage-secureboot-certificates
         return
     fi
     echo "$(xe vm-param-get uuid=$vm param-name=name-label): readiness $(xe vm-get-secureboot-readiness uuid=$vm), certificates $(xe vm-param-get uuid=$vm param-name=secureboot-certificates-state)"
@@ -135,7 +143,7 @@ manage_secureboot_certificates() {
 
     xe vm-update-secureboot-certificates-on-boot uuid=$vm mark=false
     echo "  unflagged:                $(xe vm-param-get uuid=$vm param-name=secureboot-certificates-state)"
-    echo "OK: manage-secureboot-certificates"
+    ok manage-secureboot-certificates
 }
 ```
 
@@ -197,13 +205,16 @@ def manage_secureboot_certificates(url, username, password):
     print("Pool Secure Boot readiness: %s" % x.pool.get_guest_secureboot_readiness(pool))
     print("  pool holds certificates:  %s" % bool(x.pool.get_uefi_certificates(pool)))
 
-    # A guest whose certificates have gone stale. Its state is what a client gates the
-    # flag/unflag actions on, so it is the field to watch.
+    # A guest whose certificates have gone stale. secureboot_certificates_state is set on every VM
+    # regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of
+    # "disabled" or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it
+    # for a refresh would prove nothing.
     vm = next((ref for ref, r in x.VM.get_all_records().items()
                if not r["is_a_template"] and not r["is_control_domain"] and not r["is_a_snapshot"]
-               and r["secureboot_certificates_state"] == "update_available"), None)
+               and r["secureboot_certificates_state"] == "update_available"
+               and x.VM.get_secureboot_readiness(ref) not in ("disabled", "not_supported")), None)
     if vm is None:
-        print("No guest needs a Secure Boot certificate refresh right now.")
+        print("No Secure Boot guest needs a certificate refresh right now.")
         print("OK: manage-secureboot-certificates")
         session.logout()
         return
@@ -269,16 +280,18 @@ public static void ManageSecurebootCertificates(string url, string user, string 
     Console.WriteLine("  pool holds certificates:  "
                       + !string.IsNullOrEmpty(Pool.get_uefi_certificates(session, pool)));
 
-    // A guest whose certificates have gone stale. Its state is what a client gates the flag/unflag
-    // actions on, so it is the field to watch. This is a deliberately-provisioned state, not one a
-    // normally-provisioned Secure Boot guest is ever in - so report and stop cleanly rather than
-    // letting a bare "no such element" lookup error propagate when nothing needs it right now.
+    // A guest whose certificates have gone stale. secureboot_certificates_state is set on every VM
+    // regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of
+    // "disabled" or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it
+    // for a refresh would prove nothing.
     var candidate = VM.get_all_records(session).FirstOrDefault(kv =>
         !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot
-        && kv.Value.secureboot_certificates_state == vm_secureboot_certificates_state.update_available);
+        && kv.Value.secureboot_certificates_state == vm_secureboot_certificates_state.update_available
+        && VM.get_secureboot_readiness(session, kv.Key) != vm_secureboot_readiness.disabled
+        && VM.get_secureboot_readiness(session, kv.Key) != vm_secureboot_readiness.not_supported);
     if (candidate.Key == null)
     {
-        Console.WriteLine("No guest needs a Secure Boot certificate refresh right now.");
+        Console.WriteLine("No Secure Boot guest needs a certificate refresh right now.");
         Console.WriteLine("OK: manage-secureboot-certificates");
         session.logout();
         return;
@@ -358,10 +371,10 @@ func manageSecurebootCertificates(url, user, password string) {
 	fmt.Printf("Pool Secure Boot readiness: %s\n", readiness)
 	fmt.Printf("  pool holds certificates:  %t\n", certs != "")
 
-	// A guest whose certificates have gone stale. Its state is what a client gates the flag/unflag
-	// actions on, so it is the field to watch. This is a deliberately-provisioned state, not one a
-	// normally-provisioned Secure Boot guest is ever in - report and stop cleanly when no VM needs
-	// it, rather than failing with a bare lookup error.
+	// A guest whose certificates have gone stale. SecurebootCertificatesState is set on every VM
+	// regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of
+	// "disabled" or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it
+	// for a refresh would prove nothing.
 	vms, err := xenapi.VM.GetAllRecords(session)
 	check(err)
 	var vm xenapi.VMRef
@@ -370,12 +383,16 @@ func manageSecurebootCertificates(url, user, password string) {
 	for ref, r := range vms {
 		if !r.IsATemplate && !r.IsControlDomain && !r.IsASnapshot &&
 			r.SecurebootCertificatesState == xenapi.VMSecurebootCertificatesStateUpdateAvailable {
-			vm, name, found = ref, r.NameLabel, true
-			break
+			ready, err := xenapi.VM.GetSecurebootReadiness(session, ref)
+			check(err)
+			if ready != xenapi.VMSecurebootReadinessDisabled && ready != xenapi.VMSecurebootReadinessNotSupported {
+				vm, name, found = ref, r.NameLabel, true
+				break
+			}
 		}
 	}
 	if !found {
-		fmt.Println("No guest needs a Secure Boot certificate refresh right now.")
+		fmt.Println("No Secure Boot guest needs a certificate refresh right now.")
 		fmt.Println("OK: manage-secureboot-certificates")
 		return
 	}
@@ -465,23 +482,25 @@ public final class ManageSecurebootCertificates {
             System.out.println("  pool holds certificates:  "
                 + !pool.getUefiCertificates(conn).isEmpty());
 
-            // A guest whose certificates have gone stale. Its state is what a client gates the
-            // flag/unflag actions on, so it is the field to watch.
+            // A guest whose certificates have gone stale. securebootCertificatesState is set on every VM
+            // regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of
+            // "disabled" or "not_supported" means this guest doesn't use Secure Boot at all, and flagging
+            // it for a refresh would prove nothing.
             VM vm = null;
             String name = null;
             for (Map.Entry<VM, VM.Record> e : VM.getAllRecords(conn).entrySet()) {
                 VM.Record r = e.getValue();
                 if (!r.isATemplate && !r.isControlDomain && !r.isASnapshot
                         && r.securebootCertificatesState == Types.VmSecurebootCertificatesState.UPDATE_AVAILABLE) {
-                    vm = e.getKey(); name = r.nameLabel; break;
+                    Types.VmSecurebootReadiness ready = e.getKey().getSecurebootReadiness(conn);
+                    if (ready != Types.VmSecurebootReadiness.DISABLED
+                            && ready != Types.VmSecurebootReadiness.NOT_SUPPORTED) {
+                        vm = e.getKey(); name = r.nameLabel; break;
+                    }
                 }
             }
             if (vm == null) {
-                // The precondition is the part worth being honest about: this needs a VM whose Secure
-                // Boot certificates are already due to refresh. That's a deliberately-provisioned state,
-                // not one a normally-provisioned Secure Boot guest is ever in - so report and stop cleanly
-                // rather than failing with a bare lookup error.
-                System.out.println("No guest needs a Secure Boot certificate refresh right now.");
+                System.out.println("No Secure Boot guest needs a certificate refresh right now.");
                 System.out.println("OK: manage-secureboot-certificates");
                 return;
             }

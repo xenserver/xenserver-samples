@@ -108,7 +108,7 @@ Status report for sdk-host1
   loopback-devices       max      1024 bytes  default=yes pii=maybe
   multipath              max     20480 bytes  default=yes pii=maybe
   network-config         max  10485760 bytes  default=yes pii=if_customized
-  network-status         max         0 bytes  default=yes pii=yes
+  network-status         max     40960 bytes  default=yes pii=yes
   pam                    max  52428800 bytes  default=yes pii=yes
   process-list           max     30720 bytes  default=yes pii=yes
   system-load            max  73400320 bytes  default=yes pii=maybe
@@ -217,7 +217,7 @@ server_status_report() {
     fi
 
     rm -f cli-status-all.tar cli-status-config.tar
-    echo "OK: server-status-report"
+    ok server-status-report
 }
 
 # The value of a named attribute in an XML element, using parameter expansion only - no xmllint, and no
@@ -248,7 +248,7 @@ Status report for sdk-host1
   loopback-devices       max      1024 bytes  default=yes pii=maybe
   multipath              max     20480 bytes  default=yes pii=maybe
   network-config         max  10485760 bytes  default=yes pii=if_customized
-  network-status         max         0 bytes  default=yes pii=yes
+  network-status         max     40960 bytes  default=yes pii=yes
   pam                    max  52428800 bytes  default=yes pii=yes
   process-list           max     30720 bytes  default=yes pii=yes
   system-load            max  73400320 bytes  default=yes pii=maybe
@@ -383,7 +383,7 @@ Status report for sdk-host1
   loopback-devices       max      1024 bytes  default=yes pii=maybe
   multipath              max     20480 bytes  default=yes pii=maybe
   network-config         max  10485760 bytes  default=yes pii=if_customized
-  network-status         max         0 bytes  default=yes pii=yes
+  network-status         max     40960 bytes  default=yes pii=yes
   pam                    max  52428800 bytes  default=yes pii=yes
   process-list           max     30720 bytes  default=yes pii=yes
   system-load            max  73400320 bytes  default=yes pii=maybe
@@ -523,7 +523,7 @@ Status report for sdk-host1
   loopback-devices       max      1024 bytes  default=yes pii=maybe
   multipath              max     20480 bytes  default=yes pii=maybe
   network-config         max  10485760 bytes  default=yes pii=if_customized
-  network-status         max         0 bytes  default=yes pii=yes
+  network-status         max     40960 bytes  default=yes pii=yes
   pam                    max  52428800 bytes  default=yes pii=yes
   process-list           max     30720 bytes  default=yes pii=yes
   system-load            max  73400320 bytes  default=yes pii=maybe
@@ -686,7 +686,7 @@ Status report for sdk-host1
   loopback-devices       max      1024 bytes  default=yes pii=maybe
   multipath              max     20480 bytes  default=yes pii=maybe
   network-config         max  10485760 bytes  default=yes pii=if_customized
-  network-status         max         0 bytes  default=yes pii=yes
+  network-status         max     40960 bytes  default=yes pii=yes
   pam                    max  52428800 bytes  default=yes pii=yes
   process-list           max     30720 bytes  default=yes pii=yes
   system-load            max  73400320 bytes  default=yes pii=maybe
@@ -852,7 +852,7 @@ Status report for sdk-host1
   loopback-devices       max      1024 bytes  default=yes pii=maybe
   multipath              max     20480 bytes  default=yes pii=maybe
   network-config         max  10485760 bytes  default=yes pii=if_customized
-  network-status         max         0 bytes  default=yes pii=yes
+  network-status         max     40960 bytes  default=yes pii=yes
   pam                    max  52428800 bytes  default=yes pii=yes
   process-list           max     30720 bytes  default=yes pii=yes
   system-load            max  73400320 bytes  default=yes pii=maybe

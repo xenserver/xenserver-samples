@@ -179,7 +179,7 @@ rolling_pool_update() {
     done
     for h in $ordered; do
         echo "Updating $(xe host-param-get uuid=$h param-name=name-label):"
-        if ! err=$(xe host-apply-updates uuid=$h hash=$hash 2>&1); then
+        if ! err=$(xe_try host-apply-updates uuid=$h hash=$hash 2>&1); then
             case "$err" in
                 *[Ee]vacuat*)
                     echo "  needs evacuating first; evacuating and retrying"
@@ -192,13 +192,13 @@ rolling_pool_update() {
             esac
         fi
         guidance=$(set_to_csv "$(xe host-param-get uuid=$h param-name=pending-guidances)")
-        echo "  applied; pending guidance = $guidance"
+        echo "  applied; pending guidance = [$guidance]"
         case ",$guidance," in
             *,reboot_host,*)
                 # The reboot returns before it has happened, and if this host is the coordinator it takes
                 # the connection with it - so note when it last booted, reboot it, and wait until it
                 # reports a newer boot time and is live again before re-enabling it.
-                before_key=$(xe host-param-get uuid=$h param-name=other-config param-key=boot_time 2>/dev/null) || true
+                before_key=$(xe_try host-param-get uuid=$h param-name=other-config param-key=boot_time 2>/dev/null) || true
                 xe host-reboot uuid=$h
                 wait_for_restart "$h" boot_time "$before_key"
                 ;;
@@ -210,7 +210,7 @@ rolling_pool_update() {
     done
     xe pool-param-set uuid=$pool repositories="${before//; /,}"
     for r in $repos; do xe repository-forget uuid=$r; done
-    echo "OK: rolling-pool-update"
+    ok rolling-pool-update
 }
 ```
 
@@ -219,9 +219,9 @@ rolling_pool_update() {
 ```text
 Synced updates (hash length 64)
 Updating sdk-host1:
-  applied; pending guidance = 
+  applied; pending guidance = []
 Updating sdk-host2:
-  applied; pending guidance = 
+  applied; pending guidance = []
 OK: rolling-pool-update
 ```
 

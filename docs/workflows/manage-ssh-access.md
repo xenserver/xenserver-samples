@@ -113,7 +113,7 @@ manage_ssh_access() {
         xe host-param-set uuid=$h ssh-enabled-timeout=$timeout   # first: enabling stamps the expiry from it
         [ "$enabled" = true ] && xe host-enable-ssh uuid=$h
     done
-    echo "OK: manage-ssh-access"
+    ok manage-ssh-access
 }
 ```
 

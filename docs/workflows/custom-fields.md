@@ -117,7 +117,7 @@ custom_fields() {
     # The pool's custom field DEFINITIONS (name and type, String or Date) live in a small XML document in
     # pool.gui-config["XenCenter.CustomFields"] (the key keeps its historical name); a client shows no field
     # without one, no matter what value an object carries under XenCenter.CustomFields.<name>.
-    previous_xml=$(xe pool-param-get uuid=$pool param-name=gui-config param-key=XenCenter.CustomFields 2>/dev/null) || true
+    previous_xml=$(xe_try pool-param-get uuid=$pool param-name=gui-config param-key=XenCenter.CustomFields 2>/dev/null) || true
     added_definition=false
     if [[ "$previous_xml" != *'name="Owner"'* ]]; then
         added_definition=true
@@ -144,7 +144,7 @@ custom_fields() {
             xe pool-param-set uuid=$pool gui-config:XenCenter.CustomFields="$previous_xml"
         fi
     fi
-    echo "OK: custom-fields"
+    ok custom-fields
 }
 ```
 

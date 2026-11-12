@@ -147,7 +147,7 @@ manage_driver_variants() {
     selected=$(xe hostdriver-param-get uuid=$driver param-name=selected-variant)
     active=$(xe hostdriver-param-get uuid=$driver param-name=active-variant)
     echo "  $dname: selected ${selected:-(none)}, active ${active:-(none)}"
-    echo "OK: manage-driver-variants"
+    ok manage-driver-variants
 }
 ```
 

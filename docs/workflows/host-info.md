@@ -79,12 +79,12 @@ host_info() {
     echo "Host:    $(xe host-param-get uuid=$h param-name=name-label)"
     echo "Version: $(xe host-param-get uuid=$h param-name=software-version param-key=product_version)"
     echo "Edition: $(xe host-param-get uuid=$h param-name=edition)"
-    # The physical identity, straight off the host's DMI/SMBIOS tables. The serial number is what you
-    # quote to the hardware vendor, so it identifies this machine and not just its model.
-    echo "Hardware: $(xe host-param-get uuid=$h param-name=bios-strings param-key=system-manufacturer) $(xe host-param-get uuid=$h param-name=bios-strings param-key=system-product-name)"
-    echo "Serial:   $(xe host-param-get uuid=$h param-name=bios-strings param-key=system-serial-number)"
-    echo "BIOS:     $(xe host-param-get uuid=$h param-name=bios-strings param-key=bios-version)"
-    echo "OK: host-info"
+    # bios-strings is a VM field, not a host one - xe has no DMI/SMBIOS identity for a host, only its CPU
+    # topology (cpu_info is a host field, with an underscore - the one exception to xe's usual convention).
+    cpu_count=$(xe host-param-get uuid=$h param-name=cpu_info param-key=cpu_count)
+    socket_count=$(xe host-param-get uuid=$h param-name=cpu_info param-key=socket_count)
+    echo "CPUs:    $cpu_count across $socket_count socket(s)"
+    ok host-info
 }
 ```
 
@@ -94,9 +94,7 @@ host_info() {
 Host:    sdk-host1
 Version: 9.0.0
 Edition: cloud
-Hardware:  
-Serial:   
-BIOS:     
+CPUs:    8 across 1 socket(s)
 OK: host-info
 ```
 
@@ -267,12 +265,12 @@ func hostInfo(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Host:     sdk-host1
+Host:     sdk-host2
 Version:  9.0.0
 Edition:  cloud
 CPUs:     8 across 1 socket(s)
 Hardware: Dell Inc. PowerEdge R750
-Serial:   XPSIM017RT
+Serial:   XPSIM027RT
 BIOS:     2.15.1
 OK: host-info
 ```

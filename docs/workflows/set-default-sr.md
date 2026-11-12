@@ -79,7 +79,7 @@ function Get-SrLabel {
 ```text
 default storage:  Shared NFS
   suspend images: Shared NFS
-  crash dumps:    (none)
+  crash dumps:    Shared NFS
   switched to:    sdk-example-default
   restored to:    Shared NFS
 OK: set-default-sr
@@ -132,7 +132,7 @@ set_default_sr() {
     for pbd in $(each_csv "$(xe pbd-list sr-uuid=$sr --minimal)"); do xe pbd-unplug uuid=$pbd; done
     xe sr-forget uuid=$sr
     echo "  restored to:    $(sr_label "$(xe pool-param-get uuid=$pool param-name=default-SR)")"
-    echo "OK: set-default-sr"
+    ok set-default-sr
 }
 
 # An SR's name from its UUID, tolerating the empty value an unset pool setting prints.
@@ -156,7 +156,7 @@ pool_sr_setting() {
 ```text
 default storage:  Shared NFS
   suspend images: Shared NFS
-  crash dumps:    (none)
+  crash dumps:    Shared NFS
   switched to:    xe-example-default
   restored to:    Shared NFS
 OK: set-default-sr
@@ -236,7 +236,7 @@ def sr_label(x, sr):
 ```text
 default storage:  Shared NFS
   suspend images: Shared NFS
-  crash dumps:    (none)
+  crash dumps:    Shared NFS
   switched to:    sdk-example-default
   restored to:    Shared NFS
 OK: set-default-sr
@@ -309,7 +309,7 @@ private static string SrLabel(Session session, XenRef<SR> sr) =>
 ```text
 default storage:  Shared NFS
   suspend images: Shared NFS
-  crash dumps:    (none)
+  crash dumps:    Shared NFS
   switched to:    sdk-example-default
   restored to:    Shared NFS
 OK: set-default-sr
@@ -397,7 +397,7 @@ func setDefaultSr(url, user, password, nfsServer, nfsPath string) {
 ```text
 default storage:  Shared NFS
   suspend images: Shared NFS
-  crash dumps:    (none)
+  crash dumps:    Shared NFS
   switched to:    sdk-example-default
   restored to:    Shared NFS
 OK: set-default-sr
@@ -496,7 +496,7 @@ public final class SetDefaultSr {
 ```text
 default storage:  Shared NFS
   suspend images: Shared NFS
-  crash dumps:    (none)
+  crash dumps:    Shared NFS
   switched to:    sdk-example-default
   restored to:    Shared NFS
 OK: set-default-sr

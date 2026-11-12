@@ -148,18 +148,25 @@ vm_lifecycle() {
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy
     # would leave the disks behind).
     xe vm-uninstall uuid=$vm force=true
-    echo "OK: vm-lifecycle"
+    ok vm-lifecycle
 }
 
 # Whether VM.suspend has a suspend-image SR to use: the VM's own, else the pool's, else the resident
-# host's - the same fallback order xapi's choose_suspend_sr uses.
+# host's - the same fallback order xapi's choose_suspend_sr uses. Each xe call is assigned before it is
+# tested, not tested directly in "$(...)" - a transient failure (xe is fatal; this would otherwise never
+# run) must not be read as "no SR configured".
 has_suspend_sr() {
-    local vm=$1 pool host
-    [ -n "$(xe vm-param-get uuid=$vm param-name=suspend-SR)" ] && return 0
+    # Not "host": that name is the connection target xe() dials (connection.sh), and shadowing it here
+    # would send every xe call below to an empty address instead.
+    local vm=$1 pool master sr
+    sr=$(xe vm-param-get uuid=$vm param-name=suspend-SR-uuid)
+    [ -n "$sr" ] && return 0
     pool=$(first_csv "$(xe pool-list --minimal)")
-    [ -n "$(xe pool-param-get uuid=$pool param-name=suspend-image-SR)" ] && return 0
-    host=$(xe pool-param-get uuid=$pool param-name=master)
-    [ -n "$(xe host-param-get uuid=$host param-name=suspend-image-sr)" ]
+    sr=$(xe pool-param-get uuid=$pool param-name=suspend-image-SR)
+    [ -n "$sr" ] && return 0
+    master=$(xe pool-param-get uuid=$pool param-name=master)
+    sr=$(xe host-param-get uuid=$master param-name=suspend-image-sr-uuid)
+    [ -n "$sr" ]
 }
 ```
 
@@ -169,7 +176,8 @@ has_suspend_sr() {
 Initial: halted
 After start:    running
 Device models restarted; still running
-Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host
+After suspend:  suspended
+After resume:   running
 After shutdown: halted
 OK: vm-lifecycle
 ```

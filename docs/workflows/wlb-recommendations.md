@@ -116,8 +116,8 @@ function Invoke-WlbRecommendations {
 
 ```text
 WLB: wlb.example:8012
-  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
+  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host2 rated 3.7
   sdk-host1 rated 1.0
   appliance configuration: ReportingCronString=0 3 * * *
@@ -181,7 +181,7 @@ wlb_recommendations() {
 
     # Disconnect from the appliance however the rest of this goes, or the pool stays attached to it. This
     # script dispatches to exactly one workflow and then exits, so an EXIT trap is bash's try/finally.
-    trap 'xe pool-deconfigure-wlb; [ -z "$wlb_cert_name" ] || xe pool-certificate-uninstall name="$wlb_cert_name"' EXIT
+    trap 'xe_try pool-deconfigure-wlb; [ -z "$wlb_cert_name" ] || xe_try pool-certificate-uninstall name="$wlb_cert_name"' EXIT
 
     # Initializing connects the pool to the appliance but leaves balancing off: every WLB call after this
     # would fail WLB_DISABLED until it's switched on.
@@ -200,7 +200,7 @@ wlb_recommendations() {
     vm=$(vm_uuid "$vm_name")
     deadline=$((SECONDS + 600))
     while true; do
-        if out=$(xe vm-retrieve-wlb-recommendations uuid=$vm 2>&1); then break; fi
+        if out=$(xe_try vm-retrieve-wlb-recommendations uuid=$vm 2>&1); then break; fi
         case "$out" in
             *4024*|*4025*|*"Pool discovery has not been"*|*4016*|*"does not have current metrics"*) ;;
             *) echo "$out" >&2; exit 1 ;;
@@ -215,7 +215,7 @@ wlb_recommendations() {
     xe pool-send-wlb-configuration config:ReportingCronString="0 3 * * *"
     echo "  appliance configuration: $(xe pool-retrieve-wlb-configuration)"
 
-    echo "OK: wlb-recommendations"
+    ok wlb-recommendations
 }
 ```
 
@@ -331,8 +331,8 @@ def wlb_recommendations(url, username, password, vm_name, wlb_host_port="wlb.exa
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
+  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
   sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
@@ -590,10 +590,10 @@ func isWlbStillDiscovering(err error) bool {
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
-  sdk-host2 rated 3.7
+  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
+  sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
 OK: wlb-recommendations
 ```
@@ -618,6 +618,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static com.xenserver.samples.PoolConnection.connect;
 
@@ -678,10 +679,11 @@ public final class WlbRecommendations {
                 // a copy of the set returns whichever element happens to land there -- in testing, index
                 // 1 was the reason and index 4 the "wlb" tag. So print the whole recommendation and let
                 // a human read it; a program that needs the fields must use an ordered binding or the
-                // raw JSON.
+                // raw JSON. Sorted alphabetically here, since a HashSet's own iteration order can change
+                // from one run to the next even for the same recommendation.
                 for (Map.Entry<VM, Set<String>> rec : Pool.retrieveWlbRecommendations(conn).entrySet()) {
                     System.out.println("  move " + rec.getKey().getNameLabel(conn)
-                            + ": " + String.join(" ", rec.getValue()));
+                            + ": " + String.join(" ", new TreeSet<>(rec.getValue())));
                 }
 
                 // Same caveat for a VM's own recommendations, which are keyed by host and rate each as a
@@ -705,7 +707,7 @@ public final class WlbRecommendations {
                 }
                 for (Map.Entry<Host, Set<String>> rec : vmRecs.entrySet()) {
                     System.out.println("  " + rec.getKey().getNameLabel(conn)
-                            + ": " + String.join(" ", rec.getValue()));
+                            + ": " + String.join(" ", new TreeSet<>(rec.getValue())));
                 }
 
                 // The appliance's own settings are read and written as one flat map of strings. Send a
@@ -737,10 +739,10 @@ public final class WlbRecommendations {
 
 ```text
 WLB: wlb.example:8012
-  move web-01: 00000001-0000-0000-5300-000000000000 rec-1 Optimizing pool CPU load opt-1 wlb
-  move cache-01: 00000001-0000-0000-5300-000000000000 rec-2 Optimizing pool CPU load opt-2 wlb
-  sdk-host1: 1.0 wlb id-00000001
-  sdk-host2: wlb 3.7 id-00000001
+  move cache-01: 00000001-0000-0000-5300-000000000000 Optimizing pool CPU load opt-1 rec-1 wlb
+  move web-01: 00000001-0000-0000-5300-000000000000 Optimizing pool CPU load opt-2 rec-2 wlb
+  sdk-host1: 1.0 id-00000001 wlb
+  sdk-host2: 3.7 id-00000001 wlb
   appliance configuration: ReportingCronString=0 3 * * *
 OK: wlb-recommendations
 ```

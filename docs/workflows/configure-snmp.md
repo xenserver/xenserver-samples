@@ -111,7 +111,7 @@ configure_snmp() {
         echo "$(xe host-param-get uuid=$h param-name=name-label): SNMP status: $(xe host-call-plugin host-uuid=$h plugin=snmp fn=status)"
         xe host-call-plugin host-uuid=$h plugin=snmp fn=set-config 'args:config={"common":{"enabled":"no"}}' >/dev/null  # restore
     done
-    echo "OK: configure-snmp"
+    ok configure-snmp
 }
 ```
 
@@ -438,9 +438,9 @@ public final class ConfigureSnmp {
 <details><summary>Example output</summary>
 
 ```text
-sdk-host2: SNMP enabled: enabled / active
-  community: sdk-community, trap destination: 192.0.2.50
 sdk-host1: SNMP enabled: enabled / active
+  community: sdk-community, trap destination: 192.0.2.50
+sdk-host2: SNMP enabled: enabled / active
   community: sdk-community, trap destination: 192.0.2.50
 OK: configure-snmp
 ```

@@ -138,7 +138,7 @@ configure_console_access() {
     xe pool-param-set uuid=$pool limit-console-sessions=$before_limit_console_sessions
     xe host-param-set uuid=$host_uuid console-idle-timeout=$before_host_console_idle_timeout
     echo "  restored"
-    echo "OK: configure-console-access"
+    ok configure-console-access
 }
 ```
 

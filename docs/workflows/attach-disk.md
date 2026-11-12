@@ -92,7 +92,7 @@ attach_disk() {
     # sets on the template's disks) - not the one just attached, so destroy that too.
     xe vm-uninstall uuid=$vm force=true
     xe vdi-destroy uuid=$vdi
-    echo "OK: attach-disk"
+    ok attach-disk
 }
 ```
 
@@ -325,6 +325,7 @@ import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
+import static com.xenserver.samples.Helpers.lowestVBDDevice;
 import static com.xenserver.samples.Helpers.provision;
 import static com.xenserver.samples.Helpers.srByName;
 import static com.xenserver.samples.Helpers.templateByName;
@@ -364,7 +365,7 @@ public final class AttachDisk {
         vdiRec.otherConfig = new java.util.HashMap<>();
         VDI vdi = VDI.create(conn, vdiRec);
 
-        String device = vm.getAllowedVBDDevices(conn).iterator().next();
+        String device = lowestVBDDevice(conn, vm);
         VBD.Record vbdRec = new VBD.Record();
         vbdRec.VM = vm;
         vbdRec.VDI = vdi;
@@ -391,7 +392,7 @@ public final class AttachDisk {
 <details><summary>Example output</summary>
 
 ```text
-Attached an 8 GiB disk on Shared NFS as device 11
+Attached an 8 GiB disk on Shared NFS as device 1
 VM now has 2 VBD(s)
 OK: attach-disk
 ```

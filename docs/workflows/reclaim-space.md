@@ -86,7 +86,7 @@ reclaim_space() {
     echo "  reclaimed freed space on $name: $result"
     # Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
     [ "${result,,}" = "true" ] || { echo "trim failed: $result" >&2; exit 1; }
-    echo "OK: reclaim-space"
+    ok reclaim-space
 }
 ```
 

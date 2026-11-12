@@ -128,7 +128,7 @@ reconnect_sr_storage() {
 
     # Tidy up: detach the SR from every host and forget it, leaving the storage itself untouched.
     detach_and_forget_sr $sr
-    echo "OK: reconnect-sr-storage"
+    ok reconnect-sr-storage
 }
 ```
 
@@ -467,8 +467,8 @@ public final class ReconnectSrStorage {
 <details><summary>Example output</summary>
 
 ```text
-sdk-host2: now reaches 192.0.2.10:/export/spare
 sdk-host1: now reaches 192.0.2.10:/export/spare
+sdk-host2: now reaches 192.0.2.10:/export/spare
 OK: reconnect-sr-storage
 ```
 

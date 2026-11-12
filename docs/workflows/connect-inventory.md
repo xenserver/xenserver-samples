@@ -28,7 +28,9 @@ function Invoke-ConnectInventory {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
-    Write-Host "Connected to pool: $($pool.name_label)"
+    # A pool often has no name of its own; show its coordinator's name instead.
+    $poolName = if ($pool.name_label) { $pool.name_label } else { (Get-XenHost -Ref $pool.master).name_label }
+    Write-Host "Connected to pool: $poolName"
 
     $hosts = Get-XenHost
     Write-Host "Hosts ($($hosts.Count)):"
@@ -74,11 +76,17 @@ Source: [`cli/getting-started/connect-inventory.sh`](../../cli/getting-started/c
 #   ./workflows.sh connect-inventory https://xenserver root "$password"
 
 connect_inventory() {
-    echo "Connected to pool: $(xe pool-list params=name-label --minimal)"
+    # A pool often has no name of its own; show its coordinator's name instead.
+    pool_name=$(xe pool-list params=name-label --minimal)
+    if [ -z "$pool_name" ]; then
+        master=$(xe pool-list params=master --minimal)
+        pool_name=$(xe host-list uuid=$master params=name-label --minimal)
+    fi
+    echo "Connected to pool: $pool_name"
     echo "Hosts: $(xe host-list params=name-label --minimal)"
     echo "VMs:"
     xe vm-list is-control-domain=false params=name-label,power-state
-    echo "OK: connect-inventory"
+    ok connect-inventory
 }
 ```
 
@@ -126,7 +134,9 @@ def connect_inventory(url, username, password):
     """Log in and take an inventory of the pool: its name, its hosts and its VMs."""
     session = connect(url, username, password)
     pool = list(session.xenapi.pool.get_all_records().values())[0]
-    print("Connected to pool: %s" % pool["name_label"])
+    # A pool often has no name of its own; show its coordinator's name instead.
+    pool_name = pool["name_label"] or session.xenapi.host.get_name_label(pool["master"])
+    print("Connected to pool: %s" % pool_name)
 
     hosts = session.xenapi.host.get_all_records()
     print("Hosts (%d):" % len(hosts))
@@ -178,7 +188,11 @@ public static void ConnectInventory(string url, string user, string password)
 {
     var session = Connect(url, user, password);
     var pool = Pool.get_all_records(session).Values.First();
-    Console.WriteLine($"Connected to pool: {pool.name_label}");
+    // A pool often has no name of its own; show its coordinator's name instead.
+    var poolName = string.IsNullOrEmpty(pool.name_label)
+        ? Host.get_name_label(session, pool.master)
+        : pool.name_label;
+    Console.WriteLine($"Connected to pool: {poolName}");
 
     var hosts = Host.get_all_records(session);
     Console.WriteLine($"Hosts ({hosts.Count}):");
@@ -239,7 +253,13 @@ func connectInventory(url, user, password string) {
 	pools, err := xenapi.Pool.GetAllRecords(session)
 	check(err)
 	for _, pool := range pools {
-		fmt.Printf("Connected to pool: %s\n", pool.NameLabel)
+		// A pool often has no name of its own; show its coordinator's name instead.
+		name := pool.NameLabel
+		if name == "" {
+			name, err = xenapi.Host.GetNameLabel(session, pool.Master)
+			check(err)
+		}
+		fmt.Printf("Connected to pool: %s\n", name)
 		break
 	}
 
@@ -252,14 +272,16 @@ func connectInventory(url, user, password string) {
 
 	vms, err := xenapi.VM.GetAllRecords(session)
 	check(err)
-	count := 0
+	var guests []xenapi.VMRecord
 	for _, vm := range vms {
 		if !vm.IsATemplate && !vm.IsControlDomain {
-			count++
-			fmt.Printf("  - %s [%s]\n", vm.NameLabel, vm.PowerState)
+			guests = append(guests, vm)
 		}
 	}
-	fmt.Printf("VMs (%d)\n", count)
+	fmt.Printf("VMs (%d):\n", len(guests))
+	for _, vm := range guests {
+		fmt.Printf("  - %s [%s]\n", vm.NameLabel, vm.PowerState)
+	}
 
 	fmt.Println("OK: connect-inventory")
 	session.Logout()
@@ -271,13 +293,13 @@ func connectInventory(url, user, password string) {
 ```text
 Connected to pool: sdk-pool
 Hosts (2):
-  - sdk-host2 (198.51.100.12)
   - sdk-host1 (127.0.0.1)
-  - web-01 [Running]
-  - secure-01 [Halted]
-  - db-01 [Halted]
+  - sdk-host2 (198.51.100.12)
+VMs (4):
   - cache-01 [Running]
-VMs (4)
+  - secure-01 [Halted]
+  - web-01 [Running]
+  - db-01 [Halted]
 OK: connect-inventory
 ```
 
@@ -296,6 +318,8 @@ import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.VM;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.xenserver.samples.PoolConnection.connect;
@@ -319,22 +343,22 @@ public final class ConnectInventory {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         Pool.Record pool = Pool.getAllRecords(conn).values().iterator().next();
-        System.out.println("Connected to pool: " + pool.nameLabel);
+        // A pool often has no name of its own; show its coordinator's name instead.
+        String poolName = pool.nameLabel.isEmpty() ? pool.master.getNameLabel(conn) : pool.nameLabel;
+        System.out.println("Connected to pool: " + poolName);
 
         Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
         System.out.println("Hosts (" + hosts.size() + "):");
         for (Host.Record h : hosts.values())
             System.out.println("  - " + h.nameLabel + " (" + h.address + ")");
 
-        int count = 0;
-        System.out.println("VMs:");
+        List<VM.Record> vms = new ArrayList<>();
         for (VM.Record v : VM.getAllRecords(conn).values()) {
-            if (!v.isATemplate && !v.isControlDomain) {
-                count++;
-                System.out.println("  - " + v.nameLabel + " [" + v.powerState + "]");
-            }
+            if (!v.isATemplate && !v.isControlDomain) vms.add(v);
         }
-        System.out.println("VMs (" + count + ")");
+        System.out.println("VMs (" + vms.size() + "):");
+        for (VM.Record v : vms)
+            System.out.println("  - " + v.nameLabel + " [" + v.powerState + "]");
 
         System.out.println("OK: connect-inventory");
         Session.logout(conn);
@@ -349,12 +373,11 @@ Connected to pool: sdk-pool
 Hosts (2):
   - sdk-host1 (127.0.0.1)
   - sdk-host2 (198.51.100.12)
-VMs:
+VMs (4):
   - web-01 [Running]
   - db-01 [Halted]
   - cache-01 [Running]
   - secure-01 [Halted]
-VMs (4)
 OK: connect-inventory
 ```
 

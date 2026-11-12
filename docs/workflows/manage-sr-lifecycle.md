@@ -128,7 +128,7 @@ manage_sr_lifecycle() {
     for pbd in $(each_csv "$pbds"); do xe pbd-unplug uuid=$pbd; done
     xe sr-forget uuid=$sr
     echo "  forgotten"
-    echo "OK: manage-sr-lifecycle"
+    ok manage-sr-lifecycle
 }
 
 # How many of the given PBDs are currently attached.

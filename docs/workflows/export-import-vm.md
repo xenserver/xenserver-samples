@@ -119,7 +119,7 @@ function Get-TarEntryName {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-a2765405-93d9-4238-95ca-a7e7180c2d12.xva
+  wrote 4.0 MiB to sdk-example-export-c449ceda-baf0-4122-a580-e17fb298302c.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01 (imported)
 OK: export-import-vm
@@ -175,7 +175,7 @@ export_import_vm() {
 
     # The import brought its own disks along; vm-uninstall destroys those too, not just the VM record.
     xe vm-uninstall uuid=$imported force=true
-    echo "OK: export-import-vm"
+    ok export-import-vm
 }
 ```
 
@@ -301,7 +301,7 @@ def export_import_vm(url, username, password, vm_name):
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-_su1eefz.xva
+  wrote 4.0 MiB to sdk-example-export-e7be6069.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01 (imported)
 OK: export-import-vm
@@ -413,7 +413,7 @@ public static void ExportImportVm(string url, string user, string password, stri
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-7e36c573dcdf4f0c957688c422c374d3.xva
+  wrote 4.0 MiB to sdk-example-export-08c588a9cfd54309a0148245c4310155.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01 (imported)
 OK: export-import-vm
@@ -572,7 +572,7 @@ func tarNames(path string) []string {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-3124867839.xva
+  wrote 4.0 MiB to sdk-example-export-2682014176.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01 (imported)
 OK: export-import-vm
@@ -728,7 +728,7 @@ public final class ExportImportVm {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export3789225758936647222.xva
+  wrote 4.0 MiB to sdk-example-export932597217311599156.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01 (imported)
 OK: export-import-vm
