@@ -1,12 +1,18 @@
 # Back up a host's configuration.
 #
-# Download a host's configuration backup and hand it back as a restore would — and watch another host's backup
-# be refused.
+# Download a host's configuration backup and verify it downloaded. With restore=true, stage it back onto
+# the same host's backup partition: host-restore does not restore the host there and then, it only writes
+# the archive over that host's (currently inactive) backup partition, ready for the next boot.
 #
 # Run it:
 #   ./workflows.sh backup-host-config https://xenserver root "$password"
+#
+# Optional key=value arguments (default):
+#   restore (false)
 
 backup_host_config() {
+    local restore
+    restore=$(param restore false)
     # Deliberately not `host`: that is the variable the xe() helper dials, and shadowing it here sent
     # every later command to a server named after the host's UUID.
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
@@ -21,27 +27,20 @@ backup_host_config() {
     # /host_backup, and xe writes the file. Nothing streams down the CLI connection.
     xe host-backup uuid=$target file-name="$file"
     size=$(stat -c %s "$file" 2>/dev/null || wc -c < "$file")
+    [ "$size" -gt 0 ] || { echo "backup-host-config: $file came back empty" >&2; exit 1; }
     echo "  wrote $size bytes to $file"
 
-    xe host-restore uuid=$target file-name="$file"
-    echo "  restoring it to $(xe host-param-get uuid=$target param-name=name-label): accepted"
-
-    other=""
-    for h in $(each_csv "$(xe host-list --minimal)"); do [ "$h" = "$target" ] || { other=$h; break; }; done
-    if [ -n "$other" ]; then
-        # host-backup/host-restore are served only by whichever host physically accepted the connection -
-        # xe's own uri_of_someone already dials that host's address directly by uuid, there is no
-        # forwarding and no ref= to check, so this is not refused on a real pool the way a naive reading of
-        # "restoring one host's config onto another" might suggest. A real pool's hosts are all reachable
-        # from a management client; guard the attempt anyway with a friendly message on any transport
-        # error, for networks where a second host's address isn't routable from here.
-        if err=$(xe host-restore uuid=$other file-name="$file" 2>&1); then
-            echo "  restoring it to $(xe host-param-get uuid=$other param-name=name-label): accepted"
-        else
-            echo "  restoring it to $(xe host-param-get uuid=$other param-name=name-label): could not restore ($err)"
-        fi
+    if [ "$restore" = true ]; then
+        # host-restore writes the archive over the host's own backup partition - the inactive one, never
+        # the partition it is currently running from. It only takes effect once you boot that host from
+        # the installer and choose Restore there.
+        xe host-restore uuid=$target file-name="$file"
+        echo "  staged it on $(xe host-param-get uuid=$target param-name=name-label)'s backup partition" \
+             "- it takes effect only after booting that host from the installer and choosing Restore"
+    else
+        echo "  not restoring it (pass restore=true to stage it on $(xe host-param-get uuid=$target param-name=name-label)'s backup partition)"
     fi
 
     rm -f "$file"
-    echo "OK: backup-host-config"
+    ok backup-host-config
 }

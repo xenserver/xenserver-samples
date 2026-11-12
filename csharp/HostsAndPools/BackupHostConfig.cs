@@ -10,8 +10,8 @@ namespace XenServerWorkflows;
 internal static partial class Workflows
 {
     /// <summary>
-    /// Download a host's configuration backup and hand it back as a restore would — and watch another host's
-    /// backup be refused.
+    /// Download a host's configuration backup and verify it downloaded; optionally stage it back onto that
+    /// same host's backup partition, ready for a restore done from the installer.
     /// </summary>
     /// <example>
     /// <code>
@@ -22,16 +22,14 @@ internal static partial class Workflows
     /// Both /host_backup and /host_restore are served only by whichever host physically accepted the HTTP
     /// connection - the handler is keyed off the connection's own address, not any ref= in the query string.
     /// So backing up/restoring a host means opening the connection to THAT host's own address, not the pool's
-    /// (coordinator) url - a restore sent to the wrong host's connection silently restores the WRONG host.
-    /// ref= is kept in the query string for readability in the host's logs.
+    /// (coordinator) url. ref= is kept in the query string for readability in the host's logs.
     /// </remarks>
-    public static void BackupHostConfig(string url, string user, string password)
+    public static void BackupHostConfig(string url, string user, string password, bool restore = false)
     {
         var session = Connect(url, user, password);
 
         // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
         var host = Pool.get_master(session, Pool.get_all(session)[0]);
-        var hosts = Host.get_all(session).OrderBy(h => !h.Equals(host)).ToList();
         var hostUrl = HostUrl(url, Host.get_address(session, host));
         Console.WriteLine($"Backing up {Host.get_name_label(session, host)}");
 
@@ -49,27 +47,23 @@ internal static partial class Workflows
             using (var fileStream = File.Create(path))
                 httpStream.CopyTo(fileStream);
         }
-        Console.WriteLine($"  wrote {new FileInfo(path).Length} bytes to {Path.GetFileName(path)}");
+        var size = new FileInfo(path).Length;
+        if (size == 0) throw new InvalidOperationException($"{path} came back empty");
+        Console.WriteLine($"  wrote {size} bytes to {Path.GetFileName(path)}");
 
-        Console.WriteLine($"  restoring it to {Host.get_name_label(session, host)}: "
-                          + RestoreHostConfig(session, hostUrl, host, path));
-        if (hosts.Count > 1)
+        var name = Host.get_name_label(session, host);
+        if (restore)
         {
-            var other = hosts[1];
-            var otherUrl = HostUrl(url, Host.get_address(session, other));
-            string result;
-            try
-            {
-                result = RestoreHostConfig(session, otherUrl, other, path);
-            }
-            catch (Exception e)
-            {
-                // A real pool's hosts are all reachable from a management client; this only guards an
-                // environment (a host whose address isn't routable from here, say) where that isn't
-                // true, so the example still finishes cleanly.
-                result = $"could not connect to {otherUrl} directly ({e.Message})";
-            }
-            Console.WriteLine($"  restoring it to {Host.get_name_label(session, other)}: {result}");
+            // host-restore does not restore the host there and then: it only writes the archive over that
+            // host's currently inactive backup partition, ready for the next boot. It takes effect only
+            // once that host is booted from the installer and Restore is chosen there.
+            RestoreHostConfig(session, hostUrl, host, path);
+            Console.WriteLine($"  staged it on {name}'s backup partition - it takes effect only after "
+                              + "booting that host from the installer and choosing Restore");
+        }
+        else
+        {
+            Console.WriteLine($"  not restoring it (pass restore=true to stage it on {name}'s backup partition)");
         }
 
         File.Delete(path);
@@ -89,15 +83,15 @@ internal static partial class Workflows
     }
 
     /// <summary>
-    /// Upload a backup to a host - over a connection opened to THAT host's own address - and report
-    /// what the task says about it.
+    /// Upload a backup to a host - over a connection opened to THAT host's own address - and throw if
+    /// the task reports it was refused.
     /// </summary>
     /// <remarks>
     /// An upload answers 200 as soon as it has read the request headers, because the client waits for that
     /// before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
     /// a task you create first, name in the URL, and poll once the upload has finished.
     /// </remarks>
-    private static string RestoreHostConfig(Session session, string hostUrl, XenRef<Host> host, string path)
+    private static void RestoreHostConfig(Session session, string hostUrl, XenRef<Host> host, string path)
     {
         var task = Task.create(session, "host_restore", "restoring a configuration backup").opaque_ref;
         try
@@ -118,8 +112,8 @@ internal static partial class Workflows
 
             while (Task.get_status(session, task) == task_status_type.pending)
                 System.Threading.Thread.Sleep(500);
-            if (Task.get_status(session, task) == task_status_type.success) return "accepted";
-            return $"refused ({Task.get_error_info(session, task).Last()})";
+            if (Task.get_status(session, task) != task_status_type.success)
+                throw new InvalidOperationException($"refused ({Task.get_error_info(session, task).Last()})");
         }
         finally
         {

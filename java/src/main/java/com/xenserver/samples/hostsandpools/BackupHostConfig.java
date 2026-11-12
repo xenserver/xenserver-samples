@@ -13,7 +13,6 @@ import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import java.net.URL;
-import java.util.Map;
 
 import static com.xenserver.samples.Helpers.hostUrl;
 import static com.xenserver.samples.PoolConnection.connect;
@@ -26,32 +25,31 @@ public final class BackupHostConfig {
     /**
      * Back up a host's configuration.
      *
-     * <p>Download a host's configuration backup and hand it back as a restore would — and watch another
-     * host's backup be refused.
+     * <p>Download a host's configuration backup and verify it downloaded; optionally stage it back onto
+     * that same host's backup partition, ready for a restore done from the installer.
      *
      * <p>Both /host_backup and /host_restore are served only by whichever host physically accepted the
      * HTTP connection - the handler ignores any ref= in the query string entirely, there is no forwarding
      * to another pool member. So backing up/restoring a host means opening the connection to THAT host's
-     * own address, not to the pool's (coordinator) url - a restore sent to the wrong host's connection
-     * silently restores the WRONG host, not the one named by ref=. ref= is kept in the query string purely
-     * for log-readability (a real host ignores it; it is not what makes this correct).
+     * own address, not to the pool's (coordinator) url. ref= is kept in the query string purely for
+     * log-readability (a real host ignores it).
+     *
+     * <p>restore=true stages the backup onto the SAME host's backup partition. host-restore does not
+     * restore the host there and then: it only writes the archive over that host's currently inactive
+     * backup partition, ready for the next boot. It takes effect only once that host is booted from the
+     * installer and Restore is chosen there.
      *
      * <p>Run it:
      *
      * <pre>{@code
-     * BackupHostConfig.run("https://xenserver", "root", password);
+     * BackupHostConfig.run("https://xenserver", "root", password, false);
      * }</pre>
      */
-    public static void run(String url, String user, String password) throws Exception {
+    public static void run(String url, String user, String password, boolean restore) throws Exception {
         Connection conn = connect(url, user, password);
         try {
             // The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-            // getAll is a set, in no particular order, so put the coordinator first.
             Host host = com.xensource.xenapi.Pool.getAll(conn).iterator().next().getMaster(conn);
-            java.util.List<Host> hosts = new java.util.ArrayList<Host>();
-            hosts.add(host);
-            for (Host h : Host.getAll(conn))
-                if (!h.toWireString().equals(host.toWireString())) hosts.add(h);
             String session = conn.getSessionReference();
             String hostUrl = hostUrl(url, host.getAddress(conn));
             System.out.println("Backing up " + host.getNameLabel(conn));
@@ -71,6 +69,7 @@ public final class BackupHostConfig {
                     return null;
                 });
             }
+            if (file.length() == 0) throw new IllegalStateException(file + " came back empty");
             System.out.printf("  wrote %d bytes to %s%n", file.length(), file.getName());
             // The connection's one keep-alive HTTP connection sat idle for as long as the download
             // took; a network that silently dropped it meanwhile would otherwise leave the next call
@@ -78,24 +77,14 @@ public final class BackupHostConfig {
             // session before making another API call.
             conn = dropIdleConnection(conn, url);
 
-            Map.Entry<String, Connection> restored = restoreHostConfig(conn, url, hostUrl, session, host, file);
-            conn = restored.getValue();
-            System.out.println("  restoring it to " + host.getNameLabel(conn) + ": " + restored.getKey());
-            if (hosts.size() > 1) {
-                Host other = hosts.get(1);
-                String result;
-                try {
-                    String otherUrl = hostUrl(url, other.getAddress(conn));
-                    Map.Entry<String, Connection> r = restoreHostConfig(conn, url, otherUrl, session, other, file);
-                    conn = r.getValue();
-                    result = r.getKey();
-                } catch (Exception e) {
-                    // A real pool's hosts are all reachable from a management client; this only guards an
-                    // environment (a host whose address isn't routable from here, say) where that isn't
-                    // true, so the example still finishes cleanly.
-                    result = "could not connect directly (" + e + ")";
-                }
-                System.out.println("  restoring it to " + other.getNameLabel(conn) + ": " + result);
+            String name = host.getNameLabel(conn);
+            if (restore) {
+                conn = restoreHostConfig(conn, url, hostUrl, session, host, file);
+                System.out.println("  staged it on " + name + "'s backup partition - it takes effect only "
+                        + "after booting that host from the installer and choosing Restore");
+            } else {
+                System.out.println("  not restoring it (pass restore=true to stage it on "
+                        + name + "'s backup partition)");
             }
 
             file.delete();
@@ -123,14 +112,14 @@ public final class BackupHostConfig {
     }
 
     /**
-     * Uploads a backup to a host - over a connection opened to THAT host's own address - and reports what
-     * the task says about it, alongside the (possibly renewed) connection to continue with.
+     * Uploads a backup to a host - over a connection opened to THAT host's own address - and throws if
+     * the task reports it was refused. Returns the (possibly renewed) connection to continue with.
      *
      * <p>An upload answers 200 as soon as it has read the request headers, because the client waits for
      * that before it starts sending the file. The outcome therefore cannot be in the status line: it
      * arrives on a task you create first, name in the URL, and poll once the upload has finished.
      */
-    private static Map.Entry<String, Connection> restoreHostConfig(Connection conn, String apiUrl,
+    private static Connection restoreHostConfig(Connection conn, String apiUrl,
             String hostUrl, String session, Host host, java.io.File file) throws Exception {
         Task task = Task.create(conn, "host_restore", "restoring a configuration backup");
         try {
@@ -148,17 +137,14 @@ public final class BackupHostConfig {
             conn = dropIdleConnection(conn, apiUrl);
 
             while (task.getStatus(conn) == Types.TaskStatusType.PENDING) Thread.sleep(500);
-            String result;
-            if (task.getStatus(conn) == Types.TaskStatusType.SUCCESS) {
-                result = "accepted";
-            } else {
+            if (task.getStatus(conn) != Types.TaskStatusType.SUCCESS) {
                 // error_info is declared as a SET of strings, and the Java binding hands back a real
                 // Set - so there is no "last element" to read the detail from. Print it whole rather
                 // than indexing into something unordered; see the WLB example, where guessing at an
                 // order silently lied.
-                result = "refused " + task.getErrorInfo(conn);
+                throw new IllegalStateException("refused " + task.getErrorInfo(conn));
             }
-            return new java.util.AbstractMap.SimpleEntry<>(result, conn);
+            return conn;
         } finally {
             task.destroy(conn);
         }

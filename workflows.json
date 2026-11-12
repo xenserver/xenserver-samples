@@ -404,7 +404,8 @@
         {
           "id": "backup-host-config",
           "title": "Back up a host's configuration",
-          "description": "Download a host's configuration backup and hand it back as a restore would — and watch another host's backup be refused."
+          "description": "Download a host's configuration backup and check it is not empty; optionally stage it back onto that same host's backup partition, ready for a restore done from the installer.",
+          "caution": "with restore=true, overwrites the host's backup partition with the downloaded configuration"
         },
         {
           "id": "server-status-report",

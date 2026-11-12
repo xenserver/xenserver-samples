@@ -244,7 +244,8 @@ internal static class Program
         },
         ["configure-dynamic-memory"] = (u, n, p, ov) => ConfigureDynamicMemory(u, n, p),
         ["manage-vm-media"] = (u, n, p, ov) => ManageVmMedia(u, n, p),
-        ["backup-host-config"] = (u, n, p, ov) => BackupHostConfig(u, n, p),
+        ["backup-host-config"] = (u, n, p, ov) =>
+            BackupHostConfig(u, n, p, ov.TryGetValue("restore", out var restore) && bool.Parse(restore)),
         ["manage-sr-lifecycle"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["nfs_server"] = "192.0.2.10", ["nfs_path"] = "/export/spare" }, ov);

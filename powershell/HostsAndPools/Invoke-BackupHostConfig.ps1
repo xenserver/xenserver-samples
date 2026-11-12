@@ -3,32 +3,30 @@ function Invoke-BackupHostConfig {
     .SYNOPSIS
         Back up a host's configuration.
     .DESCRIPTION
-        Download a host's configuration backup and hand it back as a restore would — and watch another
-        host's backup be refused.
+        Download a host's configuration backup and verify it downloaded; optionally stage it back onto
+        that same host's backup partition, ready for a restore done from the installer.
     .EXAMPLE
         Invoke-BackupHostConfig -Url https://xenserver -UserName root -Password $password
     #>
     param(
         [Parameter(Mandatory = $true)][string]$Url,
         [Parameter(Mandatory = $true)][string]$UserName,
-        [Parameter(Mandatory = $true)][string]$Password
+        [Parameter(Mandatory = $true)][string]$Password,
+        [bool]$Restore = $false
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
 
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
-    $coordinator = (Get-XenPool).master
-    $hosts = @(Get-XenHost | Sort-Object { $coordinator -ne $_ })
-    $vmHost = $hosts[0]
+    $vmHost = Get-XenHost -Ref (Get-XenPool).master
     $hostUrl = Get-HostUrl -Url $Url -Address $vmHost.address
     Write-Host "Backing up $($vmHost.name_label)"
 
     # Both halves are served only by whichever host physically accepted the HTTP connection - the
     # handler ignores any ref= in the query string entirely, there is no forwarding to another pool
     # member. So backing up/restoring a host means opening the connection to THAT host's own address,
-    # not to the pool's (coordinator) URL - a restore sent to the wrong host's connection silently
-    # restores the WRONG host, not the one named by ref=. ref= is kept in the query string purely for
-    # log-readability (a real host ignores it; it is not what makes this correct). Still pure
-    # PowerShell: Connect-Example has already trusted the server's certificate.
+    # not to the pool's (coordinator) URL. ref= is kept in the query string purely for log-readability
+    # (a real host ignores it). Still pure PowerShell: Connect-Example has already trusted the server's
+    # certificate.
     #
     # -OutFile/-InFile below already stream straight to/from disk rather than buffering the whole file,
     # and there is no idle-connection step to take after the transfer (unlike the Python/Java ports):
@@ -38,23 +36,20 @@ function Invoke-BackupHostConfig {
     $path = Join-Path ([IO.Path]::GetTempPath()) "sdk-example-host-$([guid]::NewGuid().Guid).backup"
     Invoke-WebRequest -UseBasicParsing -OutFile $path -TimeoutSec 10 `
         -Uri "$hostUrl/host_backup?session_id=$($session.opaque_ref)&ref=$($vmHost.opaque_ref)"
-    Write-Host "  wrote $((Get-Item $path).Length) bytes to $(Split-Path $path -Leaf)"
+    $size = (Get-Item $path).Length
+    if ($size -eq 0) { throw "$path came back empty" }
+    Write-Host "  wrote $size bytes to $(Split-Path $path -Leaf)"
 
-    Write-Host ("  restoring it to {0}: {1}" -f $vmHost.name_label,
-        (Restore-ExampleHostConfig -Session $session -HostUrl $hostUrl -VMHost $vmHost -Path $path))
-    if ($hosts.Count -gt 1) {
-        # A real pool's hosts are all reachable from a management client; guard against a topology
-        # where a second host's address isn't actually routable from the caller, and turn that into an
-        # informative message instead of a crash.
-        $other = $hosts[1]
-        $otherUrl = Get-HostUrl -Url $Url -Address $other.address
-        try {
-            $result = Restore-ExampleHostConfig -Session $session -HostUrl $otherUrl -VMHost $other -Path $path
-        }
-        catch {
-            $result = "could not connect to $otherUrl directly ($($_.Exception.Message))"
-        }
-        Write-Host ("  restoring it to {0}: {1}" -f $other.name_label, $result)
+    if ($Restore) {
+        # host-restore does not restore the host there and then: it only writes the archive over that
+        # host's currently inactive backup partition, ready for the next boot. It takes effect only once
+        # that host is booted from the installer and Restore is chosen there.
+        Restore-ExampleHostConfig -Session $session -HostUrl $hostUrl -VMHost $vmHost -Path $path
+        Write-Host ("  staged it on $($vmHost.name_label)'s backup partition - it takes effect only after " +
+            "booting that host from the installer and choosing Restore")
+    }
+    else {
+        Write-Host "  not restoring it (pass -Restore `$true to stage it on $($vmHost.name_label)'s backup partition)"
     }
 
     Remove-Item $path
@@ -77,8 +72,8 @@ function Get-HostUrl {
 function Restore-ExampleHostConfig {
     <#
     .SYNOPSIS
-        Uploads a backup to a host - over a connection opened to THAT host's own address - and reports what
-        the task says about it.
+        Uploads a backup to a host - over a connection opened to THAT host's own address - and raises if
+        the task reports it was refused.
     .DESCRIPTION
         An upload answers 200 as soon as it has read the request headers, because the client waits for that
         before it starts sending the file. The outcome therefore cannot be in the status line: it arrives on
@@ -95,8 +90,9 @@ function Restore-ExampleHostConfig {
 
         while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
         $finished = Get-XenTask -Ref $task
-        if ($finished.status -eq 'success') { return 'accepted' }
-        return "refused ($($finished.error_info[-1]))"
+        if ($finished.status -ne 'success') {
+            throw "refused ($($finished.error_info[-1]))"
+        }
     }
     finally {
         Remove-XenTask -Ref $task

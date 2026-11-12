@@ -189,7 +189,7 @@ public final class Workflows {
         d.put("manage-vtpm", mapOf());
         d.put("configure-dynamic-memory", mapOf());
         d.put("manage-vm-media", mapOf());
-        d.put("backup-host-config", mapOf());
+        d.put("backup-host-config", mapOf("restore", "false"));
         d.put("manage-sr-lifecycle", mapOf("nfs_server", "192.0.2.10", "nfs_path", "/export/spare"));
         d.put("reconnect-sr-storage", mapOf("nfs_server", "192.0.2.10", "nfs_path", "/export/spare"));
         d.put("export-import-vdi", mapOf("sr_name", "Shared NFS"));
@@ -350,7 +350,8 @@ public final class Workflows {
             case "export-import-vm": ExportImportVm.run(url, user, password, p.get("vm_name")); break;
             case "configure-dynamic-memory": ConfigureDynamicMemory.run(url, user, password); break;
             case "manage-vm-media": ManageVmMedia.run(url, user, password); break;
-            case "backup-host-config": BackupHostConfig.run(url, user, password); break;
+            case "backup-host-config":
+                BackupHostConfig.run(url, user, password, Boolean.parseBoolean(p.get("restore"))); break;
             case "reconnect-sr-storage":
                 ReconnectSrStorage.run(url, user, password, p.get("nfs_server"), p.get("nfs_path"),
                         p.get("new_nfs_server")); break;
