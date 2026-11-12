@@ -296,8 +296,8 @@ internal static class Program
         ["reclaim-space"] = (u, n, p, ov) => ReclaimSpace(u, n, p),
         ["vm-ip-address"] = (u, n, p, ov) =>
         {
-            var d = Merge(new() { ["timeout"] = "60", ["interval"] = "2" }, ov);
-            VmIpAddress(u, n, p, int.Parse(d["timeout"]), int.Parse(d["interval"]));
+            var d = Merge(new() { ["vm_name"] = "web-01", ["timeout"] = "60", ["interval"] = "2" }, ov);
+            VmIpAddress(u, n, p, d["vm_name"], int.Parse(d["timeout"]), int.Parse(d["interval"]));
         },
         ["manage-ad-users"] = (u, n, p, ov) =>
         {

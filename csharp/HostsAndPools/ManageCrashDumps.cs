@@ -22,7 +22,7 @@ internal static partial class Workflows
             .FirstOrDefault(h => Host.get_crashdumps(session, h).Count > 0);
         if (host == null)
         {
-            Console.WriteLine("No crash dumps in this pool — nothing to clear.");
+            Console.WriteLine("No crash dumps in this pool - nothing to clear.");
             Console.WriteLine("OK: manage-crash-dumps");
             session.logout();
             return;

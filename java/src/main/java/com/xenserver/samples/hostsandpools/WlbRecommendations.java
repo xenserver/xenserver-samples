@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static com.xenserver.samples.PoolConnection.connect;
 
@@ -71,10 +72,11 @@ public final class WlbRecommendations {
                 // a copy of the set returns whichever element happens to land there -- in testing, index
                 // 1 was the reason and index 4 the "wlb" tag. So print the whole recommendation and let
                 // a human read it; a program that needs the fields must use an ordered binding or the
-                // raw JSON.
+                // raw JSON. Sorted alphabetically here, since a HashSet's own iteration order can change
+                // from one run to the next even for the same recommendation.
                 for (Map.Entry<VM, Set<String>> rec : Pool.retrieveWlbRecommendations(conn).entrySet()) {
                     System.out.println("  move " + rec.getKey().getNameLabel(conn)
-                            + ": " + String.join(" ", rec.getValue()));
+                            + ": " + String.join(" ", new TreeSet<>(rec.getValue())));
                 }
 
                 // Same caveat for a VM's own recommendations, which are keyed by host and rate each as a
@@ -98,7 +100,7 @@ public final class WlbRecommendations {
                 }
                 for (Map.Entry<Host, Set<String>> rec : vmRecs.entrySet()) {
                     System.out.println("  " + rec.getKey().getNameLabel(conn)
-                            + ": " + String.join(" ", rec.getValue()));
+                            + ": " + String.join(" ", new TreeSet<>(rec.getValue())));
                 }
 
                 // The appliance's own settings are read and written as one flat map of strings. Send a

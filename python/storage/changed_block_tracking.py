@@ -38,12 +38,18 @@ def changed_block_tracking(url, username, password):
     vdi_from, vdi_to = first_disk(x, first), first_disk(x, second)
 
     # One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup
-    # reads only those blocks, over NBD.
+    # reads only those blocks, over NBD. Nothing writes to this disk between the two snapshots
+    # taken here, so expect zero changed blocks - that's CBT correctly reporting no work to do,
+    # not a failure. In real use it's the guest's own writes between snapshots that show up here.
     bitmap = base64.b64decode(x.VDI.list_changed_blocks(vdi_from, vdi_to))
     changed = sum(bin(byte).count("1") for byte in bitmap)
-    print("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)"
-          % (changed, len(bitmap) * 8, changed * 64 / 1024.0,
-             int(x.VDI.get_virtual_size(vdi_to)) / (1024.0 ** 2)))
+    if changed:
+        print("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)"
+              % (changed, len(bitmap) * 8, changed * 64 / 1024.0,
+                 int(x.VDI.get_virtual_size(vdi_to)) / (1024.0 ** 2)))
+    else:
+        print("  0 blocks of %d changed: nothing was written to the disk between the snapshots"
+              % (len(bitmap) * 8))
 
     # Release the older snapshot's blocks but keep its change metadata, so the next incremental can
     # still diff against it. data_destroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the

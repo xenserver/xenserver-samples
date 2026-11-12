@@ -30,17 +30,17 @@ function Invoke-ManageSecurebootCertificates {
     Write-Host "Pool Secure Boot readiness: $(Get-XenPoolProperty -Ref $pool -XenProperty GuestSecurebootReadiness)"
     Write-Host "  pool holds certificates:  $([bool]$pool.uefi_certificates)"
 
-    # A guest whose certificates have gone stale. Its state is what a client gates the flag/unflag actions
-    # on, so it is the field to watch.
+    # A guest whose certificates have gone stale. secureboot_certificates_state is set on every VM
+    # regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of "disabled"
+    # or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it for a refresh
+    # would prove nothing.
     $vm = Get-XenVM | Where-Object {
         -not $_.is_a_template -and -not $_.is_control_domain -and -not $_.is_a_snapshot -and
-        $_.secureboot_certificates_state -eq 'update_available'
+        $_.secureboot_certificates_state -eq 'update_available' -and
+        (Get-XenVMProperty -Ref $_ -XenProperty SecurebootReadiness) -notin @('disabled', 'not_supported')
     } | Select-Object -First 1
     if (-not $vm) {
-        # This state only occurs on a VM whose UEFI certificates are out of date, not on a normally
-        # provisioned pool. Report cleanly instead of letting a bare "no such element" lookup error
-        # propagate.
-        Write-Host "No guest needs a Secure Boot certificate refresh right now."
+        Write-Host "No Secure Boot guest needs a certificate refresh right now."
         Write-Host "OK: manage-secureboot-certificates"
         $session | Disconnect-XenServer
         return

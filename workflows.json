@@ -132,7 +132,7 @@
         {
           "id": "vm-ip-address",
           "title": "Get a VM's IP address",
-          "description": "Read a running VM's IP address from its guest metrics, as reported by the in-guest agent."
+          "description": "Read a VM's IP address (name it with vm_name) from its guest metrics, as reported by the in-guest agent, waiting a while for the agent to report one."
         },
         {
           "id": "list-templates",

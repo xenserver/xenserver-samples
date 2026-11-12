@@ -45,7 +45,9 @@ func changedBlockTracking(url, user, password string) {
 	vdiFrom, vdiTo := firstDisk(session, first), firstDisk(session, second)
 
 	// One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
-	// only those blocks, over NBD.
+	// only those blocks, over NBD. Nothing writes to this disk between the two snapshots taken here,
+	// so expect zero changed blocks - that's CBT correctly reporting no work to do, not a failure. In
+	// real use it's the guest's own writes between snapshots that show up here.
 	encoded, err := xenapi.VDI.ListChangedBlocks(session, vdiFrom, vdiTo)
 	check(err)
 	bitmap, err := base64.StdEncoding.DecodeString(encoded)
@@ -54,10 +56,15 @@ func changedBlockTracking(url, user, password string) {
 	for _, b := range bitmap {
 		changed += bits.OnesCount8(b)
 	}
-	size, err := xenapi.VDI.GetVirtualSize(session, vdiTo)
-	check(err)
-	fmt.Printf("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)\n",
-		changed, len(bitmap)*8, float64(changed)*64/1024, float64(size)/(1024*1024))
+	if changed > 0 {
+		size, err := xenapi.VDI.GetVirtualSize(session, vdiTo)
+		check(err)
+		fmt.Printf("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)\n",
+			changed, len(bitmap)*8, float64(changed)*64/1024, float64(size)/(1024*1024))
+	} else {
+		fmt.Printf("  0 blocks of %d changed: nothing was written to the disk between the snapshots\n",
+			len(bitmap)*8)
+	}
 
 	// Release the older snapshot's blocks but keep its change metadata, so the next incremental can
 	// still diff against it. DataDestroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the

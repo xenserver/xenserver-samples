@@ -19,7 +19,11 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
         var pool = Pool.get_all_records(session).Values.First();
-        Console.WriteLine($"Connected to pool: {pool.name_label}");
+        // A pool often has no name of its own; show its coordinator's name instead.
+        var poolName = string.IsNullOrEmpty(pool.name_label)
+            ? Host.get_name_label(session, pool.master)
+            : pool.name_label;
+        Console.WriteLine($"Connected to pool: {poolName}");
 
         var hosts = Host.get_all_records(session);
         Console.WriteLine($"Hosts ({hosts.Count}):");

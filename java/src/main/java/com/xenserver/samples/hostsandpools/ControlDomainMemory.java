@@ -47,6 +47,8 @@ public final class ControlDomainMemory {
                 record.memoryDynamicMin, record.memoryDynamicMax);
 
             dom0.setMemory(conn, original);   // leave the pool as we found it
+            long restored = dom0.getMemoryDynamicMin(conn);
+            System.out.printf("  restored to %.1f GiB%n", restored / (double) (1024L * 1024 * 1024));
             System.out.println("OK: control-domain-memory");
         } finally {
             Session.logout(conn);

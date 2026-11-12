@@ -35,17 +35,20 @@ public final class CreateVmWithVgpu {
     public static void run(String url, String user, String password,
             String templateName, String newVmName) throws Exception {
         Connection conn = connect(url, user, password);
-        // Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type.
+        // Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type. Picked by
+        // the type's model name, not simply the first one iteration happens to return -
+        // supportedVGPUTypes is a set server-side, so its order isn't something to rely on.
         GPUGroup group = null;
         VGPUType vgpuType = null;
-        outer:
+        String bestModel = null;
         for (Map.Entry<GPUGroup, GPUGroup.Record> e : GPUGroup.getAllRecords(conn).entrySet()) {
             if (e.getValue().PGPUs.isEmpty()) continue;
             for (VGPUType t : e.getValue().supportedVGPUTypes) {
-                if (!"passthrough".equals(t.getModelName(conn))) {
+                String modelName = t.getModelName(conn);
+                if (!"passthrough".equals(modelName) && (vgpuType == null || modelName.compareTo(bestModel) < 0)) {
                     group = e.getKey();
                     vgpuType = t;
-                    break outer;
+                    bestModel = modelName;
                 }
             }
         }

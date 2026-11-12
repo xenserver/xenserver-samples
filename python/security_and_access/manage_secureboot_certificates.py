@@ -38,13 +38,16 @@ def manage_secureboot_certificates(url, username, password):
     print("Pool Secure Boot readiness: %s" % x.pool.get_guest_secureboot_readiness(pool))
     print("  pool holds certificates:  %s" % bool(x.pool.get_uefi_certificates(pool)))
 
-    # A guest whose certificates have gone stale. Its state is what a client gates the
-    # flag/unflag actions on, so it is the field to watch.
+    # A guest whose certificates have gone stale. secureboot_certificates_state is set on every VM
+    # regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of
+    # "disabled" or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it
+    # for a refresh would prove nothing.
     vm = next((ref for ref, r in x.VM.get_all_records().items()
                if not r["is_a_template"] and not r["is_control_domain"] and not r["is_a_snapshot"]
-               and r["secureboot_certificates_state"] == "update_available"), None)
+               and r["secureboot_certificates_state"] == "update_available"
+               and x.VM.get_secureboot_readiness(ref) not in ("disabled", "not_supported")), None)
     if vm is None:
-        print("No guest needs a Secure Boot certificate refresh right now.")
+        print("No Secure Boot guest needs a certificate refresh right now.")
         print("OK: manage-secureboot-certificates")
         session.logout()
         return

@@ -152,7 +152,7 @@ $WORKFLOWS = @{
     "control-domain-memory"          = @{ Function = "Invoke-ControlDomainMemory";          Defaults = @{} }
     "rrd-metrics"                    = @{ Function = "Invoke-RrdMetrics";                   Defaults = @{} }
     "reclaim-space"                  = @{ Function = "Invoke-ReclaimSpace";                 Defaults = @{} }
-    "vm-ip-address"                  = @{ Function = "Invoke-VmIpAddress";                  Defaults = @{} }
+    "vm-ip-address"                  = @{ Function = "Invoke-VmIpAddress";                  Defaults = @{ VmName = "web-01" } }
     "manage-ad-users"                = @{ Function = "Invoke-ManageAdUsers";                Defaults = @{ Domain = ""; AdminUser = "alice"; AdminPassword = "Password1"; NewUser = "alice"; Ldaps = "false" } }
     "create-iscsi-sr"                = @{ Function = "Invoke-CreateIscsiSr";                Defaults = @{ Target = "192.0.2.30"; ScsiId = "360a980004265656d5f4a2d63764e5734" } }
     "create-smb-sr"                  = @{ Function = "Invoke-CreateSmbSr";                  Defaults = @{ Server = "192.0.2.40"; Share = "/vmstore"; SmbUsername = "Administrator"; SmbPassword = "Password1" } }

@@ -36,7 +36,9 @@ function Invoke-ChangedBlockTracking {
     $vdiTo = Get-FirstDisk -Snapshot (Get-XenVM -Ref $second)
 
     # One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
-    # only those blocks, over NBD.
+    # only those blocks, over NBD. Nothing writes to this disk between the two snapshots taken here, so
+    # expect zero changed blocks - that's CBT correctly reporting no work to do, not a failure. In real
+    # use it's the guest's own writes between snapshots that show up here.
     # BOTH disks go in the dynamic parameters. -Ref only names the object the confirmation prompt talks
     # about; the call itself is made from -VdiFrom and -VdiTo, so passing only one sends a null for the
     # other and the server answers HANDLE_INVALID with an empty reference. (Dynamic parameters are keyed
@@ -50,9 +52,13 @@ function Invoke-ChangedBlockTracking {
         $b = $byte
         while ($b) { $changed += $b -band 1; $b = $b -shr 1 }
     }
-    $size = (Get-XenVDI -Ref $vdiTo).virtual_size
-    Write-Host ("  {0} blocks of {1} changed ({2:N1} MiB to copy, not {3:N1} MiB)" -f
-        $changed, ($bitmap.Length * 8), ($changed * 64 / 1024), ($size / 1MB))
+    if ($changed -gt 0) {
+        $size = (Get-XenVDI -Ref $vdiTo).virtual_size
+        Write-Host ("  {0} blocks of {1} changed ({2:N1} MiB to copy, not {3:N1} MiB)" -f
+            $changed, ($bitmap.Length * 8), ($changed * 64 / 1024), ($size / 1MB))
+    } else {
+        Write-Host "  0 blocks of $($bitmap.Length * 8) changed: nothing was written to the disk between the snapshots"
+    }
 
     # Release the older snapshot's blocks but keep its change metadata, so the next incremental can
     # still diff against it. DataDestroy refuses a disk that a VM still uses (VDI_IN_USE), so remove the

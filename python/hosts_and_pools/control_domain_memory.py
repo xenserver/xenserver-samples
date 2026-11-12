@@ -34,5 +34,7 @@ def control_domain_memory(url, username, password):
              record["memory_dynamic_min"], record["memory_dynamic_max"]))
 
     x.VM.set_memory(dom0, str(original))     # leave the pool as we found it
+    restored = int(x.VM.get_memory_dynamic_min(dom0))
+    print("  restored to %.1f GiB" % (restored / float(1024 ** 3)))
     print("OK: control-domain-memory")
     session.logout()

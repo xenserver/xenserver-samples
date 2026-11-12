@@ -38,6 +38,9 @@ func controlDomainMemory(url, user, password string) {
 		record.MemoryDynamicMin, record.MemoryDynamicMax)
 
 	check(xenapi.VM.SetMemory(session, dom0, original)) // leave the pool as we found it
+	restored, err := xenapi.VM.GetMemoryDynamicMin(session, dom0)
+	check(err)
+	fmt.Printf("  restored to %.1f GiB\n", float64(restored)/(1024*1024*1024))
 	fmt.Println("OK: control-domain-memory")
 }
 

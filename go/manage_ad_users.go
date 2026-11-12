@@ -70,12 +70,24 @@ func manageAdUsers(url, user, password, domain, adminUser, adminPassword, newUse
 		info["subject-displayname"], info["subject-name"], strings.TrimSpace(names))
 
 	// Revoking access does not end sessions the user already has: logging the subject out is a separate
-	// act, and the one that actually gets them off the pool now rather than at next login.
+	// act, and the one that actually gets them off the pool now rather than at next login. This subject
+	// has not logged in during this example, so there is normally nothing to log out.
 	loggedIn, err := session.GetAllSubjectIdentifiers()
 	check(err)
 	fmt.Printf("Logged-in subjects: %d\n", len(loggedIn))
-	check(session.LogoutSubjectIdentifier(sid))
-	fmt.Printf("  logged out %s\n", info["subject-name"])
+	hasSession := false
+	for _, s := range loggedIn {
+		if s == sid {
+			hasSession = true
+			break
+		}
+	}
+	if hasSession {
+		check(session.LogoutSubjectIdentifier(sid))
+		fmt.Printf("  logged out %s\n", info["subject-name"])
+	} else {
+		fmt.Printf("  %s has no active session to log out\n", info["subject-name"])
+	}
 
 	check(xenapi.Subject.RemoveFromRoles(session, subject, admin))
 	check(xenapi.Subject.Destroy(session, subject))

@@ -186,8 +186,10 @@ var workflows = map[string]workflow{
 	"control-domain-memory":  wf(nil, func(u, n, p string, m map[string]string) { controlDomainMemory(u, n, p) }),
 	"rrd-metrics":            wf(nil, func(u, n, p string, m map[string]string) { rrdMetrics(u, n, p) }),
 	"reclaim-space":          wf(nil, func(u, n, p string, m map[string]string) { reclaimSpace(u, n, p) }),
-	"vm-ip-address": wf(map[string]string{"timeout": "60", "interval": "2"},
-		func(u, n, p string, m map[string]string) { vmIpAddress(u, n, p, m["timeout"], m["interval"]) }),
+	"vm-ip-address": wf(map[string]string{"vm_name": "web-01", "timeout": "60", "interval": "2"},
+		func(u, n, p string, m map[string]string) {
+			vmIpAddress(u, n, p, m["vm_name"], m["timeout"], m["interval"])
+		}),
 	"manage-ad-users": wf(map[string]string{
 		"domain": "", "admin_user": "alice", "admin_password": "Password1", "new_user": "alice",
 		"ldaps": "false",

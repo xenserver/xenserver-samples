@@ -47,23 +47,25 @@ public final class ManageSecurebootCertificates {
             System.out.println("  pool holds certificates:  "
                 + !pool.getUefiCertificates(conn).isEmpty());
 
-            // A guest whose certificates have gone stale. Its state is what a client gates the
-            // flag/unflag actions on, so it is the field to watch.
+            // A guest whose certificates have gone stale. securebootCertificatesState is set on every VM
+            // regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of
+            // "disabled" or "not_supported" means this guest doesn't use Secure Boot at all, and flagging
+            // it for a refresh would prove nothing.
             VM vm = null;
             String name = null;
             for (Map.Entry<VM, VM.Record> e : VM.getAllRecords(conn).entrySet()) {
                 VM.Record r = e.getValue();
                 if (!r.isATemplate && !r.isControlDomain && !r.isASnapshot
                         && r.securebootCertificatesState == Types.VmSecurebootCertificatesState.UPDATE_AVAILABLE) {
-                    vm = e.getKey(); name = r.nameLabel; break;
+                    Types.VmSecurebootReadiness ready = e.getKey().getSecurebootReadiness(conn);
+                    if (ready != Types.VmSecurebootReadiness.DISABLED
+                            && ready != Types.VmSecurebootReadiness.NOT_SUPPORTED) {
+                        vm = e.getKey(); name = r.nameLabel; break;
+                    }
                 }
             }
             if (vm == null) {
-                // The precondition is the part worth being honest about: this needs a VM whose Secure
-                // Boot certificates are already due to refresh. That's a deliberately-provisioned state,
-                // not one a normally-provisioned Secure Boot guest is ever in - so report and stop cleanly
-                // rather than failing with a bare lookup error.
-                System.out.println("No guest needs a Secure Boot certificate refresh right now.");
+                System.out.println("No Secure Boot guest needs a certificate refresh right now.");
                 System.out.println("OK: manage-secureboot-certificates");
                 return;
             }

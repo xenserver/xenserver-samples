@@ -36,16 +36,18 @@ internal static partial class Workflows
         Console.WriteLine("  pool holds certificates:  "
                           + !string.IsNullOrEmpty(Pool.get_uefi_certificates(session, pool)));
 
-        // A guest whose certificates have gone stale. Its state is what a client gates the flag/unflag
-        // actions on, so it is the field to watch. This is a deliberately-provisioned state, not one a
-        // normally-provisioned Secure Boot guest is ever in - so report and stop cleanly rather than
-        // letting a bare "no such element" lookup error propagate when nothing needs it right now.
+        // A guest whose certificates have gone stale. secureboot_certificates_state is set on every VM
+        // regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of
+        // "disabled" or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it
+        // for a refresh would prove nothing.
         var candidate = VM.get_all_records(session).FirstOrDefault(kv =>
             !kv.Value.is_a_template && !kv.Value.is_control_domain && !kv.Value.is_a_snapshot
-            && kv.Value.secureboot_certificates_state == vm_secureboot_certificates_state.update_available);
+            && kv.Value.secureboot_certificates_state == vm_secureboot_certificates_state.update_available
+            && VM.get_secureboot_readiness(session, kv.Key) != vm_secureboot_readiness.disabled
+            && VM.get_secureboot_readiness(session, kv.Key) != vm_secureboot_readiness.not_supported);
         if (candidate.Key == null)
         {
-            Console.WriteLine("No guest needs a Secure Boot certificate refresh right now.");
+            Console.WriteLine("No Secure Boot guest needs a certificate refresh right now.");
             Console.WriteLine("OK: manage-secureboot-certificates");
             session.logout();
             return;

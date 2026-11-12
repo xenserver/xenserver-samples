@@ -9,6 +9,7 @@ import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
+import static com.xenserver.samples.Helpers.lowestVBDDevice;
 import static com.xenserver.samples.Helpers.provision;
 import static com.xenserver.samples.Helpers.srByName;
 import static com.xenserver.samples.Helpers.templateByName;
@@ -48,7 +49,7 @@ public final class AttachDisk {
         vdiRec.otherConfig = new java.util.HashMap<>();
         VDI vdi = VDI.create(conn, vdiRec);
 
-        String device = vm.getAllowedVBDDevices(conn).iterator().next();
+        String device = lowestVBDDevice(conn, vm);
         VBD.Record vbdRec = new VBD.Record();
         vbdRec.VM = vm;
         vbdRec.VDI = vdi;

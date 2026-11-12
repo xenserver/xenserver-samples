@@ -55,13 +55,20 @@ public final class ChangedBlockTracking {
             VDI vdiTo = firstDisk(conn, second);
 
             // One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup
-            // reads only those blocks, over NBD.
+            // reads only those blocks, over NBD. Nothing writes to this disk between the two snapshots
+            // taken here, so expect zero changed blocks - that's CBT correctly reporting no work to do,
+            // not a failure. In real use it's the guest's own writes between snapshots that show up here.
             byte[] bitmap = java.util.Base64.getDecoder().decode(vdiFrom.listChangedBlocks(conn, vdiTo));
             int changed = 0;
             for (byte b : bitmap) changed += Integer.bitCount(b & 0xFF);
-            System.out.printf("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)%n",
-                changed, bitmap.length * 8, changed * 64 / 1024.0,
-                vdiTo.getVirtualSize(conn) / (1024.0 * 1024));
+            if (changed > 0) {
+                System.out.printf("  %d blocks of %d changed (%.1f MiB to copy, not %.1f MiB)%n",
+                    changed, bitmap.length * 8, changed * 64 / 1024.0,
+                    vdiTo.getVirtualSize(conn) / (1024.0 * 1024));
+            } else {
+                System.out.printf("  0 blocks of %d changed: nothing was written to the disk "
+                    + "between the snapshots%n", bitmap.length * 8);
+            }
 
             // Release the older snapshot's blocks but keep its change metadata, so the next incremental
             // can still diff against it. data_destroy refuses a disk that a VM still uses (VDI_IN_USE), so

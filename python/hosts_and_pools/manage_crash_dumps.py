@@ -19,7 +19,7 @@ def manage_crash_dumps(url, username, password):
     # Crash dumps belong to the host that wrote them, so clear them a host at a time.
     host = next((h for h in x.host.get_all() if x.host.get_crashdumps(h)), None)
     if host is None:
-        print("No crash dumps in this pool -- nothing to clear.")
+        print("No crash dumps in this pool - nothing to clear.")
         print("OK: manage-crash-dumps")
         session.logout()
         return

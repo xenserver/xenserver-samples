@@ -6,6 +6,8 @@ import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.VM;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.xenserver.samples.PoolConnection.connect;
@@ -29,22 +31,22 @@ public final class ConnectInventory {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         Pool.Record pool = Pool.getAllRecords(conn).values().iterator().next();
-        System.out.println("Connected to pool: " + pool.nameLabel);
+        // A pool often has no name of its own; show its coordinator's name instead.
+        String poolName = pool.nameLabel.isEmpty() ? pool.master.getNameLabel(conn) : pool.nameLabel;
+        System.out.println("Connected to pool: " + poolName);
 
         Map<Host, Host.Record> hosts = Host.getAllRecords(conn);
         System.out.println("Hosts (" + hosts.size() + "):");
         for (Host.Record h : hosts.values())
             System.out.println("  - " + h.nameLabel + " (" + h.address + ")");
 
-        int count = 0;
-        System.out.println("VMs:");
+        List<VM.Record> vms = new ArrayList<>();
         for (VM.Record v : VM.getAllRecords(conn).values()) {
-            if (!v.isATemplate && !v.isControlDomain) {
-                count++;
-                System.out.println("  - " + v.nameLabel + " [" + v.powerState + "]");
-            }
+            if (!v.isATemplate && !v.isControlDomain) vms.add(v);
         }
-        System.out.println("VMs (" + count + ")");
+        System.out.println("VMs (" + vms.size() + "):");
+        for (VM.Record v : vms)
+            System.out.println("  - " + v.nameLabel + " [" + v.powerState + "]");
 
         System.out.println("OK: connect-inventory");
         Session.logout(conn);

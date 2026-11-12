@@ -10,6 +10,7 @@ import com.xensource.xenapi.VM;
 
 import java.util.Map;
 
+import static com.xenserver.samples.Helpers.lowestVBDDevice;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class AttachExistingDisk {
@@ -82,7 +83,7 @@ public final class AttachExistingDisk {
         VBD.Record record = new VBD.Record();
         record.VM = vm;
         record.VDI = vdi;
-        record.userdevice = vm.getAllowedVBDDevices(conn).iterator().next();
+        record.userdevice = lowestVBDDevice(conn, vm);
         record.bootable = false;
         record.mode = Types.VbdMode.RW;
         record.type = Types.VbdType.DISK;

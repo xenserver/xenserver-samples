@@ -48,20 +48,30 @@ func createVMWithVgpu(url, user, password, templateName, newVMName string) {
 	session.Logout()
 }
 
-// gpuGroupWithVgpuType finds a (GPU_group, VGPU_type) pair where the group offers a non-passthrough type.
+// gpuGroupWithVgpuType finds a (GPU_group, VGPU_type) pair where the group offers a non-passthrough
+// type. Picked by the type's model name, not simply the first one iteration happens to return -
+// SupportedVGPUTypes is a set server-side, so its order isn't something to rely on.
 func gpuGroupWithVgpuType(session *xenapi.Session) (xenapi.GPUGroupRef, xenapi.VGPUTypeRef) {
 	groups, err := xenapi.GPUGroup.GetAllRecords(session)
 	check(err)
+	var bestModel string
+	var bestGroup xenapi.GPUGroupRef
+	var bestType xenapi.VGPUTypeRef
+	found := false
 	for ref, r := range groups {
 		if len(r.PGPUs) == 0 {
 			continue
 		}
 		for _, typeRef := range r.SupportedVGPUTypes {
-			model, _ := xenapi.VGPUType.GetModelName(session, typeRef)
-			if model != "passthrough" {
-				return ref, typeRef
+			model, err := xenapi.VGPUType.GetModelName(session, typeRef)
+			check(err)
+			if model != "passthrough" && (!found || model < bestModel) {
+				bestModel, bestGroup, bestType, found = model, ref, typeRef, true
 			}
 		}
 	}
-	panic("no GPU group offers a vGPU type")
+	if !found {
+		panic("no GPU group offers a vGPU type")
+	}
+	return bestGroup, bestType
 }

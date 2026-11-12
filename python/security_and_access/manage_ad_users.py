@@ -48,9 +48,14 @@ def manage_ad_users(url, username, password, domain="", admin_user="alice",
 
     # Revoking access does not end sessions the user already has: logging the subject out is a
     # separate act, and the one that actually gets them off the pool now rather than at next login.
-    print("Logged-in subjects: %d" % len(session.xenapi.session.get_all_subject_identifiers()))
-    session.xenapi.session.logout_subject_identifier(sid)
-    print("  logged out %s" % info["subject-name"])
+    # This subject has not logged in during this example, so there is normally nothing to log out.
+    logged_in = session.xenapi.session.get_all_subject_identifiers()
+    print("Logged-in subjects: %d" % len(logged_in))
+    if sid in logged_in:
+        session.xenapi.session.logout_subject_identifier(sid)
+        print("  logged out %s" % info["subject-name"])
+    else:
+        print("  %s has no active session to log out" % info["subject-name"])
 
     session.xenapi.subject.remove_from_roles(subject, admin_role)
     session.xenapi.subject.destroy(subject)

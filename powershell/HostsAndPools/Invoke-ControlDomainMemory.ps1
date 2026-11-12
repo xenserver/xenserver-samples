@@ -32,6 +32,8 @@ function Invoke-ControlDomainMemory {
         $updated.memory_dynamic_min, $updated.memory_dynamic_max)
 
     Set-XenVM -VM $dom0 -Memory $original   # leave the pool as we found it
+    $restored = (Get-XenVM -Ref $dom0).memory_dynamic_min
+    Write-Host ("  restored to {0:N1} GiB" -f ($restored / 1GB))
     Write-Host "OK: control-domain-memory"
     $session | Disconnect-XenServer
 }

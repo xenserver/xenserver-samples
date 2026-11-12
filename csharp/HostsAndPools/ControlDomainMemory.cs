@@ -36,6 +36,8 @@ internal static partial class Workflows
                           + $"dynamic {record.memory_dynamic_min}-{record.memory_dynamic_max})");
 
         VM.set_memory(session, dom0, original);   // leave the pool as we found it
+        var restored = VM.get_memory_dynamic_min(session, dom0);
+        Console.WriteLine($"  restored to {restored / (double)(1024 * 1024 * 1024):F1} GiB");
         Console.WriteLine("OK: control-domain-memory");
         session.logout();
     }

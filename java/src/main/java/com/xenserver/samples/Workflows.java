@@ -215,7 +215,7 @@ public final class Workflows {
         d.put("control-domain-memory", mapOf());
         d.put("rrd-metrics", mapOf());
         d.put("reclaim-space", mapOf());
-        d.put("vm-ip-address", mapOf("timeout", "60", "interval", "2"));
+        d.put("vm-ip-address", mapOf("vm_name", "web-01", "timeout", "60", "interval", "2"));
         d.put("manage-ad-users", mapOf("domain", "", "admin_user", "alice",
                 "admin_password", "Password1", "new_user", "alice", "ldaps", "false"));
         d.put("create-iscsi-sr", mapOf("target", "192.0.2.30", "scsi_id", "360a980004265656d5f4a2d63764e5734",
@@ -376,7 +376,7 @@ public final class Workflows {
             case "rrd-metrics": RrdMetrics.run(url, user, password); break;
             case "reclaim-space": ReclaimSpace.run(url, user, password); break;
             case "vm-ip-address":
-                VmIpAddress.run(url, user, password, Long.parseLong(p.get("timeout")) * 1000,
+                VmIpAddress.run(url, user, password, p.get("vm_name"), Long.parseLong(p.get("timeout")) * 1000,
                         Long.parseLong(p.get("interval")) * 1000); break;
             case "manage-ad-users":
                 ManageAdUsers.run(url, user, password, p.get("domain"), p.get("admin_user"),

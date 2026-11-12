@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using XenAPI;
 using Console = System.Console; // XenAPI also defines a Console class
 
@@ -8,48 +7,40 @@ namespace XenServerWorkflows;
 internal static partial class Workflows
 {
     /// <summary>
-    /// Read a running VM's IP address from its guest metrics, as reported by the in-guest agent.
+    /// Read a named VM's IP address from its guest metrics, as reported by the in-guest agent.
     /// </summary>
     /// <example>
     /// <code>
-    /// Workflows.VmIpAddress("https://xenserver", "root", password);
+    /// Workflows.VmIpAddress("https://xenserver", "root", password, "web-01");
     /// </code>
     /// </example>
     /// <remarks>
     /// A VM that has only just started may not have reported in yet (no guest_metrics at all, or an empty
-    /// networks map) - retry for a while rather than giving up on the first look.
+    /// networks map) - retry for a while before concluding it has no guest agent reporting.
     /// </remarks>
-    public static void VmIpAddress(string url, string user, string password,
+    public static void VmIpAddress(string url, string user, string password, string vmName = "web-01",
         int timeoutSeconds = 60, int intervalSeconds = 2)
     {
         var session = Connect(url, user, password);
+        var vm = VmByName(session, vmName);
         var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+        string ip = null;
         while (true)
         {
-            // A running guest reports its IP in networks, keyed "<vif device>/ip" (e.g. "0/ip"). Not every
-            // running VM has one (no guest tools, no NIC, still booting), so look at each until one does.
-            VM vm = null;
-            string ip = null;
-            foreach (var v in VM.get_all_records(session).Values.Where(v =>
-                         v.power_state == vm_power_state.Running && !v.is_a_template && !v.is_control_domain
-                         && !Helper.IsNullOrEmptyOpaqueRef(v.guest_metrics)))
-            {
-                if (VM_guest_metrics.get_record(session, v.guest_metrics).networks.TryGetValue("0/ip", out ip)
-                    && !string.IsNullOrEmpty(ip))
-                {
-                    vm = v;
-                    break;
-                }
-            }
-            if (vm != null)
-            {
-                Console.WriteLine($"  {vm.name_label}: {ip}");
+            // An IP only shows up once the guest's tools report in, keyed "<vif device>/ip" (e.g. "0/ip").
+            var record = VM.get_record(session, vm);
+            if (record.power_state == vm_power_state.Running && !Helper.IsNullOrEmptyOpaqueRef(record.guest_metrics)
+                && VM_guest_metrics.get_record(session, record.guest_metrics).networks.TryGetValue("0/ip", out ip)
+                && !string.IsNullOrEmpty(ip))
                 break;
-            }
+            ip = null;
             if (DateTime.UtcNow > deadline)
-                throw new Exception($"no running guest reported an IP address within {timeoutSeconds}s");
+                break;
             System.Threading.Thread.Sleep(intervalSeconds * 1000);
         }
+        Console.WriteLine(ip != null
+            ? $"  {vmName}: {ip}"
+            : $"  {vmName}: no IP address reported yet (no guest agent running?)");
         Console.WriteLine("OK: vm-ip-address");
         session.logout();
     }

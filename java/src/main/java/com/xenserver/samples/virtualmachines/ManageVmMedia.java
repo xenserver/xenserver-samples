@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.xenserver.samples.Helpers.NULL_REF;
+import static com.xenserver.samples.Helpers.lowestVBDDevice;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ManageVmMedia {
@@ -46,7 +47,7 @@ public final class ManageVmMedia {
 
             // A CD drive is a VBD like any other, distinguished by type=CD; the media is whichever VDI it
             // points at, and an empty drive points at none.
-            String device = vm.getAllowedVBDDevices(conn).iterator().next();
+            String device = lowestVBDDevice(conn, vm);
             VBD.Record spec = new VBD.Record();
             spec.VM = vm;
             spec.VDI = new VDI(NULL_REF);

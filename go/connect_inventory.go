@@ -19,7 +19,13 @@ func connectInventory(url, user, password string) {
 	pools, err := xenapi.Pool.GetAllRecords(session)
 	check(err)
 	for _, pool := range pools {
-		fmt.Printf("Connected to pool: %s\n", pool.NameLabel)
+		// A pool often has no name of its own; show its coordinator's name instead.
+		name := pool.NameLabel
+		if name == "" {
+			name, err = xenapi.Host.GetNameLabel(session, pool.Master)
+			check(err)
+		}
+		fmt.Printf("Connected to pool: %s\n", name)
 		break
 	}
 
@@ -32,14 +38,16 @@ func connectInventory(url, user, password string) {
 
 	vms, err := xenapi.VM.GetAllRecords(session)
 	check(err)
-	count := 0
+	var guests []xenapi.VMRecord
 	for _, vm := range vms {
 		if !vm.IsATemplate && !vm.IsControlDomain {
-			count++
-			fmt.Printf("  - %s [%s]\n", vm.NameLabel, vm.PowerState)
+			guests = append(guests, vm)
 		}
 	}
-	fmt.Printf("VMs (%d)\n", count)
+	fmt.Printf("VMs (%d):\n", len(guests))
+	for _, vm := range guests {
+		fmt.Printf("  - %s [%s]\n", vm.NameLabel, vm.PowerState)
+	}
 
 	fmt.Println("OK: connect-inventory")
 	session.Logout()

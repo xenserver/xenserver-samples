@@ -80,9 +80,15 @@ public final class ManageAdUsers {
 
             // Revoking access does not end sessions the user already has: logging the subject out is a
             // separate act, and the one that actually gets them off the pool now rather than at next login.
-            System.out.println("Logged-in subjects: " + Session.getAllSubjectIdentifiers(conn).size());
-            Session.logoutSubjectIdentifier(conn, sid);
-            System.out.println("  logged out " + info.get("subject-name"));
+            // This subject has not logged in during this example, so there is normally nothing to log out.
+            java.util.Set<String> loggedIn = Session.getAllSubjectIdentifiers(conn);
+            System.out.println("Logged-in subjects: " + loggedIn.size());
+            if (loggedIn.contains(sid)) {
+                Session.logoutSubjectIdentifier(conn, sid);
+                System.out.println("  logged out " + info.get("subject-name"));
+            } else {
+                System.out.println("  " + info.get("subject-name") + " has no active session to log out");
+            }
 
             subject.removeFromRoles(conn, admin);
             subject.destroy(conn);

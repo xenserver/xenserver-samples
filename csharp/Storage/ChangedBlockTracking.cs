@@ -38,12 +38,18 @@ internal static partial class Workflows
         var vdiTo = FirstDisk(session, second);
 
         // One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads
-        // only those blocks, over NBD.
+        // only those blocks, over NBD. Nothing writes to this disk between the two snapshots taken here,
+        // so expect zero changed blocks - that's CBT correctly reporting no work to do, not a failure.
+        // In real use it's the guest's own writes between snapshots that show up here.
         var bitmap = Convert.FromBase64String(VDI.list_changed_blocks(session, vdiFrom, vdiTo));
         var changed = bitmap.Sum(b => System.Numerics.BitOperations.PopCount(b));
-        Console.WriteLine($"  {changed} blocks of {bitmap.Length * 8} changed "
-                          + $"({changed * 64 / 1024.0:F1} MiB to copy, not "
-                          + $"{VDI.get_virtual_size(session, vdiTo) / (1024.0 * 1024):F1} MiB)");
+        if (changed > 0)
+            Console.WriteLine($"  {changed} blocks of {bitmap.Length * 8} changed "
+                              + $"({changed * 64 / 1024.0:F1} MiB to copy, not "
+                              + $"{VDI.get_virtual_size(session, vdiTo) / (1024.0 * 1024):F1} MiB)");
+        else
+            Console.WriteLine($"  0 blocks of {bitmap.Length * 8} changed: "
+                              + "nothing was written to the disk between the snapshots");
 
         // Release the older snapshot's blocks but keep its change metadata, so the next incremental can
         // still diff against it. data_destroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the

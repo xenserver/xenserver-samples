@@ -71,9 +71,18 @@ internal static partial class Workflows
 
         // Revoking access does not end sessions the user already has: logging the subject out is a
         // separate act, and the one that actually gets them off the pool now rather than at next login.
-        Console.WriteLine($"Logged-in subjects: {Session.get_all_subject_identifiers(session).Length}");
-        Session.logout_subject_identifier(session, sid);
-        Console.WriteLine($"  logged out {info["subject-name"]}");
+        // This subject has not logged in during this example, so there is normally nothing to log out.
+        var loggedIn = Session.get_all_subject_identifiers(session);
+        Console.WriteLine($"Logged-in subjects: {loggedIn.Length}");
+        if (loggedIn.Contains(sid))
+        {
+            Session.logout_subject_identifier(session, sid);
+            Console.WriteLine($"  logged out {info["subject-name"]}");
+        }
+        else
+        {
+            Console.WriteLine($"  {info["subject-name"]} has no active session to log out");
+        }
 
         Subject.remove_from_roles(session, subject, adminRole);
         Subject.destroy(session, subject);

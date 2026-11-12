@@ -44,11 +44,19 @@ def create_vm_with_vgpu(url, username, password, template_name, new_vm_name="sdk
 
 
 def gpu_group_with_vgpu_type(session):
-    """Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU type."""
+    """Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU type.
+
+    Picked by the type's model name, not simply the first one iteration happens to return -
+    supported_VGPU_types is a set server-side, so its order isn't something to rely on."""
+    candidates = []
     for group, r in session.xenapi.GPU_group.get_all_records().items():
         if not r["PGPUs"]:
             continue
         for type_ref in r["supported_VGPU_types"]:
-            if session.xenapi.VGPU_type.get_model_name(type_ref) != "passthrough":
-                return group, type_ref
-    raise RuntimeError("no GPU group offers a vGPU type")
+            model_name = session.xenapi.VGPU_type.get_model_name(type_ref)
+            if model_name != "passthrough":
+                candidates.append((model_name, group, type_ref))
+    if not candidates:
+        raise RuntimeError("no GPU group offers a vGPU type")
+    _, group, type_ref = min(candidates)
+    return group, type_ref

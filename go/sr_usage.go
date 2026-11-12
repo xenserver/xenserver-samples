@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 
 	"go/xenapi"
 )
@@ -19,15 +20,26 @@ func srUsage(url, user, password string) {
 	session := connect(url, user, password)
 	srs, err := xenapi.SR.GetAllRecords(session)
 	check(err)
+
+	type namedSR struct {
+		ref xenapi.SRRef
+		rec xenapi.SRRecord
+	}
+	ordered := make([]namedSR, 0, len(srs))
+	for ref, sr := range srs {
+		ordered = append(ordered, namedSR{ref, sr})
+	}
+	sort.Slice(ordered, func(i, j int) bool { return ordered[i].rec.NameLabel < ordered[j].rec.NameLabel })
+
 	var scanMe xenapi.SRRef
 	haveScan := false
-	for ref, sr := range srs {
-		if sr.PhysicalSize <= 0 { // skip ISO/DVD pseudo-SRs
+	for _, sr := range ordered {
+		if sr.rec.PhysicalSize <= 0 { // skip ISO/DVD pseudo-SRs
 			continue
 		}
-		fmt.Printf("  %s: %d / %d GiB used\n", sr.NameLabel, sr.PhysicalUtilisation/GiB, sr.PhysicalSize/GiB)
+		fmt.Printf("  %s: %d / %d GiB used\n", sr.rec.NameLabel, sr.rec.PhysicalUtilisation/GiB, sr.rec.PhysicalSize/GiB)
 		if !haveScan {
-			scanMe, haveScan = ref, true
+			scanMe, haveScan = sr.ref, true
 		}
 	}
 	// A rescan refreshes an SR's utilisation from its backend.

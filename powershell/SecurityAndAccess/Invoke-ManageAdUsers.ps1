@@ -63,11 +63,16 @@ function Invoke-ManageAdUsers {
     Write-Host "Added subject $($info.'subject-displayname') ($($info.'subject-name')) as pool-admin"
 
     # Revoking access does not end sessions the user already has: logging the subject out is a separate
-    # act, and the one that actually gets them off the pool now rather than at next login.
+    # act, and the one that actually gets them off the pool now rather than at next login. This subject
+    # has not logged in during this example, so there is normally nothing to log out.
     $loggedIn = @(Rpc "session.get_all_subject_identifiers" @())
     Write-Host "Logged-in subjects: $($loggedIn.Count)"
-    Rpc "session.logout_subject_identifier" @($sid) | Out-Null
-    Write-Host "  logged out $($info.'subject-name')"
+    if ($loggedIn -contains $sid) {
+        Rpc "session.logout_subject_identifier" @($sid) | Out-Null
+        Write-Host "  logged out $($info.'subject-name')"
+    } else {
+        Write-Host "  $($info.'subject-name') has no active session to log out"
+    }
 
     # Tidy up (remove the role assignment, then the subject).
     Rpc "subject.remove_from_roles" @($subject, $adminRole.opaque_ref) | Out-Null

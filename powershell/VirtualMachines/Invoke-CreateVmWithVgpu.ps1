@@ -16,15 +16,17 @@ function Invoke-CreateVmWithVgpu {
         [string]$NewVmName = "sdk-example-vgpu-vm"
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    # Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type.
+    # Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type. Picked by the
+    # type's model name, not simply the first one iteration happens to return - supported_VGPU_types is
+    # a set server-side, so its order isn't something to rely on.
     $group = $null; $vgpuType = $null
     foreach ($g in Get-XenGPUGroup) {
         if (-not $g.PGPUs) { continue }
         foreach ($tRef in $g.supported_VGPU_types) {
             $t = Get-XenVGPUType -Ref $tRef
-            if ($t.model_name -ne 'passthrough') { $group = $g; $vgpuType = $t; break }
+            if ($t.model_name -eq 'passthrough') { continue }
+            if (-not $vgpuType -or $t.model_name -lt $vgpuType.model_name) { $group = $g; $vgpuType = $t }
         }
-        if ($vgpuType) { break }
     }
     if (-not $vgpuType) { throw "No GPU group offers a vGPU type." }
     Write-Host "Using vGPU type: $($vgpuType.model_name) ($([int]($vgpuType.framebuffer_size / 1MB)) MB framebuffer)"

@@ -15,7 +15,9 @@ def connect_inventory(url, username, password):
     """Log in and take an inventory of the pool: its name, its hosts and its VMs."""
     session = connect(url, username, password)
     pool = list(session.xenapi.pool.get_all_records().values())[0]
-    print("Connected to pool: %s" % pool["name_label"])
+    # A pool often has no name of its own; show its coordinator's name instead.
+    pool_name = pool["name_label"] or session.xenapi.host.get_name_label(pool["master"])
+    print("Connected to pool: %s" % pool_name)
 
     hosts = session.xenapi.host.get_all_records()
     print("Hosts (%d):" % len(hosts))

@@ -38,10 +38,10 @@ func manageSecurebootCertificates(url, user, password string) {
 	fmt.Printf("Pool Secure Boot readiness: %s\n", readiness)
 	fmt.Printf("  pool holds certificates:  %t\n", certs != "")
 
-	// A guest whose certificates have gone stale. Its state is what a client gates the flag/unflag
-	// actions on, so it is the field to watch. This is a deliberately-provisioned state, not one a
-	// normally-provisioned Secure Boot guest is ever in - report and stop cleanly when no VM needs
-	// it, rather than failing with a bare lookup error.
+	// A guest whose certificates have gone stale. SecurebootCertificatesState is set on every VM
+	// regardless of whether Secure Boot is actually on, so it alone isn't enough: readiness of
+	// "disabled" or "not_supported" means this guest doesn't use Secure Boot at all, and flagging it
+	// for a refresh would prove nothing.
 	vms, err := xenapi.VM.GetAllRecords(session)
 	check(err)
 	var vm xenapi.VMRef
@@ -50,12 +50,16 @@ func manageSecurebootCertificates(url, user, password string) {
 	for ref, r := range vms {
 		if !r.IsATemplate && !r.IsControlDomain && !r.IsASnapshot &&
 			r.SecurebootCertificatesState == xenapi.VMSecurebootCertificatesStateUpdateAvailable {
-			vm, name, found = ref, r.NameLabel, true
-			break
+			ready, err := xenapi.VM.GetSecurebootReadiness(session, ref)
+			check(err)
+			if ready != xenapi.VMSecurebootReadinessDisabled && ready != xenapi.VMSecurebootReadinessNotSupported {
+				vm, name, found = ref, r.NameLabel, true
+				break
+			}
 		}
 	}
 	if !found {
-		fmt.Println("No guest needs a Secure Boot certificate refresh right now.")
+		fmt.Println("No Secure Boot guest needs a certificate refresh right now.")
 		fmt.Println("OK: manage-secureboot-certificates")
 		return
 	}

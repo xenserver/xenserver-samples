@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using XenAPI;
 using Console = System.Console; // XenAPI also defines a Console class
 
@@ -47,17 +48,24 @@ internal static partial class Workflows
         session.logout();
     }
 
-    /// <summary>Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU
-    /// type.</summary>
+    /// <summary>Find a (GPU_group, VGPU_type) pair where the group offers a non-passthrough vGPU type.
+    /// Picked by the type's model name, not simply the first one iteration happens to return -
+    /// supported_VGPU_types is a set server-side, so its order isn't something to rely on.</summary>
     private static (XenRef<GPU_group>, XenRef<VGPU_type>) GpuGroupWithVgpuType(Session session)
     {
+        var candidates = new List<(string ModelName, XenRef<GPU_group> Group, XenRef<VGPU_type> Type)>();
         foreach (var (groupRef, group) in GPU_group.get_all_records(session))
         {
             if (group.PGPUs.Count == 0) continue;
             foreach (var typeRef in group.supported_VGPU_types)
-                if (VGPU_type.get_model_name(session, typeRef) != "passthrough")
-                    return (groupRef, typeRef);
+            {
+                var modelName = VGPU_type.get_model_name(session, typeRef);
+                if (modelName != "passthrough")
+                    candidates.Add((modelName, groupRef, typeRef));
+            }
         }
-        throw new Exception("no GPU group offers a vGPU type");
+        if (candidates.Count == 0) throw new Exception("no GPU group offers a vGPU type");
+        var best = candidates.OrderBy(c => c.ModelName).First();
+        return (best.Group, best.Type);
     }
 }

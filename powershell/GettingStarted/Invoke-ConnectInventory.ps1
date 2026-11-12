@@ -15,7 +15,9 @@ function Invoke-ConnectInventory {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
-    Write-Host "Connected to pool: $($pool.name_label)"
+    # A pool often has no name of its own; show its coordinator's name instead.
+    $poolName = if ($pool.name_label) { $pool.name_label } else { (Get-XenHost -Ref $pool.master).name_label }
+    Write-Host "Connected to pool: $poolName"
 
     $hosts = Get-XenHost
     Write-Host "Hosts ($($hosts.Count)):"
