@@ -34,23 +34,27 @@ Param([Parameter(Mandatory = $true)][String]$out_xml,
     [Parameter(Mandatory = $true)][String]$usr,
     [Parameter(Mandatory = $true)][String]$passwd,
     [Parameter(Mandatory = $true)][String]$sr_svr,
-    [Parameter(Mandatory = $true)][String]$sr_path)
+    [Parameter(Mandatory = $true)][String]$sr_path,
+    [Parameter(Mandatory = $false)][bool]$VerboseLogging = $true,
+    [Parameter(Mandatory = $false)][bool]$WarningLogging = $true,
+    [Parameter(Mandatory = $false)][bool]$ErrorLogging = $true,
+    [Parameter(Mandatory = $false)][String]$ErrorActionPref = "Continue")
 
 # Initial Setup
 
 [Net.ServicePointManager]::SecurityProtocol = 'tls,tls11,tls12'
 $BestEffort = $false
-$info = $true
-$warn = $true
-$err = $true
+$info = $VerboseLogging
+$warn = $WarningLogging
+$err = $ErrorLogging
 $prog = $false
 
-$Eap = $ErrorActionPreference
-$Vp = $VerbosePreference
-$Wp = $WarningPreference
-$Ep = $ErrorPreference
+$OriginalErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = $ErrorActionPref
+$OriginalVerbosePreference = $VerbosePreference
+$OriginalWarningPreference = $WarningPreference
+$OriginalErrorPreference = $ErrorPreference
 
-$ErrorActionPreference = "Stop"
 $VerbosePreference = "Continue"
 $WarningPreference = "Continue"
 $ErrorPreference = "Continue"
@@ -84,61 +88,120 @@ function log_error([String]$msg) {
     }
 }
 
-function escape_for_xml([String]$content) {
-    return $content.replace("&", "&amp;").replace("'", "&apos;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
-}
-
 function prep_xml_output([String]$out_file) {
+    $script:xmlDoc = New-Object System.Xml.XmlDocument
+    $script:xmlDoc.AppendChild($script:xmlDoc.CreateXmlDeclaration("1.0", "UTF-8", $null)) | Out-Null
+    
+    $rootElement = $script:xmlDoc.CreateElement("results")
+    $script:xmlDoc.AppendChild($rootElement) | Out-Null
+    
     $date = Get-Date
-    "<results>" > $out_file
-    ("<testrun>Test Run Info: PowerShell bindings test {0}</testrun>" -f $date) >> $out_file
-    "<group>" >> $out_file
+    $testrunElement = $script:xmlDoc.CreateElement("testrun")
+    $testrunElement.InnerText = "Test Run Info: PowerShell bindings test $date"
+    $rootElement.AppendChild($testrunElement) | Out-Null
+    
+    $groupElement = $script:xmlDoc.CreateElement("group")
+    $script:xmlGroupElement = $groupElement
+    $rootElement.AppendChild($groupElement) | Out-Null
 }
 
 function close_xml_output([String]$out_file) {
-    "</group>" >> $out_file
-    "</results>" >> $out_file
+    $script:xmlDoc.Save($out_file)
 }
 
-function add_result([String]$out_file, [String]$cmd, [String]$test_name, [Exception]$err) {
-    $out_cmd = escape_for_xml $cmd
-    $out_test_name = escape_for_xml $test_name
-    $out_err = escape_for_xml $err
-    "<test>" >> $out_file
-    ("<name>{0}</name>" -f $out_test_name) >> $out_file
-    if (($err -ne $null)) {
-        "<state>Fail</state>" >> $out_file
-        "<log>" >> $out_file
-        ("Cmd: '{0}'" -f $out_cmd) >> $out_file
-        ("Exception: {0}" -f $out_err) >> $out_file
-        "</log>" >> $out_file
+function add_result([String]$out_file, [String]$cmd, [String]$test_name, [Exception]$err, [DateTime]$startTime = $null, [DateTime]$endTime = $null) {
+    $script:out_file = $out_file
+    
+    $testElement = $script:xmlDoc.CreateElement("test")
+    
+    $nameElement = $script:xmlDoc.CreateElement("name")
+    $nameElement.InnerText = $test_name
+    $testElement.AppendChild($nameElement) | Out-Null
+    
+    # Add timestamp elements
+    if ($startTime -ne $null) {
+        $startElement = $script:xmlDoc.CreateElement("startTime")
+        $startElement.InnerText = $startTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+        $testElement.AppendChild($startElement) | Out-Null
+    }
+    
+    if ($endTime -ne $null) {
+        $endElement = $script:xmlDoc.CreateElement("endTime")
+        $endElement.InnerText = $endTime.ToString("yyyy-MM-dd HH:mm:ss.fff")
+        $testElement.AppendChild($endElement) | Out-Null
+        
+        if ($startTime -ne $null) {
+            $duration = $endTime - $startTime
+            $durationElement = $script:xmlDoc.CreateElement("duration")
+            $durationElement.InnerText = "$([Math]::Round($duration.TotalMilliseconds, 2))ms"
+            $testElement.AppendChild($durationElement) | Out-Null
+        }
+    }
+    
+    if ($err -ne $null) {
+        $stateElement = $script:xmlDoc.CreateElement("state")
+        $stateElement.InnerText = "Fail"
+        $testElement.AppendChild($stateElement) | Out-Null
+        
+        $logElement = $script:xmlDoc.CreateElement("log")
+        
+        $logBuilder = @()
+        $logBuilder += "Cmd: '$cmd'"
+        $logBuilder += "Exception: $($err.Message)"
+        
+        # Include inner exception chain
+        if ($err.InnerException) {
+            $innerExc = $err.InnerException
+            while ($innerExc -ne $null) {
+                $logBuilder += "Inner Exception: $($innerExc.Message)"
+                $innerExc = $innerExc.InnerException
+            }
+        }
+        
+        # Include stack trace
+        if ($err.StackTrace) {
+            $logBuilder += "Stack Trace: $($err.StackTrace)"
+        }
+        
+        $logElement.InnerText = $logBuilder -join "`n"
+        $testElement.AppendChild($logElement) | Out-Null
     }
     else {
-        "<state>Pass</state>" >> $out_file
-        "<log />" >> $out_file
+        $stateElement = $script:xmlDoc.CreateElement("state")
+        $stateElement.InnerText = "Pass"
+        $testElement.AppendChild($stateElement) | Out-Null
+        
+        $logElement = $script:xmlDoc.CreateElement("log")
+        $testElement.AppendChild($logElement) | Out-Null
     }
-    "</test>" >> $out_file
+    
+    $script:xmlGroupElement.AppendChild($testElement) | Out-Null
 }
 
 
 function exec([String]$test_name, [String]$cmd, [String]$expected) {
-    trap [Exception] {
-        add_result $out_xml $cmd $test $_.Exception
-        $fails.Add($test_name, $_.Exception)
-        break
+    $startTime = Get-Date
+    try {
+        log_info ("Test '{0}' Started: cmd = {1}, expected = {2}" -f $test_name, $cmd, $expected)
+        $result = Invoke-Expression $cmd
+        $endTime = Get-Date
+        
+        if ($result -eq $expected) {
+            add_result $script:out_xml $cmd $test_name $null $startTime $endTime
+            return $true
+        }
+        else {
+            $exc = New-Object Exception("Test '{0}' Failed: expected '{1}'; actual '{2}'" `
+                    -f $test_name, $expected, $result)
+            add_result $script:out_xml $cmd $test_name $exc $startTime $endTime
+            $script:fails.Add($test_name, $exc)
+            return $false
+        }
     }
-
-    log_info ("Test '{0}' Started: cmd = {1}, expected = {2}" -f $test_name, $cmd, $expected)
-    $result = Invoke-Expression $cmd
-    if ($result -eq $expected) {
-        add_result $out_xml $cmd $test_name $null
-        return $true
-    }
-    else {
-        $exc = New-Object Exception("Test '{0}' Failed: expected '{1}'; actual '{2}'" `
-                -f $test_name, $expected, $result)
-        add_result $out_xml $cmd $test_name $exc
-        $fails.Add($test_name, $exc)
+    catch [Exception] {
+        $endTime = Get-Date
+        add_result $script:out_xml $cmd $test_name $_.Exception $startTime $endTime
+        $script:fails.Add($test_name, $_.Exception)
         return $false
     }
 }
@@ -158,6 +221,45 @@ function connect_server([String]$svr, [String]$usr, [String]$passwd) {
         return $false
     }
     return $true
+}
+
+function connect_server_start_job([String]$svr, [String]$usr, [String]$passwd) {
+    log_info ("connecting to server '{0}' from Start-Job" -f $svr)
+
+    $job_script = {
+        param([String]$svr, [String]$usr, [String]$passwd, [String]$profile)
+        
+        # Set $PROFILE so XenServerPSModule's Initialize-Environment.ps1 can use it
+        $global:PROFILE = $profile
+
+        # Trust all certificates. This is for test purposes only.
+        # DO NOT USE -NoWarnCertificates and -NoWarnNewCertificates IN PRODUCTION CODE.
+        $session = Connect-XenServer -Server $svr -UserName $usr -Password $passwd -PassThru -NoWarnCertificates -NoWarnNewCertificates
+        if ($null -eq $session) {
+            return $false
+        }
+
+        Disconnect-XenServer -Session $session
+        return $true
+    }
+
+    $job = Start-Job -ScriptBlock $job_script -ArgumentList @($svr, $usr, $passwd, $PROFILE)
+    $completed = Wait-Job -Job $job -Timeout 120
+    if ($null -eq $completed) {
+        log_warn ("Start-Job timed out for server '{0}'" -f $svr)
+        Stop-Job -Job $job -ErrorAction SilentlyContinue
+        Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
+        return $false
+    }
+
+    $output = Receive-Job -Job $job
+    Remove-Job -Job $job -Force -ErrorAction SilentlyContinue
+
+    if ($output -contains $true) {
+        return $true
+    }
+
+    return $false
 }
 
 function disconnect_server([String]$svr) {
@@ -197,53 +299,52 @@ function destroy_vm([XenAPI.VM]$vm) {
 }
 
 function install_vm([String]$name, [String]$sr_name) {
-    trap [Exception] {
-        trap [Exception] {
+    try {
+        #find a windows template
+        log_info "looking for a Windows template..."
+        $template = @(Get-XenVM -Name 'Windows *' | Where-Object { $_.is_a_template })[0]
+
+        log_info ("installing vm '{0}' from template '{1}'" -f $template.name_label, $name)
+
+        #clone template
+        log_info ("cloning vm '{0}' to '{1}'" -f $template.name_label, $name)
+        Invoke-XenVM -VM $template -XenAction Clone -NewName $name -Async -PassThru |`
+            Wait-XenTask -ShowProgress
+
+        $vm = Get-XenVM -Name $name
+        $sr = Get-XenSR -Name $sr_name
+        $other_config = $vm.other_config
+        $other_config["disks"] = $other_config["disks"].Replace('sr=""', 'sr="{0}"' -f $sr.uuid)
+
+        #add cd drive
+        log_info ("creating cd drive for vm '{0}'" -f $vm.name_label)
+        New-XenVBD -VM $vm -VDI $null -Userdevice 3 -Bootable $false -Mode RO `
+            -Type CD -Unpluggable $true -Empty $true -OtherConfig @{ } `
+            -QosAlgorithmType "" -QosAlgorithmParams @{ }
+
+        Set-XenVM -VM $vm -OtherConfig $other_config
+
+        #provision vm
+        log_info ("provisioning vm '{0}'" -f $vm.name_label)
+        Invoke-XenVM -VM $vm -XenAction Provision -Async -PassThru | Wait-XenTask -ShowProgress
+
+        return $true
+    }
+    catch [Exception] {
+        log_info "Attempting to clean up after failed vm install..."
+        try {
+            $vms = Get-XenVM -Name $name
+            foreach ($vm in $vms) {
+                destroy_vm($vm)
+            }
+            log_info "...success."
+        }
+        catch [Exception] {
             log_warn "Clean up after failed vm install unsuccessful"
             log_info "...failed!"
-            break
         }
-
-        log_info "Attempting to clean up after failed vm install..."
-
-        $vms = Get-XenVM -Name $name
-
-        foreach ($vm in $vms) {
-            destroy_vm($vm)
-        }
-        log_info "...success."
-        break
+        throw
     }
-
-    #find a windows template
-    log_info "looking for a Windows template..."
-    $template = @(Get-XenVM -Name 'Windows *' | Where-Object { $_.is_a_template })[0]
-
-    log_info ("installing vm '{0}' from template '{1}'" -f $template.name_label, $name)
-
-    #clone template
-    log_info ("cloning vm '{0}' to '{1}'" -f $template.name_label, $name)
-    Invoke-XenVM -VM $template -XenAction Clone -NewName $name -Async -PassThru |`
-        Wait-XenTask -ShowProgress
-
-    $vm = Get-XenVM -Name $name
-    $sr = Get-XenSR -Name $sr_name
-    $other_config = $vm.other_config
-    $other_config["disks"] = $other_config["disks"].Replace('sr=""', 'sr="{0}"' -f $sr.uuid)
-
-    #add cd drive
-    log_info ("creating cd drive for vm '{0}'" -f $vm.name_label)
-    New-XenVBD -VM $vm -VDI $null -Userdevice 3 -Bootable $false -Mode RO `
-        -Type CD -Unpluggable $true -Empty $true -OtherConfig @{ } `
-        -QosAlgorithmType "" -QosAlgorithmParams @{ }
-
-    Set-XenVM -VM $vm -OtherConfig $other_config
-
-    #provision vm
-    log_info ("provisioning vm '{0}'" -f $vm.name_label)
-    Invoke-XenVM -VM $vm -XenAction Provision -Async -PassThru | Wait-XenTask -ShowProgress
-
-    return $true
 }
 
 function uninstall_vm([String]$name) {
@@ -259,14 +360,14 @@ function uninstall_vm([String]$name) {
 }
 
 function vm_can_boot($vm_name, [XenApi.Host[]] $servers) {
-    trap [Exception] {
-        $script:exceptions += $_.Exception
-        continue
-    }
-
     $script:exceptions = @()
     foreach ($server in $servers) {
-        Invoke-XenVM -Name $vm_name -XenAction AssertCanBootHere -XenHost $server
+        try {
+            Invoke-XenVM -Name $vm_name -XenAction AssertCanBootHere -XenHost $server
+        }
+        catch [Exception] {
+            $script:exceptions += $_.Exception
+        }
     }
 
     if ($exceptions.Length -lt $servers.Length) {
@@ -358,7 +459,7 @@ function detach_nfs_sr([String]$sr_name) {
 function append_random_string_to([String]$toAppend, $length = 10) {
     $randomisedString = $toAppend
     $charSet = "0123456789abcdefghijklmnopqrstuvwxyz".ToCharArray()
-    for ($i; $i -le $length; $i++) {
+    for ($i = 0; $i -lt $length; $i++) {
         $randomisedString += $charSet | Get-Random
     }
     return $randomisedString
@@ -370,6 +471,7 @@ function append_random_string_to([String]$toAppend, $length = 10) {
 
 $tests = @(
     @("Connect Server", "connect_server $svr $usr $passwd", $true),
+    @("Connect Server Start-Job", "connect_server_start_job $svr $usr $passwd", $true),
     @("Create SR", "create_nfs_sr $sr_svr $sr_path PowerShellAutoTestSR", $true),
     @("Install VM", "install_vm PowerShellAutoTestVM PowerShellAutoTestSR", $true),
     @("Start VM", "start_vm PowerShellAutoTestVM", "Running"),
@@ -381,12 +483,13 @@ $tests = @(
 # End Test List
 
 # Main Test Execution
-Import-Module XenServerPSModule
 
 $complete = 0;
 $max = $tests.Count;
 
 $fails = @{ }
+$script:xmlDoc = $null
+$script:xmlGroupElement = $null
 
 prep_xml_output $out_xml
 
@@ -394,22 +497,23 @@ $vmName = append_random_string_to "PowerShellAutoTestVM"
 $srName = append_random_string_to "PowerShellAutoTestSR"
 
 foreach ($test in $tests) {
-    trap [Exception] {
+    try {
+        $success = $false
+
+        # Add randomness to the names of the test VM and SR to
+        # allow a parallel execution context
+        $cmd = $test[1]
+        $cmd = $cmd -replace "PowerShellAutoTestVM", $vmName
+        $cmd = $cmd -replace "PowerShellAutoTestSR", $srName
+
+        $success = exec $test[0] $cmd $test[2]
+        if ($success) {
+            $complete++
+        }
+    }
+    catch [Exception] {
         # we encountered an exception in running the test before it completed
         # its already been logged, so continue
-        continue
-    }
-    $success = $false
-
-    # Add randomness to the names of the test VM and SR to
-    # allow a parallel execution context
-    $cmd = $test[1]
-    $cmd = $cmd -replace "PowerShellAutoTestVM", $vmName
-    $cmd = $cmd -replace "PowerShellAutoTestSR", $srName
-
-    $success = exec $test[0] $cmd $test[2]
-    if ($success) {
-        $complete++
     }
 }
 
@@ -424,11 +528,20 @@ if ($fails.Count -gt 0) {
     $fails
 }
 
-$ErrorActionPreference = $Eap
-$VerbosePreference = $Vp
-$WarningPreference = $Wp
-$ErrorPreference = $Ep
+# Determine exit code based on test results
+if ($complete -eq $max -and $fails.Count -eq 0) {
+    $exitCode = 0
+} else {
+    $exitCode = 1
+}
+
+$ErrorActionPreference = $OriginalErrorActionPreference
+$VerbosePreference = $OriginalVerbosePreference
+$WarningPreference = $OriginalWarningPreference
+$ErrorPreference = $OriginalErrorPreference
 
 Remove-Module XenServerPSModule
+
+exit $exitCode
 
 # End Main Test Execution

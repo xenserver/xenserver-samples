@@ -3,7 +3,9 @@
 ## Overview
 
 - [AutomatedTestCore.ps1](AutomatedTestCore.ps1): Shows how to log in to a host,
-  create a storage repository and a VM, and perform various powercycle operations.
+    create a storage repository and a VM, and perform various powercycle operations.
+    Includes a regression check that validates `Connect-XenServer` works when invoked
+    via `Start-Job` using `-InitializationScript`.
 
 - [SmartConnect.ps1](SmartConnect.ps1): Shows how to handle the error when
     attempting to connect to a supporter server, identify the pool coordinator,
