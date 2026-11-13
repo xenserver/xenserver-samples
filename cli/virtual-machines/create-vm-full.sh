@@ -13,8 +13,15 @@
 create_vm_full() {
     # Not "host": that name is the connection target xe() dials (connection.sh), and shadowing it here
     # would send every xe call below it to an empty address instead.
-    local template=$(param template_name "Rocky Linux 8") home_host net sr
-    vm=$(xe vm-install template="$template" new-name-label=xe-example-full-vm)
+    local template=$(param template_name "Rocky Linux 8") home_host net sr template_uuid vbd_device
+    echo "Template:      $template"
+    template_uuid=$(first_csv "$(xe template-list name-label="$template" --minimal)")
+    [ -n "$template_uuid" ] || { echo "no template named '$template' was found" >&2; return 1; }
+    # vm-clone, not vm-install: vm-install also runs VM.provision, which would create the disk the
+    # template's own other-config:disks describes - doubling up with the one this example adds itself
+    # below. A clone of a template is itself a template, so mark it an ordinary VM afterward.
+    vm=$(xe vm-clone uuid=$template_uuid new-name-label=xe-example-full-vm)
+    xe vm-param-set uuid=$vm is-a-template=false
     echo "Created VM:    $vm"
     xe vm-param-set uuid=$vm other-config:install-repository=http://mirror.example.com/rocky/9/os/x86_64
     echo "Install media: network repository"
@@ -30,7 +37,8 @@ create_vm_full() {
 
     sr=$(default_sr)
     vdi=$(xe vdi-create sr-uuid=$sr name-label="xe-example-full-vm disk" virtual-size=24GiB type=user)
-    xe vbd-create vm-uuid=$vm vdi-uuid=$vdi device=1 type=Disk mode=RW >/dev/null
+    vbd_device=$(first_csv "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=allowed-VBD-devices)")")
+    xe vbd-create vm-uuid=$vm vdi-uuid=$vdi device=$vbd_device type=Disk mode=RW >/dev/null
     echo "Storage:       24 GiB disk on $(xe sr-param-get uuid=$sr param-name=name-label)"
 
     net=$(first_csv "$(xe network-list --minimal)")
@@ -41,13 +49,15 @@ create_vm_full() {
     echo "--- Result ---"
     echo "power-state: $(xe vm-param-get uuid=$vm param-name=power-state)"
     echo "vCPUs:       $(xe vm-param-get uuid=$vm param-name=VCPUs-max)"
-    echo "disks:       $(count_csv "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=VBDs)")"), NICs:" \
+    # type=Disk, in case a future template of this name ships with a CD/DVD drive VBD of its own.
+    echo "disks:       $(count_csv "$(xe vbd-list vm-uuid=$vm type=Disk --minimal)"), NICs:" \
          "$(count_csv "$(xe vif-list vm-uuid=$vm --minimal)")"
-    # Tidy up so the example is repeatable: stop the VM, then vm-uninstall destroys it and the disks it
-    # owns (vm-destroy would leave the disks behind). It owns only the template's disks - vm-install marks
-    # those (VBD other-config:owner) - not one added with a plain vbd-create, so destroy that one too.
+    # Tidy up so the example is repeatable: stop the VM, then vm-uninstall destroys it (vm-destroy would
+    # leave the disk behind). Cloning the template rather than installing from it means nothing here is
+    # provisioned, so vm-uninstall owns no disks of its own - destroy the one this example added.
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
     xe vdi-destroy uuid=$vdi
+    echo "Cleaned up the example VM."
     ok create-vm-full
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"go/xenapi"
 )
@@ -29,7 +30,9 @@ func srUsage(url, user, password string) {
 	for ref, sr := range srs {
 		ordered = append(ordered, namedSR{ref, sr})
 	}
-	sort.Slice(ordered, func(i, j int) bool { return ordered[i].rec.NameLabel < ordered[j].rec.NameLabel })
+	sort.Slice(ordered, func(i, j int) bool {
+		return strings.ToLower(ordered[i].rec.NameLabel) < strings.ToLower(ordered[j].rec.NameLabel)
+	})
 
 	var scanMe xenapi.SRRef
 	haveScan := false

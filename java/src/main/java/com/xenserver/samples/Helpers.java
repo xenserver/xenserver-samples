@@ -79,6 +79,18 @@ public final class Helpers {
     }
 
     /**
+     * The lowest-numbered of a VM's allowed VIF device slots (getAllowedVIFDevices returns a Set, so
+     * picking any element but the lowest would be arbitrary).
+     */
+    public static String lowestVIFDevice(Connection conn, VM vm) throws Exception {
+        String lowest = null;
+        for (String device : vm.getAllowedVIFDevices(conn))
+            if (lowest == null || Integer.parseInt(device) < Integer.parseInt(lowest)) lowest = device;
+        if (lowest == null) throw new RuntimeException("the VM has no free VIF device slot");
+        return lowest;
+    }
+
+    /**
      * The VDIs backing a VM's disk VBDs (used to clean up a clone/copy/created VM's disks). VM.destroy
      * leaves VDIs behind, so callers destroy these explicitly afterward.
      */

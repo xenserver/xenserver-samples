@@ -18,7 +18,7 @@ sr_usage() {
         name=$(xe sr-param-get uuid=$sr param-name=name-label)
         lines+="$name"$'\t'"  $name: $((util / 1073741824)) / $((size / 1073741824)) GiB used"$'\n'
     done
-    printf '%s' "$lines" | sort | cut -f2-
+    printf '%s' "$lines" | sort -t$'\t' -k1,1f | cut -f2-
     # A rescan refreshes an SR's utilisation from its backend.
     xe sr-scan uuid=$scan_me
     ok sr-usage

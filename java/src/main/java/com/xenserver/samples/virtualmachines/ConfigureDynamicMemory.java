@@ -57,7 +57,11 @@ public final class ConfigureDynamicMemory {
                 vm.setMemoryDynamicRange(conn, floor, ceiling * 2);
                 System.out.println("  ERROR: an out-of-range maximum was accepted");
             } catch (Types.XenAPIException e) {
-                System.out.println("  refused a dynamic_max above static_max: " + e.shortDescription);
+                // errorDescription[0] is the error code (e.g. MEMORY_CONSTRAINT_VIOLATION_ORDER);
+                // shortDescription is the raw server response when the binding couldn't parse that out.
+                String code = e.errorDescription != null && e.errorDescription.length > 0
+                        ? e.errorDescription[0] : e.shortDescription;
+                System.out.println("  refused a dynamic_max above static_max: " + code);
             }
 
             vm.setMemoryDynamicRange(conn, before.memoryDynamicMin, before.memoryDynamicMax);

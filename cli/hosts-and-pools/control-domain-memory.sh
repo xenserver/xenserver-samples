@@ -12,14 +12,14 @@ control_domain_memory() {
     dom0=$(first_csv "$(xe vm-list is-control-domain=true resident-on=$h --minimal)")
     [ -n "$dom0" ] || { echo "the host reports no control domain" >&2; return 1; }
     original=$(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min)
-    echo "$(xe host-param-get uuid=$h param-name=name-label) dom0: $((original / 1024 / 1024 / 1024)) GiB"
+    echo "$(xe host-param-get uuid=$h param-name=name-label) dom0: $(gib $original)"
 
     # vm-memory-set, not vm-memory-limits-set: dom0 does not balloon, so one value pins the static and
     # dynamic bounds and the target together. It takes effect at the host's next reboot.
     xe vm-memory-set uuid=$dom0 memory=$((original + 1073741824))
-    echo "  now $(( $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min) / 1024 / 1024 / 1024 )) GiB (static $(xe vm-param-get uuid=$dom0 param-name=memory-static-min)-$(xe vm-param-get uuid=$dom0 param-name=memory-static-max), dynamic $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min)-$(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-max))"
+    echo "  now $(gib $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min)) (static $(xe vm-param-get uuid=$dom0 param-name=memory-static-min)-$(xe vm-param-get uuid=$dom0 param-name=memory-static-max), dynamic $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min)-$(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-max))"
 
     xe vm-memory-set uuid=$dom0 memory=$original    # leave the pool as we found it
-    echo "  restored to $(( $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min) / 1024 / 1024 / 1024 )) GiB"
+    echo "  restored to $(gib $(xe vm-param-get uuid=$dom0 param-name=memory-dynamic-min))"
     ok control-domain-memory
 }

@@ -27,7 +27,7 @@ public final class SrUsage {
         final long GiB = 1024L * 1024 * 1024;
         Connection conn = connect(url, user, password);
         java.util.List<SR.Record> srs = new java.util.ArrayList<>(SR.getAllRecords(conn).values());
-        srs.sort(java.util.Comparator.comparing((SR.Record s) -> s.nameLabel));
+        srs.sort(java.util.Comparator.comparing((SR.Record s) -> s.nameLabel, String.CASE_INSENSITIVE_ORDER));
         for (SR.Record sr : srs) {
             if (sr.physicalSize <= 0) continue; // skip ISO/DVD pseudo-SRs
             System.out.println("  " + sr.nameLabel + ": " + sr.physicalUtilisation / GiB

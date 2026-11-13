@@ -8,6 +8,7 @@ import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
+import static com.xenserver.samples.Helpers.lowestVIFDevice;
 import static com.xenserver.samples.Helpers.provision;
 import static com.xenserver.samples.Helpers.templateByName;
 import static com.xenserver.samples.PoolConnection.connect;
@@ -33,7 +34,7 @@ public final class ManageVif {
         VM vm = templateByName(conn, templateName).createClone(conn, newVmName);
         provision(conn, vm);
         Network net = Network.getAll(conn).iterator().next();
-        String device = vm.getAllowedVIFDevices(conn).iterator().next();
+        String device = lowestVIFDevice(conn, vm);
 
         VIF.Record vifRec = new VIF.Record();
         vifRec.VM = vm;

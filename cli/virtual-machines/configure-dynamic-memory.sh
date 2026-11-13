@@ -34,12 +34,3 @@ configure_dynamic_memory() {
     xe vm-memory-dynamic-range-set uuid=$vm min=$dyn_min max=$dyn_max
     ok configure-dynamic-memory
 }
-
-# Bytes as GiB to one decimal place, using shell arithmetic only - there is no floating point here, so
-# the fraction is worked out from the remainder.
-gib() {
-    local bytes=$1 whole tenths
-    whole=$((bytes / 1073741824))
-    tenths=$(((bytes % 1073741824) * 10 / 1073741824))
-    echo "${whole}.${tenths} GiB"
-}

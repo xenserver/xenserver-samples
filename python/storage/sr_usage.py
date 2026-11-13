@@ -14,7 +14,7 @@ def sr_usage(url, username, password):
     """Report each real SR's used/total space, then rescan one to refresh its utilisation."""
     GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
-    srs = sorted(session.xenapi.SR.get_all_records().values(), key=lambda s: s["name_label"])
+    srs = sorted(session.xenapi.SR.get_all_records().values(), key=lambda s: s["name_label"].lower())
     for sr in srs:
         if int(sr["physical_size"]) <= 0:
             continue  # skip ISO/DVD pseudo-SRs

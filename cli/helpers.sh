@@ -218,3 +218,12 @@ first_disk_vdi() {
 }
 
 host_live() { xe_try host-param-get uuid=$1 param-name=host-metrics-live; }
+
+# Bytes as GiB to one decimal place, using shell arithmetic only - there is no floating point here, so
+# the fraction is worked out from the remainder.
+gib() {
+    local bytes=$1 whole tenths
+    whole=$((bytes / 1073741824))
+    tenths=$(((bytes % 1073741824) * 10 / 1073741824))
+    echo "${whole}.${tenths} GiB"
+}

@@ -71,13 +71,16 @@ disaster_recovery_failover() {
             [ "${t,,}" = metadata ] || continue
             db=database:vdi-uuid=$vdi
 
-            # A pool often has no name of its own; show its coordinator's name instead - and if even that
-            # is unnamed, its uuid, so this line is never blank.
+            # A pool often has no name of its own; show its coordinator's name instead. Reading a pool's
+            # metadata, though, xe prints the coordinator reference as "<not in database>" rather than a
+            # uuid, so fall back to the name of a host the metadata lists.
             pool_name=$(xe pool-list $db params=name-label --minimal)
             if [ -z "$pool_name" ]; then
                 master=$(xe pool-list $db params=master --minimal)
-                pool_name=$(xe host-list $db uuid=$master params=name-label --minimal)
-                [ -n "$pool_name" ] || pool_name="pool $master"
+                if [[ $master =~ ^[0-9a-f-]{36}$ ]]; then
+                    pool_name=$(xe host-list $db uuid=$master params=name-label --minimal)
+                fi
+                [ -n "$pool_name" ] || pool_name=$(first_csv "$(xe host-list $db params=name-label --minimal)")
             fi
             echo "  pool metadata of $pool_name"
 

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"go/xenapi"
@@ -29,6 +30,7 @@ func listRoles(url, user, password string) {
 			names = append(names, r.NameLabel)
 		}
 	}
+	sort.Strings(names)
 	shown := names
 	if len(shown) > 8 {
 		shown = shown[:8]
