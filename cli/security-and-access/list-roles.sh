@@ -8,6 +8,10 @@
 list_roles() {
     # role-list shows the roles a user can be granted, not the permissions they are made of. Its field
     # is `name`: a role has no name-label, and asking for one prints nothing.
-    echo "Roles: $(xe role-list params=name --minimal)"
+    local roles first
+    roles=$(xe role-list params=name --minimal)
+    # Sorted, and at most eight, as the other languages print them.
+    first=$(each_csv "$roles" | sort | head -n 8)
+    echo "Roles ($(count_csv "$roles")): ${first//$'\n'/, }"
     ok list-roles
 }
