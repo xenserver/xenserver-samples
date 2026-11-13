@@ -124,15 +124,6 @@ configure_dynamic_memory() {
     xe vm-memory-dynamic-range-set uuid=$vm min=$dyn_min max=$dyn_max
     ok configure-dynamic-memory
 }
-
-# Bytes as GiB to one decimal place, using shell arithmetic only - there is no floating point here, so
-# the fraction is worked out from the remainder.
-gib() {
-    local bytes=$1 whole tenths
-    whole=$((bytes / 1073741824))
-    tenths=$(((bytes % 1073741824) * 10 / 1073741824))
-    echo "${whole}.${tenths} GiB"
-}
 ```
 
 <details><summary>Example output</summary>
@@ -430,7 +421,11 @@ public final class ConfigureDynamicMemory {
                 vm.setMemoryDynamicRange(conn, floor, ceiling * 2);
                 System.out.println("  ERROR: an out-of-range maximum was accepted");
             } catch (Types.XenAPIException e) {
-                System.out.println("  refused a dynamic_max above static_max: " + e.shortDescription);
+                // errorDescription[0] is the error code (e.g. MEMORY_CONSTRAINT_VIOLATION_ORDER);
+                // shortDescription is the raw server response when the binding couldn't parse that out.
+                String code = e.errorDescription != null && e.errorDescription.length > 0
+                        ? e.errorDescription[0] : e.shortDescription;
+                System.out.println("  refused a dynamic_max above static_max: " + code);
             }
 
             vm.setMemoryDynamicRange(conn, before.memoryDynamicMin, before.memoryDynamicMax);

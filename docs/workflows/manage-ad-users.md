@@ -174,7 +174,9 @@ manage_ad_users() {
     # separate act, and the one that actually gets them off the pool now rather than at next login.
     # This subject has not logged in during this example, so there is normally nothing to log out.
     sid=$(xe subject-param-get uuid=$subj param-name=subject-identifier)
-    if xe session-subject-identifier-list --minimal | tr , '\n' | grep -qx "$sid"; then
+    logged_in=$(xe session-subject-identifier-list --minimal)
+    echo "Logged-in subjects: $(count_csv "$logged_in")"
+    if each_csv "$logged_in" | grep -qx "$sid"; then
         xe session-subject-identifier-logout subject-identifier=$sid
         echo "  logged out $name"
     else
@@ -196,6 +198,7 @@ manage_ad_users() {
 ```text
 Joined domain: (none given)
 Added subject Alice Admin with role pool-admin
+Logged-in subjects: 0
   Alice Admin has no active session to log out
 OK: manage-ad-users
 ```

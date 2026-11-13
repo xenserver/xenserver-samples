@@ -77,7 +77,7 @@ sr_usage() {
         name=$(xe sr-param-get uuid=$sr param-name=name-label)
         lines+="$name"$'\t'"  $name: $((util / 1073741824)) / $((size / 1073741824)) GiB used"$'\n'
     done
-    printf '%s' "$lines" | sort | cut -f2-
+    printf '%s' "$lines" | sort -t$'\t' -k1,1f | cut -f2-
     # A rescan refreshes an SR's utilisation from its backend.
     xe sr-scan uuid=$scan_me
     ok sr-usage
@@ -88,11 +88,11 @@ sr_usage() {
 
 ```text
 Storage:
+  iSCSI storage: 25 / 200 GiB used
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 25 / 512 GiB used
-  iSCSI storage: 25 / 200 GiB used
+  Shared NFS: 79 / 512 GiB used
 OK: sr-usage
 ```
 
@@ -119,7 +119,7 @@ def sr_usage(url, username, password):
     """Report each real SR's used/total space, then rescan one to refresh its utilisation."""
     GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
-    srs = sorted(session.xenapi.SR.get_all_records().values(), key=lambda s: s["name_label"])
+    srs = sorted(session.xenapi.SR.get_all_records().values(), key=lambda s: s["name_label"].lower())
     for sr in srs:
         if int(sr["physical_size"]) <= 0:
             continue  # skip ISO/DVD pseudo-SRs
@@ -138,11 +138,11 @@ def sr_usage(url, username, password):
 <details><summary>Example output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
   Shared NFS: 54 / 512 GiB used
-  iSCSI storage: 25 / 200 GiB used
 OK: sr-usage
 ```
 
@@ -201,6 +201,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"go/xenapi"
 )
@@ -227,7 +228,9 @@ func srUsage(url, user, password string) {
 	for ref, sr := range srs {
 		ordered = append(ordered, namedSR{ref, sr})
 	}
-	sort.Slice(ordered, func(i, j int) bool { return ordered[i].rec.NameLabel < ordered[j].rec.NameLabel })
+	sort.Slice(ordered, func(i, j int) bool {
+		return strings.ToLower(ordered[i].rec.NameLabel) < strings.ToLower(ordered[j].rec.NameLabel)
+	})
 
 	var scanMe xenapi.SRRef
 	haveScan := false
@@ -252,11 +255,11 @@ func srUsage(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 58 / 512 GiB used
-  iSCSI storage: 25 / 200 GiB used
+  Shared NFS: 25 / 512 GiB used
 OK: sr-usage
 ```
 
@@ -296,7 +299,7 @@ public final class SrUsage {
         final long GiB = 1024L * 1024 * 1024;
         Connection conn = connect(url, user, password);
         java.util.List<SR.Record> srs = new java.util.ArrayList<>(SR.getAllRecords(conn).values());
-        srs.sort(java.util.Comparator.comparing((SR.Record s) -> s.nameLabel));
+        srs.sort(java.util.Comparator.comparing((SR.Record s) -> s.nameLabel, String.CASE_INSENSITIVE_ORDER));
         for (SR.Record sr : srs) {
             if (sr.physicalSize <= 0) continue; // skip ISO/DVD pseudo-SRs
             System.out.println("  " + sr.nameLabel + ": " + sr.physicalUtilisation / GiB
@@ -316,11 +319,11 @@ public final class SrUsage {
 <details><summary>Example output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 54 / 512 GiB used
-  iSCSI storage: 25 / 200 GiB used
+  Shared NFS: 29 / 512 GiB used
 OK: sr-usage
 ```
 

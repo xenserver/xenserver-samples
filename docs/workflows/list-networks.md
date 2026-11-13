@@ -177,6 +177,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 
 	"go/xenapi"
 )
@@ -192,8 +193,13 @@ func listNetworks(url, user, password string) {
 	session := connect(url, user, password)
 	nets, err := xenapi.Network.GetAllRecords(session)
 	check(err)
-	fmt.Printf("Networks (%d):\n", len(nets))
+	ordered := make([]xenapi.NetworkRecord, 0, len(nets))
 	for _, net := range nets {
+		ordered = append(ordered, net)
+	}
+	sort.Slice(ordered, func(i, j int) bool { return ordered[i].NameLabel < ordered[j].NameLabel })
+	fmt.Printf("Networks (%d):\n", len(ordered))
+	for _, net := range ordered {
 		fmt.Printf("  - %s: %d PIF(s), %d VIF(s)\n", net.NameLabel, len(net.PIFs), len(net.VIFs))
 	}
 	fmt.Println("OK: list-networks")
@@ -205,10 +211,10 @@ func listNetworks(url, user, password string) {
 
 ```text
 Networks (4):
-  - Pool-wide network associated with eth0: 2 PIF(s), 5 VIF(s)
+  - Host internal management network: 0 PIF(s), 0 VIF(s)
+  - Pool-wide network associated with eth0: 2 PIF(s), 4 VIF(s)
   - Pool-wide network associated with eth1: 2 PIF(s), 0 VIF(s)
   - Pool-wide network associated with eth2: 2 PIF(s), 0 VIF(s)
-  - Host internal management network: 0 PIF(s), 0 VIF(s)
 OK: list-networks
 ```
 

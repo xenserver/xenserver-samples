@@ -80,7 +80,8 @@ attach_usb_device() {
     local vm_uuid pusb_uuid group_uuid vusb_uuid
     vm_uuid=$(xe vm-list name-label=web-01 --minimal)
     pusb_uuid=$(first_csv "$(xe pusb-list --minimal)")
-    echo "Device:         $(xe pusb-list uuid="$pusb_uuid" params=description --minimal)"
+    # param-get, not --minimal: --minimal escapes any comma in the value ("Ours Technology\, Inc.").
+    echo "Device:         $(xe pusb-param-get uuid="$pusb_uuid" param-name=description)"
 
     # Passthrough is off until an administrator releases the device: attaching one that has not been
     # released fails rather than silently doing nothing.

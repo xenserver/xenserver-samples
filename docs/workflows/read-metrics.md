@@ -226,10 +226,15 @@ func readMetrics(url, user, password string) {
 	fmt.Printf("Host %s: %d MiB total, %d MiB free, live = %v\n",
 		hostName, total/MiB, free/MiB, live)
 
-	vms, err := xenapi.VM.GetAllRecords(session)
+	// GetAll, not GetAllRecords: it returns the server's own list order, so the choice below is
+	// repeatable - ranging over GetAllRecords' map would pick an effectively random VM, since Go
+	// randomizes map iteration order.
+	vmRefs, err := xenapi.VM.GetAll(session)
 	check(err)
 	var vmRef xenapi.VMRef
-	for ref, v := range vms {
+	for _, ref := range vmRefs {
+		v, err := xenapi.VM.GetRecord(session, ref)
+		check(err)
 		if !v.IsATemplate && !v.IsControlDomain && v.PowerState == xenapi.VMPowerStateRunning {
 			vmRef = ref
 			break
@@ -249,8 +254,8 @@ func readMetrics(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Host sdk-host1: 65536 MiB total, 57344 MiB free, live = true
-VM cache-01: 2 vCPU(s), 4096 MiB
+Host sdk-host2: 65536 MiB total, 57344 MiB free, live = true
+VM web-01: 2 vCPU(s), 4096 MiB
 OK: read-metrics
 ```
 

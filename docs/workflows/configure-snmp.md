@@ -93,12 +93,23 @@ Source: [`cli/hosts-and-pools/configure-snmp.sh`](../../cli/hosts-and-pools/conf
 # Optional key=value arguments (default):
 #   trap_destination (192.0.2.50)
 
+# The string value of a JSON key, e.g. json_value '{"agent":{"community":"x"}}' community => x. A real host
+# pretty-prints the plugin's JSON over several lines and the simulator doesn't, but both quote every value
+# read here, so parameter expansion alone (no sed/grep process) finds it either way.
+json_value() {
+    local json=$1 key=$2 rest
+    rest=${json#*\"$key\"}
+    rest=${rest#*:}
+    rest=${rest#*\"}
+    echo "${rest%%\"*}"
+}
+
 # trap_destination: nmss is the list of real trap destinations SNMP notifications go to - an empty list
 # never configures where traps actually go, which is arguably the main point of "configure SNMP
 # monitoring". Plugin calls are per-host, so configure every host, and restore each one to disabled again
 # afterwards.
 configure_snmp() {
-    local trap_destination config nms_uuid answer
+    local trap_destination config nms_uuid answer status cfg dest
     trap_destination=$(param trap_destination "192.0.2.50")
     # Each trap destination needs a uuid of its own: the plugin refuses the whole config without one.
     nms_uuid=$(printf '%04x%04x-%04x-4%03x-%04x-%04x%04x%04x' $RANDOM $RANDOM $RANDOM $((RANDOM & 0xfff)) \
@@ -108,7 +119,11 @@ configure_snmp() {
         # The plugin reports a refused config in its answer, not as an xe error: check it.
         answer=$(xe host-call-plugin host-uuid=$h plugin=snmp fn=set-config "args:config=$config")
         case "$answer" in *'"code": 0'*|*'"code":0'*) ;; *) echo "set-config refused the configuration: $answer" >&2; exit 1 ;; esac
-        echo "$(xe host-param-get uuid=$h param-name=name-label): SNMP status: $(xe host-call-plugin host-uuid=$h plugin=snmp fn=status)"
+        status=$(xe host-call-plugin host-uuid=$h plugin=snmp fn=status)
+        cfg=$(xe host-call-plugin host-uuid=$h plugin=snmp fn=get-config)
+        dest=$(json_value "$cfg" address); dest=${dest:-"(none)"}
+        echo "$(xe host-param-get uuid=$h param-name=name-label): SNMP enabled: $(json_value "$status" enabled) / $(json_value "$status" active)"
+        echo "  community: $(json_value "$cfg" community), trap destination: $dest"
         xe host-call-plugin host-uuid=$h plugin=snmp fn=set-config 'args:config={"common":{"enabled":"no"}}' >/dev/null  # restore
     done
     ok configure-snmp
@@ -118,8 +133,10 @@ configure_snmp() {
 <details><summary>Example output</summary>
 
 ```text
-sdk-host1: SNMP status: {"code":0,"result":{"enabled":"enabled","active":"active"},"message":null}
-sdk-host2: SNMP status: {"code":0,"result":{"enabled":"enabled","active":"active"},"message":null}
+sdk-host1: SNMP enabled: enabled / active
+  community: sdk-community, trap destination: 192.0.2.50
+sdk-host2: SNMP enabled: enabled / active
+  community: sdk-community, trap destination: 192.0.2.50
 OK: configure-snmp
 ```
 

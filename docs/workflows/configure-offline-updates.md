@@ -142,6 +142,9 @@ configure_offline_updates() {
     if [ -n "$bundle_path" ]; then
         xe pool-sync-bundle filename="$bundle_path"
         echo "Uploaded $(basename "$bundle_path")"
+        # The updates a bundle makes available are served over HTTP by the coordinator (GET /updates),
+        # which the SDK examples read; no XenAPI call or xe command returns them, so xe cannot list them.
+        echo "Updates in the bundle: not listed (xe has no command for them; they are served over HTTP at /updates)"
     else
         echo "No bundle given: pass bundle_path to upload one"
     fi

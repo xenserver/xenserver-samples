@@ -88,7 +88,7 @@ create_bond() {
     # NOT `host`: that is the script-level variable the xe() wrapper passes to -s, and shadowing it
     # replaces the server address with a uuid, after which every call fails with "No hostname was
     # specified" and the cause is nowhere near the symptom.
-    local host_uuid spares network bond master
+    local host_uuid spares network bond master devices p
     host_uuid=$(first_csv "$(xe host-list --minimal)")
 
     # Pick up any NIC racked since the host booted; without it a card added a moment ago is not there
@@ -103,7 +103,11 @@ create_bond() {
         return 1
     fi
     spares="$(first_csv "$spares"),$(nth_csv "$spares" 2)"
-    echo "Bonding:      $spares"
+    devices=""
+    for p in $(each_csv "$spares"); do
+        devices="${devices:+$devices, }$(xe pif-list uuid=$p params=device --minimal)"
+    done
+    echo "Bonding:      $devices"
 
     network=$(xe network-create name-label=sdk-example-bond)
     bond=$(xe bond-create network-uuid="$network" pif-uuids="$spares" mode=balance-slb)
@@ -121,7 +125,7 @@ create_bond() {
 <details><summary>Example output</summary>
 
 ```text
-Bonding:      00000001-0000-0000-2700-000000000000,00000001-0000-0000-2900-000000000000
+Bonding:      eth1, eth2
 Bond master:  bond0
 Mode:         balance-slb
 Bonds left:   0

@@ -157,6 +157,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"go/xenapi"
@@ -184,6 +185,7 @@ func listRoles(url, user, password string) {
 			names = append(names, r.NameLabel)
 		}
 	}
+	sort.Strings(names)
 	shown := names
 	if len(shown) > 8 {
 		shown = shown[:8]
@@ -197,7 +199,7 @@ func listRoles(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Roles (7): vm-admin, read-only, vm-operator, client-cert, vm-power-admin, pool-operator, pool-admin
+Roles (7): client-cert, pool-admin, pool-operator, read-only, vm-admin, vm-operator, vm-power-admin
 OK: list-roles
 ```
 
