@@ -106,7 +106,7 @@ snapshot_schedule() {
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-120a-000000000000
+Created schedule: 00000001-0000-0000-310a-000000000000
 Members:          1
 Keeps:            2 snapshot(s)
 OK: snapshot-schedule
@@ -174,7 +174,7 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-170a-000000000000
+Created schedule: 00000001-0000-0000-1b0a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -238,7 +238,7 @@ public static void SnapshotSchedule(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-0d0a-000000000000
+Created schedule: 00000001-0000-0000-080a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -322,7 +322,7 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-1d0a-000000000000
+Created schedule: 00000001-0000-0000-170a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule
@@ -410,7 +410,7 @@ public final class SnapshotSchedule {
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-0a0a-000000000000
+Created schedule: 00000001-0000-0000-230a-000000000000
 Members:          1
 Snapshots kept:   2 (retention 2)
 OK: snapshot-schedule

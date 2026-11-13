@@ -179,6 +179,10 @@ Device models restarted; still running
 After suspend:  suspended
 After resume:   running
 After shutdown: halted
+The following items are about to be destroyed
+VM : 00000001-0000-0000-4b0a-000000000000 (xe-example-lifecycle)
+VDI: 00000001-0000-0000-4e0a-000000000000 (web-01 root disk) 
+All objects destroyed
 OK: vm-lifecycle
 ```
 

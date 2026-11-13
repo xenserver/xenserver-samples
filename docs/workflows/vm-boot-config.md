@@ -108,6 +108,10 @@ vm_boot_config() {
 vCPUs: 2/4
 Boot order: cdn
 Boot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)
+The following items are about to be destroyed
+VM : 00000001-0000-0000-630a-000000000000 (xe-example-boot)
+VDI: 00000001-0000-0000-660a-000000000000 (0) 
+All objects destroyed
 OK: vm-boot-config
 ```
 

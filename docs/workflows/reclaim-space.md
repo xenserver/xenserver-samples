@@ -263,7 +263,7 @@ func reclaimSpace(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-  reclaimed freed space on iSCSI storage: True
+  reclaimed freed space on Local storage: True
 OK: reclaim-space
 ```
 

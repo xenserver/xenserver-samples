@@ -82,7 +82,7 @@ function Invoke-CreateHbaSr {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-e20a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-e40a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -158,7 +158,7 @@ create_hba_sr() {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created HBA SR: 00000001-0000-0000-9a0a-000000000000 (512 GiB)
+Created HBA SR: 00000001-0000-0000-b20a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -309,7 +309,7 @@ public static void CreateHbaSr(string url, string user, string password, string 
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-970a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-a90a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 
@@ -498,7 +498,7 @@ public final class CreateHbaSr {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-e10a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-880a-000000000000 (512 GiB)
 OK: create-hba-sr
 ```
 

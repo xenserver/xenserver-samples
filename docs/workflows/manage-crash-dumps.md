@@ -335,12 +335,12 @@ func mib(size int64) string { return fmt.Sprintf("%d MiB", size/(1024*1024)) }
 <details><summary>Example output</summary>
 
 ```text
-sdk-host2 has 3 crash dump(s)
+sdk-host1 has 3 crash dump(s)
   20260101T09:00:00Z  256 MiB
   20260101T09:00:00Z  256 MiB
   20260101T09:00:00Z  256 MiB
   768 MiB in total
-  cleared:  sdk-host2 now has 0
+  cleared:  sdk-host1 now has 0
 OK: manage-crash-dumps
 ```
 
@@ -420,12 +420,12 @@ public final class ManageCrashDumps {
 <details><summary>Example output</summary>
 
 ```text
-sdk-host1 has 3 crash dump(s)
+sdk-host2 has 3 crash dump(s)
   20260101T09:00:00Z  256 MiB
   20260101T09:00:00Z  256 MiB
   20260101T09:00:00Z  256 MiB
   768 MiB in total
-  cleared:  sdk-host1 now has 0
+  cleared:  sdk-host2 now has 0
 OK: manage-crash-dumps
 ```
 

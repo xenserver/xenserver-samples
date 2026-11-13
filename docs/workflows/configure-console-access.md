@@ -75,7 +75,7 @@ function Invoke-ConfigureConsoleAccess {
   VM console idle timeout    0s
   limit console sessions     False
   host console idle timeout  0s
-  host https only            False
+  host https only            True
 after tightening:
   VM console idle timeout    600s
   limit console sessions     True
@@ -148,7 +148,7 @@ configure_console_access() {
   VM console idle timeout    0s
   limit console sessions     false
   host console idle timeout  0s
-  host https only            false
+  host https only            true
 after tightening:
   VM console idle timeout    600s
   limit console sessions     true
@@ -234,7 +234,7 @@ def configure_console_access(url, username, password):
   VM console idle timeout    0s
   limit console sessions     False
   host console idle timeout  0s
-  host https only            False
+  host https only            True
 after tightening:
   VM console idle timeout    600s
   limit console sessions     True
@@ -321,7 +321,7 @@ public static void ConfigureConsoleAccess(string url, string user, string passwo
   VM console idle timeout    0s
   limit console sessions     False
   host console idle timeout  0s
-  host https only            False
+  host https only            True
 after tightening:
   VM console idle timeout    600s
   limit console sessions     True
@@ -420,7 +420,7 @@ func configureConsoleAccess(url, user, password string) {
   VM console idle timeout    0s
   limit console sessions     false
   host console idle timeout  0s
-  host https only            false
+  host https only            true
 after tightening:
   VM console idle timeout    600s
   limit console sessions     true
@@ -520,7 +520,7 @@ public final class ConfigureConsoleAccess {
   VM console idle timeout    0s
   limit console sessions     false
   host console idle timeout  0s
-  host https only            false
+  host https only            true
 after tightening:
   VM console idle timeout    600s
   limit console sessions     true

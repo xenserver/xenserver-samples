@@ -130,6 +130,10 @@ live_migrate() {
 Running on: sdk-host1
 Migrated to: sdk-host2
 Still running: running
+The following items are about to be destroyed
+VM : 00000001-0000-0000-cf0a-000000000000 (xe-example-migrate)
+VDI: 00000001-0000-0000-d20a-000000000000 (web-01 root disk) 
+All objects destroyed
 OK: live-migrate
 ```
 

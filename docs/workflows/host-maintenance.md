@@ -152,6 +152,10 @@ Guest resident on:sdk-host2
 After disable:  enabled=false
 After evacuate: guest now on sdk-host1
 After enable:   enabled=true
+The following items are about to be destroyed
+VM : 00000001-0000-0000-650b-000000000000 (xe-example-maint)
+VDI: 00000001-0000-0000-680b-000000000000 (web-01 root disk) 
+All objects destroyed
 OK: host-maintenance
 ```
 

@@ -296,10 +296,10 @@ Hosts (2):
   - sdk-host1 (127.0.0.1)
   - sdk-host2 (198.51.100.12)
 VMs (4):
-  - cache-01 [Running]
-  - secure-01 [Halted]
-  - web-01 [Running]
   - db-01 [Halted]
+  - cache-01 [Running]
+  - web-01 [Running]
+  - secure-01 [Halted]
 OK: connect-inventory
 ```
 

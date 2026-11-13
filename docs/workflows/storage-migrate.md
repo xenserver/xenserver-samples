@@ -139,6 +139,10 @@ storage_migrate() {
 ```text
 Disk is on SR: Shared NFS
 Disk moved to: iSCSI storage
+The following items are about to be destroyed
+VM : 00000001-0000-0000-a60a-000000000000 (xe-example-storagemigrate)
+VDI: 00000001-0000-0000-b00a-000000000000 (web-01 root disk) 
+All objects destroyed
 OK: storage-migrate
 ```
 

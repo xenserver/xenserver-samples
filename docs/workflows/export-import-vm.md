@@ -119,9 +119,9 @@ function Get-TarEntryName {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-c449ceda-baf0-4122-a580-e17fb298302c.xva
+  wrote 4.0 MiB to sdk-example-export-3860f236-d1f9-44e9-ace4-e31f4136c723.xva
   archive holds ova.xml and 4 disk block(s)
-  imported as db-01 (imported)
+  imported as db-01
 OK: export-import-vm
 ```
 
@@ -184,7 +184,11 @@ export_import_vm() {
 ```text
 Exporting db-01
   wrote 4 MiB to cli-export.xva
-  imported as db-01 (imported)
+  imported as db-01
+The following items are about to be destroyed
+VM : 00000001-0000-0000-790a-000000000000 (db-01)
+VDI: 00000001-0000-0000-7b0a-000000000000 (db-01 disk 0) 
+All objects destroyed
 OK: export-import-vm
 ```
 
@@ -301,9 +305,9 @@ def export_import_vm(url, username, password, vm_name):
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-e7be6069.xva
+  wrote 4.0 MiB to sdk-example-export-ie8d5xqt.xva
   archive holds ova.xml and 4 disk block(s)
-  imported as db-01 (imported)
+  imported as db-01
 OK: export-import-vm
 ```
 
@@ -413,9 +417,9 @@ public static void ExportImportVm(string url, string user, string password, stri
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-08c588a9cfd54309a0148245c4310155.xva
+  wrote 4.0 MiB to sdk-example-export-08552addef264861a0ffc24f0abc55b2.xva
   archive holds ova.xml and 4 disk block(s)
-  imported as db-01 (imported)
+  imported as db-01
 OK: export-import-vm
 ```
 
@@ -572,9 +576,9 @@ func tarNames(path string) []string {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-2682014176.xva
+  wrote 4.0 MiB to sdk-example-export-4263554790.xva
   archive holds ova.xml and 4 disk block(s)
-  imported as db-01 (imported)
+  imported as db-01
 OK: export-import-vm
 ```
 
@@ -728,9 +732,9 @@ public final class ExportImportVm {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export932597217311599156.xva
+  wrote 4.0 MiB to sdk-example-export13152219564260145515.xva
   archive holds ova.xml and 4 disk block(s)
-  imported as db-01 (imported)
+  imported as db-01
 OK: export-import-vm
 ```
 

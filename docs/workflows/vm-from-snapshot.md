@@ -106,6 +106,18 @@ vm_from_snapshot() {
 Snapshot of db-01 taken
   new VM:      xe-example-vm-from-snapshot (is-a-template=false)
   new template:xe-example-template-from-snapshot (is-a-template=true)
+The following items are about to be destroyed
+VM : 00000001-0000-0000-680a-000000000000 (xe-example-vm-from-snapshot)
+VDI: 00000001-0000-0000-6b0a-000000000000 (db-01 root disk) 
+All objects destroyed
+The following items are about to be destroyed
+VM : 00000001-0000-0000-710a-000000000000 (xe-example-template-from-snapshot)
+VDI: 00000001-0000-0000-740a-000000000000 (db-01 root disk) 
+All objects destroyed
+The following items are about to be destroyed
+VM : 00000001-0000-0000-610a-000000000000 (xe-example-source-snapshot)
+VDI: 00000001-0000-0000-620a-000000000000 (db-01 root disk) 
+All objects destroyed
 OK: vm-from-snapshot
 ```
 

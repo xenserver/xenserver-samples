@@ -87,6 +87,10 @@ convert_to_template() {
 ```text
 is-a-template after install: false
 is-a-template after convert: true
+The following items are about to be destroyed
+VM : 00000001-0000-0000-340a-000000000000 (xe-example-totemplate)
+VDI: 00000001-0000-0000-370a-000000000000 (0) 
+All objects destroyed
 OK: convert-to-template
 ```
 

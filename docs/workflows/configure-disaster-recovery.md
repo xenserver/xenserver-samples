@@ -94,7 +94,7 @@ function Invoke-ConfigureDisasterRecovery {
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-510b-000000000000), 3804 MiB, up to date: True
+  metadata disk: Metadata for DR (00000001-0000-0000-530b-000000000000), 3804 MiB, up to date: True
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -192,7 +192,7 @@ configure_disaster_recovery() {
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-ed0a-000000000000), 3804 MiB, up to date: true
+  metadata disk: Metadata for DR (00000001-0000-0000-e40a-000000000000), 3804 MiB, up to date: true
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -286,7 +286,7 @@ def configure_disaster_recovery(url, username, password, sr_name=None):
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-570b-000000000000), 3804 MiB, up to date: True
+  metadata disk: Metadata for DR (00000001-0000-0000-8b0b-000000000000), 3804 MiB, up to date: True
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -379,7 +379,7 @@ public static void ConfigureDisasterRecovery(string url, string user, string pas
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-e90a-000000000000), 3804 MiB, up to date: True
+  metadata disk: Metadata for DR (00000001-0000-0000-e00a-000000000000), 3804 MiB, up to date: True
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -502,7 +502,7 @@ func configureDisasterRecovery(url, user, password, srName string) {
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-320b-000000000000), 3804 MiB, up to date: true
+  metadata disk: Metadata for DR (00000001-0000-0000-410b-000000000000), 3804 MiB, up to date: true
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```
@@ -628,7 +628,7 @@ public final class ConfigureDisasterRecovery {
 ```text
 SRs that can hold the pool metadata: iSCSI storage
 Replicating the pool metadata to iSCSI storage
-  metadata disk: Metadata for DR (00000001-0000-0000-5b0b-000000000000), 3804 MiB, up to date: true
+  metadata disk: Metadata for DR (00000001-0000-0000-1e0b-000000000000), 3804 MiB, up to date: true
 Turned replication off again, as it was before
 OK: configure-disaster-recovery
 ```

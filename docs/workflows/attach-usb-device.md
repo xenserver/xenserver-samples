@@ -275,7 +275,7 @@ func attachUsbDevice(url, user, password, vmName string) {
 <details><summary>Example output</summary>
 
 ```text
-Device:         Kingston Technology DataTraveler 3.0
+Device:         Logitech, Inc. Unifying Receiver
 Attached:       1 device(s)
 OK: attach-usb-device
 ```

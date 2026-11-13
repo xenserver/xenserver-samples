@@ -181,6 +181,10 @@ After unplug:   false
 Resized:        4294967296 -> 8589934592 bytes
 After plug:     true
 Grown online:   not supported by nfs storage; unplug, resize, plug as above
+The following items are about to be destroyed
+VM : 00000001-0000-0000-490a-000000000000 (xe-example-vm-disks)
+VDI: 00000001-0000-0000-4c0a-000000000000 (web-01 root disk) 
+All objects destroyed
 OK: manage-vm-disks
 ```
 

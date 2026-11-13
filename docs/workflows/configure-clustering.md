@@ -77,7 +77,7 @@ function Invoke-ConfigureClustering {
 
 ```text
 Stack:      corosync
-Quorate:    True (2/1 needed)
+Quorate:    True (1/2 needed)
 One member out, quorate: True
 Resynced,   quorate: True
 Cluster removed again.
@@ -223,7 +223,7 @@ def configure_clustering(url, username, password):
 
 ```text
 Stack:      corosync
-Quorate:    True (2/1 needed)
+Quorate:    True (1/2 needed)
 One member out, quorate: True
 Resynced,   quorate: True
 Cluster removed again.
@@ -305,7 +305,7 @@ public static void ConfigureClustering(string url, string user, string password)
 
 ```text
 Stack:      corosync
-Quorate:    True (2/1 needed)
+Quorate:    True (1/2 needed)
 One member out, quorate: True
 Resynced,   quorate: True
 Cluster removed again.
@@ -407,7 +407,7 @@ func configureClustering(url, user, password string) {
 
 ```text
 Stack:      corosync
-Quorate:    true (2/1 needed)
+Quorate:    true (1/2 needed)
 One member out, quorate: true
 Resynced,   quorate: true
 Cluster removed again.
@@ -514,7 +514,7 @@ public final class ConfigureClustering {
 
 ```text
 Stack:      corosync
-Quorate:    true (2/1 needed)
+Quorate:    true (1/2 needed)
 One member out, quorate: true
 Resynced,   quorate: true
 Cluster removed again.

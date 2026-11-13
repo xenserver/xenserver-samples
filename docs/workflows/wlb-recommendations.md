@@ -116,8 +116,6 @@ function Invoke-WlbRecommendations {
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
-  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host2 rated 3.7
   sdk-host1 rated 1.0
   appliance configuration: ReportingCronString=0 3 * * *
@@ -223,8 +221,6 @@ wlb_recommendations() {
 
 ```text
 WLB: wlb.example:8012
-web-01: wlb 00000001-0000-0000-5300-000000000000 opt-1 rec-1 Optimizing pool CPU load
-cache-01: wlb 00000001-0000-0000-5300-000000000000 opt-2 rec-2 Optimizing pool CPU load
 sdk-host1: wlb 1.0 id-00000001
 sdk-host2: wlb 3.7 id-00000001
   appliance configuration: ReportingCronString: 0 3 * * *
@@ -331,8 +327,6 @@ def wlb_recommendations(url, username, password, vm_name, wlb_host_port="wlb.exa
 
 ```text
 WLB: wlb.example:8012
-  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
-  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
   sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
@@ -450,8 +444,6 @@ public static void WlbRecommendations(string url, string user, string password, 
 
 ```text
 WLB: wlb.example:8012
-  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
-  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
   sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
@@ -590,8 +582,6 @@ func isWlbStillDiscovering(err error) bool {
 
 ```text
 WLB: wlb.example:8012
-  move web-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
-  move cache-01 -> host 00000001-0000-0000-5300-000000000000 (Optimizing pool CPU load)
   sdk-host1 rated 1.0
   sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
@@ -739,8 +729,6 @@ public final class WlbRecommendations {
 
 ```text
 WLB: wlb.example:8012
-  move cache-01: 00000001-0000-0000-5300-000000000000 Optimizing pool CPU load opt-1 rec-1 wlb
-  move web-01: 00000001-0000-0000-5300-000000000000 Optimizing pool CPU load opt-2 rec-2 wlb
   sdk-host1: 1.0 id-00000001 wlb
   sdk-host2: 3.7 id-00000001 wlb
   appliance configuration: ReportingCronString=0 3 * * *

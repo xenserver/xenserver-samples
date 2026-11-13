@@ -89,8 +89,12 @@ create_vm() {
 <details><summary>Example output</summary>
 
 ```text
-Created VM: 00000001-0000-0000-f009-000000000000
+Created VM: 00000001-0000-0000-ef09-000000000000
 is-a-template = false
+The following items are about to be destroyed
+VM : 00000001-0000-0000-ef09-000000000000 (xe-example-vm)
+VDI: 00000001-0000-0000-f209-000000000000 (0) 
+All objects destroyed
 OK: create-vm
 ```
 
@@ -185,7 +189,7 @@ public static void CreateVm(string url, string user, string password,
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-ea09-000000000000
+Cloned new VM: 00000001-0000-0000-ee09-000000000000
 Provisioned. is_a_template = False
 Cleaned up the example VM.
 OK: create-vm
@@ -240,7 +244,7 @@ func createVM(url, user, password, templateName, newVMName string) {
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-ef09-000000000000
+Cloned new VM: 00000001-0000-0000-ed09-000000000000
 Provisioned. is_a_template = false
 Cleaned up the example VM.
 OK: create-vm
@@ -304,7 +308,7 @@ public final class CreateVm {
 
 ```text
 Using template: Rocky Linux 8
-Cloned new VM: 00000001-0000-0000-ef09-000000000000
+Cloned new VM: 00000001-0000-0000-f009-000000000000
 Provisioned. is_a_template = false
 Cleaned up the example VM.
 OK: create-vm

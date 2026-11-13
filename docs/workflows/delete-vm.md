@@ -93,6 +93,10 @@ delete_vm() {
 <details><summary>Example output</summary>
 
 ```text
+The following items are about to be destroyed
+VM : 00000001-0000-0000-1c0a-000000000000 (xe-example-delete)
+VDI: 00000001-0000-0000-1f0a-000000000000 (0) 
+All objects destroyed
 VM still present: false
 OK: delete-vm
 ```
@@ -141,7 +145,7 @@ def delete_vm(url, username, password, template_name, new_vm_name="sdk-example-d
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-0b0a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-130a-000000000000 with 1 disk(s)
 VM still present: False
 OK: delete-vm
 ```
@@ -187,7 +191,7 @@ public static void DeleteVm(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-0f0a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-080a-000000000000 with 1 disk(s)
 VM still present: False
 OK: delete-vm
 ```
@@ -249,7 +253,7 @@ func deleteVM(url, user, password, templateName, newVMName string) {
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-0f0a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-090a-000000000000 with 1 disk(s)
 VM still present: false
 OK: delete-vm
 ```
@@ -318,7 +322,7 @@ public final class DeleteVm {
 <details><summary>Example output</summary>
 
 ```text
-Deleting VM 00000001-0000-0000-050a-000000000000 with 1 disk(s)
+Deleting VM 00000001-0000-0000-0f0a-000000000000 with 1 disk(s)
 VM still present: false
 OK: delete-vm
 ```

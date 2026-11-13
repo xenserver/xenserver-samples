@@ -92,6 +92,10 @@ manage_vif() {
 
 ```text
 Attached a VIF; VM now has 1 NIC(s)
+The following items are about to be destroyed
+VM : 00000001-0000-0000-d30a-000000000000 (xe-example-vif)
+VDI: 00000001-0000-0000-d60a-000000000000 (0) 
+All objects destroyed
 OK: manage-vif
 ```
 

@@ -92,7 +92,7 @@ Storage:
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 79 / 512 GiB used
+  Shared NFS: 50 / 512 GiB used
 OK: sr-usage
 ```
 
@@ -142,7 +142,7 @@ def sr_usage(url, username, password):
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 54 / 512 GiB used
+  Shared NFS: 50 / 512 GiB used
 OK: sr-usage
 ```
 
@@ -185,7 +185,7 @@ public static void SrUsage(string url, string user, string password)
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 58 / 512 GiB used
+  Shared NFS: 54 / 512 GiB used
 OK: sr-usage
 ```
 
@@ -323,7 +323,7 @@ public final class SrUsage {
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 29 / 512 GiB used
+  Shared NFS: 54 / 512 GiB used
 OK: sr-usage
 ```
 

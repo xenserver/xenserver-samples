@@ -105,7 +105,11 @@ copy_vm() {
 <details><summary>Example output</summary>
 
 ```text
-Copied VM: 00000001-0000-0000-000a-000000000000
+Copied VM: 00000001-0000-0000-130a-000000000000
+The following items are about to be destroyed
+VM : 00000001-0000-0000-130a-000000000000 (xe-example-copy)
+VDI: 00000001-0000-0000-160a-000000000000 (db-01 root disk) 
+All objects destroyed
 OK: copy-vm
 ```
 
@@ -166,7 +170,7 @@ def copy_vm(url, username, password, vm_name, sr_name, copy_name="sdk-example-co
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-020a-000000000000
+Copied VM:     00000001-0000-0000-0a0a-000000000000
 Copy has 1 VBD(s), is_a_template = False
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm
@@ -220,7 +224,7 @@ public static void CopyVm(string url, string user, string password,
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-060a-000000000000
+Copied VM:     00000001-0000-0000-fe09-000000000000
 Copy has 1 VBD(s), is_a_template = False
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm
@@ -291,7 +295,7 @@ func copyVM(url, user, password, vmName, srName, copyName string) {
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-060a-000000000000
+Copied VM:     00000001-0000-0000-fe09-000000000000
 Copy has 1 VBD(s), is_a_template = false
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm
@@ -365,7 +369,7 @@ public final class CopyVm {
 
 ```text
 Copying 'db-01' to SR: Shared NFS
-Copied VM:     00000001-0000-0000-090a-000000000000
+Copied VM:     00000001-0000-0000-080a-000000000000
 Copy has 1 VBD(s), is_a_template = false
 Cleaned up the copied VM (left the source intact).
 OK: copy-vm

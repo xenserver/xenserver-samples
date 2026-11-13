@@ -130,7 +130,11 @@ create_vm_with_vgpu() {
 <details><summary>Example output</summary>
 
 ```text
-Created vGPU: 00000001-0000-0000-a60a-000000000000 of type GRID K100
+Created vGPU: 00000001-0000-0000-730a-000000000000 of type GRID K100
+The following items are about to be destroyed
+VM : 00000001-0000-0000-6c0a-000000000000 (xe-example-vgpu)
+VDI: 00000001-0000-0000-6f0a-000000000000 (0) 
+All objects destroyed
 OK: create-vm-with-vgpu
 ```
 
@@ -209,7 +213,7 @@ def gpu_group_with_vgpu_type(session):
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-670a-000000000000
+Created vGPU: 00000001-0000-0000-490a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu
@@ -288,7 +292,7 @@ private static (XenRef<GPU_group>, XenRef<VGPU_type>) GpuGroupWithVgpuType(Sessi
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-650a-000000000000
+Created vGPU: 00000001-0000-0000-950a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu
@@ -384,7 +388,7 @@ func gpuGroupWithVgpuType(session *xenapi.Session) (xenapi.GPUGroupRef, xenapi.V
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-6f0a-000000000000
+Created vGPU: 00000001-0000-0000-5e0a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu
@@ -483,7 +487,7 @@ public final class CreateVmWithVgpu {
 
 ```text
 Using vGPU type: GRID K100 (256 MB framebuffer)
-Created vGPU: 00000001-0000-0000-650a-000000000000
+Created vGPU: 00000001-0000-0000-9d0a-000000000000
 VM now has 1 vGPU(s); type = GRID K100
 Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu

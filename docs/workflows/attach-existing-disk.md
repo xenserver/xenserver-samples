@@ -392,9 +392,9 @@ func attachVdi(session *xenapi.Session, vm xenapi.VMRef, vdi xenapi.VDIRef) xena
 
 ```text
 Disk sdk-example-portable-disk created on Shared NFS
-  attached to db-01
-  detached:   the disk still exists (4294967296 bytes)
   attached to secure-01
+  detached:   the disk still exists (4294967296 bytes)
+  attached to db-01
   the disk is on 1 VM(s)
 OK: attach-existing-disk
 ```

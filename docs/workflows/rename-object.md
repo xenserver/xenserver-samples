@@ -140,7 +140,7 @@ public static void RenameObject(string url, string user, string password, string
     var vm = VmByName(session, vmName);
     var original = VM.get_name_label(session, vm);
     VM.set_name_label(session, vm, "sdk-renamed");
-    Console.WriteLine($"Renamed '{original}' → '{VM.get_name_label(session, vm)}'");
+    Console.WriteLine($"Renamed '{original}' -> '{VM.get_name_label(session, vm)}'");
     VM.set_name_label(session, vm, original); // restore so the example is repeatable
     Console.WriteLine("OK: rename-object");
     session.logout();
@@ -150,7 +150,7 @@ public static void RenameObject(string url, string user, string password, string
 <details><summary>Example output</summary>
 
 ```text
-Renamed 'web-01'  'sdk-renamed'
+Renamed 'web-01' -> 'sdk-renamed'
 OK: rename-object
 ```
 
@@ -232,7 +232,7 @@ public final class RenameObject {
         VM vm = vmByName(conn, vmName);
         String original = vm.getNameLabel(conn);
         vm.setNameLabel(conn, "sdk-renamed");
-        System.out.println("Renamed '" + original + "' → '" + vm.getNameLabel(conn) + "'");
+        System.out.println("Renamed '" + original + "' -> '" + vm.getNameLabel(conn) + "'");
         vm.setNameLabel(conn, original); // restore so the example is repeatable
         System.out.println("OK: rename-object");
         Session.logout(conn);
@@ -243,7 +243,7 @@ public final class RenameObject {
 <details><summary>Example output</summary>
 
 ```text
-Renamed 'web-01' ? 'sdk-renamed'
+Renamed 'web-01' -> 'sdk-renamed'
 OK: rename-object
 ```
 

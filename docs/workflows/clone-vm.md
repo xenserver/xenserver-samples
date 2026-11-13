@@ -86,7 +86,7 @@ clone_vm() {
     was_running=$([ "$(xe vm-param-get uuid=$vm param-name=power-state)" = "running" ] && echo true || echo false)
     [ "$was_running" = true ] && xe vm-shutdown uuid=$vm
     clone=$(xe vm-clone uuid=$vm new-name-label=xe-example-clone)
-    echo "Cloned VM: $clone"
+    echo "Cloned '$(xe vm-param-get uuid=$vm param-name=name-label)' -> $(xe vm-param-get uuid=$clone param-name=name-label)"
     [ "$was_running" = true ] && xe vm-start uuid=$vm
     # Tidy up: vm-uninstall destroys the clone and the disks it owns (vm-destroy would leave them).
     xe vm-uninstall uuid=$clone force=true
@@ -97,7 +97,11 @@ clone_vm() {
 <details><summary>Example output</summary>
 
 ```text
-Cloned VM: 00000001-0000-0000-f709-000000000000
+Cloned 'db-01' -> xe-example-clone
+The following items are about to be destroyed
+VM : 00000001-0000-0000-e809-000000000000 (xe-example-clone)
+VDI: 00000001-0000-0000-eb09-000000000000 (db-01 root disk) 
+All objects destroyed
 OK: clone-vm
 ```
 
@@ -188,7 +192,7 @@ public static void CloneVm(string url, string user, string password,
     if (wasRunning) VM.clean_shutdown(session, source);
 
     var clone = VM.clone(session, source, cloneName);
-    Console.WriteLine($"Cloned '{VM.get_name_label(session, source)}' → {VM.get_name_label(session, clone)}");
+    Console.WriteLine($"Cloned '{VM.get_name_label(session, source)}' -> {VM.get_name_label(session, clone)}");
     Console.WriteLine($"Clone has {VM.get_VBDs(session, clone).Count} VBD(s)");
 
     if (wasRunning) VM.start(session, source, false, true);
@@ -203,7 +207,7 @@ public static void CloneVm(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Cloned 'db-01'  sdk-example-clone
+Cloned 'db-01' -> sdk-example-clone
 Clone has 1 VBD(s)
 OK: clone-vm
 ```
@@ -319,7 +323,7 @@ public final class CloneVm {
         if (wasRunning) source.cleanShutdown(conn);
 
         VM clone = source.createClone(conn, cloneName);
-        System.out.println("Cloned '" + source.getNameLabel(conn) + "' → " + clone.getNameLabel(conn));
+        System.out.println("Cloned '" + source.getNameLabel(conn) + "' -> " + clone.getNameLabel(conn));
         System.out.println("Clone has " + clone.getVBDs(conn).size() + " VBD(s)");
 
         if (wasRunning) source.start(conn, false, true);
@@ -335,7 +339,7 @@ public final class CloneVm {
 <details><summary>Example output</summary>
 
 ```text
-Cloned 'db-01' ? sdk-example-clone
+Cloned 'db-01' -> sdk-example-clone
 Clone has 1 VBD(s)
 OK: clone-vm
 ```

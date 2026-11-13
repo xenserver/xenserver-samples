@@ -116,8 +116,16 @@ checkpoint_vm() {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-560a-000000000000
+Created checkpoint: 00000001-0000-0000-6c0a-000000000000
 Reverted to the checkpoint; power-state now: suspended
+The following items are about to be destroyed
+VM : 00000001-0000-0000-6c0a-000000000000 (xe-example-checkpoint-1)
+VDI: 00000001-0000-0000-6d0a-000000000000 (web-01 root disk) 
+All objects destroyed
+The following items are about to be destroyed
+VM : 00000001-0000-0000-620a-000000000000 (xe-example-checkpoint)
+VDI: 00000001-0000-0000-650a-000000000000 (web-01 root disk) 
+All objects destroyed
 OK: checkpoint-vm
 ```
 
@@ -179,7 +187,7 @@ def checkpoint_vm(url, username, password, source_vm, new_vm_name="sdk-example-c
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-3c0a-000000000000
+Created checkpoint: 00000001-0000-0000-3b0a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -239,7 +247,7 @@ public static void CheckpointVm(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-3d0a-000000000000
+Created checkpoint: 00000001-0000-0000-520a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -304,7 +312,7 @@ func checkpointVM(url, user, password, sourceVM, newVMName string) {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-580a-000000000000
+Created checkpoint: 00000001-0000-0000-550a-000000000000
 is_a_snapshot = true
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm
@@ -382,7 +390,7 @@ public final class CheckpointVm {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-720a-000000000000
+Created checkpoint: 00000001-0000-0000-770a-000000000000
 is_a_snapshot = true
 Reverted the VM to the checkpoint; power state now: Suspended
 OK: checkpoint-vm

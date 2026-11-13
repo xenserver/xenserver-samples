@@ -178,6 +178,10 @@ changed_block_tracking() {
 Backing up web-01
   bitmap of 68268 base64 chars covers 409600 blocks of 64 KiB
   older snapshot is now type=cbt_metadata, still cbt-enabled=true
+The following items are about to be destroyed
+VM : 00000001-0000-0000-350b-000000000000 (cbt-backup-2)
+VDI: 00000001-0000-0000-360b-000000000000 (web-01 root disk) 
+All objects destroyed
 OK: changed-block-tracking
 ```
 
@@ -479,7 +483,7 @@ func firstDisk(session *xenapi.Session, vm xenapi.VMRef) xenapi.VDIRef {
 <details><summary>Example output</summary>
 
 ```text
-Backing up db-01
+Backing up secure-01
   0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt_enabled=true
 OK: changed-block-tracking

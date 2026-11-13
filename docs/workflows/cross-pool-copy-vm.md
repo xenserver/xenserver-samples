@@ -295,7 +295,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-f509-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-f409-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -384,7 +384,7 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-fe09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-ea09-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -505,7 +505,7 @@ func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, 
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-ec09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-fe09-000000000000)
 OK: cross-pool-copy-vm
 ```
 

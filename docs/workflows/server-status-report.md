@@ -121,7 +121,7 @@ Status report for sdk-host1
   xen-bugtool            max        -1 bytes  default=yes pii=no
   xenserver-config       max    163840 bytes  default=yes pii=maybe
   xenserver-domains      max      1024 bytes  default=yes pii=no
-  xenserver-databases    max  12582912 bytes  default=yes pii=yes
+  xenserver-databases    max  54525952 bytes  default=yes pii=yes
   xenserver-install      max   4194304 bytes  default=yes pii=maybe
   xenserver-logs         max  73400320 bytes  default=yes pii=maybe
   xen-info               max     20480 bytes  default=yes pii=maybe
@@ -261,7 +261,7 @@ Status report for sdk-host1
   xen-bugtool            max        -1 bytes  default=yes pii=no
   xenserver-config       max    163840 bytes  default=yes pii=maybe
   xenserver-domains      max      1024 bytes  default=yes pii=no
-  xenserver-databases    max  12582912 bytes  default=yes pii=yes
+  xenserver-databases    max  54525952 bytes  default=yes pii=yes
   xenserver-install      max   4194304 bytes  default=yes pii=maybe
   xenserver-logs         max  73400320 bytes  default=yes pii=maybe
   xen-info               max     20480 bytes  default=yes pii=maybe
@@ -396,7 +396,7 @@ Status report for sdk-host1
   xen-bugtool            max        -1 bytes  default=yes pii=no
   xenserver-config       max    163840 bytes  default=yes pii=maybe
   xenserver-domains      max      1024 bytes  default=yes pii=no
-  xenserver-databases    max  12582912 bytes  default=yes pii=yes
+  xenserver-databases    max  54525952 bytes  default=yes pii=yes
   xenserver-install      max   4194304 bytes  default=yes pii=maybe
   xenserver-logs         max  73400320 bytes  default=yes pii=maybe
   xen-info               max     20480 bytes  default=yes pii=maybe
@@ -536,7 +536,7 @@ Status report for sdk-host1
   xen-bugtool            max        -1 bytes  default=yes pii=no
   xenserver-config       max    163840 bytes  default=yes pii=maybe
   xenserver-domains      max      1024 bytes  default=yes pii=no
-  xenserver-databases    max  12582912 bytes  default=yes pii=yes
+  xenserver-databases    max  54525952 bytes  default=yes pii=yes
   xenserver-install      max   4194304 bytes  default=yes pii=maybe
   xenserver-logs         max  73400320 bytes  default=yes pii=maybe
   xen-info               max     20480 bytes  default=yes pii=maybe
@@ -699,7 +699,7 @@ Status report for sdk-host1
   xen-bugtool            max        -1 bytes  default=yes pii=no
   xenserver-config       max    163840 bytes  default=yes pii=maybe
   xenserver-domains      max      1024 bytes  default=yes pii=no
-  xenserver-databases    max  12582912 bytes  default=yes pii=yes
+  xenserver-databases    max  54525952 bytes  default=yes pii=yes
   xenserver-install      max   4194304 bytes  default=yes pii=maybe
   xenserver-logs         max  73400320 bytes  default=yes pii=maybe
   xen-info               max     20480 bytes  default=yes pii=maybe
@@ -865,7 +865,7 @@ Status report for sdk-host1
   xen-bugtool            max        -1 bytes  default=yes pii=no
   xenserver-config       max    163840 bytes  default=yes pii=maybe
   xenserver-domains      max      1024 bytes  default=yes pii=no
-  xenserver-databases    max  12582912 bytes  default=yes pii=yes
+  xenserver-databases    max  54525952 bytes  default=yes pii=yes
   xenserver-install      max   4194304 bytes  default=yes pii=maybe
   xenserver-logs         max  73400320 bytes  default=yes pii=maybe
   xen-info               max     20480 bytes  default=yes pii=maybe
