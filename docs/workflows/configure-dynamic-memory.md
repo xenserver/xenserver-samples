@@ -370,6 +370,8 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.xenserver.samples.PoolConnection.connect;
 
@@ -421,11 +423,7 @@ public final class ConfigureDynamicMemory {
                 vm.setMemoryDynamicRange(conn, floor, ceiling * 2);
                 System.out.println("  ERROR: an out-of-range maximum was accepted");
             } catch (Types.XenAPIException e) {
-                // errorDescription[0] is the error code (e.g. MEMORY_CONSTRAINT_VIOLATION_ORDER);
-                // shortDescription is the raw server response when the binding couldn't parse that out.
-                String code = e.errorDescription != null && e.errorDescription.length > 0
-                        ? e.errorDescription[0] : e.shortDescription;
-                System.out.println("  refused a dynamic_max above static_max: " + code);
+                System.out.println("  refused a dynamic_max above static_max: " + errorCode(e));
             }
 
             vm.setMemoryDynamicRange(conn, before.memoryDynamicMin, before.memoryDynamicMax);
@@ -438,6 +436,22 @@ public final class ConfigureDynamicMemory {
     private static String gib(long bytes) {
         return String.format("%.1f GiB", bytes / (1024.0 * 1024 * 1024));
     }
+
+    /**
+     * The XenAPI error code (e.g. MEMORY_CONSTRAINT_VIOLATION_ORDER), however the binding reported it. A
+     * generic exception carries it in errorDescription[0]; an error with no parameters can instead arrive
+     * as a generic exception whose shortDescription is the raw error JSON (the code is its "message"),
+     * or as the error's own exception class (Types.MemoryConstraintViolationOrder), named after the code.
+     */
+    private static String errorCode(Types.XenAPIException e) {
+        if (e.errorDescription != null && e.errorDescription.length > 0) return e.errorDescription[0];
+        Matcher m = Pattern.compile("\"message\"\\s*:\\s*\"([^\"]+)\"")
+                .matcher(e.shortDescription == null ? "" : e.shortDescription);
+        if (m.find()) return m.group(1);
+        if (e.getClass() != Types.XenAPIException.class && e.getClass() != Types.BadServerResponse.class)
+            return e.getClass().getSimpleName().replaceAll("([a-z0-9])([A-Z])", "$1_$2").toUpperCase();
+        return e.shortDescription;
+    }
 }
 ```
 
@@ -446,7 +460,7 @@ public final class ConfigureDynamicMemory {
 ```text
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
   dynamic range now 3.0 GiB-4.0 GiB
-  refused a dynamic_max above static_max: The dynamic memory range violates constraint static_min &lt;= dynamic_min &lt;= dynamic_max &lt;= static_max.
+  refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER
 OK: configure-dynamic-memory
 ```
 

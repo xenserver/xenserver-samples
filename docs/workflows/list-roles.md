@@ -61,7 +61,11 @@ Source: [`cli/security-and-access/list-roles.sh`](../../cli/security-and-access/
 list_roles() {
     # role-list shows the roles a user can be granted, not the permissions they are made of. Its field
     # is `name`: a role has no name-label, and asking for one prints nothing.
-    echo "Roles: $(xe role-list params=name --minimal)"
+    local roles first
+    roles=$(xe role-list params=name --minimal)
+    # Sorted, and at most eight, as the other languages print them.
+    first=$(each_csv "$roles" | sort | head -n 8)
+    echo "Roles ($(count_csv "$roles")): ${first//$'\n'/, }"
     ok list-roles
 }
 ```
@@ -69,7 +73,7 @@ list_roles() {
 <details><summary>Example output</summary>
 
 ```text
-Roles: pool-admin,pool-operator,vm-power-admin,vm-admin,vm-operator,read-only,client-cert
+Roles (7): client-cert, pool-admin, pool-operator, read-only, vm-admin, vm-operator, vm-power-admin
 OK: list-roles
 ```
 

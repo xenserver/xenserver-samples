@@ -115,14 +115,19 @@ create_vm_with_vgpu() {
     best=$(printf '%s\n' "$candidates" | head -n1)
     group=$(printf '%s' "$best" | cut -f2)
     type=$(printf '%s' "$best" | cut -f3)
+    echo "Using vGPU type: $(xe vgpu-type-param-get uuid=$type param-name=model-name)"          "($(( $(xe vgpu-type-param-get uuid=$type param-name=framebuffer-size) / 1048576 )) MB framebuffer)"
     local template=$(param template_name "Rocky Linux 8")
     # No sr-uuid: the template's disks go to the pool's default SR, as VM.provision does.
     vm=$(xe vm-install template="$template" new-name-label=xe-example-vgpu)
     vgpu=$(xe vgpu-create vm-uuid=$vm gpu-group-uuid=$group vgpu-type-uuid=$type)
-    echo "Created vGPU: $vgpu of type $(xe vgpu-type-param-get uuid=$type param-name=model-name)"
+    echo "Created vGPU: $vgpu"
+    # Read the assignment back.
+    vgpus=$(xe vgpu-list vm-uuid=$vm --minimal)
+    echo "VM now has $(count_csv "$vgpus") vGPU(s); type = $(xe vgpu-param-get uuid=$(first_csv "$vgpus") param-name=type-model-name)"
     # Tidy up so the example is repeatable: the vGPU, then the VM and the disks it owns.
     xe vgpu-destroy uuid=$vgpu
-    xe vm-uninstall uuid=$vm force=true
+    xe vm-uninstall uuid=$vm force=true >/dev/null
+    echo "Cleaned up the example VM and its vGPU."
     ok create-vm-with-vgpu
 }
 ```
@@ -130,11 +135,10 @@ create_vm_with_vgpu() {
 <details><summary>Example output</summary>
 
 ```text
-Created vGPU: 00000001-0000-0000-730a-000000000000 of type GRID K100
-The following items are about to be destroyed
-VM : 00000001-0000-0000-6c0a-000000000000 (xe-example-vgpu)
-VDI: 00000001-0000-0000-6f0a-000000000000 (0) 
-All objects destroyed
+Using vGPU type: GRID K100 (256 MB framebuffer)
+Created vGPU: 00000001-0000-0000-ef09-000000000000
+VM now has 1 vGPU(s); type = 00000001-0000-0000-3500-000000000000
+Cleaned up the example VM and its vGPU.
 OK: create-vm-with-vgpu
 ```
 
