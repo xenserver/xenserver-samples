@@ -1,83 +1,37 @@
-# XenServerJava usage examples
+# XenServer Java examples
 
-This folder contains of a number of test programs that can be used as pedagogical
-examples accompanying XenServerJava (com.xenserver.xen-api). They are
-structured as a Maven project.
-
-## Overview
-
-Running the main file `RunTests` runs a series of examples included in the 
-same directory:
-
--  `AddNetwork`: Adds a new internal network not attached to any NICs.
-
--  `AsyncVMCreate`: Makes asynchronously a new VM from a built-in template, 
-    starts, and stops it.
-
--  `CreateVM`: Creates a VM on the default SR with a network and DVD drive.
-
--  `EventMonitor`: Listens for events on a connection and prints each event out 
-    as it is received.
-
--  `GetVariousRecords`: Retrieves the records for various types of objects.
-
--  `SessionReuse`: Shows how a Session object can be shared among multiple Connections.
-
--  `SharedStorage`: Creates a shared NFS SR.
-
--  `StartAllVMs`: Connects to a host and tries to start each VM on it.
-
--  `VMlifecycle`: Takes a VM through the various lifecycle states. Requires a 
-    shutdown VM with tools installed.
-
--  `VdiAndSrOps`: Performs various SR and VDI tests, including creating
-    a dummy SR.
-
-## Dependencies
-
-This code depends on XenServerJava, which in turns depends upon Apache XML-RPC
-by the Apache Software Foundation, licensed under the Apache Software License 2.0.
-
-
-If you have the jar, you can install it using the Maven CLI:
-
-```bash
-mvn install:install-file -Dfile=".\xen-api-XX.YY.ZZ.jar" -DgroupId="com.xenserver" -DartifactId=xen-api -Dversion="XX.YY.ZZ" -Dpackaging=jar
-```
-
-## How to run the tests
-
-Once you compile the project run:
+This folder holds the Java version of every workflow example ([the full list](../README.md#workflow-examples))
+except `trace-api-calls` (the Java SDK cannot add a header to its requests), as a Maven project with one
+class per workflow, in a package per area:
 
 ```
-RunTests <host> <username> <password> [nfs server] [nfs path]
+java/src/main/java/com/xenserver/samples/
+  gettingstarted/ConnectInventory.java, Events.java, ErrorHandling.java, ...
+  virtualmachines/CreateVm.java, CloneVm.java, SnapshotRevert.java, ...
+  storage/  networking/  migration/  hostsandpools/  updates/  ...
+  PoolConnection.java   connecting to a pool (used by every workflow)
+  Helpers.java          small helpers several workflows share (find by name, clean up, ...)
+  Workflows.java        the command-line dispatcher that runs any workflow by name
 ```
 
-Before running, you may need to perform these steps:
+## Build and run
 
-1. Run the following command on the server you want to connect to:
-   ```
-   openssl x509 -in /etc/xensource/xapi-ssl.pem -pubkey -out serverpub.pem
-   ```
+You need Java 11 or later and Maven. The SDK jar is not published to Maven Central, so install it into
+your local repository first, then build and run:
 
-2. Copy the public key `serverpub.pem` to your client machine.
+```
+mvn install:install-file -Dfile=xen-api-<version>.jar -DgroupId=com.xenserver -DartifactId=xen-api -Dversion=<version> -Dpackaging=jar
+mvn compile exec:java -Dxenapi.version=<version> -Dexec.args="connect-inventory https://xenserver root <password>"
+```
 
-3. To convert the public key into a form that Java's keytool can understand, run:
-   ```
-   openssl x509 -inform PEM -outform DER -in serverpub.pem -out serverpub.jks
-   ```
+`PoolConnection` accepts the host's self-signed certificate, so no keystore setup is needed.
 
-4. Run keytool (found in Java's bin directory) as follows:
-   ```
-   keytool -importcert -file serverpub.jks -alias <hostname> [-keystore <keystore_location>]
-   ```
+## Use a workflow in your own code
 
-5. To tell the JVM the location and password of your keystore, run it with the
-   additional parameters:
-   ```
-   -Djavax.net.ssl.trustStore=<keystore_location> -Djavax.net.ssl.trustStorePassword=<keystore_password>
-   ```
-   For extra debug info, try:
-   ```
-   -Djavax.net.debug=ssl
-   ```
+Each workflow is a class with a self-contained `run` method you can copy into your own code, together
+with `PoolConnection` (and any helper from `Helpers` it uses). Its Javadoc describes what it does and
+shows how to call it, e.g.:
+
+```java
+ConnectInventory.run("https://xenserver", "root", password);
+```

@@ -1,0 +1,792 @@
+<!-- Generated from workflows.json, the example sources and a run of each example. Edit those, not this file. -->
+
+# Create a VM (full workflow)
+
+Create a VM end to end: pick a template, name the VM, choose an installation source and a home server, set CPU & memory, add a disk on a storage repository, attach a network interface and start it — the full sequence, rather than a single clone call.
+
+Workflow `create-vm-full`. [All workflows](README.md) · [Connecting](connecting.md)
+
+## PowerShell
+
+Source: [`powershell/VirtualMachines/Invoke-CreateVmFull.ps1`](../../powershell/VirtualMachines/Invoke-CreateVmFull.ps1)
+
+```powershell
+function Invoke-CreateVmFull {
+    <#
+    .SYNOPSIS
+        Create a VM (full workflow).
+    .DESCRIPTION
+        Create a VM end to end: pick a template, name the VM, choose an installation source and a home
+        server, set CPU & memory, add a disk on a storage repository, attach a network interface and start
+        it — the full sequence, rather than a single clone call.
+    .EXAMPLE
+        Invoke-CreateVmFull -Url https://xenserver -UserName root -Password $password -TemplateName 'Rocky Linux 8'
+    #>
+    param(
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$UserName,
+        [Parameter(Mandatory = $true)][string]$Password,
+        [Parameter(Mandatory = $true)][string]$TemplateName,
+        [string]$NewVmName = "sdk-example-full-vm"
+    )
+    $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
+    # Step 1 - Template.
+    $template = Get-XenVM -Name $TemplateName | Where-Object { $_.is_a_template } | Select-Object -First 1
+    if (-not $template) { throw "No template named '$TemplateName' was found." }
+    Write-Host "Template:      $($template.name_label)"
+
+    # Step 2 - Name and description.
+    $vm = $template | Invoke-XenVM -XenAction Clone -NewName $NewVmName -PassThru
+    $ref = $vm
+    $vm | Set-XenVM -NameDescription "Created by the create-vm-full example"
+    $vm | Set-XenVM -IsATemplate $false
+    Write-Host "Created VM:    $((Get-XenVM -Ref $ref).uuid)"
+
+    # Step 3 - Installation media (a network install repository). Set replaces other_config wholesale,
+    # so merge our key into a copy of the current map.
+    $current = (Get-XenVM -Ref $ref).other_config
+    $oc = @{}
+    foreach ($k in $current.Keys) { $oc[$k] = $current[$k] }
+    $oc["install-repository"] = "http://mirror.example.com/rocky/9/os/x86_64"
+    $vm | Set-XenVM -OtherConfig $oc
+    Write-Host "Install media: network repository"
+
+    # Step 4 - Home server (affinity).
+    $xenHost = Get-XenHost | Select-Object -First 1
+    $vm | Set-XenVM -Affinity $xenHost
+    Write-Host "Home server:   $($xenHost.name_label)"
+
+    # Step 5 - CPU & Memory. -MemoryLimits takes [static_min, static_max, dynamic_min, dynamic_max].
+    $vm | Set-XenVM -VCPUsMax 2 -VCPUsAtStartup 2
+    $vm | Set-XenVM -MemoryLimits (512MB, 2GB, 2GB, 2GB)
+    Write-Host "CPU/memory:    2 vCPUs, 2 GiB"
+
+    # Step 6 - Storage: add a disk on a (non-ISO) SR.
+    $sr = Get-XenSR | Where-Object { $_.content_type -ne 'iso' -and $_.type -notin @('iso', 'udev') } | Select-Object -First 1
+    $vbdDevice = (Get-XenVMProperty -Ref $ref -XenProperty AllowedVBDDevices)[0]
+    $vdi = New-XenVDI -NameLabel "$NewVmName disk 0" -NameDescription "System disk created by the create-vm-full example" `
+        -SR $sr -VirtualSize 24GB -Type system -Sharable $false -ReadOnly $false -PassThru
+    New-XenVBD -VM (Get-XenVM -Ref $ref) -VDI $vdi -Userdevice $vbdDevice -Bootable $true `
+        -Mode RW -Type Disk -Empty $false | Out-Null
+    Write-Host "Storage:       24 GiB disk on $($sr.name_label)"
+
+    # Step 7 - Networking: attach a VIF to a network.
+    $net = Get-XenNetwork | Select-Object -First 1
+    $vifDevice = (Get-XenVMProperty -Ref $ref -XenProperty AllowedVIFDevices)[0]
+    New-XenVIF -VM (Get-XenVM -Ref $ref) -Network $net -Device $vifDevice -MAC "" -MTU 1500 | Out-Null
+    Write-Host "Networking:    NIC on $($net.name_label)"
+
+    # Step 8 - Finish: start the VM.
+    $vm | Invoke-XenVM -XenAction Start
+
+    $started = Get-XenVM -Ref $ref
+    Write-Host "--- Result ---"
+    Write-Host "power state:   $($started.power_state)"
+    Write-Host "vCPUs:         $($started.VCPUs_max)"
+    Write-Host "disks:         $(@($started.VBDs).Count), NICs: $(@($started.VIFs).Count)"
+
+    # Tidy up so the example is repeatable.
+    $vm | Invoke-XenVM -XenAction HardShutdown
+    $vm | Remove-XenVM
+    $vdi | Remove-XenVDI
+    Write-Host "OK: create-vm-full"
+    $session | Disconnect-XenServer
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Template:      Rocky Linux 8
+Created VM:    00000001-0000-0000-f509-000000000000
+Install media: network repository
+Home server:   sdk-host1
+CPU/memory:    2 vCPUs, 2 GiB
+Storage:       24 GiB disk on Shared NFS
+Networking:    NIC on Pool-wide network 0
+--- Result ---
+power state:   Running
+vCPUs:         2
+disks:         1, NICs: 1
+OK: create-vm-full
+```
+
+</details>
+
+## xe CLI
+
+Source: [`cli/virtual-machines/create-vm-full.sh`](../../cli/virtual-machines/create-vm-full.sh)
+
+```bash
+# Create a VM (full workflow).
+#
+# Create a VM end to end: pick a template, name the VM, choose an installation source and a home server, set
+# CPU & memory, add a disk on a storage repository, attach a network interface and start it — the full
+# sequence, rather than a single clone call.
+#
+# Run it:
+#   ./workflows.sh create-vm-full https://xenserver root "$password"
+#
+# Optional key=value arguments (default):
+#   template_name (Rocky Linux 8)
+
+create_vm_full() {
+    # Not "host": that name is the connection target xe() dials (connection.sh), and shadowing it here
+    # would send every xe call below it to an empty address instead.
+    local template=$(param template_name "Rocky Linux 8") home_host net sr template_uuid vbd_device
+    echo "Template:      $template"
+    template_uuid=$(first_csv "$(xe template-list name-label="$template" --minimal)")
+    [ -n "$template_uuid" ] || { echo "no template named '$template' was found" >&2; return 1; }
+    # vm-clone, not vm-install: vm-install also runs VM.provision, which would create the disk the
+    # template's own other-config:disks describes - doubling up with the one this example adds itself
+    # below. A clone of a template is itself a template, so mark it an ordinary VM afterward.
+    vm=$(xe vm-clone uuid=$template_uuid new-name-label=xe-example-full-vm)
+    xe vm-param-set uuid=$vm is-a-template=false
+    echo "Created VM:    $vm"
+    xe vm-param-set uuid=$vm other-config:install-repository=http://mirror.example.com/rocky/9/os/x86_64
+    echo "Install media: network repository"
+
+    # Home server: the host the VM prefers to start on, when more than one in the pool could run it.
+    home_host=$(first_host)
+    xe vm-param-set uuid=$vm affinity=$home_host
+    echo "Home server:   $(xe host-param-get uuid=$home_host param-name=name-label)"
+
+    xe vm-param-set uuid=$vm VCPUs-max=2 VCPUs-at-startup=2
+    xe vm-memory-limits-set uuid=$vm static-min=512MiB static-max=2GiB dynamic-min=2GiB dynamic-max=2GiB
+    echo "CPU/memory:    2 vCPUs, 2 GiB"
+
+    sr=$(default_sr)
+    vdi=$(xe vdi-create sr-uuid=$sr name-label="xe-example-full-vm disk" virtual-size=24GiB type=user)
+    vbd_device=$(first_csv "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=allowed-VBD-devices)")")
+    xe vbd-create vm-uuid=$vm vdi-uuid=$vdi device=$vbd_device type=Disk mode=RW >/dev/null
+    echo "Storage:       24 GiB disk on $(xe sr-param-get uuid=$sr param-name=name-label)"
+
+    net=$(first_csv "$(xe network-list --minimal)")
+    xe vif-create vm-uuid=$vm network-uuid=$net device=0 >/dev/null
+    echo "Networking:    NIC on $(xe network-param-get uuid=$net param-name=name-label)"
+
+    xe vm-start uuid=$vm
+    echo "--- Result ---"
+    echo "power-state: $(xe vm-param-get uuid=$vm param-name=power-state)"
+    echo "vCPUs:       $(xe vm-param-get uuid=$vm param-name=VCPUs-max)"
+    # type=Disk, in case a future template of this name ships with a CD/DVD drive VBD of its own.
+    echo "disks:       $(count_csv "$(xe vbd-list vm-uuid=$vm type=Disk --minimal)"), NICs:" \
+         "$(count_csv "$(xe vif-list vm-uuid=$vm --minimal)")"
+    # Tidy up so the example is repeatable: stop the VM, then vm-uninstall destroys it (vm-destroy would
+    # leave the disk behind). Cloning the template rather than installing from it means nothing here is
+    # provisioned, so vm-uninstall owns no disks of its own - destroy the one this example added.
+    xe vm-shutdown uuid=$vm force=true
+    xe vm-uninstall uuid=$vm force=true
+    xe vdi-destroy uuid=$vdi
+    echo "Cleaned up the example VM."
+    ok create-vm-full
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Template:      Rocky Linux 8
+Created VM:    00000001-0000-0000-fc09-000000000000
+Install media: network repository
+Home server:   sdk-host1
+CPU/memory:    2 vCPUs, 2 GiB
+Storage:       24 GiB disk on Shared NFS
+Networking:    NIC on Pool-wide network 0
+--- Result ---
+power-state: running
+vCPUs:       2
+disks:       1, NICs: 1
+The following items are about to be destroyed
+VM : 00000001-0000-0000-fc09-000000000000 (xe-example-full-vm)
+All objects destroyed
+Cleaned up the example VM.
+OK: create-vm-full
+```
+
+</details>
+
+## Python
+
+Source: [`python/virtual_machines/create_vm_full.py`](../../python/virtual_machines/create_vm_full.py)
+
+```python
+"""Create a VM (full workflow).
+
+Create a VM end to end: pick a template, name the VM, choose an installation source and a home
+server, set CPU & memory, add a disk on a storage repository, attach a network interface and start
+it — the full sequence, rather than a single clone call.
+
+Run it::
+
+    create_vm_full("https://xenserver", "root", password, "Rocky Linux 8")
+"""
+
+from connection import connect
+from helpers import template_by_name
+
+
+def create_vm_full(url, username, password, template_name, new_vm_name="sdk-example-full-vm"):
+    """
+    Create a VM end to end: start from the named template, name the VM,
+    choose an installation source, a home server, CPU & memory, add a disk, attach a network,
+    then start it.
+    """
+    GIB = 1024 * 1024 * 1024
+    MIB = 1024 * 1024
+
+    session = connect(url, username, password)
+    # Step 1 - Template.
+    template_ref = template_by_name(session, template_name)
+    print("Template:      %s" % session.xenapi.VM.get_name_label(template_ref))
+
+    # Step 2 - Name and description.
+    vm = session.xenapi.VM.clone(template_ref, new_vm_name)
+    session.xenapi.VM.set_name_description(vm, "Created by the create-vm-full example")
+    session.xenapi.VM.set_is_a_template(vm, False)
+    print("Created VM:    %s" % session.xenapi.VM.get_uuid(vm))
+
+    # Step 3 - Installation media (a network install repository).
+    session.xenapi.VM.add_to_other_config(vm, "install-repository",
+                                          "http://mirror.example.com/rocky/9/os/x86_64")
+    print("Install media: network repository")
+
+    # Step 4 - Home server (affinity).
+    host_ref, host = next(iter(session.xenapi.host.get_all_records().items()))
+    session.xenapi.VM.set_affinity(vm, host_ref)
+    print("Home server:   %s" % host["name_label"])
+
+    # Step 5 - CPU & Memory (memory sizes are passed as strings: they exceed XML-RPC's 32-bit int).
+    session.xenapi.VM.set_VCPUs_max(vm, "2")
+    session.xenapi.VM.set_VCPUs_at_startup(vm, "2")
+    session.xenapi.VM.set_memory_limits(vm, str(512 * MIB), str(2 * GIB), str(2 * GIB), str(2 * GIB))
+    print("CPU/memory:    2 vCPUs, 2 GiB")
+
+    # Step 6 - Storage: add a disk on a (non-ISO) SR.
+    sr_ref = next(ref for ref, r in session.xenapi.SR.get_all_records().items()
+                  if r["content_type"] != "iso" and r["type"] not in ("iso", "udev"))
+    vbd_device = session.xenapi.VM.get_allowed_VBD_devices(vm)[0]
+    vdi = session.xenapi.VDI.create({
+        "name_label": "%s disk 0" % new_vm_name,
+        "name_description": "System disk created by the create-vm-full example",
+        "SR": sr_ref,
+        "virtual_size": str(24 * GIB),
+        "type": "system",
+        "sharable": False,
+        "read_only": False,
+        "other_config": {},
+    })
+    session.xenapi.VBD.create({
+        "VM": vm, "VDI": vdi, "userdevice": vbd_device, "bootable": True,
+        "mode": "RW", "type": "Disk", "empty": False, "other_config": {},
+        "qos_algorithm_type": "", "qos_algorithm_params": {},
+    })
+    print("Storage:       24 GiB disk on %s" % session.xenapi.SR.get_name_label(sr_ref))
+
+    # Step 7 - Networking: attach a VIF to a network.
+    net_ref, net = next(iter(session.xenapi.network.get_all_records().items()))
+    vif_device = session.xenapi.VM.get_allowed_VIF_devices(vm)[0]
+    session.xenapi.VIF.create({
+        "VM": vm, "network": net_ref, "device": vif_device, "MAC": "",
+        "MTU": "1500", "other_config": {},
+        "qos_algorithm_type": "", "qos_algorithm_params": {},
+    })
+    print("Networking:    NIC on %s" % net["name_label"])
+
+    # Step 8 - Finish: start the VM.
+    session.xenapi.VM.start(vm, False, True)
+
+    # Report the assembled VM.
+    print("--- Result ---")
+    print("power state:   %s" % session.xenapi.VM.get_power_state(vm))
+    print("vCPUs:         %s" % session.xenapi.VM.get_VCPUs_max(vm))
+    print("disks:         %d, NICs: %d" %
+          (len(session.xenapi.VM.get_VBDs(vm)), len(session.xenapi.VM.get_VIFs(vm))))
+
+    # Tidy up so the example is repeatable.
+    session.xenapi.VM.hard_shutdown(vm)
+    session.xenapi.VM.destroy(vm)
+    session.xenapi.VDI.destroy(vdi)
+    print("Cleaned up the example VM.")
+
+    print("OK: create-vm-full")
+    session.xenapi.session.logout()
+```
+
+<details><summary>Example output</summary>
+
+```text
+Template:      Rocky Linux 8
+Created VM:    00000001-0000-0000-f709-000000000000
+Install media: network repository
+Home server:   sdk-host1
+CPU/memory:    2 vCPUs, 2 GiB
+Storage:       24 GiB disk on Shared NFS
+Networking:    NIC on Pool-wide network 0
+--- Result ---
+power state:   Running
+vCPUs:         2
+disks:         1, NICs: 1
+Cleaned up the example VM.
+OK: create-vm-full
+```
+
+</details>
+
+## C# (.NET)
+
+Source: [`csharp/VirtualMachines/CreateVmFull.cs`](../../csharp/VirtualMachines/CreateVmFull.cs)
+
+```csharp
+/// <summary>
+/// Create a VM end to end: pick a template, name the VM, choose an installation source and a home server,
+/// set CPU &amp; memory, add a disk on a storage repository, attach a network interface and start it —
+/// the full sequence, rather than a single clone call.
+/// </summary>
+/// <example>
+/// <code>
+/// Workflows.CreateVmFull("https://xenserver", "root", password, "Rocky Linux 8");
+/// </code>
+/// </example>
+public static void CreateVmFull(string url, string user, string password,
+    string templateName, string newVmName = "sdk-example-full-vm")
+{
+    const long GiB = 1024L * 1024 * 1024, MiB = 1024L * 1024;
+
+    var session = Connect(url, user, password);
+    // Step 1 - Template.
+    var templateRef = TemplateByName(session, templateName);
+    Console.WriteLine($"Template:      {VM.get_name_label(session, templateRef)}");
+
+    // Step 2 - Name and description.
+    var vm = VM.clone(session, templateRef, newVmName);
+    VM.set_name_description(session, vm, "Created by the create-vm-full example");
+    VM.set_is_a_template(session, vm, false);
+    Console.WriteLine($"Created VM:    {VM.get_uuid(session, vm)}");
+
+    // Step 3 - Installation media (a network install repository).
+    VM.add_to_other_config(session, vm, "install-repository", "http://mirror.example.com/rocky/9/os/x86_64");
+    Console.WriteLine("Install media: network repository");
+
+    // Step 4 - Home server (affinity).
+    var (hostRef, host) = Host.get_all_records(session).First();
+    VM.set_affinity(session, vm, hostRef);
+    Console.WriteLine($"Home server:   {host.name_label}");
+
+    // Step 5 - CPU & Memory.
+    VM.set_VCPUs_max(session, vm, 2);
+    VM.set_VCPUs_at_startup(session, vm, 2);
+    VM.set_memory_limits(session, vm, 512 * MiB, 2 * GiB, 2 * GiB, 2 * GiB);
+    Console.WriteLine("CPU/memory:    2 vCPUs, 2 GiB");
+
+    // Step 6 - Storage: add a disk on a (non-ISO) SR.
+    var (srRef, sr) = SR.get_all_records(session)
+        .First(kv => kv.Value.content_type != "iso" && kv.Value.type != "iso" && kv.Value.type != "udev");
+    var vbdDevice = VM.get_allowed_VBD_devices(session, vm)[0];
+    var vdi = VDI.create(session, new VDI
+    {
+        name_label = $"{newVmName} disk 0",
+        name_description = "System disk created by the create-vm-full example",
+        SR = srRef,
+        virtual_size = 24 * GiB,
+        type = vdi_type.system,
+        sharable = false,
+        read_only = false,
+        other_config = new Dictionary<string, string>(),
+    });
+    VBD.create(session, new VBD
+    {
+        VM = vm,
+        VDI = vdi,
+        userdevice = vbdDevice,
+        bootable = true,
+        mode = vbd_mode.RW,
+        type = vbd_type.Disk,
+        empty = false,
+        other_config = new Dictionary<string, string>(),
+        qos_algorithm_type = "",
+        qos_algorithm_params = new Dictionary<string, string>(),
+    });
+    Console.WriteLine($"Storage:       24 GiB disk on {sr.name_label}");
+
+    // Step 7 - Networking: attach a VIF to a network.
+    var (netRef, net) = Network.get_all_records(session).First();
+    var vifDevice = VM.get_allowed_VIF_devices(session, vm)[0];
+    VIF.create(session, new VIF
+    {
+        VM = vm,
+        network = netRef,
+        device = vifDevice,
+        MAC = "",
+        MTU = 1500,
+        other_config = new Dictionary<string, string>(),
+        qos_algorithm_type = "",
+        qos_algorithm_params = new Dictionary<string, string>(),
+    });
+    Console.WriteLine($"Networking:    NIC on {net.name_label}");
+
+    // Step 8 - Finish: start the VM.
+    VM.start(session, vm, false, true);
+
+    Console.WriteLine("--- Result ---");
+    Console.WriteLine($"power state:   {VM.get_power_state(session, vm)}");
+    Console.WriteLine($"vCPUs:         {VM.get_VCPUs_max(session, vm)}");
+    Console.WriteLine($"disks:         {VM.get_VBDs(session, vm).Count}, NICs: {VM.get_VIFs(session, vm).Count}");
+
+    // Tidy up so the example is repeatable.
+    VM.hard_shutdown(session, vm);
+    VM.destroy(session, vm);
+    VDI.destroy(session, vdi);
+    Console.WriteLine("Cleaned up the example VM.");
+
+    Console.WriteLine("OK: create-vm-full");
+    session.logout();
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Template:      Rocky Linux 8
+Created VM:    00000001-0000-0000-f209-000000000000
+Install media: network repository
+Home server:   sdk-host1
+CPU/memory:    2 vCPUs, 2 GiB
+Storage:       24 GiB disk on Shared NFS
+Networking:    NIC on Pool-wide network 0
+--- Result ---
+power state:   Running
+vCPUs:         2
+disks:         1, NICs: 1
+Cleaned up the example VM.
+OK: create-vm-full
+```
+
+</details>
+
+## Go
+
+Source: [`go/create_vm_full.go`](../../go/create_vm_full.go)
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"go/xenapi"
+)
+
+// createVMFull - Create a VM (full workflow).
+//
+// Create a VM end to end: pick a template, name the VM, choose an installation source and a home
+// server, set CPU & memory, add a disk on a storage repository, attach a network interface and
+// start it — the full sequence, rather than a single clone call.
+//
+// Run it:
+//
+//	createVMFull("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-full-vm")
+func createVMFull(url, user, password, templateName, newVMName string) {
+	const GiB = 1024 * 1024 * 1024
+	const MiB = 1024 * 1024
+
+	session := connect(url, user, password)
+	// Step 1 - Template.
+	templateRef := templateByName(session, templateName)
+	tname, _ := xenapi.VM.GetNameLabel(session, templateRef)
+	fmt.Printf("Template:      %s\n", tname)
+
+	// Step 2 - Name and description.
+	vm, err := xenapi.VM.Clone(session, templateRef, newVMName)
+	check(err)
+	check(xenapi.VM.SetNameDescription(session, vm, "Created by the create-vm-full example"))
+	check(xenapi.VM.SetIsATemplate(session, vm, false))
+	uuid, _ := xenapi.VM.GetUUID(session, vm)
+	fmt.Printf("Created VM:    %s\n", uuid)
+
+	// Step 3 - Installation media (a network install repository).
+	check(xenapi.VM.AddToOtherConfig(session, vm, "install-repository",
+		"http://mirror.example.com/rocky/9/os/x86_64"))
+	fmt.Println("Install media: network repository")
+
+	// Step 4 - Home server (affinity).
+	hosts, err := xenapi.Host.GetAllRecords(session)
+	check(err)
+	var hostRef xenapi.HostRef
+	var hostName string
+	for ref, h := range hosts {
+		hostRef, hostName = ref, h.NameLabel
+		break
+	}
+	check(xenapi.VM.SetAffinity(session, vm, hostRef))
+	fmt.Printf("Home server:   %s\n", hostName)
+
+	// Step 5 - CPU & Memory.
+	check(xenapi.VM.SetVCPUsMax(session, vm, 2))
+	check(xenapi.VM.SetVCPUsAtStartup(session, vm, 2))
+	check(xenapi.VM.SetMemoryLimits(session, vm, 512*MiB, 2*GiB, 2*GiB, 2*GiB))
+	fmt.Println("CPU/memory:    2 vCPUs, 2 GiB")
+
+	// Step 6 - Storage: add a disk on a (non-ISO) SR.
+	srs, err := xenapi.SR.GetAllRecords(session)
+	check(err)
+	var srRef xenapi.SRRef
+	var srName string
+	for ref, sr := range srs {
+		if sr.ContentType != "iso" && sr.Type != "iso" && sr.Type != "udev" {
+			srRef, srName = ref, sr.NameLabel
+			break
+		}
+	}
+	vbdDevices, err := xenapi.VM.GetAllowedVBDDevices(session, vm)
+	check(err)
+	vdi, err := xenapi.VDI.Create(session, xenapi.VDIRecord{
+		NameLabel:       newVMName + " disk 0",
+		NameDescription: "System disk created by the create-vm-full example",
+		SR:              srRef,
+		VirtualSize:     24 * GiB,
+		Type:            xenapi.VdiTypeSystem,
+		Sharable:        false,
+		ReadOnly:        false,
+		OtherConfig:     map[string]string{},
+	})
+	check(err)
+	_, err = xenapi.VBD.Create(session, xenapi.VBDRecord{
+		VM: vm, VDI: vdi, Userdevice: vbdDevices[0], Bootable: true,
+		Mode: xenapi.VbdModeRW, Type: xenapi.VbdTypeDisk, Empty: false,
+		OtherConfig: map[string]string{}, QosAlgorithmParams: map[string]string{},
+	})
+	check(err)
+	fmt.Printf("Storage:       24 GiB disk on %s\n", srName)
+
+	// Step 7 - Networking: attach a VIF to a network.
+	nets, err := xenapi.Network.GetAllRecords(session)
+	check(err)
+	var netRef xenapi.NetworkRef
+	var netName string
+	for ref, n := range nets {
+		netRef, netName = ref, n.NameLabel
+		break
+	}
+	vifDevices, err := xenapi.VM.GetAllowedVIFDevices(session, vm)
+	check(err)
+	// A Go record sends every field, enums included, and a real host rejects an empty enum value
+	// (INTERNAL_ERROR "Unknown tag/contents"), so set the enums to the defaults xapi applies when
+	// they are left out.
+	_, err = xenapi.VIF.Create(session, xenapi.VIFRecord{
+		VM: vm, Network: netRef, Device: vifDevices[0], MAC: "", MTU: 1500,
+		OtherConfig: map[string]string{}, QosAlgorithmParams: map[string]string{},
+		LockingMode:           xenapi.VifLockingModeNetworkDefault,
+		Ipv4ConfigurationMode: xenapi.VifIpv4ConfigurationModeNone,
+		Ipv6ConfigurationMode: xenapi.VifIpv6ConfigurationModeNone,
+	})
+	check(err)
+	fmt.Printf("Networking:    NIC on %s\n", netName)
+
+	// Step 8 - Finish: start the VM.
+	check(xenapi.VM.Start(session, vm, false, true))
+
+	fmt.Println("--- Result ---")
+	ps, _ := xenapi.VM.GetPowerState(session, vm)
+	vcpus, _ := xenapi.VM.GetVCPUsMax(session, vm)
+	vbds, _ := xenapi.VM.GetVBDs(session, vm)
+	vifs, _ := xenapi.VM.GetVIFs(session, vm)
+	fmt.Printf("power state:   %s\n", ps)
+	fmt.Printf("vCPUs:         %d\n", vcpus)
+	fmt.Printf("disks:         %d, NICs: %d\n", len(vbds), len(vifs))
+
+	// Tidy up so the example is repeatable.
+	check(xenapi.VM.HardShutdown(session, vm))
+	check(xenapi.VM.Destroy(session, vm))
+	check(xenapi.VDI.Destroy(session, vdi))
+	fmt.Println("Cleaned up the example VM.")
+
+	fmt.Println("OK: create-vm-full")
+	session.Logout()
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Template:      Rocky Linux 8
+Created VM:    00000001-0000-0000-eb09-000000000000
+Install media: network repository
+Home server:   sdk-host2
+CPU/memory:    2 vCPUs, 2 GiB
+Storage:       24 GiB disk on Local storage
+Networking:    NIC on Pool-wide network 1
+--- Result ---
+power state:   Running
+vCPUs:         2
+disks:         1, NICs: 1
+Cleaned up the example VM.
+OK: create-vm-full
+```
+
+</details>
+
+## Java
+
+Source: [`java/src/main/java/com/xenserver/samples/virtualmachines/CreateVmFull.java`](../../java/src/main/java/com/xenserver/samples/virtualmachines/CreateVmFull.java)
+
+```java
+package com.xenserver.samples.virtualmachines;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Session;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VM;
+
+import java.util.Map;
+
+import static com.xenserver.samples.Helpers.templateByName;
+import static com.xenserver.samples.PoolConnection.connect;
+
+public final class CreateVmFull {
+    private CreateVmFull() {
+    }
+
+    /**
+     * Create a VM (full workflow).
+     *
+     * <p>Create a VM end to end: pick a template, name the VM, choose an installation source and a home
+     * server, set CPU &amp; memory, add a disk on a storage repository, attach a network interface and
+     * start it — the full sequence, rather than a single clone call.
+     *
+     * <p>Run it:
+     *
+     * <pre>{@code
+     * CreateVmFull.run("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-full-vm");
+     * }</pre>
+     */
+    public static void run(String url, String user, String password,
+            String templateName, String newVmName) throws Exception {
+        final long GiB = 1024L * 1024 * 1024, MiB = 1024L * 1024;
+
+        Connection conn = connect(url, user, password);
+        // Step 1 - Template.
+        VM template = templateByName(conn, templateName);
+        System.out.println("Template:      " + template.getNameLabel(conn));
+
+        // Step 2 - Name and description.
+        VM vm = template.createClone(conn, newVmName);
+        vm.setNameDescription(conn, "Created by the create-vm-full example");
+        vm.setIsATemplate(conn, false);
+        System.out.println("Created VM:    " + vm.getUuid(conn));
+
+        // Step 3 - Installation media (a network install repository).
+        vm.addToOtherConfig(conn, "install-repository", "http://mirror.example.com/rocky/9/os/x86_64");
+        System.out.println("Install media: network repository");
+
+        // Step 4 - Home server (affinity).
+        Map.Entry<Host, Host.Record> he = Host.getAllRecords(conn).entrySet().iterator().next();
+        vm.setAffinity(conn, he.getKey());
+        System.out.println("Home server:   " + he.getValue().nameLabel);
+
+        // Step 5 - CPU & Memory.
+        vm.setVCPUsMax(conn, 2L);
+        vm.setVCPUsAtStartup(conn, 2L);
+        vm.setMemoryLimits(conn, 512 * MiB, 2 * GiB, 2 * GiB, 2 * GiB);
+        System.out.println("CPU/memory:    2 vCPUs, 2 GiB");
+
+        // Step 6 - Storage: add a disk on a (non-ISO) SR.
+        SR sr = null;
+        String srName = null;
+        for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet()) {
+            if (!"iso".equals(e.getValue().contentType)
+                    && !"iso".equals(e.getValue().type) && !"udev".equals(e.getValue().type)) {
+                sr = e.getKey();
+                srName = e.getValue().nameLabel;
+                break;
+            }
+        }
+        VDI.Record vdiRec = new VDI.Record();
+        vdiRec.nameLabel = newVmName + " disk 0";
+        vdiRec.nameDescription = "System disk created by the create-vm-full example";
+        vdiRec.SR = sr;
+        vdiRec.virtualSize = 24 * GiB;
+        vdiRec.type = Types.VdiType.SYSTEM;
+        vdiRec.sharable = false;
+        vdiRec.readOnly = false;
+        vdiRec.otherConfig = new java.util.HashMap<>();
+        VDI vdi = VDI.create(conn, vdiRec);
+
+        VBD.Record vbdRec = new VBD.Record();
+        vbdRec.VM = vm;
+        vbdRec.VDI = vdi;
+        vbdRec.userdevice = vm.getAllowedVBDDevices(conn).iterator().next();
+        vbdRec.bootable = true;
+        vbdRec.mode = Types.VbdMode.RW;
+        vbdRec.type = Types.VbdType.DISK;
+        vbdRec.empty = false;
+        vbdRec.otherConfig = new java.util.HashMap<>();
+        vbdRec.qosAlgorithmType = "";
+        vbdRec.qosAlgorithmParams = new java.util.HashMap<>();
+        VBD.create(conn, vbdRec);
+        System.out.println("Storage:       24 GiB disk on " + srName);
+
+        // Step 7 - Networking: attach a VIF to a network.
+        Map.Entry<Network, Network.Record> ne = Network.getAllRecords(conn).entrySet().iterator().next();
+        VIF.Record vifRec = new VIF.Record();
+        vifRec.VM = vm;
+        vifRec.network = ne.getKey();
+        vifRec.device = vm.getAllowedVIFDevices(conn).iterator().next();
+        vifRec.MAC = "";
+        vifRec.MTU = 1500L;
+        vifRec.otherConfig = new java.util.HashMap<>();
+        vifRec.qosAlgorithmType = "";
+        vifRec.qosAlgorithmParams = new java.util.HashMap<>();
+        // Left unset, the binding's Record defaults these two enums to its own UNRECOGNIZED sentinel,
+        // which released xapi rejects outright rather than treating as "no IP configured". Say so
+        // explicitly.
+        vifRec.ipv4ConfigurationMode = Types.VifIpv4ConfigurationMode.NONE;
+        vifRec.ipv6ConfigurationMode = Types.VifIpv6ConfigurationMode.NONE;
+        VIF.create(conn, vifRec);
+        System.out.println("Networking:    NIC on " + ne.getValue().nameLabel);
+
+        // Step 8 - Finish: start the VM.
+        vm.start(conn, false, true);
+
+        System.out.println("--- Result ---");
+        System.out.println("power state:   " + vm.getPowerState(conn));
+        System.out.println("vCPUs:         " + vm.getVCPUsMax(conn));
+        System.out.println("disks:         " + vm.getVBDs(conn).size() + ", NICs: " + vm.getVIFs(conn).size());
+
+        // Tidy up so the example is repeatable.
+        vm.hardShutdown(conn);
+        vm.destroy(conn);
+        vdi.destroy(conn);
+        System.out.println("Cleaned up the example VM.");
+
+        System.out.println("OK: create-vm-full");
+        Session.logout(conn);
+    }
+}
+```
+
+<details><summary>Example output</summary>
+
+```text
+Template:      Rocky Linux 8
+Created VM:    00000001-0000-0000-f509-000000000000
+Install media: network repository
+Home server:   sdk-host1
+CPU/memory:    2 vCPUs, 2 GiB
+Storage:       24 GiB disk on Shared NFS
+Networking:    NIC on Pool-wide network 0
+--- Result ---
+power state:   Running
+vCPUs:         2
+disks:         1, NICs: 1
+Cleaned up the example VM.
+OK: create-vm-full
+```
+
+</details>

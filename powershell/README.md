@@ -1,30 +1,37 @@
-# XenServer PowerShell Module usage examples
+# XenServer PowerShell examples
 
-## Overview
+This folder holds the PowerShell version of every workflow example ([the full list](../README.md#workflow-examples)),
+written with the SDK module's cmdlets: one script per workflow function, in a folder per area:
 
-- [AutomatedTestCore.ps1](AutomatedTestCore.ps1): Shows how to log in to a host,
-  create a storage repository and a VM, and perform various powercycle operations.
+```
+powershell/
+  GettingStarted/Invoke-ConnectInventory.ps1, Invoke-Events.ps1, Invoke-TraceApiCalls.ps1, ...
+  VirtualMachines/Invoke-CreateVm.ps1, Invoke-CloneVm.ps1, Invoke-SnapshotRevert.ps1, ...
+  Storage/  Networking/  Migration/  HostsAndPools/  Updates/  ...
+  Connection.ps1   connecting to a pool (used by every workflow)
+  Helpers.ps1      small helpers several workflows share (find by name, clean up, ...)
+  workflows.ps1    loads them all and runs any workflow by name
+```
 
-- [SmartConnect.ps1](SmartConnect.ps1): Shows how to handle the error when
-    attempting to connect to a supporter server, identify the pool coordinator,
-    and connect to it instead.
+## Run
 
-- [Updates.ps1](Updates.ps1): Shows how to configure a pool running XenServer 8
-    (or greater) to synchronize with a Continuous Delivery Channel (CDN), view
-    available updates and post-update tasks, and apply these updates on the
-    pool's servers.
+Copy the `XenServerPSModule` folder for your PowerShell from the SDK into a folder on
+`$env:PSModulePath`: `XenServerPowerShell/PowerShell_7` for PowerShell 7 (`pwsh`), or
+`XenServerPowerShell/PowerShell_51` for Windows PowerShell 5.1 (`powershell`). Then:
 
-- [UpdatesOffline.ps1](UpdatesOffline.ps1): Shows how to configure an air-gapped
-    pool running XenServer 8 (or greater) for upload and installation of update
-    bundles, view available updates and post-update tasks, and apply these updates
-    on the pool's servers.
+```
+pwsh -File workflows.ps1 connect-inventory https://xenserver root <password>
+```
 
-- [VmExportImport.ps1](VmExportImport.ps1): Shows how to log in to a host, create
-    a VM, and export it to an .XVA package on the local machine. Then, import
-    a VM from a locally stored .XVA package.
+## Use a workflow in your own scripts
 
-- [Metrics.ps1](Metrics.ps1): Shows how to log in to a host, and retrieve
-    operational metrics.
+Each workflow is a self-contained function you can copy into your own scripts, together with
+`Connection.ps1` (and any helper from `Helpers.ps1` it uses). Its comment-based help describes what it
+does and shows how to call it:
 
-- [UpdatesLegacy.ps1](UpdatesLegacy.ps1): Shows how to upload and install an 
-    update to a server running Citrix Hypervisor 8.2 CU1.
+```powershell
+. .\Connection.ps1
+. .\GettingStarted\Invoke-ConnectInventory.ps1
+Get-Help Invoke-ConnectInventory -Full
+Invoke-ConnectInventory -Url https://xenserver -UserName root -Password $password
+```
