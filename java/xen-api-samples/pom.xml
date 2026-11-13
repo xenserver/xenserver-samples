@@ -51,6 +51,20 @@
             <artifactId>xen-api</artifactId>
             <version>[25.17.0,)</version>
         </dependency>
+        <!-- The binding's own HTTP and JSON libraries come in transitively, at whatever versions the
+             resolved xen-api release was built with. Pin the patched ones (as the binding itself now uses):
+             jackson-databind 2.22.4 (CVE-2026-110879), httpclient5 5.6.4 (CVE-2026-71290), which also
+             brings a fixed httpcore5 (CVE-2026-54399, CVE-2026-54428). -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.22.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.6.4</version>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
