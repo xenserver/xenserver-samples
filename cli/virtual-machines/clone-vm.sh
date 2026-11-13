@@ -14,7 +14,7 @@ clone_vm() {
     was_running=$([ "$(xe vm-param-get uuid=$vm param-name=power-state)" = "running" ] && echo true || echo false)
     [ "$was_running" = true ] && xe vm-shutdown uuid=$vm
     clone=$(xe vm-clone uuid=$vm new-name-label=xe-example-clone)
-    echo "Cloned VM: $clone"
+    echo "Cloned '$(xe vm-param-get uuid=$vm param-name=name-label)' -> $(xe vm-param-get uuid=$clone param-name=name-label)"
     [ "$was_running" = true ] && xe vm-start uuid=$vm
     # Tidy up: vm-uninstall destroys the clone and the disks it owns (vm-destroy would leave them).
     xe vm-uninstall uuid=$clone force=true

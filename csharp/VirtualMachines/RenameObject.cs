@@ -19,7 +19,7 @@ internal static partial class Workflows
         var vm = VmByName(session, vmName);
         var original = VM.get_name_label(session, vm);
         VM.set_name_label(session, vm, "sdk-renamed");
-        Console.WriteLine($"Renamed '{original}' → '{VM.get_name_label(session, vm)}'");
+        Console.WriteLine($"Renamed '{original}' -> '{VM.get_name_label(session, vm)}'");
         VM.set_name_label(session, vm, original); // restore so the example is repeatable
         Console.WriteLine("OK: rename-object");
         session.logout();

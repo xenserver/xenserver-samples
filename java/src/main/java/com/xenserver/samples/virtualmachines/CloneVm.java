@@ -37,7 +37,7 @@ public final class CloneVm {
         if (wasRunning) source.cleanShutdown(conn);
 
         VM clone = source.createClone(conn, cloneName);
-        System.out.println("Cloned '" + source.getNameLabel(conn) + "' → " + clone.getNameLabel(conn));
+        System.out.println("Cloned '" + source.getNameLabel(conn) + "' -> " + clone.getNameLabel(conn));
         System.out.println("Clone has " + clone.getVBDs(conn).size() + " VBD(s)");
 
         if (wasRunning) source.start(conn, false, true);

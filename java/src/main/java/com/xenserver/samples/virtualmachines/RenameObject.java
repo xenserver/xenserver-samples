@@ -27,7 +27,7 @@ public final class RenameObject {
         VM vm = vmByName(conn, vmName);
         String original = vm.getNameLabel(conn);
         vm.setNameLabel(conn, "sdk-renamed");
-        System.out.println("Renamed '" + original + "' → '" + vm.getNameLabel(conn) + "'");
+        System.out.println("Renamed '" + original + "' -> '" + vm.getNameLabel(conn) + "'");
         vm.setNameLabel(conn, original); // restore so the example is repeatable
         System.out.println("OK: rename-object");
         Session.logout(conn);
