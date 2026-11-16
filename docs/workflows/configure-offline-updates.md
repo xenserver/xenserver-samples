@@ -95,7 +95,7 @@ function Invoke-ConfigureOfflineUpdates {
 ```text
 Pool repositories: sdk-example-offline
 Uploaded sdk-example-bundle.xsbundle
-Updates in the bundle: 1 (apply them with hash 9ac521c0d8cddce38b249093ac597a2426553cdef205505a9fbb2f06481c29ce)
+Updates in the bundle: 1 (apply them with hash 940d617f845df53f6af888a48ff3113e843fcbcd4b20c7df98d3e51f35a6b761)
 OK: configure-offline-updates
 ```
 
@@ -256,7 +256,7 @@ def configure_offline_updates(url, username, password, bundle_path=None):
 ```text
 Pool repositories: sdk-example-offline
 Uploaded sdk-example-bundle.xsbundle
-Updates in the bundle: 1 (apply them with hash 9ac521c0d8cddce38b249093ac597a2426553cdef205505a9fbb2f06481c29ce)
+Updates in the bundle: 1 (apply them with hash 940d617f845df53f6af888a48ff3113e843fcbcd4b20c7df98d3e51f35a6b761)
 OK: configure-offline-updates
 ```
 
@@ -355,7 +355,7 @@ public static void ConfigureOfflineUpdates(string url, string user, string passw
 ```text
 Pool repositories: sdk-example-offline
 Uploaded sdk-example-bundle.xsbundle
-Updates in the bundle: 1 (apply them with hash 9ac521c0d8cddce38b249093ac597a2426553cdef205505a9fbb2f06481c29ce)
+Updates in the bundle: 1 (apply them with hash 940d617f845df53f6af888a48ff3113e843fcbcd4b20c7df98d3e51f35a6b761)
 OK: configure-offline-updates
 ```
 
@@ -493,7 +493,7 @@ func configureOfflineUpdates(url, user, password, bundlePath string) {
 ```text
 Pool repositories: sdk-example-offline
 Uploaded sdk-example-bundle.xsbundle
-Updates in the bundle: 1 (apply them with hash 9ac521c0d8cddce38b249093ac597a2426553cdef205505a9fbb2f06481c29ce)
+Updates in the bundle: 1 (apply them with hash 940d617f845df53f6af888a48ff3113e843fcbcd4b20c7df98d3e51f35a6b761)
 OK: configure-offline-updates
 ```
 
@@ -613,7 +613,7 @@ public final class ConfigureOfflineUpdates {
 ```text
 Pool repositories: sdk-example-offline
 Uploaded sdk-example-bundle.xsbundle
-Updates in the bundle: 1 (apply them with hash 9ac521c0d8cddce38b249093ac597a2426553cdef205505a9fbb2f06481c29ce)
+Updates in the bundle: 1 (apply them with hash 940d617f845df53f6af888a48ff3113e843fcbcd4b20c7df98d3e51f35a6b761)
 OK: configure-offline-updates
 ```
 

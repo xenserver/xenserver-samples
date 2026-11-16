@@ -345,8 +345,8 @@ func rrdMetrics(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-  sdk-host1: peak PVS cache utilisation 94%
   sdk-host2: peak PVS cache utilisation 78%
+  sdk-host1: peak PVS cache utilisation 94%
 OK: rrd-metrics
 ```
 

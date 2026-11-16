@@ -615,9 +615,9 @@ func createVMFull(url, user, password, templateName, newVMName string) {
 Template:      Rocky Linux 8
 Created VM:    00000001-0000-0000-f709-000000000000
 Install media: network repository
-Home server:   sdk-host2
+Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
-Storage:       24 GiB disk on iSCSI storage
+Storage:       24 GiB disk on Local storage
 Networking:    NIC on Pool-wide network 2
 --- Result ---
 power state:   Running

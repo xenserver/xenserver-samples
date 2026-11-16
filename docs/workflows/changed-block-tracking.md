@@ -499,7 +499,7 @@ func firstDisk(session *xenapi.Session, vm xenapi.VMRef) xenapi.VDIRef {
 <details><summary>Example output</summary>
 
 ```text
-Backing up db-01
+Backing up secure-01
   0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt_enabled=true
 OK: changed-block-tracking

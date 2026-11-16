@@ -348,7 +348,7 @@ func gib(size int64) string {
 <details><summary>Example output</summary>
 
 ```text
-db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
+secure-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
   dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max: MEMORY_CONSTRAINT_VIOLATION_ORDER
 OK: configure-dynamic-memory

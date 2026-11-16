@@ -412,9 +412,9 @@ func configureHa(url, user, password, heartbeatSRName string) {
 
 ```text
 Heartbeat SR:  Shared NFS
-Max failures:  1
+Max failures:  2
 HA enabled:    true
-web-01 priority: "" -> "restart"
+db-01 priority: "" -> "restart"
 Restart on internal shutdown: true
 HA enabled:    false
 OK: configure-ha

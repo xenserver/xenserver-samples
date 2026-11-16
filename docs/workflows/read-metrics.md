@@ -254,7 +254,7 @@ func readMetrics(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Host sdk-host1: 65536 MiB total, 57344 MiB free, live = true
+Host sdk-host2: 65536 MiB total, 57344 MiB free, live = true
 VM web-01: 2 vCPU(s), 4096 MiB
 OK: read-metrics
 ```

@@ -107,7 +107,7 @@ function Restore-ExampleHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-cd109a0f-4384-4e45-98e3-e7b9f6c8aa91.backup
+  wrote 83 bytes to sdk-example-host-6d4d068f-2065-47f6-a283-521beca34813.backup
   not restoring it (pass -Restore $true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
@@ -407,7 +407,7 @@ private static void RestoreHostConfig(Session session, string hostUrl, XenRef<Ho
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-3b4ee86c689d44fb81e84dec2648ab3f.backup
+  wrote 83 bytes to sdk-example-host-611459f858ad40c1b64f57f152f2f1c0.backup
   not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
@@ -569,7 +569,7 @@ func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.Hos
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-3996007023.backup
+  wrote 83 bytes to sdk-example-host-261992855.backup
   not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
@@ -739,7 +739,7 @@ public final class BackupHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host12818834678477480016.backup
+  wrote 83 bytes to sdk-example-host15755737929815515916.backup
   not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```

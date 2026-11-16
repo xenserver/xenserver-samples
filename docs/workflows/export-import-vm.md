@@ -120,7 +120,7 @@ function Get-TarEntryName {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-090b600a-8bfe-49cd-a8fa-a42e6d48036d.xva
+  wrote 4.0 MiB to sdk-example-export-f268b73f-5aba-44d5-9d46-7d16e4b18b62.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
 Cleaned up the imported VM.
@@ -310,7 +310,7 @@ def export_import_vm(url, username, password, vm_name):
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-wt1fviyo.xva
+  wrote 4.0 MiB to sdk-example-export-mgg51v1j.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
 Cleaned up the imported VM.
@@ -424,7 +424,7 @@ public static void ExportImportVm(string url, string user, string password, stri
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-910ca0b690e44e4984c5a75ea7fc6504.xva
+  wrote 4.0 MiB to sdk-example-export-f5a2c7d5ef64437c9adf3d57a61e1b8a.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
 Cleaned up the imported VM.
@@ -585,7 +585,7 @@ func tarNames(path string) []string {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-3591511188.xva
+  wrote 4.0 MiB to sdk-example-export-3565246778.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
 Cleaned up the imported VM.
@@ -743,7 +743,7 @@ public final class ExportImportVm {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export4423992380335120445.xva
+  wrote 4.0 MiB to sdk-example-export5970780667703479625.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
 Cleaned up the imported VM.

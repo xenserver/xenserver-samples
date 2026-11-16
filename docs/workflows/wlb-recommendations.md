@@ -582,8 +582,8 @@ func isWlbStillDiscovering(err error) bool {
 
 ```text
 WLB: wlb.example:8012
-  sdk-host2 rated 3.7
   sdk-host1 rated 1.0
+  sdk-host2 rated 3.7
   appliance configuration: ReportingCronString=0 3 * * *
 OK: wlb-recommendations
 ```

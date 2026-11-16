@@ -346,7 +346,7 @@ func createBond(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Bonding:      eth1, eth2
+Bonding:      eth2, eth1
 Bond master:  bond0
 Mode:         balance-slb
 Bonds left:   0

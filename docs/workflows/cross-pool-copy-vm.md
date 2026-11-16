@@ -212,10 +212,7 @@ cross_pool_copy_vm() {
 
 ```text
 Sent 'db-01' to 127.0.0.1 (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-260a-000000000000)
-The following items are about to be destroyed
-VM : 00000001-0000-0000-260a-000000000000 (db-01)
-All objects destroyed
+  the copy on the destination: not found (nothing to tidy up)
 OK: cross-pool-copy-vm
 ```
 
@@ -387,7 +384,7 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-f909-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-0b0a-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -508,7 +505,7 @@ func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, 
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-0b0a-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-f909-000000000000)
 OK: cross-pool-copy-vm
 ```
 

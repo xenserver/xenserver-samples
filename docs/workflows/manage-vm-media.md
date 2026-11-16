@@ -367,7 +367,7 @@ func manageVmMedia(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Adding a DVD drive to db-01
+Adding a DVD drive to secure-01
   drive 1 is empty: true
   inserting Windows_Server_2022.iso
   drive now holds Windows_Server_2022.iso (empty=false)
