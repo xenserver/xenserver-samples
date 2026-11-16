@@ -23,8 +23,14 @@
 # returning a failed call's real exit status, a plain `xe ...` or a `var=$(xe ...)` assignment now stops
 # the whole script instead of letting a later line act on nothing or print it blank. xe_try is the
 # explicit, non-fatal form for a call site that is deliberately checking whether xe succeeds.
-set -euo pipefail
-shopt -s inherit_errexit
+set -eo pipefail
+# Only from bash 4.4 (XenServer 9's dom0 has it; XenServer 8.4's has 4.2): older bash has no
+# inherit_errexit, and under -u treats an empty array ("${opts[@]}") as an unbound variable. Without
+# them, xe() and ok (connection.sh, helpers.sh) still catch every failed xe call.
+if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )); then
+    set -u
+    shopt -s inherit_errexit
+fi
 
 # Under Git Bash/MSYS, an argument that looks like a Unix path (e.g. serverpath=/export/vol1) gets
 # rewritten to a Windows path before xe sees it. These are all *remote* paths (NFS exports, folders),
