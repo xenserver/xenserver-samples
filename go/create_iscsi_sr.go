@@ -29,9 +29,12 @@ import (
 func createIscsiSr(url, user, password, target, port, chapUser, chapPassword, targetIQN, scsiID, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
-	hosts, err := xenapi.Host.GetAll(session)
+	// Discover from the pool master: a shared SR is created there, and the probes log in to the target
+	// and rescan only on the host they run on.
+	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
-	host := hosts[0]
+	host, err := xenapi.Pool.GetMaster(session, pools[0])
+	check(err)
 	dc := map[string]string{"target": target}
 	if port != "" {
 		dc["port"] = port

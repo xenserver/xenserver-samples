@@ -36,7 +36,9 @@ create_iscsi_sr() {
     chap_user=$(param chap_user "")
     chap_password=$(param chap_password "")
     sr_name=$(param sr_name "xe-example-iscsi")
-    h=$(first_host)
+    # Discover from the pool master: a shared SR is created there, and the probes log in to the target and
+    # rescan only on the host they run on.
+    h=$(xe pool-list params=master --minimal)
 
     dc=(device-config:target="$target")
     [ -n "$port" ] && dc+=(device-config:port="$port")

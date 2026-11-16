@@ -39,7 +39,9 @@ function Invoke-CreateHbaSr {
     # hosts are using, so name the one that is yours (-ScsiId); with none, the first LUN listed is taken,
     # which is only right on a dedicated test target.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost | Select-Object -First 1
+    # Discover from the pool master: a shared SR is created there, and a probe rescans only the host it runs
+    # on (destroying an HBA SR removes the LUN's devices from the host until one does).
+    $xenHost = Get-XenHost -Ref (Get-XenPool).master
 
     # The root element varies by backend; find BlockDevice entries by tag wherever they are.
     $devlistXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost -DeviceConfig @{} -SmType lvmohba)
@@ -114,7 +116,9 @@ Source: [`cli/storage/create-hba-sr.sh`](../../cli/storage/create-hba-sr.sh)
 create_hba_sr() {
     local sr_name h xml block scsi_id path sr
     sr_name=$(param sr_name "xe-example-hba")
-    h=$(first_host)
+    # Discover from the pool master: a shared SR is created there, and a probe rescans only the host it runs
+    # on (destroying an HBA SR removes the LUN's devices from the host until one does).
+    h=$(xe pool-list params=master --minimal)
     xml=$(probe_for_failure lvmohba host-uuid="$h")
     # sr-create formats the LUN: on shared FC storage name yours (scsi_id=); with none, the first is taken.
     local want rest
@@ -194,7 +198,9 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
     is taken, which is only right on a dedicated test target."""
     GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
-    host = session.xenapi.host.get_all()[0]
+    # Discover from the pool master: a shared SR is created there, and a probe rescans only the host
+    # it runs on (destroying an HBA SR removes the LUN's devices from the host until one does).
+    host = session.xenapi.pool.get_master(session.xenapi.pool.get_all()[0])
 
     # The root element varies by backend; find BlockDevice entries by tag wherever they are.
     devlist_xml = ET.fromstring(probe_for_failure(session, host, {}, "lvmohba"))
@@ -273,7 +279,9 @@ public static void CreateHbaSr(string url, string user, string password, string 
 {
     const long GiB = 1024L * 1024 * 1024;
     var session = Connect(url, user, password);
-    var host = Host.get_all(session)[0];
+    // Discover from the pool master: a shared SR is created there, and a probe rescans only the host it
+    // runs on (destroying an HBA SR removes the LUN's devices from the host until one does).
+    var host = Pool.get_master(session, Pool.get_all(session)[0]);
 
     // The root element varies by backend; find BlockDevice entries by tag wherever they are.
     var devlistXml = XDocument.Parse(ProbeForFailure(session, host, new Dictionary<string, string>(), "lvmohba"));
@@ -352,9 +360,12 @@ import (
 func createHbaSr(url, user, password, scsiID, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
-	hosts, err := xenapi.Host.GetAll(session)
+	// Discover from the pool master: a shared SR is created there, and a probe rescans only the host
+	// it runs on (destroying an HBA SR removes the LUN's devices from the host until one does).
+	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
-	host := hosts[0]
+	host, err := xenapi.Pool.GetMaster(session, pools[0])
+	check(err)
 
 	// SR.create formats the LUN: on shared FC storage name yours (scsiID); with none, the first is taken.
 	device := findXMLElement(probeForFailure(session, host, map[string]string{}, "lvmohba"), "BlockDevice",
@@ -417,6 +428,7 @@ package com.xenserver.samples.storage;
 
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
 
@@ -453,7 +465,10 @@ public final class CreateHbaSr {
         final long GiB = 1024L * 1024 * 1024;
         Connection conn = connect(url, user, password);
         try {
-            Host host = Host.getAllRecords(conn).keySet().iterator().next();
+            // Discover from the pool master: a shared SR is created there, and a probe rescans only the
+            // host it runs on (destroying an HBA SR removes the LUN's devices from the host until one
+            // does).
+            Host host = Pool.getAll(conn).iterator().next().getMaster(conn);
 
             // The root element varies by backend; find BlockDevice entries by tag wherever they are.
             org.w3c.dom.Element devlistRoot =

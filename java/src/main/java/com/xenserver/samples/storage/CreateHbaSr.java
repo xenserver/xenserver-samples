@@ -2,6 +2,7 @@ package com.xenserver.samples.storage;
 
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
 
@@ -38,7 +39,10 @@ public final class CreateHbaSr {
         final long GiB = 1024L * 1024 * 1024;
         Connection conn = connect(url, user, password);
         try {
-            Host host = Host.getAllRecords(conn).keySet().iterator().next();
+            // Discover from the pool master: a shared SR is created there, and a probe rescans only the
+            // host it runs on (destroying an HBA SR removes the LUN's devices from the host until one
+            // does).
+            Host host = Pool.getAll(conn).iterator().next().getMaster(conn);
 
             // The root element varies by backend; find BlockDevice entries by tag wherever they are.
             org.w3c.dom.Element devlistRoot =

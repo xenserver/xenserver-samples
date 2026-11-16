@@ -43,7 +43,9 @@ internal static partial class Workflows
     {
         const long GiB = 1024L * 1024 * 1024;
         var session = Connect(url, user, password);
-        var host = Host.get_all(session)[0];
+        // Discover from the pool master: a shared SR is created there, and the probes log in to the target
+        // and rescan only on the host they run on.
+        var host = Pool.get_master(session, Pool.get_all(session)[0]);
         var dc = new Dictionary<string, string> { ["target"] = target };
         if (port.HasValue) dc["port"] = port.Value.ToString();
         XenRef<Secret> secret = null;

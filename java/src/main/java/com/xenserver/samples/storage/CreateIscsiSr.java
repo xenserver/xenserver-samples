@@ -2,6 +2,7 @@ package com.xenserver.samples.storage;
 
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Secret;
 import com.xensource.xenapi.Session;
@@ -53,7 +54,9 @@ public final class CreateIscsiSr {
         Connection conn = connect(url, user, password);
         Secret secret = null;
         try {
-            Host host = Host.getAllRecords(conn).keySet().iterator().next();
+            // Discover from the pool master: a shared SR is created there, and the probes log in to the
+            // target and rescan only on the host they run on.
+            Host host = Pool.getAll(conn).iterator().next().getMaster(conn);
             Map<String, String> dc = new java.util.HashMap<>();
             dc.put("target", target);
             if (port != null && !port.isEmpty()) dc.put("port", port);

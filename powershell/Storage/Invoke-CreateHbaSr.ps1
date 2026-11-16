@@ -22,7 +22,9 @@ function Invoke-CreateHbaSr {
     # hosts are using, so name the one that is yours (-ScsiId); with none, the first LUN listed is taken,
     # which is only right on a dedicated test target.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost | Select-Object -First 1
+    # Discover from the pool master: a shared SR is created there, and a probe rescans only the host it runs
+    # on (destroying an HBA SR removes the LUN's devices from the host until one does).
+    $xenHost = Get-XenHost -Ref (Get-XenPool).master
 
     # The root element varies by backend; find BlockDevice entries by tag wherever they are.
     $devlistXml = [xml](Invoke-ProbeForFailure -XenHostRef $xenHost -DeviceConfig @{} -SmType lvmohba)

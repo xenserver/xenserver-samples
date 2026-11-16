@@ -27,7 +27,9 @@ def create_iscsi_sr(url, username, password, target, port=None, chap_user=None, 
     already does for its share password."""
     GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
-    host = session.xenapi.host.get_all()[0]
+    # Discover from the pool master: a shared SR is created there, and the probes log in to the target
+    # and rescan only on the host they run on.
+    host = session.xenapi.pool.get_master(session.xenapi.pool.get_all()[0])
     dc = {"target": target}
     if port:
         dc["port"] = str(port)

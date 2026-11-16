@@ -22,9 +22,12 @@ import (
 func createHbaSr(url, user, password, scsiID, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
-	hosts, err := xenapi.Host.GetAll(session)
+	// Discover from the pool master: a shared SR is created there, and a probe rescans only the host
+	// it runs on (destroying an HBA SR removes the LUN's devices from the host until one does).
+	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
-	host := hosts[0]
+	host, err := xenapi.Pool.GetMaster(session, pools[0])
+	check(err)
 
 	// SR.create formats the LUN: on shared FC storage name yours (scsiID); with none, the first is taken.
 	device := findXMLElement(probeForFailure(session, host, map[string]string{}, "lvmohba"), "BlockDevice",

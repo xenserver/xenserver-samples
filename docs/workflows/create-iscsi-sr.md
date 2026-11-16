@@ -50,7 +50,9 @@ function Invoke-CreateIscsiSr {
     # The CHAP password (if any) travels as a Secret, not plaintext device-config, as Invoke-CreateSmbSr
     # already does for its share password.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost | Select-Object -First 1
+    # Discover from the pool master: a shared SR is created there, and the probes log in to the target and
+    # rescan only on the host they run on.
+    $xenHost = Get-XenHost -Ref (Get-XenPool).master
     $dc = @{ target = $Target }
     if ($Port) { $dc["port"] = $Port }
     $secret = $null
@@ -207,7 +209,9 @@ create_iscsi_sr() {
     chap_user=$(param chap_user "")
     chap_password=$(param chap_password "")
     sr_name=$(param sr_name "xe-example-iscsi")
-    h=$(first_host)
+    # Discover from the pool master: a shared SR is created there, and the probes log in to the target and
+    # rescan only on the host they run on.
+    h=$(xe pool-list params=master --minimal)
 
     dc=(device-config:target="$target")
     [ -n "$port" ] && dc+=(device-config:port="$port")
@@ -351,7 +355,9 @@ def create_iscsi_sr(url, username, password, target, port=None, chap_user=None, 
     already does for its share password."""
     GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
-    host = session.xenapi.host.get_all()[0]
+    # Discover from the pool master: a shared SR is created there, and the probes log in to the target
+    # and rescan only on the host they run on.
+    host = session.xenapi.pool.get_master(session.xenapi.pool.get_all()[0])
     dc = {"target": target}
     if port:
         dc["port"] = str(port)
@@ -483,7 +489,9 @@ public static void CreateIscsiSr(string url, string user, string password, strin
 {
     const long GiB = 1024L * 1024 * 1024;
     var session = Connect(url, user, password);
-    var host = Host.get_all(session)[0];
+    // Discover from the pool master: a shared SR is created there, and the probes log in to the target
+    // and rescan only on the host they run on.
+    var host = Pool.get_master(session, Pool.get_all(session)[0]);
     var dc = new Dictionary<string, string> { ["target"] = target };
     if (port.HasValue) dc["port"] = port.Value.ToString();
     XenRef<Secret> secret = null;
@@ -626,9 +634,12 @@ import (
 func createIscsiSr(url, user, password, target, port, chapUser, chapPassword, targetIQN, scsiID, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
-	hosts, err := xenapi.Host.GetAll(session)
+	// Discover from the pool master: a shared SR is created there, and the probes log in to the target
+	// and rescan only on the host they run on.
+	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
-	host := hosts[0]
+	host, err := xenapi.Pool.GetMaster(session, pools[0])
+	check(err)
 	dc := map[string]string{"target": target}
 	if port != "" {
 		dc["port"] = port
@@ -821,6 +832,7 @@ package com.xenserver.samples.storage;
 
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Secret;
 import com.xensource.xenapi.Session;
@@ -872,7 +884,9 @@ public final class CreateIscsiSr {
         Connection conn = connect(url, user, password);
         Secret secret = null;
         try {
-            Host host = Host.getAllRecords(conn).keySet().iterator().next();
+            // Discover from the pool master: a shared SR is created there, and the probes log in to the
+            // target and rescan only on the host they run on.
+            Host host = Pool.getAll(conn).iterator().next().getMaster(conn);
             Map<String, String> dc = new java.util.HashMap<>();
             dc.put("target", target);
             if (port != null && !port.isEmpty()) dc.put("port", port);

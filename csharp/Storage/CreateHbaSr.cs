@@ -32,7 +32,9 @@ internal static partial class Workflows
     {
         const long GiB = 1024L * 1024 * 1024;
         var session = Connect(url, user, password);
-        var host = Host.get_all(session)[0];
+        // Discover from the pool master: a shared SR is created there, and a probe rescans only the host it
+        // runs on (destroying an HBA SR removes the LUN's devices from the host until one does).
+        var host = Pool.get_master(session, Pool.get_all(session)[0]);
 
         // The root element varies by backend; find BlockDevice entries by tag wherever they are.
         var devlistXml = XDocument.Parse(ProbeForFailure(session, host, new Dictionary<string, string>(), "lvmohba"));

@@ -17,7 +17,9 @@
 create_hba_sr() {
     local sr_name h xml block scsi_id path sr
     sr_name=$(param sr_name "xe-example-hba")
-    h=$(first_host)
+    # Discover from the pool master: a shared SR is created there, and a probe rescans only the host it runs
+    # on (destroying an HBA SR removes the LUN's devices from the host until one does).
+    h=$(xe pool-list params=master --minimal)
     xml=$(probe_for_failure lvmohba host-uuid="$h")
     # sr-create formats the LUN: on shared FC storage name yours (scsi_id=); with none, the first is taken.
     local want rest

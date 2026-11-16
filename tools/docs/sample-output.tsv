@@ -25,8 +25,8 @@ cli	control-domain-memory	3e1c8e4d40bb	sdk-host1 dom0: 2.0 GiB\n  now 3.0 GiB (s
 cli	convert-to-template	9a4f81796b06	is-a-template after install: false\nis-a-template after convert: true\nThe following items are about to be destroyed\nVM : 00000001-0000-0000-f609-000000000000 (xe-example-totemplate)\nVDI: 00000001-0000-0000-f909-000000000000 (0) \nAll objects destroyed\nCleaned up the example template.\nOK: convert-to-template
 cli	copy-vm	972280454bcd	Copied VM: 00000001-0000-0000-f609-000000000000\nThe following items are about to be destroyed\nVM : 00000001-0000-0000-f609-000000000000 (xe-example-copy)\nVDI: 00000001-0000-0000-f909-000000000000 (db-01 root disk) \nAll objects destroyed\nOK: copy-vm
 cli	create-bond	1868d5d10911	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance-slb\nBonds left:   0\nOK: create-bond
-cli	create-hba-sr	fecbcdb140b7	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated HBA SR: 00000001-0000-0000-f609-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
-cli	create-iscsi-sr	cf91c61175fb	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated iSCSI SR: 00000001-0000-0000-f609-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
+cli	create-hba-sr	52a92a8997aa	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated HBA SR: 00000001-0000-0000-f609-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
+cli	create-iscsi-sr	d83153a05f92	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated iSCSI SR: 00000001-0000-0000-f609-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
 cli	create-iso-sr	a9b2f8f19c19	Created ISO SR: 00000001-0000-0000-f609-000000000000\nISO images: 0\nDetached and forgot the SR.\nOK: create-iso-sr
 cli	create-network	f91d30d84b24	Created network: 00000001-0000-0000-f609-000000000000\nMTU now:         9000\nOK: create-network
 cli	create-nfs-sr	56727840665e	Created SR: 00000001-0000-0000-f609-000000000000\nDetached and forgot the SR.\nOK: create-nfs-sr
@@ -120,8 +120,8 @@ csharp	control-domain-memory	49055d9d33ce	sdk-host1 dom0: 2.0 GiB\n  now 3.0 GiB
 csharp	convert-to-template	f28d6b87b8d5	is_a_template after provision: False\nis_a_template after convert:  True\nCleaned up the example template.\nOK: convert-to-template
 csharp	copy-vm	bdcdcd292b48	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-f709-000000000000\nCopy has 1 VBD(s), is_a_template = False\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 csharp	create-bond	8a27288c7746	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance_slb\nBonds left:   0\nOK: create-bond
-csharp	create-hba-sr	ce95ffee3d69	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
-csharp	create-iscsi-sr	8480acb455f6	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
+csharp	create-hba-sr	8e17f16a1cdd	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
+csharp	create-iscsi-sr	74c00c284752	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
 csharp	create-iso-sr	3b89629a3888	Created ISO SR: 00000001-0000-0000-f709-000000000000\nISO images: 0\nDetached and forgot the SR.\nOK: create-iso-sr
 csharp	create-network	4f9c20e96c4f	Created network: 00000001-0000-0000-f709-000000000000\nMTU now:         9000\nOK: create-network
 csharp	create-nfs-sr	e68def73e9c5	Created SR: 00000001-0000-0000-f709-000000000000\nDetached and forgot the SR.\nOK: create-nfs-sr
@@ -215,8 +215,8 @@ go	control-domain-memory	7774bcf94e5e	sdk-host1 dom0: 2.0 GiB\n  now 3.0 GiB (st
 go	convert-to-template	462a8ca3d8d2	is_a_template after provision: false\nis_a_template after convert:  true\nCleaned up the example template.\nOK: convert-to-template
 go	copy-vm	7b97b601f336	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-f709-000000000000\nCopy has 1 VBD(s), is_a_template = false\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 go	create-bond	f0c3f0322867	Bonding:      eth2, eth1\nBond master:  bond0\nMode:         balance-slb\nBonds left:   0\nOK: create-bond
-go	create-hba-sr	8994734c5860	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
-go	create-iscsi-sr	2678173e9566	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
+go	create-hba-sr	bd8b539b1a28	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
+go	create-iscsi-sr	3c2a879e9a73	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
 go	create-iso-sr	65bcc93f8e5c	Created ISO SR: 00000001-0000-0000-f709-000000000000\nISO images: 0\nDetached and forgot the SR.\nOK: create-iso-sr
 go	create-network	b6c0675f9bf1	Created network: 00000001-0000-0000-f709-000000000000\nMTU now:         9000\nOK: create-network
 go	create-nfs-sr	f721c56148bb	Created SR: 00000001-0000-0000-f709-000000000000\nDetached and forgot the SR.\nOK: create-nfs-sr
@@ -310,8 +310,8 @@ java	control-domain-memory	47861a08be02	sdk-host1 dom0: 2.0 GiB\n  now 3.0 GiB (
 java	convert-to-template	3fa0202131f1	is_a_template after provision: false\nis_a_template after convert:  true\nCleaned up the example template.\nOK: convert-to-template
 java	copy-vm	5c2280439c5a	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-f709-000000000000\nCopy has 1 VBD(s), is_a_template = false\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 java	create-bond	8a12c2f24735	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance-slb\nBonds left:   0\nOK: create-bond
-java	create-hba-sr	f87519bd7d5a	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
-java	create-iscsi-sr	ae5024a9bf2b	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
+java	create-hba-sr	4e639ef476e5	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
+java	create-iscsi-sr	1ef922325fe7	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
 java	create-iso-sr	4fa3bdac15d7	Created ISO SR: 00000001-0000-0000-f709-000000000000\nISO images: 0\nDetached and forgot the SR.\nOK: create-iso-sr
 java	create-network	cc8bb283f0e4	Created network: 00000001-0000-0000-f709-000000000000\nMTU now:         9000\nOK: create-network
 java	create-nfs-sr	b4f2e9d6ab29	Created SR: 00000001-0000-0000-f709-000000000000\nDetached and forgot the SR.\nOK: create-nfs-sr
@@ -404,8 +404,8 @@ powershell	control-domain-memory	d388ebc3c93a	sdk-host1 dom0: 2.0 GiB\n  now 3.0
 powershell	convert-to-template	6ed08cd3d902	is_a_template after provision: False\nis_a_template after convert:  True\nCleaned up the example template.\nOK: convert-to-template
 powershell	copy-vm	9d1f54dc1133	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-f709-000000000000\nCopy has 1 VBD(s), is_a_template = False\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 powershell	create-bond	2441745dea7e	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance_slb\nBonds left:   0\nOK: create-bond
-powershell	create-hba-sr	f972fa402b3d	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
-powershell	create-iscsi-sr	fec05334a4bc	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
+powershell	create-hba-sr	1af5ca6e4848	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
+powershell	create-iscsi-sr	877ef90b7efc	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
 powershell	create-iso-sr	8c907c9c7278	Created ISO SR: 00000001-0000-0000-f709-000000000000\nISO images: 0\nDetached and forgot the SR.\nOK: create-iso-sr
 powershell	create-network	8b4a33bf2770	Created network: 00000001-0000-0000-f709-000000000000\nMTU now:         9000\nOK: create-network
 powershell	create-nfs-sr	aaad90cb2ac8	Created SR: 00000001-0000-0000-f709-000000000000\nDetached and forgot the SR.\nOK: create-nfs-sr
@@ -499,8 +499,8 @@ python	control-domain-memory	318d292026c8	sdk-host1 dom0: 2.0 GiB\n  now 3.0 GiB
 python	convert-to-template	8ab7153497a8	is_a_template after provision: False\nis_a_template after convert:  True\nCleaned up the example template.\nOK: convert-to-template
 python	copy-vm	48126636e686	Copying 'db-01' to SR: Shared NFS\nCopied VM:     00000001-0000-0000-f709-000000000000\nCopy has 1 VBD(s), is_a_template = False\nCleaned up the copied VM (left the source intact).\nOK: copy-vm
 python	create-bond	41a67d365f8f	Bonding:      eth1, eth2\nBond master:  bond0\nMode:         balance-slb\nBonds left:   0\nOK: create-bond
-python	create-hba-sr	932228f12068	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
-python	create-iscsi-sr	1a52a5d1a456	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
+python	create-hba-sr	7dfb2efe7164	Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]\nCreated SR: 00000001-0000-0000-f709-000000000000 (512 GiB)\nDestroyed the SR.\nOK: create-hba-sr
+python	create-iscsi-sr	59af122a648d	Discovered IQN: iqn.2009-01.com.example:target-0\nDiscovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)\nCreated SR: 00000001-0000-0000-f709-000000000000 (200 GiB)\nDestroyed the SR.\nOK: create-iscsi-sr
 python	create-iso-sr	fd482bf4afaa	Created ISO SR: 00000001-0000-0000-f709-000000000000\nISO images: 0\nDetached and forgot the SR.\nOK: create-iso-sr
 python	create-network	006c69cb2cda	Created network: 00000001-0000-0000-f709-000000000000\nMTU now:         9000\nOK: create-network
 python	create-nfs-sr	86cc8337ba3e	Created SR: 00000001-0000-0000-f709-000000000000\nDetached and forgot the SR.\nOK: create-nfs-sr

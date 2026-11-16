@@ -19,7 +19,9 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
     is taken, which is only right on a dedicated test target."""
     GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
-    host = session.xenapi.host.get_all()[0]
+    # Discover from the pool master: a shared SR is created there, and a probe rescans only the host
+    # it runs on (destroying an HBA SR removes the LUN's devices from the host until one does).
+    host = session.xenapi.pool.get_master(session.xenapi.pool.get_all()[0])
 
     # The root element varies by backend; find BlockDevice entries by tag wherever they are.
     devlist_xml = ET.fromstring(probe_for_failure(session, host, {}, "lvmohba"))

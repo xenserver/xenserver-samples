@@ -33,7 +33,9 @@ function Invoke-CreateIscsiSr {
     # The CHAP password (if any) travels as a Secret, not plaintext device-config, as Invoke-CreateSmbSr
     # already does for its share password.
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
-    $xenHost = Get-XenHost | Select-Object -First 1
+    # Discover from the pool master: a shared SR is created there, and the probes log in to the target and
+    # rescan only on the host they run on.
+    $xenHost = Get-XenHost -Ref (Get-XenPool).master
     $dc = @{ target = $Target }
     if ($Port) { $dc["port"] = $Port }
     $secret = $null
