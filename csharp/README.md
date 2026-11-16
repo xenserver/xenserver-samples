@@ -16,7 +16,7 @@ csharp/
 ## Build and run
 
 The project references the XenServer.NET NuGet package, which the SDK ships in its `XenServer.NET` folder.
-Add that folder as a package source once, then build and run it with the .NET 8 SDK (or open
+Add that folder as a package source once, then build and run it with the .NET 10 SDK (or open
 `XenServerWorkflows.csproj` in Visual Studio):
 
 ```
