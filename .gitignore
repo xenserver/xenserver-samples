@@ -607,3 +607,6 @@ FodyWeavers.xsd
 # Unreleased SDK staged by tools/stage-ci-sdk.sh
 .ci-sdk/
 .sdk-build/
+
+# The xe export-import-vdi example's working files.
+cli/cli-raw-*.bin

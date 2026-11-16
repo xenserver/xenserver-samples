@@ -31,6 +31,8 @@ export_import_vdi() {
     xe vdi-import uuid=$original filename="$data" format=raw
     echo "Uploaded 8 MiB into sdk-example-raw-source"
 
+    # xe refuses to write over an existing file, so clear one left by an earlier, interrupted run.
+    rm -f "$exported"
     xe vdi-export uuid=$original filename="$exported" format=raw
     echo "Downloaded $(( $(wc -c < "$exported") / 1024 / 1024 )) MiB of raw contents"
 
