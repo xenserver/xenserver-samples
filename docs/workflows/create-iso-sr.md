@@ -37,7 +37,14 @@ function Invoke-CreateIsoSr {
         -NameLabel "sdk-example-iso" -NameDescription "ISO library created by the SDK example" `
         -Type "iso" -ContentType "iso" -Shared $true -PassThru
     Write-Host "Created ISO SR: $($sr.uuid)"
+
+    # A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+    # installation media.
+    $sr | Invoke-XenSR -XenAction Scan
+    Write-Host "ISO images: $((Get-XenSR -Ref $sr).VDIs.Count)"
+
     Invoke-DetachAndForgetSr -Ref $sr
+    Write-Host "Detached and forgot the SR."
     Write-Host "OK: create-iso-sr"
     $session | Disconnect-XenServer
 }
@@ -46,7 +53,9 @@ function Invoke-CreateIsoSr {
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-e70a-000000000000
+Created ISO SR: 00000001-0000-0000-f709-000000000000
+ISO images: 0
+Detached and forgot the SR.
 OK: create-iso-sr
 ```
 
@@ -76,7 +85,14 @@ create_iso_sr() {
     sr=$(xe sr-create host-uuid=$(first_host) type=iso name-label=xe-example-iso content-type=iso \
         device-config:location="$location" device-config:type=nfs_iso shared=true)
     echo "Created ISO SR: $sr"
+
+    # A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+    # installation media.
+    xe sr-scan uuid=$sr
+    echo "ISO images: $(count_csv "$(xe vdi-list sr-uuid=$sr --minimal)")"
+
     detach_and_forget_sr $sr
+    echo "Detached and forgot the SR."
     ok create-iso-sr
 }
 ```
@@ -84,7 +100,9 @@ create_iso_sr() {
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-dc0a-000000000000
+Created ISO SR: 00000001-0000-0000-f609-000000000000
+ISO images: 0
+Detached and forgot the SR.
 OK: create-iso-sr
 ```
 
@@ -114,7 +132,14 @@ def create_iso_sr(url, username, password, location):
     sr = session.xenapi.SR.create(host, dc, "0", "sdk-example-iso",
                                   "ISO library created by the SDK example", "iso", "iso", True, {})
     print("Created ISO SR: %s" % session.xenapi.SR.get_uuid(sr))
+
+    # A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+    # installation media.
+    session.xenapi.SR.scan(sr)
+    print("ISO images: %d" % len(session.xenapi.SR.get_VDIs(sr)))
+
     detach_and_forget_sr(session, sr)
+    print("Detached and forgot the SR.")
     print("OK: create-iso-sr")
     session.logout()
 ```
@@ -122,7 +147,9 @@ def create_iso_sr(url, username, password, location):
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-8b0a-000000000000
+Created ISO SR: 00000001-0000-0000-f709-000000000000
+ISO images: 0
+Detached and forgot the SR.
 OK: create-iso-sr
 ```
 
@@ -153,7 +180,14 @@ public static void CreateIsoSr(string url, string user, string password, string 
     var sr = SR.create(session, host, dc, 0, "sdk-example-iso", "ISO library created by the SDK example",
         "iso", "iso", true, new Dictionary<string, string>());
     Console.WriteLine($"Created ISO SR: {SR.get_uuid(session, sr)}");
+
+    // A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+    // installation media.
+    SR.scan(session, sr);
+    Console.WriteLine($"ISO images: {SR.get_VDIs(session, sr).Count}");
+
     DetachAndForgetSr(session, sr);
+    Console.WriteLine("Detached and forgot the SR.");
     Console.WriteLine("OK: create-iso-sr");
     session.logout();
 }
@@ -162,7 +196,9 @@ public static void CreateIsoSr(string url, string user, string password, string 
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-d90a-000000000000
+Created ISO SR: 00000001-0000-0000-f709-000000000000
+ISO images: 0
+Detached and forgot the SR.
 OK: create-iso-sr
 ```
 
@@ -198,7 +234,16 @@ func createIsoSr(url, user, password, location string) {
 	check(err)
 	uuid, _ := xenapi.SR.GetUUID(session, sr)
 	fmt.Printf("Created ISO SR: %s\n", uuid)
+
+	// A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+	// installation media.
+	check(xenapi.SR.Scan(session, sr))
+	vdis, err := xenapi.SR.GetVDIs(session, sr)
+	check(err)
+	fmt.Printf("ISO images: %d\n", len(vdis))
+
 	detachAndForgetSR(session, sr)
+	fmt.Println("Detached and forgot the SR.")
 	fmt.Println("OK: create-iso-sr")
 	session.Logout()
 }
@@ -207,7 +252,9 @@ func createIsoSr(url, user, password, location string) {
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-8e0a-000000000000
+Created ISO SR: 00000001-0000-0000-f709-000000000000
+ISO images: 0
+Detached and forgot the SR.
 OK: create-iso-sr
 ```
 
@@ -259,7 +306,14 @@ public final class CreateIsoSr {
             SR sr = SR.create(conn, host, dc, 0L, "sdk-example-iso", "ISO library created by the SDK example",
                 "iso", "iso", true, new java.util.HashMap<>());
             System.out.println("Created ISO SR: " + sr.getUuid(conn));
+
+            // A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+            // installation media.
+            sr.scan(conn);
+            System.out.println("ISO images: " + sr.getVDIs(conn).size());
+
             detachAndForgetSr(conn, sr);
+            System.out.println("Detached and forgot the SR.");
             System.out.println("OK: create-iso-sr");
         } finally {
             Session.logout(conn);
@@ -271,7 +325,9 @@ public final class CreateIsoSr {
 <details><summary>Example output</summary>
 
 ```text
-Created ISO SR: 00000001-0000-0000-9c0a-000000000000
+Created ISO SR: 00000001-0000-0000-f709-000000000000
+ISO images: 0
+Detached and forgot the SR.
 OK: create-iso-sr
 ```
 

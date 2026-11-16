@@ -120,7 +120,7 @@ function Invoke-CrossPoolCopyVm {
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-110a-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-1d0a-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -211,8 +211,11 @@ cross_pool_copy_vm() {
 <details><summary>Example output</summary>
 
 ```text
-Sent 'db-01' to localhost (copy); source still present: True
-  the copy on the destination: not found (nothing to tidy up)
+Sent 'db-01' to 127.0.0.1 (copy); source still present: True
+  the copy on the destination: db-01 (00000001-0000-0000-260a-000000000000)
+The following items are about to be destroyed
+VM : 00000001-0000-0000-260a-000000000000 (db-01)
+All objects destroyed
 OK: cross-pool-copy-vm
 ```
 
@@ -295,7 +298,7 @@ def cross_pool_copy_vm(url, username, password, dest_url, vm_name="db-01",
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-f409-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-020a-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -384,7 +387,7 @@ public static void CrossPoolCopyVm(string url, string user, string password, str
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: True
-  the copy on the destination: db-01 (00000001-0000-0000-ea09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-f909-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -505,7 +508,7 @@ func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, 
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-fe09-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-0b0a-000000000000)
 OK: cross-pool-copy-vm
 ```
 
@@ -627,7 +630,7 @@ public final class CrossPoolCopyVm {
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-070a-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-140a-000000000000)
 OK: cross-pool-copy-vm
 ```
 

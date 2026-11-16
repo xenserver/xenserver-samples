@@ -149,11 +149,27 @@ changed_block_tracking() {
     vdi_to=$(first_disk_vdi "$second")
 
     # One bit per 64 KiB block, base64-encoded; bit N set means block N changed. A real backup reads only
-    # those blocks, over NBD. Counting the bits needs a decoder, which bash is not - so report the size
-    # of the answer and let the language examples do the arithmetic.
+    # those blocks, over NBD. Nothing writes to this disk between the two snapshots taken here, so expect
+    # zero changed blocks - that's CBT correctly reporting no work to do, not a failure. Decode the bitmap
+    # with base64 -d, dump it one byte per line with od, and count the set bits in bash (no popcount
+    # builtin, so shift-and-mask each byte).
     encoded=$(xe vdi-list-changed-blocks vdi-from-uuid=$vdi_from vdi-to-uuid=$vdi_to)
     size=$(xe vdi-param-get uuid=$vdi_to param-name=virtual-size)
-    echo "  bitmap of ${#encoded} base64 chars covers $((size / 65536)) blocks of 64 KiB"
+    blocks=$((size / 65536))
+    changed=0
+    for byte in $(printf '%s' "$encoded" | base64 -d | od -An -v -tu1); do
+        while [ "$byte" -gt 0 ]; do
+            changed=$((changed + (byte & 1)))
+            byte=$((byte >> 1))
+        done
+    done
+    if [ "$changed" -gt 0 ]; then
+        to_copy=$((changed * 640 / 1024)) total=$((size * 10 / 1024 / 1024))
+        echo "  $changed blocks of $blocks changed" \
+             "($((to_copy / 10)).$((to_copy % 10)) MiB to copy, not $((total / 10)).$((total % 10)) MiB)"
+    else
+        echo "  0 blocks of $blocks changed: nothing was written to the disk between the snapshots"
+    fi
 
     # Release the older snapshot's blocks but keep its change metadata, so the next incremental can still
     # diff against it. vdi-data-destroy refuses a disk that a VM still uses (VDI_IN_USE), so drop the older
@@ -176,11 +192,11 @@ changed_block_tracking() {
 
 ```text
 Backing up web-01
-  bitmap of 68268 base64 chars covers 409600 blocks of 64 KiB
+  0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt-enabled=true
 The following items are about to be destroyed
-VM : 00000001-0000-0000-350b-000000000000 (cbt-backup-2)
-VDI: 00000001-0000-0000-360b-000000000000 (web-01 root disk) 
+VM : 00000001-0000-0000-fd09-000000000000 (cbt-backup-2)
+VDI: 00000001-0000-0000-fe09-000000000000 (web-01 root disk) 
 All objects destroyed
 OK: changed-block-tracking
 ```
@@ -483,7 +499,7 @@ func firstDisk(session *xenapi.Session, vm xenapi.VMRef) xenapi.VDIRef {
 <details><summary>Example output</summary>
 
 ```text
-Backing up secure-01
+Backing up db-01
   0 blocks of 409600 changed: nothing was written to the disk between the snapshots
   older snapshot is now type=cbt_metadata, still cbt_enabled=true
 OK: changed-block-tracking

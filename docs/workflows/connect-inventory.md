@@ -50,8 +50,8 @@ function Invoke-ConnectInventory {
 ```text
 Connected to pool: sdk-pool
 Hosts (2):
-  - sdk-host1 (127.0.0.1)
-  - sdk-host2 (198.51.100.12)
+  - sdk-host1 (127.0.0.21)
+  - sdk-host2 (127.0.0.31)
 VMs (4):
   - web-01 [Running]
   - db-01 [Halted]
@@ -159,7 +159,7 @@ def connect_inventory(url, username, password):
 Connected to pool: sdk-pool
 Hosts (2):
   - sdk-host1 (127.0.0.1)
-  - sdk-host2 (198.51.100.12)
+  - sdk-host2 (127.0.0.11)
 VMs (4):
   - web-01 [Running]
   - db-01 [Halted]
@@ -216,7 +216,7 @@ public static void ConnectInventory(string url, string user, string password)
 Connected to pool: sdk-pool
 Hosts (2):
   - sdk-host1 (127.0.0.1)
-  - sdk-host2 (198.51.100.12)
+  - sdk-host2 (127.0.0.11)
 VMs (4):
   - web-01 [Running]
   - db-01 [Halted]
@@ -294,12 +294,12 @@ func connectInventory(url, user, password string) {
 Connected to pool: sdk-pool
 Hosts (2):
   - sdk-host1 (127.0.0.1)
-  - sdk-host2 (198.51.100.12)
+  - sdk-host2 (127.0.0.11)
 VMs (4):
-  - db-01 [Halted]
-  - cache-01 [Running]
   - web-01 [Running]
   - secure-01 [Halted]
+  - cache-01 [Running]
+  - db-01 [Halted]
 OK: connect-inventory
 ```
 
@@ -372,7 +372,7 @@ public final class ConnectInventory {
 Connected to pool: sdk-pool
 Hosts (2):
   - sdk-host1 (127.0.0.1)
-  - sdk-host2 (198.51.100.12)
+  - sdk-host2 (127.0.0.11)
 VMs (4):
   - web-01 [Running]
   - db-01 [Halted]

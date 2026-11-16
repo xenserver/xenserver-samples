@@ -73,6 +73,7 @@ function Invoke-CreateHbaSr {
     Get-XenPBD | Where-Object { $_.SR -eq $sr -and $_.currently_attached } |
         ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
     Remove-XenSR -Ref $sr
+    Write-Host "Destroyed the SR."
     Write-Host "OK: create-hba-sr"
     $session | Disconnect-XenServer
 }
@@ -82,7 +83,8 @@ function Invoke-CreateHbaSr {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-e40a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (512 GiB)
+Destroyed the SR.
 OK: create-hba-sr
 ```
 
@@ -150,6 +152,7 @@ create_hba_sr() {
         xe pbd-unplug uuid=$pbd
     done
     xe sr-destroy uuid=$sr
+    echo "Destroyed the SR."
     ok create-hba-sr
 }
 ```
@@ -158,7 +161,8 @@ create_hba_sr() {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created HBA SR: 00000001-0000-0000-b20a-000000000000 (512 GiB)
+Created HBA SR: 00000001-0000-0000-f609-000000000000 (512 GiB)
+Destroyed the SR.
 OK: create-hba-sr
 ```
 
@@ -225,6 +229,7 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
         if session.xenapi.PBD.get_currently_attached(pbd):
             session.xenapi.PBD.unplug(pbd)
     session.xenapi.SR.destroy(sr)
+    print("Destroyed the SR.")
     print("OK: create-hba-sr")
     session.logout()
 ```
@@ -233,7 +238,8 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-ac0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (512 GiB)
+Destroyed the SR.
 OK: create-hba-sr
 ```
 
@@ -300,6 +306,7 @@ public static void CreateHbaSr(string url, string user, string password, string 
         if (PBD.get_currently_attached(session, pbd))
             PBD.unplug(session, pbd);
     SR.destroy(session, sr);
+    Console.WriteLine("Destroyed the SR.");
     Console.WriteLine("OK: create-hba-sr");
     session.logout();
 }
@@ -309,7 +316,8 @@ public static void CreateHbaSr(string url, string user, string password, string 
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-a90a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (512 GiB)
+Destroyed the SR.
 OK: create-hba-sr
 ```
 
@@ -383,6 +391,7 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 		}
 	}
 	check(xenapi.SR.Destroy(session, sr))
+	fmt.Println("Destroyed the SR.")
 	fmt.Println("OK: create-hba-sr")
 	session.Logout()
 }
@@ -392,7 +401,8 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-af0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (512 GiB)
+Destroyed the SR.
 OK: create-hba-sr
 ```
 
@@ -486,6 +496,7 @@ public final class CreateHbaSr {
             for (com.xensource.xenapi.PBD pbd : sr.getPBDs(conn))
                 if (pbd.getCurrentlyAttached(conn)) pbd.unplug(conn);
             sr.destroy(conn);
+            System.out.println("Destroyed the SR.");
             System.out.println("OK: create-hba-sr");
         } finally {
             Session.logout(conn);
@@ -498,7 +509,8 @@ public final class CreateHbaSr {
 
 ```text
 Discovered LUN: SCSIid 360a980004265656d5f4a2d63764e5736 on /dev/sdb [sdc]
-Created SR: 00000001-0000-0000-880a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (512 GiB)
+Destroyed the SR.
 OK: create-hba-sr
 ```
 

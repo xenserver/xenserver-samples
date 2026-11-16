@@ -71,6 +71,7 @@ function Invoke-VmLifecycle {
     Write-Host "After shutdown: $(State)"
 
     Remove-VmAndDisks -Ref $ref
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: vm-lifecycle"
     $session | Disconnect-XenServer
 }
@@ -100,6 +101,7 @@ Device models restarted; still Running
 After suspend:  Suspended
 After resume:   Running
 After shutdown: Halted
+Cleaned up the example VM.
 OK: vm-lifecycle
 ```
 
@@ -148,6 +150,7 @@ vm_lifecycle() {
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy
     # would leave the disks behind).
     xe vm-uninstall uuid=$vm force=true
+    echo "Cleaned up the example VM."
     ok vm-lifecycle
 }
 
@@ -180,9 +183,10 @@ After suspend:  suspended
 After resume:   running
 After shutdown: halted
 The following items are about to be destroyed
-VM : 00000001-0000-0000-4b0a-000000000000 (xe-example-lifecycle)
-VDI: 00000001-0000-0000-4e0a-000000000000 (web-01 root disk) 
+VM : 00000001-0000-0000-fd09-000000000000 (xe-example-lifecycle)
+VDI: 00000001-0000-0000-000a-000000000000 (web-01 root disk) 
 All objects destroyed
+Cleaned up the example VM.
 OK: vm-lifecycle
 ```
 
@@ -243,6 +247,7 @@ def vm_lifecycle(url, username, password, source_vm, new_vm_name="sdk-example-li
     print("After shutdown:%s" % state())
 
     destroy_vm_and_disks(session, vm_ref)
+    print("Cleaned up the example VM.")
     print("OK: vm-lifecycle")
     session.xenapi.session.logout()
 
@@ -269,6 +274,7 @@ Device models restarted; still Running
 After suspend: Suspended
 After resume:  Running
 After shutdown:Halted
+Cleaned up the example VM.
 OK: vm-lifecycle
 ```
 
@@ -330,6 +336,7 @@ public static void VmLifecycle(string url, string user, string password,
     Console.WriteLine($"After shutdown: {State()}");
 
     DestroyVmAndDisks(session, vmRef);
+    Console.WriteLine("Cleaned up the example VM.");
     Console.WriteLine("OK: vm-lifecycle");
     session.logout();
 }
@@ -357,6 +364,7 @@ Device models restarted; still Running
 After suspend:  Suspended
 After resume:   Running
 After shutdown: Halted
+Cleaned up the example VM.
 OK: vm-lifecycle
 ```
 
@@ -420,6 +428,7 @@ func vmLifecycle(url, user, password, sourceVM, newVMName string) {
 	fmt.Printf("After shutdown: %s\n", state())
 
 	destroyVMAndDisks(session, vmRef)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: vm-lifecycle")
 	session.Logout()
 }
@@ -451,6 +460,7 @@ Device models restarted; still Running
 After suspend:  Suspended
 After resume:   Running
 After shutdown: Halted
+Cleaned up the example VM.
 OK: vm-lifecycle
 ```
 
@@ -522,6 +532,7 @@ public final class VmLifecycle {
         System.out.println("After shutdown:" + vm.getPowerState(conn));
 
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: vm-lifecycle");
         Session.logout(conn);
     }
@@ -549,6 +560,7 @@ Device models restarted; still Running
 After suspend: Suspended
 After resume:  Running
 After shutdown:Halted
+Cleaned up the example VM.
 OK: vm-lifecycle
 ```
 

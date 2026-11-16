@@ -50,6 +50,7 @@ function Invoke-CloneVm {
 
     # Tidy up: destroy the clone and its (owned) disks.
     Remove-VmAndDisks -Ref $clone
+    Write-Host "Cleaned up the cloned VM (left the source intact)."
     Write-Host "OK: clone-vm"
     $session | Disconnect-XenServer
 }
@@ -60,6 +61,7 @@ function Invoke-CloneVm {
 ```text
 Cloned 'db-01' -> sdk-example-clone
 Clone has 1 VBD(s)
+Cleaned up the cloned VM (left the source intact).
 OK: clone-vm
 ```
 
@@ -90,6 +92,7 @@ clone_vm() {
     [ "$was_running" = true ] && xe vm-start uuid=$vm
     # Tidy up: vm-uninstall destroys the clone and the disks it owns (vm-destroy would leave them).
     xe vm-uninstall uuid=$clone force=true
+    echo "Cleaned up the cloned VM (left the source intact)."
     ok clone-vm
 }
 ```
@@ -99,9 +102,10 @@ clone_vm() {
 ```text
 Cloned 'db-01' -> xe-example-clone
 The following items are about to be destroyed
-VM : 00000001-0000-0000-e809-000000000000 (xe-example-clone)
-VDI: 00000001-0000-0000-eb09-000000000000 (db-01 root disk) 
+VM : 00000001-0000-0000-f609-000000000000 (xe-example-clone)
+VDI: 00000001-0000-0000-f909-000000000000 (db-01 root disk) 
 All objects destroyed
+Cleaned up the cloned VM (left the source intact).
 OK: clone-vm
 ```
 
@@ -150,6 +154,7 @@ def clone_vm(url, username, password, vm_name, clone_name="sdk-example-clone"):
 
     # Tidy up: destroy the clone and its (owned) disks.
     destroy_vm_and_disks(session, clone)
+    print("Cleaned up the cloned VM (left the source intact).")
     print("OK: clone-vm")
     session.xenapi.session.logout()
 ```
@@ -159,6 +164,7 @@ def clone_vm(url, username, password, vm_name, clone_name="sdk-example-clone"):
 ```text
 Cloned 'db-01' -> sdk-example-clone
 Clone has 1 VBD(s)
+Cleaned up the cloned VM (left the source intact).
 OK: clone-vm
 ```
 
@@ -199,6 +205,7 @@ public static void CloneVm(string url, string user, string password,
 
     // Tidy up: destroy the clone and its (owned) disks.
     DestroyVmAndDisks(session, clone);
+    Console.WriteLine("Cleaned up the cloned VM (left the source intact).");
     Console.WriteLine("OK: clone-vm");
     session.logout();
 }
@@ -209,6 +216,7 @@ public static void CloneVm(string url, string user, string password,
 ```text
 Cloned 'db-01' -> sdk-example-clone
 Clone has 1 VBD(s)
+Cleaned up the cloned VM (left the source intact).
 OK: clone-vm
 ```
 
@@ -264,6 +272,7 @@ func cloneVM(url, user, password, vmName, cloneName string) {
 
 	// Tidy up: destroy the clone and its (owned) disks.
 	destroyVMAndDisks(session, clone)
+	fmt.Println("Cleaned up the cloned VM (left the source intact).")
 	fmt.Println("OK: clone-vm")
 	session.Logout()
 }
@@ -274,6 +283,7 @@ func cloneVM(url, user, password, vmName, cloneName string) {
 ```text
 Cloned 'db-01' -> sdk-example-clone
 Clone has 1 VBD(s)
+Cleaned up the cloned VM (left the source intact).
 OK: clone-vm
 ```
 
@@ -330,6 +340,7 @@ public final class CloneVm {
 
         // Tidy up: destroy the clone and its (owned) disks.
         destroyVmAndDisks(conn, clone);
+        System.out.println("Cleaned up the cloned VM (left the source intact).");
         System.out.println("OK: clone-vm");
         Session.logout(conn);
     }
@@ -341,6 +352,7 @@ public final class CloneVm {
 ```text
 Cloned 'db-01' -> sdk-example-clone
 Clone has 1 VBD(s)
+Cleaned up the cloned VM (left the source intact).
 OK: clone-vm
 ```
 

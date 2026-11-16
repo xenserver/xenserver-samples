@@ -96,6 +96,7 @@ function Invoke-CreateIscsiSr {
         Get-XenPBD | Where-Object { $_.SR -eq $sr -and $_.currently_attached } |
             ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
         Remove-XenSR -Ref $sr
+        Write-Host "Destroyed the SR."
     }
     finally {
         if ($secret) { Remove-XenSecret -Ref $secret }
@@ -156,7 +157,8 @@ function Select-Lun {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-dd0a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (200 GiB)
+Destroyed the SR.
 OK: create-iscsi-sr
 ```
 
@@ -249,6 +251,7 @@ create_iscsi_sr() {
         xe pbd-unplug uuid=$pbd
     done
     xe sr-destroy uuid=$sr
+    echo "Destroyed the SR."
     if [ -n "$secret" ]; then
         xe secret-destroy uuid=$secret
         trap - EXIT
@@ -307,7 +310,8 @@ choose_lun() {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created iSCSI SR: 00000001-0000-0000-990a-000000000000 (200 GiB)
+Created iSCSI SR: 00000001-0000-0000-f609-000000000000 (200 GiB)
+Destroyed the SR.
 OK: create-iscsi-sr
 ```
 
@@ -393,6 +397,7 @@ def create_iscsi_sr(url, username, password, target, port=None, chap_user=None, 
             if session.xenapi.PBD.get_currently_attached(pbd):
                 session.xenapi.PBD.unplug(pbd)
         session.xenapi.SR.destroy(sr)
+        print("Destroyed the SR.")
     finally:
         if secret:
             session.xenapi.secret.destroy(secret)
@@ -432,7 +437,8 @@ def _choose_lun(luns, scsi_id):
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-930a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (200 GiB)
+Destroyed the SR.
 OK: create-iscsi-sr
 ```
 
@@ -527,6 +533,7 @@ public static void CreateIscsiSr(string url, string user, string password, strin
             if (PBD.get_currently_attached(session, pbd))
                 PBD.unplug(session, pbd);
         SR.destroy(session, sr);
+        Console.WriteLine("Destroyed the SR.");
     }
     finally
     {
@@ -576,7 +583,8 @@ private static XElement ChooseLun(List<XElement> luns, string scsiId)
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-e80a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (200 GiB)
+Destroyed the SR.
 OK: create-iscsi-sr
 ```
 
@@ -691,6 +699,7 @@ func createIscsiSr(url, user, password, target, port, chapUser, chapPassword, ta
 		}
 	}
 	check(xenapi.SR.Destroy(session, sr))
+	fmt.Println("Destroyed the SR.")
 	if !secretDestroyed {
 		check(xenapi.Secret.Destroy(session, secret))
 		secretDestroyed = true
@@ -796,7 +805,8 @@ func chooseLUN(luns []map[string]string, scsiID string) map[string]string {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-960a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (200 GiB)
+Destroyed the SR.
 OK: create-iscsi-sr
 ```
 
@@ -913,6 +923,7 @@ public final class CreateIscsiSr {
             for (com.xensource.xenapi.PBD pbd : sr.getPBDs(conn))
                 if (pbd.getCurrentlyAttached(conn)) pbd.unplug(conn);
             sr.destroy(conn);
+            System.out.println("Destroyed the SR.");
         } finally {
             if (secret != null) secret.destroy(conn);
             Session.logout(conn);
@@ -965,7 +976,8 @@ public final class CreateIscsiSr {
 ```text
 Discovered IQN: iqn.2009-01.com.example:target-0
 Discovered LUN 0 (SCSIid 360a980004265656d5f4a2d63764e5734)
-Created SR: 00000001-0000-0000-9e0a-000000000000 (200 GiB)
+Created SR: 00000001-0000-0000-f709-000000000000 (200 GiB)
+Destroyed the SR.
 OK: create-iscsi-sr
 ```
 

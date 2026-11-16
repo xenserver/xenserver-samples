@@ -61,6 +61,7 @@ function Invoke-LiveMigrate {
     # Tidy up so the example is repeatable.
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $vm
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: live-migrate"
     $session | Disconnect-XenServer
 }
@@ -72,6 +73,7 @@ function Invoke-LiveMigrate {
 VM is running on: sdk-host1
 Migrated to:      sdk-host2
 Still running:    Running
+Cleaned up the example VM.
 OK: live-migrate
 ```
 
@@ -120,6 +122,7 @@ live_migrate() {
     # owns (vm-destroy would leave the disks behind).
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
+    echo "Cleaned up the example VM."
     ok live-migrate
 }
 ```
@@ -131,9 +134,10 @@ Running on: sdk-host1
 Migrated to: sdk-host2
 Still running: running
 The following items are about to be destroyed
-VM : 00000001-0000-0000-cf0a-000000000000 (xe-example-migrate)
-VDI: 00000001-0000-0000-d20a-000000000000 (web-01 root disk) 
+VM : 00000001-0000-0000-fd09-000000000000 (xe-example-migrate)
+VDI: 00000001-0000-0000-000a-000000000000 (web-01 root disk) 
 All objects destroyed
+Cleaned up the example VM.
 OK: live-migrate
 ```
 
@@ -190,6 +194,7 @@ def live_migrate(url, username, password, source_vm, sr_name, new_vm_name="sdk-e
     # Tidy up so the example is repeatable.
     session.xenapi.VM.hard_shutdown(vm)
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example VM.")
     print("OK: live-migrate")
     session.xenapi.session.logout()
 ```
@@ -200,6 +205,7 @@ def live_migrate(url, username, password, source_vm, sr_name, new_vm_name="sdk-e
 VM is running on: sdk-host1
 Migrated to:      sdk-host2
 Still running:    Running
+Cleaned up the example VM.
 OK: live-migrate
 ```
 
@@ -251,6 +257,7 @@ public static void LiveMigrate(string url, string user, string password,
     // Tidy up so the example is repeatable.
     VM.hard_shutdown(session, vm);
     DestroyVmAndDisks(session, vm);
+    Console.WriteLine("Cleaned up the example VM.");
     Console.WriteLine("OK: live-migrate");
     session.logout();
 }
@@ -262,6 +269,7 @@ public static void LiveMigrate(string url, string user, string password,
 VM is running on: sdk-host1
 Migrated to:      sdk-host2
 Still running:    Running
+Cleaned up the example VM.
 OK: live-migrate
 ```
 
@@ -325,6 +333,7 @@ func liveMigrate(url, user, password, sourceVM, srName, newVMName string) {
 	// Tidy up so the example is repeatable.
 	check(xenapi.VM.HardShutdown(session, vm))
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: live-migrate")
 	session.Logout()
 }
@@ -336,6 +345,7 @@ func liveMigrate(url, user, password, sourceVM, srName, newVMName string) {
 VM is running on: sdk-host1
 Migrated to:      sdk-host2
 Still running:    Running
+Cleaned up the example VM.
 OK: live-migrate
 ```
 
@@ -409,6 +419,7 @@ public final class LiveMigrate {
         // Tidy up so the example is repeatable.
         vm.hardShutdown(conn);
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: live-migrate");
         Session.logout(conn);
     }
@@ -421,6 +432,7 @@ public final class LiveMigrate {
 VM is running on: sdk-host1
 Migrated to:      sdk-host2
 Still running:    Running
+Cleaned up the example VM.
 OK: live-migrate
 ```
 

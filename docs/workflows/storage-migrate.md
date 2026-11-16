@@ -65,6 +65,7 @@ function Invoke-StorageMigrate {
     # Tidy up: the VM and the disks it now owns.
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $ref
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: storage-migrate"
     $session | Disconnect-XenServer
 }
@@ -75,6 +76,7 @@ function Invoke-StorageMigrate {
 ```text
 Disk is on SR: Shared NFS
 Disk moved to:  iSCSI storage
+Cleaned up the example VM.
 OK: storage-migrate
 ```
 
@@ -130,6 +132,7 @@ storage_migrate() {
     # (vm-destroy would leave the disks behind).
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
+    echo "Cleaned up the example VM."
     ok storage-migrate
 }
 ```
@@ -140,9 +143,10 @@ storage_migrate() {
 Disk is on SR: Shared NFS
 Disk moved to: iSCSI storage
 The following items are about to be destroyed
-VM : 00000001-0000-0000-a60a-000000000000 (xe-example-storagemigrate)
-VDI: 00000001-0000-0000-b00a-000000000000 (web-01 root disk) 
+VM : 00000001-0000-0000-fd09-000000000000 (xe-example-storagemigrate)
+VDI: 00000001-0000-0000-070a-000000000000 (web-01 root disk) 
 All objects destroyed
+Cleaned up the example VM.
 OK: storage-migrate
 ```
 
@@ -198,6 +202,7 @@ def storage_migrate(url, username, password, source_vm, new_vm_name="sdk-example
     # Tidy up: the VM and the disks it now owns.
     session.xenapi.VM.hard_shutdown(vm)
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example VM.")
     print("OK: storage-migrate")
     session.xenapi.session.logout()
 ```
@@ -207,6 +212,7 @@ def storage_migrate(url, username, password, source_vm, new_vm_name="sdk-example
 ```text
 Disk is on SR: Shared NFS
 Disk moved to:  iSCSI storage
+Cleaned up the example VM.
 OK: storage-migrate
 ```
 
@@ -260,6 +266,7 @@ public static void StorageMigrate(string url, string user, string password,
     // Tidy up: the VM and the disks it now owns.
     VM.hard_shutdown(session, vm);
     DestroyVmAndDisks(session, vm);
+    Console.WriteLine("Cleaned up the example VM.");
     Console.WriteLine("OK: storage-migrate");
     session.logout();
 }
@@ -270,6 +277,7 @@ public static void StorageMigrate(string url, string user, string password,
 ```text
 Disk is on SR: Shared NFS
 Disk moved to:  iSCSI storage
+Cleaned up the example VM.
 OK: storage-migrate
 ```
 
@@ -350,6 +358,7 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 	// Tidy up: the VM and the disks it now owns.
 	check(xenapi.VM.HardShutdown(session, vm))
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: storage-migrate")
 	session.Logout()
 }
@@ -360,6 +369,7 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 ```text
 Disk is on SR: Shared NFS
 Disk moved to:  iSCSI storage
+Cleaned up the example VM.
 OK: storage-migrate
 ```
 
@@ -442,6 +452,7 @@ public final class StorageMigrate {
         // Tidy up: the VM and the disks it now owns.
         vm.hardShutdown(conn);
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: storage-migrate");
         Session.logout(conn);
     }
@@ -453,6 +464,7 @@ public final class StorageMigrate {
 ```text
 Disk is on SR: Shared NFS
 Disk moved to:  iSCSI storage
+Cleaned up the example VM.
 OK: storage-migrate
 ```
 

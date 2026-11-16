@@ -51,6 +51,7 @@ function Invoke-CreateSmbSr {
         -Type "smb" -ContentType "user" -Shared $true -PassThru
     Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
     Invoke-DetachAndForgetSr -Ref $sr
+    Write-Host "Detached and forgot the SR."
     Remove-XenSecret -Ref $secret
     Write-Host "OK: create-smb-sr"
     $session | Disconnect-XenServer
@@ -60,7 +61,8 @@ function Invoke-CreateSmbSr {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-e10a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f809-000000000000 (512 GiB)
+Detached and forgot the SR.
 OK: create-smb-sr
 ```
 
@@ -101,6 +103,7 @@ create_smb_sr() {
         device-config:username="$smb_username" device-config:password_secret=$secret)
     echo "Created SMB SR: $sr ($(( $(xe sr-param-get uuid=$sr param-name=physical-size) / 1024 / 1024 / 1024 )) GiB)"
     detach_and_forget_sr $sr
+    echo "Detached and forgot the SR."
     xe secret-destroy uuid=$secret
     ok create-smb-sr
 }
@@ -109,7 +112,8 @@ create_smb_sr() {
 <details><summary>Example output</summary>
 
 ```text
-Created SMB SR: 00000001-0000-0000-f40a-000000000000 (512 GiB)
+Created SMB SR: 00000001-0000-0000-f709-000000000000 (512 GiB)
+Detached and forgot the SR.
 OK: create-smb-sr
 ```
 
@@ -148,6 +152,7 @@ def create_smb_sr(url, username, password, server, share, smb_username, smb_pass
     print("Created SR: %s (%d GiB)"
           % (session.xenapi.SR.get_uuid(sr), int(session.xenapi.SR.get_physical_size(sr)) // GIB))
     detach_and_forget_sr(session, sr)
+    print("Detached and forgot the SR.")
     session.xenapi.secret.destroy(secret)
     print("OK: create-smb-sr")
     session.logout()
@@ -156,7 +161,8 @@ def create_smb_sr(url, username, password, server, share, smb_username, smb_pass
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-a20a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f809-000000000000 (512 GiB)
+Detached and forgot the SR.
 OK: create-smb-sr
 ```
 
@@ -203,6 +209,7 @@ public static void CreateSmbSr(string url, string user, string password, string 
         "smb", "user", true, new Dictionary<string, string>());
     Console.WriteLine($"Created SR: {SR.get_uuid(session, sr)} ({SR.get_physical_size(session, sr) / GiB} GiB)");
     DetachAndForgetSr(session, sr);
+    Console.WriteLine("Detached and forgot the SR.");
     Secret.destroy(session, secret);
     Console.WriteLine("OK: create-smb-sr");
     session.logout();
@@ -212,7 +219,8 @@ public static void CreateSmbSr(string url, string user, string password, string 
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-ec0a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f809-000000000000 (512 GiB)
+Detached and forgot the SR.
 OK: create-smb-sr
 ```
 
@@ -263,6 +271,7 @@ func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, s
 	uuid, _ := xenapi.SR.GetUUID(session, sr)
 	fmt.Printf("Created SR: %s (%d GiB)\n", uuid, size/GiB)
 	detachAndForgetSR(session, sr)
+	fmt.Println("Detached and forgot the SR.")
 	check(xenapi.Secret.Destroy(session, secret))
 	fmt.Println("OK: create-smb-sr")
 	session.Logout()
@@ -272,7 +281,8 @@ func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, s
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-f00a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f809-000000000000 (512 GiB)
+Detached and forgot the SR.
 OK: create-smb-sr
 ```
 
@@ -336,6 +346,7 @@ public final class CreateSmbSr {
                 "smb", "user", true, new java.util.HashMap<>());
             System.out.println("Created SR: " + sr.getUuid(conn) + " (" + sr.getPhysicalSize(conn) / GiB + " GiB)");
             detachAndForgetSr(conn, sr);
+            System.out.println("Detached and forgot the SR.");
             secret.destroy(conn);
             System.out.println("OK: create-smb-sr");
         } finally {
@@ -348,7 +359,8 @@ public final class CreateSmbSr {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-a60a-000000000000 (512 GiB)
+Created SR: 00000001-0000-0000-f809-000000000000 (512 GiB)
+Detached and forgot the SR.
 OK: create-smb-sr
 ```
 

@@ -39,6 +39,7 @@ function Invoke-CreateNfsSr {
     Write-Host "Created SR: $($sr.uuid)"
 
     Invoke-DetachAndForgetSr -Ref $sr
+    Write-Host "Detached and forgot the SR."
     Write-Host "OK: create-nfs-sr"
     $session | Disconnect-XenServer
 }
@@ -47,7 +48,8 @@ function Invoke-CreateNfsSr {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-da0a-000000000000
+Created SR: 00000001-0000-0000-f709-000000000000
+Detached and forgot the SR.
 OK: create-nfs-sr
 ```
 
@@ -77,6 +79,7 @@ create_nfs_sr() {
         device-config:server="$nfs_server" device-config:serverpath="$nfs_path" device-config:nfsversion=3 shared=true)
     echo "Created SR: $sr"
     detach_and_forget_sr $sr
+    echo "Detached and forgot the SR."
     ok create-nfs-sr
 }
 ```
@@ -84,7 +87,8 @@ create_nfs_sr() {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-850a-000000000000
+Created SR: 00000001-0000-0000-f609-000000000000
+Detached and forgot the SR.
 OK: create-nfs-sr
 ```
 
@@ -122,6 +126,7 @@ def create_nfs_sr(url, username, password, nfs_server, nfs_path, sr_name="sdk-ex
     print("Created SR: %s" % session.xenapi.SR.get_uuid(sr_ref))
 
     detach_and_forget_sr(session, sr_ref)
+    print("Detached and forgot the SR.")
     print("OK: create-nfs-sr")
     session.xenapi.session.logout()
 ```
@@ -129,7 +134,8 @@ def create_nfs_sr(url, username, password, nfs_server, nfs_path, sr_name="sdk-ex
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-7f0a-000000000000
+Created SR: 00000001-0000-0000-f709-000000000000
+Detached and forgot the SR.
 OK: create-nfs-sr
 ```
 
@@ -167,6 +173,7 @@ public static void CreateNfsSr(string url, string user, string password,
     Console.WriteLine($"Created SR: {SR.get_uuid(session, srRef)}");
 
     DetachAndForgetSr(session, srRef);
+    Console.WriteLine("Detached and forgot the SR.");
     Console.WriteLine("OK: create-nfs-sr");
     session.logout();
 }
@@ -175,7 +182,8 @@ public static void CreateNfsSr(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-e50a-000000000000
+Created SR: 00000001-0000-0000-f709-000000000000
+Detached and forgot the SR.
 OK: create-nfs-sr
 ```
 
@@ -225,6 +233,7 @@ func createNfsSR(url, user, password, nfsServer, nfsPath, srName string) {
 	fmt.Printf("Created SR: %s\n", uuid)
 
 	detachAndForgetSR(session, srRef)
+	fmt.Println("Detached and forgot the SR.")
 	fmt.Println("OK: create-nfs-sr")
 	session.Logout()
 }
@@ -233,7 +242,8 @@ func createNfsSR(url, user, password, nfsServer, nfsPath, srName string) {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-820a-000000000000
+Created SR: 00000001-0000-0000-f709-000000000000
+Detached and forgot the SR.
 OK: create-nfs-sr
 ```
 
@@ -287,6 +297,7 @@ public final class CreateNfsSr {
         System.out.println("Created SR: " + sr.getUuid(conn));
 
         detachAndForgetSr(conn, sr);
+        System.out.println("Detached and forgot the SR.");
         System.out.println("OK: create-nfs-sr");
         Session.logout(conn);
     }
@@ -296,7 +307,8 @@ public final class CreateNfsSr {
 <details><summary>Example output</summary>
 
 ```text
-Created SR: 00000001-0000-0000-900a-000000000000
+Created SR: 00000001-0000-0000-f709-000000000000
+Detached and forgot the SR.
 OK: create-nfs-sr
 ```
 

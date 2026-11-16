@@ -80,6 +80,7 @@ function Invoke-ManageVmDisks {
 
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $ref
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: manage-vm-disks"
     Disconnect-XenServer -Session $session
 }
@@ -93,6 +94,7 @@ After unplug:   False
 Resized:        4294967296 -> 8589934592 bytes
 After plug:     True
 Grown online:   not supported by nfs storage; unplug, resize, plug as above
+Cleaned up the example VM.
 OK: manage-vm-disks
 ```
 
@@ -169,6 +171,7 @@ manage_vm_disks() {
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
     xe vdi-destroy uuid=$vdi
+    echo "Cleaned up the example VM."
     ok manage-vm-disks
 }
 ```
@@ -182,9 +185,10 @@ Resized:        4294967296 -> 8589934592 bytes
 After plug:     true
 Grown online:   not supported by nfs storage; unplug, resize, plug as above
 The following items are about to be destroyed
-VM : 00000001-0000-0000-490a-000000000000 (xe-example-vm-disks)
-VDI: 00000001-0000-0000-4c0a-000000000000 (web-01 root disk) 
+VM : 00000001-0000-0000-fd09-000000000000 (xe-example-vm-disks)
+VDI: 00000001-0000-0000-000a-000000000000 (web-01 root disk) 
 All objects destroyed
+Cleaned up the example VM.
 OK: manage-vm-disks
 ```
 
@@ -265,6 +269,7 @@ def manage_vm_disks(url, username, password, source_vm, sr_name, new_vm_name="sd
 
     session.xenapi.VM.hard_shutdown(vm_ref)
     destroy_vm_and_disks(session, vm_ref)
+    print("Cleaned up the example VM.")
     print("OK: manage-vm-disks")
     session.xenapi.session.logout()
 ```
@@ -277,6 +282,7 @@ After unplug:   False
 Resized:        4294967296 -> 8589934592 bytes
 After plug:     True
 Grown online:   not supported by nfs storage; unplug, resize, plug as above
+Cleaned up the example VM.
 OK: manage-vm-disks
 ```
 
@@ -365,6 +371,7 @@ public static void ManageVmDisks(string url, string user, string password,
 
     VM.hard_shutdown(session, vmRef);
     DestroyVmAndDisks(session, vmRef);
+    Console.WriteLine("Cleaned up the example VM.");
     Console.WriteLine("OK: manage-vm-disks");
     session.logout();
 }
@@ -378,6 +385,7 @@ After unplug:   False
 Resized:        4294967296 -> 8589934592 bytes
 After plug:     True
 Grown online:   not supported by nfs storage; unplug, resize, plug as above
+Cleaned up the example VM.
 OK: manage-vm-disks
 ```
 
@@ -485,6 +493,7 @@ func manageVMDisks(url, user, password, sourceVM, srName, newVMName string) {
 
 	check(xenapi.VM.HardShutdown(session, vmRef))
 	destroyVMAndDisks(session, vmRef)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: manage-vm-disks")
 	session.Logout()
 }
@@ -498,6 +507,7 @@ After unplug:   false
 Resized:        4294967296 -> 8589934592 bytes
 After plug:     true
 Grown online:   not supported by nfs storage; unplug, resize, plug as above
+Cleaned up the example VM.
 OK: manage-vm-disks
 ```
 
@@ -617,6 +627,7 @@ public final class ManageVmDisks {
 
         vm.hardShutdown(conn);
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: manage-vm-disks");
         Session.logout(conn);
     }
@@ -631,6 +642,7 @@ After unplug:   false
 Resized:        4294967296 -> 8589934592 bytes
 After plug:     true
 Grown online:   not supported by nfs storage; unplug, resize, plug as above
+Cleaned up the example VM.
 OK: manage-vm-disks
 ```
 

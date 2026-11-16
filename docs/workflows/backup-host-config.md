@@ -72,18 +72,6 @@ function Invoke-BackupHostConfig {
     $session | Disconnect-XenServer
 }
 
-function Get-HostUrl {
-    <#
-    .SYNOPSIS
-        Build the URL for a given host's own address, keeping the scheme and port the caller originally
-        connected with (a host's management address carries no port of its own).
-    #>
-    param([string]$Url, [string]$Address)
-    $uri = [System.Uri]$Url
-    $port = if ($uri.Port -gt 0) { ":$($uri.Port)" } else { "" }
-    return "$($uri.Scheme)://$Address$port"
-}
-
 function Restore-ExampleHostConfig {
     <#
     .SYNOPSIS
@@ -119,7 +107,7 @@ function Restore-ExampleHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-39843df2-0e33-43ed-82b8-fe8c12adf9c2.backup
+  wrote 83 bytes to sdk-example-host-cd109a0f-4384-4e45-98e3-e7b9f6c8aa91.backup
   not restoring it (pass -Restore $true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
@@ -206,10 +194,10 @@ import shutil
 import ssl
 import tempfile
 import time
-import urllib.parse
 import urllib.request
 
 from connection import connect
+from helpers import host_url as build_host_url
 
 
 def backup_host_config(url, username, password, restore=False):
@@ -239,7 +227,7 @@ def backup_host_config(url, username, password, restore=False):
 
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
     host = x.pool.get_master(x.pool.get_all()[0])
-    host_url = _host_url(url, x.host.get_address(host))
+    host_url = build_host_url(url, x.host.get_address(host))
     print("Backing up %s" % x.host.get_name_label(host))
 
     path = os.path.join(tempfile.gettempdir(), "sdk-example-host.backup")
@@ -264,14 +252,6 @@ def backup_host_config(url, username, password, restore=False):
     os.remove(path)
     print("OK: backup-host-config")
     session.logout()
-
-
-def _host_url(url, address):
-    """Build the URL for a given host's own address, keeping the scheme and port the caller
-    originally connected with (a host's management address carries no port of its own)."""
-    parts = urllib.parse.urlsplit(url)
-    port = ":%d" % parts.port if parts.port else ""
-    return "%s://%s%s" % (parts.scheme, address, port)
 
 
 def _drop_idle_connection(session):
@@ -384,17 +364,6 @@ public static void BackupHostConfig(string url, string user, string password, bo
 }
 
 /// <summary>
-/// Build the URL for a given host's own address, keeping the scheme and port the caller originally
-/// connected with (a host's management address carries no port of its own).
-/// </summary>
-private static string HostUrl(string url, string address)
-{
-    var uri = new Uri(url);
-    var port = uri.IsDefaultPort ? "" : $":{uri.Port}";
-    return $"{uri.Scheme}://{address}{port}";
-}
-
-/// <summary>
 /// Upload a backup to a host - over a connection opened to THAT host's own address - and throw if
 /// the task reports it was refused.
 /// </summary>
@@ -438,7 +407,7 @@ private static void RestoreHostConfig(Session session, string hostUrl, XenRef<Ho
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-0fde92ec17e542f9acb09791fd5ba469.backup
+  wrote 83 bytes to sdk-example-host-3b4ee86c689d44fb81e84dec2648ab3f.backup
   not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
@@ -600,7 +569,7 @@ func restoreHostConfig(session *xenapi.Session, url, sid string, host xenapi.Hos
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host-3435847481.backup
+  wrote 83 bytes to sdk-example-host-3996007023.backup
   not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```
@@ -770,7 +739,7 @@ public final class BackupHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host13201454403948149848.backup
+  wrote 83 bytes to sdk-example-host12818834678477480016.backup
   not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```

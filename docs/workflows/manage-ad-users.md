@@ -105,10 +105,10 @@ function Invoke-ManageAdUsers {
 <details><summary>Example output</summary>
 
 ```text
-Joined domain: (none given)
-Added subject Alice Admin (alice) as pool-admin
+Joined domain: sdk-example.local
+Added subject Alice Admin (SDK-EXAMPLE.LOCAL\alice) as pool-admin
 Logged-in subjects: 0
-  alice has no active session to log out
+  SDK-EXAMPLE.LOCAL\alice has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -168,7 +168,8 @@ manage_ad_users() {
     subj=$(xe subject-add subject-name="$subject_name")
     xe subject-role-add uuid=$subj role-name=pool-admin
     name=$(xe subject-param-get uuid=$subj param-name=other-config param-key=subject-displayname)
-    echo "Added subject $name with role pool-admin"
+    echo "Added subject $name ($(xe subject-param-get uuid=$subj param-name=other-config param-key=subject-name))" \
+         "as $(xe subject-param-get uuid=$subj param-name=roles)"
 
     # Revoking access does not end sessions the user already has: logging the subject out is a
     # separate act, and the one that actually gets them off the pool now rather than at next login.
@@ -196,8 +197,8 @@ manage_ad_users() {
 <details><summary>Example output</summary>
 
 ```text
-Joined domain: (none given)
-Added subject Alice Admin with role pool-admin
+Joined domain: sdk-example.local
+Added subject Alice Admin (SDK-EXAMPLE.LOCAL\alice) as pool-admin
 Logged-in subjects: 0
   Alice Admin has no active session to log out
 OK: manage-ad-users
@@ -282,10 +283,10 @@ def manage_ad_users(url, username, password, domain="", admin_user="alice",
 <details><summary>Example output</summary>
 
 ```text
-Joined domain: (none given)
-Added subject Alice Admin (alice) as pool-admin
+Joined domain: sdk-example.local
+Added subject Alice Admin (SDK-EXAMPLE.LOCAL\alice) as pool-admin
 Logged-in subjects: 0
-  alice has no active session to log out
+  SDK-EXAMPLE.LOCAL\alice has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -389,10 +390,10 @@ public static void ManageAdUsers(string url, string user, string password, strin
 <details><summary>Example output</summary>
 
 ```text
-Joined domain: (none given)
-Added subject Alice Admin (alice) as pool-admin
+Joined domain: sdk-example.local
+Added subject Alice Admin (SDK-EXAMPLE.LOCAL\alice) as pool-admin
 Logged-in subjects: 0
-  alice has no active session to log out
+  SDK-EXAMPLE.LOCAL\alice has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -510,10 +511,10 @@ func manageAdUsers(url, user, password, domain, adminUser, adminPassword, newUse
 <details><summary>Example output</summary>
 
 ```text
-Joined domain: (none given)
-Added subject Alice Admin (alice) as pool-admin
+Joined domain: sdk-example.local
+Added subject Alice Admin (SDK-EXAMPLE.LOCAL\alice) as pool-admin
 Logged-in subjects: 0
-  alice has no active session to log out
+  SDK-EXAMPLE.LOCAL\alice has no active session to log out
 OK: manage-ad-users
 ```
 
@@ -637,10 +638,10 @@ public final class ManageAdUsers {
 <details><summary>Example output</summary>
 
 ```text
-Joined domain: (none given)
-Added subject Alice Admin (alice) as pool-admin
+Joined domain: sdk-example.local
+Added subject Alice Admin (SDK-EXAMPLE.LOCAL\alice) as pool-admin
 Logged-in subjects: 0
-  alice has no active session to log out
+  SDK-EXAMPLE.LOCAL\alice has no active session to log out
 OK: manage-ad-users
 ```
 

@@ -32,22 +32,27 @@ function Invoke-SnapshotSchedule {
         Select-Object -First 1
     if (-not $vm) { throw "No VM named '$VmName' was found." }
 
+    $runs = 3
+    $retention = 2
+
     # RetainedSnapshots is the interesting field: the schedule prunes to it every time it runs.
     $vmss = New-XenVMSS -NameLabel $ScheduleName `
         -NameDescription 'Scheduled snapshots created by the SDK example' `
-        -Enabled $true -Type snapshot -Frequency daily -RetainedSnapshots 2 `
+        -Enabled $true -Type snapshot -Frequency daily -RetainedSnapshots $retention `
         -Schedule @{ hour = '2'; min = '0' } -PassThru
     Write-Host "Created schedule: $($vmss.uuid)"
 
     Set-XenVM -VM $vm -SnapshotSchedule $vmss
     Write-Host "Members:          $((Get-XenVMSS -Ref $vmss).VMs.Count)"
 
-    # Run it three times against a retention of two: the oldest is pruned away. Compare against the
-    # snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+    # Run it three times against a retention of two: the oldest is pruned away each time it runs over the
+    # limit. Compare against the snapshots the VM already had, so only the schedule's own are counted
+    # (and tidied up below).
     $before = @((Get-XenVM -Ref $vm).snapshots)
-    1..3 | ForEach-Object { Invoke-XenVMSS -Ref $vmss -XenAction SnapshotNow | Out-Null }
+    1..$runs | ForEach-Object { Invoke-XenVMSS -Ref $vmss -XenAction SnapshotNow | Out-Null }
     $kept = @((Get-XenVM -Ref $vm).snapshots | Where-Object { $before -notcontains $_ })
-    Write-Host "Snapshots kept:   $($kept.Count) (retention 2)"
+    $pruned = if ($runs -gt $kept.Count) { 'the oldest was pruned' } else { 'nothing needed pruning yet' }
+    Write-Host "Ran the schedule $runs times; kept $($kept.Count) (retention $retention): $pruned"
 
     # Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     # first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
@@ -62,9 +67,9 @@ function Invoke-SnapshotSchedule {
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-190a-000000000000
+Created schedule: 00000001-0000-0000-f709-000000000000
 Members:          1
-Snapshots kept:   2 (retention 2)
+Ran the schedule 3 times; kept 2 (retention 2): the oldest was pruned
 OK: snapshot-schedule
 ```
 
@@ -94,7 +99,8 @@ snapshot_schedule() {
 
     # xe has no command to run a schedule on demand (the API's VMSS.snapshot_now has no CLI form), so it
     # takes its first snapshot when it next falls due, and from then on keeps the newest retained-snapshots.
-    echo "Keeps:            $(xe vmss-param-get uuid=$vmss param-name=retained-snapshots) snapshot(s)"
+    echo "Schedule keeps the newest $(xe vmss-param-get uuid=$vmss param-name=retained-snapshots)" \
+         "snapshot(s) each time it runs (xe cannot trigger a run on demand)"
 
     # A schedule with VMs still on it cannot be destroyed, so take the VM off it first.
     xe vm-param-set uuid=$vm snapshot-schedule=
@@ -106,9 +112,9 @@ snapshot_schedule() {
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-310a-000000000000
+Created schedule: 00000001-0000-0000-f609-000000000000
 Members:          1
-Keeps:            2 snapshot(s)
+Schedule keeps the newest 2 snapshot(s) each time it runs (xe cannot trigger a run on demand)
 OK: snapshot-schedule
 ```
 
@@ -137,6 +143,7 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
     """Create a scheduled-snapshot policy, attach a VM, run it, and watch retention prune."""
     session = connect(url, username, password)
     vm_ref = vm_by_name(session, vm_name)
+    runs, retention = 3, 2
 
     # retained_snapshots is the interesting field: the schedule prunes to it every time it runs.
     vmss_ref = session.xenapi.VMSS.create({
@@ -145,7 +152,7 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
         "enabled": True,
         "type": "snapshot",
         "frequency": "daily",
-        "retained_snapshots": "2",
+        "retained_snapshots": str(retention),
         "schedule": {"hour": "2", "min": "0"},
     })
     print("Created schedule: %s" % session.xenapi.VMSS.get_uuid(vmss_ref))
@@ -153,13 +160,15 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
     session.xenapi.VM.set_snapshot_schedule(vm_ref, vmss_ref)
     print("Members:          %d" % len(session.xenapi.VMSS.get_VMs(vmss_ref)))
 
-    # Run it three times against a retention of two: the oldest is pruned away. Compare against the
-    # snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+    # Run it three times against a retention of two: the oldest is pruned away each time it runs over
+    # the limit. Compare against the snapshots the VM already had, so only the schedule's own are
+    # counted (and tidied up below).
     before = set(session.xenapi.VM.get_snapshots(vm_ref))
-    for _ in range(3):
+    for _ in range(runs):
         session.xenapi.VMSS.snapshot_now(vmss_ref)
     kept = [s for s in session.xenapi.VM.get_snapshots(vm_ref) if s not in before]
-    print("Snapshots kept:   %d (retention 2)" % len(kept))
+    pruned = "the oldest was pruned" if runs > len(kept) else "nothing needed pruning yet"
+    print("Ran the schedule %d times; kept %d (retention %d): %s" % (runs, len(kept), retention, pruned))
 
     # Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     # first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
@@ -174,9 +183,9 @@ def snapshot_schedule(url, username, password, vm_name, schedule_name="sdk-examp
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-1b0a-000000000000
+Created schedule: 00000001-0000-0000-f709-000000000000
 Members:          1
-Snapshots kept:   2 (retention 2)
+Ran the schedule 3 times; kept 2 (retention 2): the oldest was pruned
 OK: snapshot-schedule
 ```
 
@@ -201,6 +210,7 @@ public static void SnapshotSchedule(string url, string user, string password,
 {
     var session = Connect(url, user, password);
     var vmRef = VmByName(session, vmName);
+    const int runs = 3, retention = 2;
 
     // retained_snapshots is the interesting field: the schedule prunes to it every time it runs.
     var vmssRef = VMSS.create(session, new VMSS
@@ -210,7 +220,7 @@ public static void SnapshotSchedule(string url, string user, string password,
         enabled = true,
         type = vmss_type.snapshot,
         frequency = vmss_frequency.daily,
-        retained_snapshots = 2,
+        retained_snapshots = retention,
         schedule = new Dictionary<string, string> { ["hour"] = "2", ["min"] = "0" },
     });
     Console.WriteLine($"Created schedule: {VMSS.get_uuid(session, vmssRef)}");
@@ -218,12 +228,14 @@ public static void SnapshotSchedule(string url, string user, string password,
     VM.set_snapshot_schedule(session, vmRef, vmssRef);
     Console.WriteLine($"Members:          {VMSS.get_VMs(session, vmssRef).Count}");
 
-    // Run it three times against a retention of two: the oldest is pruned away. Compare against the
-    // snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+    // Run it three times against a retention of two: the oldest is pruned away each time it runs
+    // over the limit. Compare against the snapshots the VM already had, so only the schedule's own
+    // are counted (and tidied up below).
     var before = VM.get_snapshots(session, vmRef).ToHashSet();
-    for (var i = 0; i < 3; i++) VMSS.snapshot_now(session, vmssRef);
+    for (var i = 0; i < runs; i++) VMSS.snapshot_now(session, vmssRef);
     var kept = VM.get_snapshots(session, vmRef).Where(s => !before.Contains(s)).ToList();
-    Console.WriteLine($"Snapshots kept:   {kept.Count} (retention 2)");
+    var pruned = runs > kept.Count ? "the oldest was pruned" : "nothing needed pruning yet";
+    Console.WriteLine($"Ran the schedule {runs} times; kept {kept.Count} (retention {retention}): {pruned}");
 
     // Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     // first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
@@ -238,9 +250,9 @@ public static void SnapshotSchedule(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-080a-000000000000
+Created schedule: 00000001-0000-0000-f709-000000000000
 Members:          1
-Snapshots kept:   2 (retention 2)
+Ran the schedule 3 times; kept 2 (retention 2): the oldest was pruned
 OK: snapshot-schedule
 ```
 
@@ -266,6 +278,7 @@ import (
 func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 	session := connect(url, user, password)
 	vmRef := vmByName(session, vmName)
+	const runs, retention = 3, 2
 
 	// RetainedSnapshots is the interesting field: the schedule prunes to it every time it runs.
 	vmssRef, err := xenapi.VMSS.Create(session, xenapi.VMSSRecord{
@@ -274,7 +287,7 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 		Enabled:           true,
 		Type:              xenapi.VmssTypeSnapshot,
 		Frequency:         xenapi.VmssFrequencyDaily,
-		RetainedSnapshots: 2,
+		RetainedSnapshots: retention,
 		Schedule:          map[string]string{"hour": "2", "min": "0"},
 	})
 	check(err)
@@ -285,15 +298,16 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 	members, _ := xenapi.VMSS.GetVMs(session, vmssRef)
 	fmt.Printf("Members:          %d\n", len(members))
 
-	// Run it three times against a retention of two: the oldest is pruned away. Compare against the
-	// snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+	// Run it three times against a retention of two: the oldest is pruned away each time it runs over
+	// the limit. Compare against the snapshots the VM already had, so only the schedule's own are
+	// counted (and tidied up below).
 	existing, err := xenapi.VM.GetSnapshots(session, vmRef)
 	check(err)
 	before := map[xenapi.VMRef]bool{}
 	for _, s := range existing {
 		before[s] = true
 	}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < runs; i++ {
 		_, err = xenapi.VMSS.SnapshotNow(session, vmssRef)
 		check(err)
 	}
@@ -305,7 +319,11 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 			kept = append(kept, s)
 		}
 	}
-	fmt.Printf("Snapshots kept:   %d (retention 2)\n", len(kept))
+	pruned := "nothing needed pruning yet"
+	if runs > len(kept) {
+		pruned = "the oldest was pruned"
+	}
+	fmt.Printf("Ran the schedule %d times; kept %d (retention %d): %s\n", runs, len(kept), retention, pruned)
 
 	// Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
 	// first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
@@ -322,9 +340,9 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-170a-000000000000
+Created schedule: 00000001-0000-0000-f709-000000000000
 Members:          1
-Snapshots kept:   2 (retention 2)
+Ran the schedule 3 times; kept 2 (retention 2): the oldest was pruned
 OK: snapshot-schedule
 ```
 
@@ -367,6 +385,7 @@ public final class SnapshotSchedule {
             String vmName, String scheduleName) throws Exception {
         Connection conn = connect(url, user, password);
         VM vm = vmByName(conn, vmName);
+        final int runs = 3, retention = 2;
 
         // retainedSnapshots is the interesting field: the schedule prunes to it every time it runs.
         VMSS.Record spec = new VMSS.Record();
@@ -375,7 +394,7 @@ public final class SnapshotSchedule {
         spec.enabled = true;
         spec.type = Types.VmssType.SNAPSHOT;
         spec.frequency = Types.VmssFrequency.DAILY;
-        spec.retainedSnapshots = 2L;
+        spec.retainedSnapshots = (long) retention;
         Map<String, String> when = new HashMap<>();
         when.put("hour", "2");
         when.put("min", "0");
@@ -386,15 +405,18 @@ public final class SnapshotSchedule {
         vm.setSnapshotSchedule(conn, vmss);
         System.out.println("Members:          " + vmss.getVMs(conn).size());
 
-        // Run it three times against a retention of two: the oldest is pruned away. Compare against the
-        // snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+        // Run it three times against a retention of two: the oldest is pruned away each time it runs
+        // over the limit. Compare against the snapshots the VM already had, so only the schedule's own
+        // are counted (and tidied up below).
         Set<VM> before = vm.getSnapshots(conn);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < runs; i++) {
             vmss.snapshotNow(conn);
         }
         Set<VM> kept = new HashSet<>(vm.getSnapshots(conn));
         kept.removeAll(before);
-        System.out.println("Snapshots kept:   " + kept.size() + " (retention 2)");
+        String pruned = runs > kept.size() ? "the oldest was pruned" : "nothing needed pruning yet";
+        System.out.println("Ran the schedule " + runs + " times; kept " + kept.size()
+                + " (retention " + retention + "): " + pruned);
 
         // Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
         // first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.
@@ -410,9 +432,9 @@ public final class SnapshotSchedule {
 <details><summary>Example output</summary>
 
 ```text
-Created schedule: 00000001-0000-0000-230a-000000000000
+Created schedule: 00000001-0000-0000-f709-000000000000
 Members:          1
-Snapshots kept:   2 (retention 2)
+Ran the schedule 3 times; kept 2 (retention 2): the oldest was pruned
 OK: snapshot-schedule
 ```
 

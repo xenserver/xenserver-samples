@@ -50,6 +50,7 @@ function Invoke-VmBootConfig {
     Write-Host "Boot mode: firmware=$($configured.HVM_boot_params['firmware']), secureboot=$($configured.platform['secureboot']) (resolved against pool certificates at boot)"
 
     Remove-VmAndDisks -Ref $vm
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: vm-boot-config"
     $session | Disconnect-XenServer
 }
@@ -61,6 +62,7 @@ function Invoke-VmBootConfig {
 vCPUs: 2/4
 Boot order: cdn
 Boot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)
+Cleaned up the example VM.
 OK: vm-boot-config
 ```
 
@@ -98,6 +100,7 @@ vm_boot_config() {
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy
     # would leave the disks behind).
     xe vm-uninstall uuid=$vm force=true
+    echo "Cleaned up the example VM."
     ok vm-boot-config
 }
 ```
@@ -109,9 +112,10 @@ vCPUs: 2/4
 Boot order: cdn
 Boot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)
 The following items are about to be destroyed
-VM : 00000001-0000-0000-630a-000000000000 (xe-example-boot)
-VDI: 00000001-0000-0000-660a-000000000000 (0) 
+VM : 00000001-0000-0000-f609-000000000000 (xe-example-boot)
+VDI: 00000001-0000-0000-f909-000000000000 (0) 
 All objects destroyed
+Cleaned up the example VM.
 OK: vm-boot-config
 ```
 
@@ -162,6 +166,7 @@ def vm_boot_config(url, username, password, template_name, new_vm_name="sdk-exam
            session.xenapi.VM.get_platform(vm)["secureboot"]))
 
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example VM.")
     print("OK: vm-boot-config")
     session.xenapi.session.logout()
 ```
@@ -172,6 +177,7 @@ def vm_boot_config(url, username, password, template_name, new_vm_name="sdk-exam
 vCPUs: 2/4
 Boot order: cdn
 Boot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)
+Cleaned up the example VM.
 OK: vm-boot-config
 ```
 
@@ -216,6 +222,7 @@ public static void VmBootConfig(string url, string user, string password,
                       "(resolved against pool certificates at boot)");
 
     DestroyVmAndDisks(session, vm);
+    Console.WriteLine("Cleaned up the example VM.");
     Console.WriteLine("OK: vm-boot-config");
     session.logout();
 }
@@ -227,6 +234,7 @@ public static void VmBootConfig(string url, string user, string password,
 vCPUs: 2/4
 Boot order: cdn
 Boot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)
+Cleaned up the example VM.
 OK: vm-boot-config
 ```
 
@@ -280,6 +288,7 @@ func vmBootConfig(url, user, password, templateName, newVMName string) {
 		bootParams["firmware"], platform["secureboot"])
 
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: vm-boot-config")
 	session.Logout()
 }
@@ -291,6 +300,7 @@ func vmBootConfig(url, user, password, templateName, newVMName string) {
 vCPUs: 2/4
 Boot order: cdn
 Boot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)
+Cleaned up the example VM.
 OK: vm-boot-config
 ```
 
@@ -357,6 +367,7 @@ public final class VmBootConfig {
                 + " (resolved against pool certificates at boot)");
 
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: vm-boot-config");
         Session.logout(conn);
     }
@@ -369,6 +380,7 @@ public final class VmBootConfig {
 vCPUs: 2/4
 Boot order: cdn
 Boot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)
+Cleaned up the example VM.
 OK: vm-boot-config
 ```
 

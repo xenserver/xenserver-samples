@@ -89,6 +89,8 @@ function Invoke-CreateVmFull {
     $vm | Invoke-XenVM -XenAction HardShutdown
     $vm | Remove-XenVM
     $vdi | Remove-XenVDI
+    Write-Host "Cleaned up the example VM."
+
     Write-Host "OK: create-vm-full"
     $session | Disconnect-XenServer
 }
@@ -98,7 +100,7 @@ function Invoke-CreateVmFull {
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f509-000000000000
+Created VM:    00000001-0000-0000-f709-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -108,6 +110,7 @@ Networking:    NIC on Pool-wide network 0
 power state:   Running
 vCPUs:         2
 disks:         1, NICs: 1
+Cleaned up the example VM.
 OK: create-vm-full
 ```
 
@@ -187,7 +190,7 @@ create_vm_full() {
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-fc09-000000000000
+Created VM:    00000001-0000-0000-f609-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -198,7 +201,7 @@ power-state: running
 vCPUs:       2
 disks:       1, NICs: 1
 The following items are about to be destroyed
-VM : 00000001-0000-0000-fc09-000000000000 (xe-example-full-vm)
+VM : 00000001-0000-0000-f609-000000000000 (xe-example-full-vm)
 All objects destroyed
 Cleaned up the example VM.
 OK: create-vm-full
@@ -448,7 +451,7 @@ public static void CreateVmFull(string url, string user, string password,
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f209-000000000000
+Created VM:    00000001-0000-0000-f709-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
@@ -610,12 +613,12 @@ func createVMFull(url, user, password, templateName, newVMName string) {
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-eb09-000000000000
+Created VM:    00000001-0000-0000-f709-000000000000
 Install media: network repository
 Home server:   sdk-host2
 CPU/memory:    2 vCPUs, 2 GiB
-Storage:       24 GiB disk on Local storage
-Networking:    NIC on Pool-wide network 1
+Storage:       24 GiB disk on iSCSI storage
+Networking:    NIC on Pool-wide network 2
 --- Result ---
 power state:   Running
 vCPUs:         2
@@ -775,7 +778,7 @@ public final class CreateVmFull {
 
 ```text
 Template:      Rocky Linux 8
-Created VM:    00000001-0000-0000-f509-000000000000
+Created VM:    00000001-0000-0000-f709-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB

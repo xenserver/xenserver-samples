@@ -34,6 +34,7 @@ function Invoke-SrUsage {
     # A rescan refreshes an SR's utilisation from its backend.
     $scanMe = Get-XenSR | Where-Object { $_.physical_size -gt 0 } | Select-Object -First 1
     $scanMe | Invoke-XenSR -XenAction Scan
+    Write-Host "Rescanned $($scanMe.name_label)"
     Write-Host "OK: sr-usage"
     $session | Disconnect-XenServer
 }
@@ -46,7 +47,8 @@ function Invoke-SrUsage {
   ISO library: 4 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 54 / 512 GiB used
+  Shared NFS: 25 / 512 GiB used
+Rescanned Shared NFS
 OK: sr-usage
 ```
 
@@ -68,18 +70,19 @@ sr_usage() {
     echo "Storage:"
     # Built up here rather than piped straight from the loop, so scan_me survives it - every stage of a
     # pipeline runs in its own subshell, and a plain `for ... | sort` would lose it.
-    scan_me="" lines=""
+    scan_me="" scan_name="" lines=""
     for sr in $(each_csv "$(xe sr-list --minimal)"); do
         size=$(xe sr-param-get uuid=$sr param-name=physical-size)
         [ "$size" -gt 0 ] || continue   # skip ISO/DVD pseudo-SRs, which report no capacity
-        [ -n "$scan_me" ] || scan_me=$sr
-        util=$(xe sr-param-get uuid=$sr param-name=physical-utilisation)
         name=$(xe sr-param-get uuid=$sr param-name=name-label)
+        if [ -z "$scan_me" ]; then scan_me=$sr; scan_name=$name; fi
+        util=$(xe sr-param-get uuid=$sr param-name=physical-utilisation)
         lines+="$name"$'\t'"  $name: $((util / 1073741824)) / $((size / 1073741824)) GiB used"$'\n'
     done
     printf '%s' "$lines" | sort -t$'\t' -k1,1f | cut -f2-
     # A rescan refreshes an SR's utilisation from its backend.
     xe sr-scan uuid=$scan_me
+    echo "Rescanned $scan_name"
     ok sr-usage
 }
 ```
@@ -92,7 +95,8 @@ Storage:
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 50 / 512 GiB used
+  Shared NFS: 25 / 512 GiB used
+Rescanned Shared NFS
 OK: sr-usage
 ```
 
@@ -128,9 +132,10 @@ def sr_usage(url, username, password):
                  int(sr["physical_utilisation"]) // GIB, int(sr["physical_size"]) // GIB))
 
     # A rescan refreshes an SR's utilisation from its backend.
-    scan_me = next(ref for ref, r in session.xenapi.SR.get_all_records().items()
-                   if int(r["physical_size"]) > 0)
-    session.xenapi.SR.scan(scan_me)
+    scan_ref, scan_rec = next((ref, r) for ref, r in session.xenapi.SR.get_all_records().items()
+                              if int(r["physical_size"]) > 0)
+    session.xenapi.SR.scan(scan_ref)
+    print("Rescanned %s" % scan_rec["name_label"])
     print("OK: sr-usage")
     session.xenapi.session.logout()
 ```
@@ -142,7 +147,8 @@ def sr_usage(url, username, password):
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 50 / 512 GiB used
+  Shared NFS: 25 / 512 GiB used
+Rescanned Shared NFS
 OK: sr-usage
 ```
 
@@ -171,8 +177,9 @@ public static void SrUsage(string url, string user, string password)
         Console.WriteLine($"  {sr.name_label}: {sr.physical_utilisation / GiB} / {sr.physical_size / GiB} GiB used");
     }
     // A rescan refreshes an SR's utilisation from its backend.
-    var scanMe = SR.get_all_records(session).First(kv => kv.Value.physical_size > 0).Key;
-    SR.scan(session, scanMe);
+    var scanMe = SR.get_all_records(session).First(kv => kv.Value.physical_size > 0);
+    SR.scan(session, scanMe.Key);
+    Console.WriteLine($"Rescanned {scanMe.Value.name_label}");
     Console.WriteLine("OK: sr-usage");
     session.logout();
 }
@@ -185,7 +192,8 @@ public static void SrUsage(string url, string user, string password)
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 54 / 512 GiB used
+  Shared NFS: 25 / 512 GiB used
+Rescanned Shared NFS
 OK: sr-usage
 ```
 
@@ -233,6 +241,7 @@ func srUsage(url, user, password string) {
 	})
 
 	var scanMe xenapi.SRRef
+	var scanName string
 	haveScan := false
 	for _, sr := range ordered {
 		if sr.rec.PhysicalSize <= 0 { // skip ISO/DVD pseudo-SRs
@@ -240,12 +249,13 @@ func srUsage(url, user, password string) {
 		}
 		fmt.Printf("  %s: %d / %d GiB used\n", sr.rec.NameLabel, sr.rec.PhysicalUtilisation/GiB, sr.rec.PhysicalSize/GiB)
 		if !haveScan {
-			scanMe, haveScan = sr.ref, true
+			scanMe, scanName, haveScan = sr.ref, sr.rec.NameLabel, true
 		}
 	}
 	// A rescan refreshes an SR's utilisation from its backend.
 	if haveScan {
 		check(xenapi.SR.Scan(session, scanMe))
+		fmt.Printf("Rescanned %s\n", scanName)
 	}
 	fmt.Println("OK: sr-usage")
 	session.Logout()
@@ -260,6 +270,7 @@ func srUsage(url, user, password string) {
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
   Shared NFS: 25 / 512 GiB used
+Rescanned iSCSI storage
 OK: sr-usage
 ```
 
@@ -307,9 +318,11 @@ public final class SrUsage {
         }
         // A rescan refreshes an SR's utilisation from its backend.
         SR scanMe = null;
+        String scanName = null;
         for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet())
-            if (e.getValue().physicalSize > 0) { scanMe = e.getKey(); break; }
+            if (e.getValue().physicalSize > 0) { scanMe = e.getKey(); scanName = e.getValue().nameLabel; break; }
         scanMe.scan(conn);
+        System.out.println("Rescanned " + scanName);
         System.out.println("OK: sr-usage");
         Session.logout(conn);
     }
@@ -323,7 +336,8 @@ public final class SrUsage {
   ISO library: 3 / 100 GiB used
   Local storage: 25 / 512 GiB used
   Local storage: 25 / 512 GiB used
-  Shared NFS: 54 / 512 GiB used
+  Shared NFS: 25 / 512 GiB used
+Rescanned Shared NFS
 OK: sr-usage
 ```
 

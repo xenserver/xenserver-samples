@@ -82,7 +82,7 @@ function Invoke-SnapshotRevert {
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-560a-000000000000
+Created snapshot: 00000001-0000-0000-f709-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -128,11 +128,11 @@ snapshot_revert() {
 <details><summary>Example output</summary>
 
 ```text
-Created snapshot: 00000001-0000-0000-250a-000000000000
+Created snapshot: 00000001-0000-0000-f609-000000000000
 Reverted to the snapshot.
 The following items are about to be destroyed
-VM : 00000001-0000-0000-250a-000000000000 (xe-example-snapshot)
-VDI: 00000001-0000-0000-260a-000000000000 (web-01 root disk) 
+VM : 00000001-0000-0000-f609-000000000000 (xe-example-snapshot)
+VDI: 00000001-0000-0000-f709-000000000000 (web-01 root disk) 
 All objects destroyed
 OK: snapshot-revert
 ```
@@ -212,7 +212,7 @@ def snapshot_revert(url, username, password, vm_name, snapshot_name="sdk-example
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-230a-000000000000
+Created snapshot: 00000001-0000-0000-f709-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -289,7 +289,7 @@ public static void SnapshotRevert(string url, string user, string password,
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-320a-000000000000
+Created snapshot: 00000001-0000-0000-f709-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -390,7 +390,7 @@ func snapshotRevert(url, user, password, vmName, snapshotName string) {
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-390a-000000000000
+Created snapshot: 00000001-0000-0000-f709-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).
@@ -492,7 +492,7 @@ public final class SnapshotRevert {
 
 ```text
 Snapshotting VM: web-01
-Created snapshot: 00000001-0000-0000-5f0a-000000000000
+Created snapshot: 00000001-0000-0000-f709-000000000000
 Thumbnail:      23379 bytes of PNG
 Reverted VM to the snapshot.
 Restarted the VM (it was running before the revert).

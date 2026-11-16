@@ -87,7 +87,6 @@ Caught expected failure:
 The uuid you supplied was invalid.
 type: VM
 uuid: this-uuid-does-not-exist
-[ERROR] Command Exit 1
 OK: error-handling
 ```
 

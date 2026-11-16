@@ -79,6 +79,7 @@ function Invoke-ExportImportVm {
 
         # The import brought its own disks along; destroy those too, not just the VM record.
         Remove-VmAndDisks -Ref $imported
+        Write-Host "Cleaned up the imported VM."
         Write-Host "OK: export-import-vm"
     }
     finally {
@@ -119,9 +120,10 @@ function Get-TarEntryName {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-3860f236-d1f9-44e9-ace4-e31f4136c723.xva
+  wrote 4.0 MiB to sdk-example-export-090b600a-8bfe-49cd-a8fa-a42e6d48036d.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
+Cleaned up the imported VM.
 OK: export-import-vm
 ```
 
@@ -175,6 +177,7 @@ export_import_vm() {
 
     # The import brought its own disks along; vm-uninstall destroys those too, not just the VM record.
     xe vm-uninstall uuid=$imported force=true
+    echo "Cleaned up the imported VM."
     ok export-import-vm
 }
 ```
@@ -186,9 +189,10 @@ Exporting db-01
   wrote 4 MiB to cli-export.xva
   imported as db-01
 The following items are about to be destroyed
-VM : 00000001-0000-0000-790a-000000000000 (db-01)
-VDI: 00000001-0000-0000-7b0a-000000000000 (db-01 disk 0) 
+VM : 00000001-0000-0000-f909-000000000000 (db-01)
+VDI: 00000001-0000-0000-fb09-000000000000 (db-01 disk 0) 
 All objects destroyed
+Cleaned up the imported VM.
 OK: export-import-vm
 ```
 
@@ -297,6 +301,7 @@ def export_import_vm(url, username, password, vm_name):
     # The import brought its own disks along; destroy those too, not just the VM record.
     destroy_vm_and_disks(session, imported)
     os.remove(path)
+    print("Cleaned up the imported VM.")
     print("OK: export-import-vm")
     session.logout()
 ```
@@ -305,9 +310,10 @@ def export_import_vm(url, username, password, vm_name):
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-ie8d5xqt.xva
+  wrote 4.0 MiB to sdk-example-export-wt1fviyo.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
+Cleaned up the imported VM.
 OK: export-import-vm
 ```
 
@@ -401,6 +407,7 @@ public static void ExportImportVm(string url, string user, string password, stri
         Console.WriteLine($"  imported as {VM.get_name_label(session, imported)}");
 
         DestroyVmAndDisks(session, imported);
+        Console.WriteLine("Cleaned up the imported VM.");
         Console.WriteLine("OK: export-import-vm");
     }
     finally
@@ -417,9 +424,10 @@ public static void ExportImportVm(string url, string user, string password, stri
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-08552addef264861a0ffc24f0abc55b2.xva
+  wrote 4.0 MiB to sdk-example-export-910ca0b690e44e4984c5a75ea7fc6504.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
+Cleaned up the imported VM.
 OK: export-import-vm
 ```
 
@@ -551,6 +559,7 @@ func exportImportVm(url, user, password, vmName string) {
 
 	// The import brought its own disks along; destroy those too, not just the VM record.
 	destroyVMAndDisks(session, imported)
+	fmt.Println("Cleaned up the imported VM.")
 	fmt.Println("OK: export-import-vm")
 }
 
@@ -576,9 +585,10 @@ func tarNames(path string) []string {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-4263554790.xva
+  wrote 4.0 MiB to sdk-example-export-3591511188.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
+Cleaned up the imported VM.
 OK: export-import-vm
 ```
 
@@ -689,6 +699,7 @@ public final class ExportImportVm {
 
                 // The import brought its own disks along; destroy those too, not just the VM record.
                 destroyVmAndDisks(conn, importedVm);
+                System.out.println("Cleaned up the imported VM.");
                 System.out.println("OK: export-import-vm");
             } finally {
                 // Always clean up the file, on failure too: a real export is gigabytes, not worth
@@ -732,9 +743,10 @@ public final class ExportImportVm {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export13152219564260145515.xva
+  wrote 4.0 MiB to sdk-example-export4423992380335120445.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
+Cleaned up the imported VM.
 OK: export-import-vm
 ```
 

@@ -51,7 +51,7 @@ function Invoke-TraceApiCalls {
 <details><summary>Example output</summary>
 
 ```text
-Trace 9cb8eea39c676ed01467b485401c6bf9: each call sends traceparent: 00-9cb8eea39c676ed01467b485401c6bf9-7b3d7137ff3ba329-03
+Trace e3548d2e9aef12b054eeb7b9ecfbbd59: each call sends traceparent: 00-e3548d2e9aef12b054eeb7b9ecfbbd59-13c84fb4288b3b16-03
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -92,7 +92,7 @@ trace_api_calls() {
 <details><summary>Example output</summary>
 
 ```text
-Trace 145efff448ba3d61ac1e8ac67ab85d3d: each command sends traceparent: 00-145efff448ba3d61ac1e8ac67ab85d3d-ad198648b2ac0a70-01
+Trace 55cae4cb1ea7ba44972e45368447b8c0: each command sends traceparent: 00-55cae4cb1ea7ba44972e45368447b8c0-59abdb76d4a2f2fa-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -160,7 +160,7 @@ def trace_api_calls(url, username, password):
 <details><summary>Example output</summary>
 
 ```text
-Trace 29c0d3cc4f4158252c037008e6821047: each call sends traceparent: 00-29c0d3cc4f4158252c037008e6821047-08e7e2a63990a5ce-01
+Trace cdbd9220ff5eb9185001693ad04668a2: each call sends traceparent: 00-cdbd9220ff5eb9185001693ad04668a2-bb608e6518bab0ed-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -207,7 +207,7 @@ public static void TraceApiCalls(string url, string user, string password)
 <details><summary>Example output</summary>
 
 ```text
-Trace 76a8cecf6d63ee463bda6d2e06271b5a: each call sends traceparent: 00-76a8cecf6d63ee463bda6d2e06271b5a-0f3162a89592c7a4-01
+Trace db4863497ff6f36d3034878ee0d30291: each call sends traceparent: 00-db4863497ff6f36d3034878ee0d30291-8d41bf5ab63c0afe-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```
@@ -271,7 +271,7 @@ func traceAPICalls(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Trace a8d32fb783dd579de63580cdb61e4273: each call sends traceparent: 00-a8d32fb783dd579de63580cdb61e4273-3083858fdc88f1ac-01
+Trace 4a8bc331eabb84e2ee4c356addc8061f: each call sends traceparent: 00-4a8bc331eabb84e2ee4c356addc8061f-4fbe402352186e13-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```

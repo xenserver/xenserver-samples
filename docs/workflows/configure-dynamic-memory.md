@@ -132,7 +132,6 @@ configure_dynamic_memory() {
 db-01: static 0.5 GiB-4.0 GiB, dynamic 4.0 GiB-4.0 GiB
   dynamic range now 3.0 GiB-4.0 GiB
   refused a dynamic_max above static_max: The dynamic memory range violates constraint static_min <= dynamic_min <= dynamic_max <= static_max.
-[ERROR] Command Exit 1
 OK: configure-dynamic-memory
 ```
 

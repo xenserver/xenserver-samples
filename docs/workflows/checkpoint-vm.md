@@ -55,6 +55,7 @@ function Invoke-CheckpointVm {
     Remove-VmAndDisks -Ref $checkpoint
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $ref
+    Write-Host "Cleaned up the example VM and its checkpoint."
     Write-Host "OK: checkpoint-vm"
     $session | Disconnect-XenServer
 }
@@ -63,9 +64,10 @@ function Invoke-CheckpointVm {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-6e0a-000000000000
+Created checkpoint: 00000001-0000-0000-080a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
+Cleaned up the example VM and its checkpoint.
 OK: checkpoint-vm
 ```
 
@@ -109,6 +111,7 @@ checkpoint_vm() {
     xe snapshot-uninstall snapshot-uuid=$cp force=true
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
+    echo "Cleaned up the example VM and its checkpoint."
     ok checkpoint-vm
 }
 ```
@@ -116,16 +119,17 @@ checkpoint_vm() {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-6c0a-000000000000
+Created checkpoint: 00000001-0000-0000-070a-000000000000
 Reverted to the checkpoint; power-state now: suspended
 The following items are about to be destroyed
-VM : 00000001-0000-0000-6c0a-000000000000 (xe-example-checkpoint-1)
-VDI: 00000001-0000-0000-6d0a-000000000000 (web-01 root disk) 
+VM : 00000001-0000-0000-070a-000000000000 (xe-example-checkpoint-1)
+VDI: 00000001-0000-0000-080a-000000000000 (web-01 root disk) 
 All objects destroyed
 The following items are about to be destroyed
-VM : 00000001-0000-0000-620a-000000000000 (xe-example-checkpoint)
-VDI: 00000001-0000-0000-650a-000000000000 (web-01 root disk) 
+VM : 00000001-0000-0000-fd09-000000000000 (xe-example-checkpoint)
+VDI: 00000001-0000-0000-000a-000000000000 (web-01 root disk) 
 All objects destroyed
+Cleaned up the example VM and its checkpoint.
 OK: checkpoint-vm
 ```
 
@@ -180,6 +184,7 @@ def checkpoint_vm(url, username, password, source_vm, new_vm_name="sdk-example-c
     destroy_vm_and_disks(session, checkpoint)
     session.xenapi.VM.hard_shutdown(vm)
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example VM and its checkpoint.")
     print("OK: checkpoint-vm")
     session.xenapi.session.logout()
 ```
@@ -187,9 +192,10 @@ def checkpoint_vm(url, username, password, source_vm, new_vm_name="sdk-example-c
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-3b0a-000000000000
+Created checkpoint: 00000001-0000-0000-080a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
+Cleaned up the example VM and its checkpoint.
 OK: checkpoint-vm
 ```
 
@@ -239,6 +245,7 @@ public static void CheckpointVm(string url, string user, string password,
     DestroyVmAndDisks(session, checkpoint);
     VM.hard_shutdown(session, vm);
     DestroyVmAndDisks(session, vm);
+    Console.WriteLine("Cleaned up the example VM and its checkpoint.");
     Console.WriteLine("OK: checkpoint-vm");
     session.logout();
 }
@@ -247,9 +254,10 @@ public static void CheckpointVm(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-520a-000000000000
+Created checkpoint: 00000001-0000-0000-080a-000000000000
 is_a_snapshot = True
 Reverted the VM to the checkpoint; power state now: Suspended
+Cleaned up the example VM and its checkpoint.
 OK: checkpoint-vm
 ```
 
@@ -304,6 +312,7 @@ func checkpointVM(url, user, password, sourceVM, newVMName string) {
 	destroyVMAndDisks(session, checkpoint)
 	check(xenapi.VM.HardShutdown(session, vm))
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example VM and its checkpoint.")
 	fmt.Println("OK: checkpoint-vm")
 	session.Logout()
 }
@@ -312,9 +321,10 @@ func checkpointVM(url, user, password, sourceVM, newVMName string) {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-550a-000000000000
+Created checkpoint: 00000001-0000-0000-080a-000000000000
 is_a_snapshot = true
 Reverted the VM to the checkpoint; power state now: Suspended
+Cleaned up the example VM and its checkpoint.
 OK: checkpoint-vm
 ```
 
@@ -381,6 +391,7 @@ public final class CheckpointVm {
         destroyVmAndDisks(conn, checkpoint);
         vm.hardShutdown(conn);
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM and its checkpoint.");
         System.out.println("OK: checkpoint-vm");
         Session.logout(conn);
     }
@@ -390,9 +401,10 @@ public final class CheckpointVm {
 <details><summary>Example output</summary>
 
 ```text
-Created checkpoint: 00000001-0000-0000-770a-000000000000
+Created checkpoint: 00000001-0000-0000-080a-000000000000
 is_a_snapshot = true
 Reverted the VM to the checkpoint; power state now: Suspended
+Cleaned up the example VM and its checkpoint.
 OK: checkpoint-vm
 ```
 

@@ -43,8 +43,9 @@ function Invoke-DismissAlerts {
 <details><summary>Example output</summary>
 
 ```text
-Alerts:         0
-No alerts to dismiss.
+Alerts:         14
+Dismissing:     VM_STARTED (priority 5)
+Alerts left:    13
 OK: dismiss-alerts
 ```
 
@@ -81,8 +82,9 @@ dismiss_alerts() {
 <details><summary>Example output</summary>
 
 ```text
-Alerts:         0
-No alerts to dismiss.
+Alerts:         14
+Dismissing:     VM_STARTED (priority 5)
+Alerts left:    13
 OK: dismiss-alerts
 ```
 
@@ -121,8 +123,9 @@ def dismiss_alerts(url, username, password):
 <details><summary>Example output</summary>
 
 ```text
-Alerts:         0
-No alerts to dismiss.
+Alerts:         14
+Dismissing:     VM_STARTED (priority 5)
+Alerts left:    13
 OK: dismiss-alerts
 ```
 
@@ -162,8 +165,9 @@ public static void DismissAlerts(string url, string user, string password)
 <details><summary>Example output</summary>
 
 ```text
-Alerts:         0
-No alerts to dismiss.
+Alerts:         14
+Dismissing:     VM_STARTED (priority 5)
+Alerts left:    13
 OK: dismiss-alerts
 ```
 
@@ -216,8 +220,9 @@ func dismissAlerts(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Alerts:         0
-No alerts to dismiss.
+Alerts:         14
+Dismissing:     VM_STARTED (priority 5)
+Alerts left:    13
 OK: dismiss-alerts
 ```
 
@@ -270,8 +275,9 @@ public final class DismissAlerts {
 <details><summary>Example output</summary>
 
 ```text
-Alerts:         0
-No alerts to dismiss.
+Alerts:         14
+Dismissing:     VM_STARTED (priority 5)
+Alerts left:    13
 OK: dismiss-alerts
 ```
 

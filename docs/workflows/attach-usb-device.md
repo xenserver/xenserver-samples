@@ -32,7 +32,9 @@ function Invoke-AttachUsbDevice {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $vm = Get-XenVM -Name $VmName
 
-    $pusb = Get-XenPUSB | Select-Object -First 1
+    # Pick deterministically (lowest description, then uuid), not whatever order the server happens
+    # to list them in, so the example behaves the same way every run.
+    $pusb = Get-XenPUSB | Sort-Object description, uuid | Select-Object -First 1
     Write-Host "Device:         $($pusb.description)"
 
     # Passthrough is off until an administrator releases the device: attaching one that has not been
@@ -48,7 +50,8 @@ function Invoke-AttachUsbDevice {
         Invoke-XenVUSB -Ref $vusb -XenAction Unplug
     }
     Remove-XenVUSB -VUSB $vusb
-    Set-XenPUSB -PUSB (Get-XenPUSB | Select-Object -First 1) -PassthroughEnabled $false
+    Write-Host "Detached:       $(@((Get-XenVM -Name $VmName).VUSBs).Count) device(s)"
+    Set-XenPUSB -PUSB $pusb -PassthroughEnabled $false
     Write-Host "OK: attach-usb-device"
     $session | Disconnect-XenServer
 }
@@ -59,6 +62,7 @@ function Invoke-AttachUsbDevice {
 ```text
 Device:         Kingston Technology DataTraveler 3.0
 Attached:       1 device(s)
+Detached:       0 device(s)
 OK: attach-usb-device
 ```
 
@@ -77,10 +81,18 @@ Source: [`cli/virtual-machines/attach-usb-device.sh`](../../cli/virtual-machines
 #   ./workflows.sh attach-usb-device https://xenserver root "$password"
 
 attach_usb_device() {
-    local vm_uuid pusb_uuid group_uuid vusb_uuid
+    local vm_uuid pusb_uuid group_uuid vusb_uuid p desc key best_key
     vm_uuid=$(xe vm-list name-label=web-01 --minimal)
-    pusb_uuid=$(first_csv "$(xe pusb-list --minimal)")
-    # param-get, not --minimal: --minimal escapes any comma in the value ("Ours Technology\, Inc.").
+    # Pick deterministically (lowest description, then uuid), not whatever order the server lists them in.
+    pusb_uuid="" best_key=""
+    for p in $(each_csv "$(xe pusb-list --minimal)"); do
+        # param-get, not --minimal: --minimal escapes any comma in the value ("Ours Technology\, Inc.").
+        desc=$(xe pusb-param-get uuid="$p" param-name=description)
+        key="$desc"$'\t'"$p"
+        if [ -z "$pusb_uuid" ] || [[ "$key" < "$best_key" ]]; then
+            best_key=$key; pusb_uuid=$p
+        fi
+    done
     echo "Device:         $(xe pusb-param-get uuid="$pusb_uuid" param-name=description)"
 
     # Passthrough is off until an administrator releases the device: attaching one that has not been
@@ -97,6 +109,7 @@ attach_usb_device() {
         xe vusb-unplug uuid="$vusb_uuid"
     fi
     xe vusb-destroy uuid="$vusb_uuid"
+    echo "Detached:       $(count_csv "$(xe vusb-list vm-uuid="$vm_uuid" --minimal)") device(s)"
     xe pusb-param-set uuid="$pusb_uuid" passthrough-enabled=false
     ok attach-usb-device
 }
@@ -107,6 +120,7 @@ attach_usb_device() {
 ```text
 Device:         Kingston Technology DataTraveler 3.0
 Attached:       1 device(s)
+Detached:       0 device(s)
 OK: attach-usb-device
 ```
 
@@ -140,7 +154,9 @@ def attach_usb_device(url, username, password, vm_name):
     x = session.xenapi
     vm = x.VM.get_by_name_label(vm_name)[0]
 
-    pusb_ref, pusb = next(iter(x.PUSB.get_all_records().items()))
+    # Pick deterministically (lowest description, then uuid), not whatever order the server happens
+    # to list them in, so the example behaves the same way every run.
+    pusb_ref, pusb = min(x.PUSB.get_all_records().items(), key=lambda kv: (kv[1]["description"], kv[1]["uuid"]))
     print(f"Device:         {pusb['description']}")
 
     # Passthrough is off until an administrator enables it on the device: attaching one that has not
@@ -153,6 +169,7 @@ def attach_usb_device(url, username, password, vm_name):
     if x.VUSB.get_currently_attached(vusb):
         x.VUSB.unplug(vusb)
     x.VUSB.destroy(vusb)
+    print(f"Detached:       {len(x.VM.get_VUSBs(vm))} device(s)")
     x.PUSB.set_passthrough_enabled(pusb_ref, False)
     print("OK: attach-usb-device")
     x.session.logout()
@@ -163,6 +180,7 @@ def attach_usb_device(url, username, password, vm_name):
 ```text
 Device:         Kingston Technology DataTraveler 3.0
 Attached:       1 device(s)
+Detached:       0 device(s)
 OK: attach-usb-device
 ```
 
@@ -186,7 +204,10 @@ public static void AttachUsbDevice(string url, string user, string password, str
     var session = Connect(url, user, password);
     var vm = VM.get_by_name_label(session, vmName)[0];
 
-    var pusb = PUSB.get_all_records(session).First();
+    // Pick deterministically (lowest description, then uuid), not whatever order the server
+    // happens to list them in, so the example behaves the same way every run.
+    var pusb = PUSB.get_all_records(session)
+        .OrderBy(p => p.Value.description).ThenBy(p => p.Value.uuid).First();
     Console.WriteLine($"Device:         {pusb.Value.description}");
 
     // Passthrough is off until an administrator enables it on the device — a VUSB.create against a
@@ -200,6 +221,7 @@ public static void AttachUsbDevice(string url, string user, string password, str
     // it gets plugged in as soon as it's created, so unplug it first.
     if (VUSB.get_currently_attached(session, vusb)) VUSB.unplug(session, vusb);
     VUSB.destroy(session, vusb);
+    Console.WriteLine($"Detached:       {VM.get_VUSBs(session, vm).Count} device(s)");
     PUSB.set_passthrough_enabled(session, pusb.Key, false);
     Console.WriteLine("OK: attach-usb-device");
     session.logout();
@@ -211,6 +233,7 @@ public static void AttachUsbDevice(string url, string user, string password, str
 ```text
 Device:         Kingston Technology DataTraveler 3.0
 Attached:       1 device(s)
+Detached:       0 device(s)
 OK: attach-usb-device
 ```
 
@@ -241,11 +264,16 @@ func attachUsbDevice(url, user, password, vmName string) {
 
 	pusbs, err := xenapi.PUSB.GetAllRecords(session)
 	check(err)
+	// Pick deterministically (lowest description, then uuid), not whatever order map iteration gives.
 	var pusbRef xenapi.PUSBRef
 	var pusb xenapi.PUSBRecord
+	first := true
 	for ref, rec := range pusbs {
-		pusbRef, pusb = ref, rec
-		break
+		if first || rec.Description < pusb.Description ||
+			(rec.Description == pusb.Description && rec.UUID < pusb.UUID) {
+			pusbRef, pusb = ref, rec
+			first = false
+		}
 	}
 	fmt.Printf("Device:         %s\n", pusb.Description)
 
@@ -266,6 +294,8 @@ func attachUsbDevice(url, user, password, vmName string) {
 		check(xenapi.VUSB.Unplug(session, vusb))
 	}
 	check(xenapi.VUSB.Destroy(session, vusb))
+	detached, _ := xenapi.VM.GetVUSBs(session, vm)
+	fmt.Printf("Detached:       %d device(s)\n", len(detached))
 	check(xenapi.PUSB.SetPassthroughEnabled(session, pusbRef, false))
 	fmt.Println("OK: attach-usb-device")
 	session.Logout()
@@ -275,8 +305,9 @@ func attachUsbDevice(url, user, password, vmName string) {
 <details><summary>Example output</summary>
 
 ```text
-Device:         Logitech, Inc. Unifying Receiver
+Device:         Kingston Technology DataTraveler 3.0
 Attached:       1 device(s)
+Detached:       0 device(s)
 OK: attach-usb-device
 ```
 
@@ -295,6 +326,7 @@ import com.xensource.xenapi.Session;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VUSB;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -322,8 +354,12 @@ public final class AttachUsbDevice {
         try {
             VM vm = VM.getByNameLabel(conn, vmName).iterator().next();
 
-            Map.Entry<PUSB, PUSB.Record> entry =
-                    PUSB.getAllRecords(conn).entrySet().iterator().next();
+            // Pick deterministically (lowest description, then uuid), not whatever order the server
+            // happens to list them in, so the example behaves the same way every run.
+            Map.Entry<PUSB, PUSB.Record> entry = PUSB.getAllRecords(conn).entrySet().stream()
+                    .min(Comparator.<Map.Entry<PUSB, PUSB.Record>, String>comparing(e -> e.getValue().description)
+                            .thenComparing(e -> e.getValue().uuid))
+                    .orElseThrow();
             System.out.println("Device:         " + entry.getValue().description);
 
             // Passthrough is off until an administrator releases the device: attaching one that has
@@ -338,6 +374,7 @@ public final class AttachUsbDevice {
             // it gets plugged in as soon as it's created, so unplug it first.
             if (vusb.getCurrentlyAttached(conn)) vusb.unplug(conn);
             vusb.destroy(conn);
+            System.out.println("Detached:       " + vm.getVUSBs(conn).size() + " device(s)");
             entry.getKey().setPassthroughEnabled(conn, false);
             System.out.println("OK: attach-usb-device");
         } finally {
@@ -352,6 +389,7 @@ public final class AttachUsbDevice {
 ```text
 Device:         Kingston Technology DataTraveler 3.0
 Attached:       1 device(s)
+Detached:       0 device(s)
 OK: attach-usb-device
 ```
 

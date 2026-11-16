@@ -47,8 +47,15 @@ function Invoke-ManageVmGroups {
     foreach ($m in $members) { Write-Host "  $((Get-XenVM -Ref $m).name_label)" }
 
     # VM_group.destroy already clears the group from every member VM's groups field - no need to remove
-    # membership ourselves first.
+    # membership ourselves first. Read both back afterwards to confirm.
     Remove-XenVMGroup -Ref $group
+    $stillGrouped = @((Get-XenVM -Ref $vm).groups) -contains $group.opaque_ref
+    $stillExists = @(Get-XenVMGroup) | Where-Object { $_.opaque_ref -eq $group.opaque_ref }
+    if (-not $stillGrouped -and -not $stillExists) {
+        Write-Host "Removed $VmName from the group; group deleted"
+    } else {
+        Write-Host "Group teardown incomplete: stillGrouped=$stillGrouped, stillExists=$([bool]$stillExists)"
+    }
     Write-Host "OK: manage-vm-groups"
     Disconnect-XenServer -Session $session
 }
@@ -57,9 +64,10 @@ function Invoke-ManageVmGroups {
 <details><summary>Example output</summary>
 
 ```text
-Created group:  00000001-0000-0000-180a-000000000000
+Created group:  00000001-0000-0000-f709-000000000000
 Group members:  1
   web-01
+Removed web-01 from the group; group deleted
 OK: manage-vm-groups
 ```
 
@@ -79,7 +87,8 @@ Source: [`cli/virtual-machines/manage-vm-groups.sh`](../../cli/virtual-machines/
 #   ./workflows.sh manage-vm-groups https://xenserver root "$password"
 
 manage_vm_groups() {
-    vm=$(vm_uuid web-01)
+    local vm_name=web-01
+    vm=$(vm_uuid "$vm_name")
     # anti-affinity asks the pool to keep the group's members on different hosts.
     group=$(xe vm-group-create name-label=xe-example-group placement=anti-affinity)
     echo "Created group:  $group"
@@ -93,8 +102,14 @@ manage_vm_groups() {
     done
 
     # vm-group-destroy already clears the group from every member VM on its own - no need to remove
-    # membership ourselves first.
+    # membership ourselves first. Read both back afterwards to confirm.
     xe vm-group-destroy uuid=$group
+    if [ -z "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=groups)")" ] \
+        && [ -z "$(xe vm-group-list uuid=$group --minimal)" ]; then
+        echo "Removed $vm_name from the group; group deleted"
+    else
+        echo "group teardown incomplete" >&2
+    fi
     ok manage-vm-groups
 }
 ```
@@ -102,9 +117,10 @@ manage_vm_groups() {
 <details><summary>Example output</summary>
 
 ```text
-Created group:  00000001-0000-0000-110a-000000000000
+Created group:  00000001-0000-0000-f609-000000000000
 Group members:  1
   web-01
+Removed web-01 from the group; group deleted
 OK: manage-vm-groups
 ```
 
@@ -152,8 +168,14 @@ def manage_vm_groups(url, username, password, vm_name, group_name="sdk-example-g
         print("  %s" % session.xenapi.VM.get_name_label(m))
 
     # VM_group.destroy already clears the group from every member VM's groups field - no need to
-    # remove membership ourselves first.
+    # remove membership ourselves first. Read both back afterwards to confirm.
     session.xenapi.VM_group.destroy(group_ref)
+    still_grouped = group_ref in session.xenapi.VM.get_groups(vm_ref)
+    still_exists = group_ref in session.xenapi.VM_group.get_all()
+    if not still_grouped and not still_exists:
+        print("Removed %s from the group; group deleted" % vm_name)
+    else:
+        print("Group teardown incomplete: still_grouped=%s, still_exists=%s" % (still_grouped, still_exists))
     print("OK: manage-vm-groups")
     session.xenapi.session.logout()
 ```
@@ -161,9 +183,10 @@ def manage_vm_groups(url, username, password, vm_name, group_name="sdk-example-g
 <details><summary>Example output</summary>
 
 ```text
-Created group:  00000001-0000-0000-1a0a-000000000000
+Created group:  00000001-0000-0000-f709-000000000000
 Group members:  1
   web-01
+Removed web-01 from the group; group deleted
 OK: manage-vm-groups
 ```
 
@@ -208,8 +231,13 @@ public static void ManageVmGroups(string url, string user, string password,
         Console.WriteLine($"  {VM.get_name_label(session, m)}");
 
     // VM_group.destroy already clears the group from every member VM's groups field - no need to
-    // remove membership ourselves first.
+    // remove membership ourselves first. Read both back afterwards to confirm.
     VM_group.destroy(session, groupRef);
+    var stillGrouped = VM.get_groups(session, vmRef).Contains(groupRef);
+    var stillExists = VM_group.get_all(session).Contains(groupRef);
+    Console.WriteLine(!stillGrouped && !stillExists
+        ? $"Removed {vmName} from the group; group deleted"
+        : $"Group teardown incomplete: stillGrouped={stillGrouped}, stillExists={stillExists}");
     Console.WriteLine("OK: manage-vm-groups");
     session.logout();
 }
@@ -218,9 +246,10 @@ public static void ManageVmGroups(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Created group:  00000001-0000-0000-100a-000000000000
+Created group:  00000001-0000-0000-f709-000000000000
 Group members:  1
   web-01
+Removed web-01 from the group; group deleted
 OK: manage-vm-groups
 ```
 
@@ -235,6 +264,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 
 	"go/xenapi"
 )
@@ -270,8 +300,18 @@ func manageVMGroups(url, user, password, vmName, groupName string) {
 	}
 
 	// VM_group.destroy already clears the group from every member VM's groups field - no need to
-	// remove membership ourselves first.
+	// remove membership ourselves first. Read both back afterwards to confirm.
 	check(xenapi.VMGroup.Destroy(session, groupRef))
+	groups, err := xenapi.VM.GetGroups(session, vmRef)
+	check(err)
+	allGroups, err := xenapi.VMGroup.GetAll(session)
+	check(err)
+	stillGrouped, stillExists := slices.Contains(groups, groupRef), slices.Contains(allGroups, groupRef)
+	if !stillGrouped && !stillExists {
+		fmt.Printf("Removed %s from the group; group deleted\n", vmName)
+	} else {
+		fmt.Printf("Group teardown incomplete: stillGrouped=%t, stillExists=%t\n", stillGrouped, stillExists)
+	}
 	fmt.Println("OK: manage-vm-groups")
 	session.Logout()
 }
@@ -280,9 +320,10 @@ func manageVMGroups(url, user, password, vmName, groupName string) {
 <details><summary>Example output</summary>
 
 ```text
-Created group:  00000001-0000-0000-070a-000000000000
+Created group:  00000001-0000-0000-f709-000000000000
 Group members:  1
   web-01
+Removed web-01 from the group; group deleted
 OK: manage-vm-groups
 ```
 
@@ -343,8 +384,16 @@ public final class ManageVmGroups {
         }
 
         // VM_group.destroy already clears the group from every member VM's groups field - no need to
-        // remove membership ourselves first.
+        // remove membership ourselves first. Read both back afterwards to confirm.
         group.destroy(conn);
+        boolean stillGrouped = vm.getGroups(conn).contains(group);
+        boolean stillExists = VMGroup.getAll(conn).contains(group);
+        if (!stillGrouped && !stillExists) {
+            System.out.println("Removed " + vmName + " from the group; group deleted");
+        } else {
+            System.out.println("Group teardown incomplete: stillGrouped=" + stillGrouped
+                    + ", stillExists=" + stillExists);
+        }
         System.out.println("OK: manage-vm-groups");
         Session.logout(conn);
     }
@@ -354,9 +403,10 @@ public final class ManageVmGroups {
 <details><summary>Example output</summary>
 
 ```text
-Created group:  00000001-0000-0000-160a-000000000000
+Created group:  00000001-0000-0000-f709-000000000000
 Group members:  1
   web-01
+Removed web-01 from the group; group deleted
 OK: manage-vm-groups
 ```
 

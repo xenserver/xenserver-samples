@@ -41,6 +41,8 @@ function Invoke-ManageVif {
     Write-Host "Attached a VIF on device $device; VM now has $(@((Get-XenVM -Ref $ref).VIFs).Count) NIC(s)"
 
     $vif | Remove-XenVIF
+    Write-Host "Removed the VIF; VM now has $(@((Get-XenVM -Ref $ref).VIFs).Count) NIC(s)"
+
     Remove-VmAndDisks -Ref $vm
     Write-Host "OK: manage-vif"
     $session | Disconnect-XenServer
@@ -51,6 +53,7 @@ function Invoke-ManageVif {
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
+Removed the VIF; VM now has 0 NIC(s)
 OK: manage-vif
 ```
 
@@ -80,7 +83,10 @@ manage_vif() {
     # VMs have no "VIFs" field in xe (only the SDKs expose VM.VIFs directly) - count the VIF objects instead.
     vifs=$(xe vif-list vm-uuid=$vm --minimal)
     echo "Attached a VIF; VM now has $(count_csv "$vifs") NIC(s)"
+
     xe vif-destroy uuid=$vif
+    echo "Removed the VIF; VM now has $(count_csv "$(xe vif-list vm-uuid=$vm --minimal)") NIC(s)"
+
     # Tidy up so the example is repeatable: vm-uninstall destroys the VM and the disks it owns (vm-destroy
     # would leave the disks behind).
     xe vm-uninstall uuid=$vm force=true
@@ -92,9 +98,10 @@ manage_vif() {
 
 ```text
 Attached a VIF; VM now has 1 NIC(s)
+Removed the VIF; VM now has 0 NIC(s)
 The following items are about to be destroyed
-VM : 00000001-0000-0000-d30a-000000000000 (xe-example-vif)
-VDI: 00000001-0000-0000-d60a-000000000000 (0) 
+VM : 00000001-0000-0000-f609-000000000000 (xe-example-vif)
+VDI: 00000001-0000-0000-f909-000000000000 (0) 
 All objects destroyed
 OK: manage-vif
 ```
@@ -136,6 +143,8 @@ def manage_vif(url, username, password, template_name, new_vm_name="sdk-example-
           % (device, len(session.xenapi.VM.get_VIFs(vm))))
 
     session.xenapi.VIF.destroy(vif)
+    print("Removed the VIF; VM now has %d NIC(s)" % len(session.xenapi.VM.get_VIFs(vm)))
+
     destroy_vm_and_disks(session, vm)
     print("OK: manage-vif")
     session.xenapi.session.logout()
@@ -145,6 +154,7 @@ def manage_vif(url, username, password, template_name, new_vm_name="sdk-example-
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
+Removed the VIF; VM now has 0 NIC(s)
 OK: manage-vif
 ```
 
@@ -186,6 +196,8 @@ public static void ManageVif(string url, string user, string password,
     Console.WriteLine($"Attached a VIF on device {device}; VM now has {VM.get_VIFs(session, vm).Count} NIC(s)");
 
     VIF.destroy(session, vif);
+    Console.WriteLine($"Removed the VIF; VM now has {VM.get_VIFs(session, vm).Count} NIC(s)");
+
     DestroyVmAndDisks(session, vm);
     Console.WriteLine("OK: manage-vif");
     session.logout();
@@ -196,6 +208,7 @@ public static void ManageVif(string url, string user, string password,
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
+Removed the VIF; VM now has 0 NIC(s)
 OK: manage-vif
 ```
 
@@ -248,6 +261,9 @@ func manageVif(url, user, password, templateName, newVMName string) {
 	fmt.Printf("Attached a VIF on device %s; VM now has %d NIC(s)\n", device, len(vifs))
 
 	check(xenapi.VIF.Destroy(session, vif))
+	vifsAfter, _ := xenapi.VM.GetVIFs(session, vm)
+	fmt.Printf("Removed the VIF; VM now has %d NIC(s)\n", len(vifsAfter))
+
 	destroyVMAndDisks(session, vm)
 	fmt.Println("OK: manage-vif")
 	session.Logout()
@@ -258,6 +274,7 @@ func manageVif(url, user, password, templateName, newVMName string) {
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
+Removed the VIF; VM now has 0 NIC(s)
 OK: manage-vif
 ```
 
@@ -325,6 +342,8 @@ public final class ManageVif {
                 + vm.getVIFs(conn).size() + " NIC(s)");
 
         vif.destroy(conn);
+        System.out.println("Removed the VIF; VM now has " + vm.getVIFs(conn).size() + " NIC(s)");
+
         destroyVmAndDisks(conn, vm);
         System.out.println("OK: manage-vif");
         Session.logout(conn);
@@ -336,6 +355,7 @@ public final class ManageVif {
 
 ```text
 Attached a VIF on device 0; VM now has 1 NIC(s)
+Removed the VIF; VM now has 0 NIC(s)
 OK: manage-vif
 ```
 

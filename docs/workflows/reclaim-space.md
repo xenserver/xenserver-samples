@@ -33,10 +33,20 @@ function Invoke-ReclaimSpace {
     # A host with a currently-attached PBD can reach the SR to run the plugin.
     $pbd = $sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_ } | Where-Object { $_.currently_attached } | Select-Object -First 1
     $xenHost = Get-XenHost -Ref $pbd.host
+
+    $used = [long]($sr.physical_utilisation / 1GB)
+    $total = [long]($sr.physical_size / 1GB)
+    Write-Host "  $($sr.name_label): $used / $total GiB used"
+
     $result = $xenHost | Invoke-XenHost -XenAction CallPlugin -Plugin "trim" -Fn "do_trim" -Args @{ sr_uuid = $sr.uuid } -PassThru
     Write-Host "  reclaimed freed space on $($sr.name_label): $result"
     # Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
     if ($result.Trim().ToLowerInvariant() -ne "true") { throw "trim plugin returned '$result'" }
+
+    # Rescan to refresh utilisation from the backend, the same way Invoke-SrUsage does, before reporting it.
+    $sr | Invoke-XenSR -XenAction Scan
+    $usedAfter = [long]((Get-XenSR -Ref $sr).physical_utilisation / 1GB)
+    Write-Host "  $($sr.name_label): $usedAfter / $total GiB used"
     Write-Host "OK: reclaim-space"
     $session | Disconnect-XenServer
 }
@@ -45,7 +55,9 @@ function Invoke-ReclaimSpace {
 <details><summary>Example output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   reclaimed freed space on iSCSI storage: True
+  iSCSI storage: 22 / 200 GiB used
 OK: reclaim-space
 ```
 
@@ -65,7 +77,7 @@ Source: [`cli/storage/reclaim-space.sh`](../../cli/storage/reclaim-space.sh)
 #   ./workflows.sh reclaim-space https://xenserver root "$password"
 
 reclaim_space() {
-    local sr candidate type pbd h name result
+    local sr candidate type pbd h name result size before after
     # A thin-provisioned SR (local LVM here) can return space freed by deleted disks to the backend via
     # the trim plugin. Find one via its storage manager's SR_TRIM feature, instead of hard-coding a
     # type.
@@ -82,10 +94,19 @@ reclaim_space() {
     pbd=$(first_csv "$(xe pbd-list sr-uuid=$sr currently-attached=true --minimal)")
     h=$(xe pbd-param-get uuid=$pbd param-name=host)
     name=$(xe sr-param-get uuid=$sr param-name=name-label)
+    size=$(xe sr-param-get uuid=$sr param-name=physical-size)
+    before=$(xe sr-param-get uuid=$sr param-name=physical-utilisation)
+    echo "  $name: $((before / 1073741824)) / $((size / 1073741824)) GiB used"
+
     result=$(xe host-call-plugin host-uuid=$h plugin=trim fn=do_trim args:sr_uuid=$sr)
     echo "  reclaimed freed space on $name: $result"
     # Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
     [ "${result,,}" = "true" ] || { echo "trim failed: $result" >&2; exit 1; }
+
+    # Rescan to refresh utilisation from the backend, the same way sr-usage does, before reporting it.
+    xe sr-scan uuid=$sr
+    after=$(xe sr-param-get uuid=$sr param-name=physical-utilisation)
+    echo "  $name: $((after / 1073741824)) / $((size / 1073741824)) GiB used"
     ok reclaim-space
 }
 ```
@@ -93,7 +114,9 @@ reclaim_space() {
 <details><summary>Example output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   reclaimed freed space on iSCSI storage: True
+  iSCSI storage: 22 / 200 GiB used
 OK: reclaim-space
 ```
 
@@ -120,20 +143,30 @@ def reclaim_space(url, username, password):
     SR_TRIM feature, pick a host with a live (currently-attached) connection to it, and run
     the plugin.
     """
+    GIB = 1024 * 1024 * 1024
     session = connect(url, username, password)
     # Storage-manager backends that advertise SR_TRIM in their features map are trim-capable.
     trim_types = set(sm["type"] for sm in session.xenapi.SM.get_all_records().values()
                      if "SR_TRIM" in sm["features"])
-    sr = next(r for r in session.xenapi.SR.get_all_records().values()
-              if r["type"] in trim_types and int(r["physical_size"]) > 0)
+    sr_ref, sr = next((ref, r) for ref, r in session.xenapi.SR.get_all_records().items()
+                      if r["type"] in trim_types and int(r["physical_size"]) > 0)
     # A host with a currently-attached PBD can reach the SR to run the plugin.
     host = next(pbd["host"] for pbd in
                 (session.xenapi.PBD.get_record(ref) for ref in sr["PBDs"])
                 if pbd["currently_attached"])
+
+    print("  %s: %d / %d GiB used"
+          % (sr["name_label"], int(sr["physical_utilisation"]) // GIB, int(sr["physical_size"]) // GIB))
+
     result = session.xenapi.host.call_plugin(host, "trim", "do_trim", {"sr_uuid": sr["uuid"]})
     print("  reclaimed freed space on %s: %s" % (sr["name_label"], result))
     # Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
     assert result.strip().lower() == "true", "trim plugin returned %r" % result
+
+    # Rescan to refresh utilisation from the backend, the same way sr_usage does, before reporting it.
+    session.xenapi.SR.scan(sr_ref)
+    used_after = int(session.xenapi.SR.get_physical_utilisation(sr_ref))
+    print("  %s: %d / %d GiB used" % (sr["name_label"], used_after // GIB, int(sr["physical_size"]) // GIB))
     print("OK: reclaim-space")
     session.logout()
 ```
@@ -141,7 +174,9 @@ def reclaim_space(url, username, password):
 <details><summary>Example output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   reclaimed freed space on iSCSI storage: True
+  iSCSI storage: 22 / 200 GiB used
 OK: reclaim-space
 ```
 
@@ -163,20 +198,31 @@ Source: [`csharp/Storage/ReclaimSpace.cs`](../../csharp/Storage/ReclaimSpace.cs)
 /// </example>
 public static void ReclaimSpace(string url, string user, string password)
 {
+    const long GiB = 1024L * 1024 * 1024;
     var session = Connect(url, user, password);
     // Storage-manager backends that advertise SR_TRIM in their features map are trim-capable.
     var trimTypes = SM.get_all_records(session).Values
         .Where(sm => sm.features.ContainsKey("SR_TRIM")).Select(sm => sm.type).ToHashSet();
-    var sr = SR.get_all_records(session).Values
-        .First(s => s.physical_size > 0 && trimTypes.Contains(s.type));
+    var srEntry = SR.get_all_records(session)
+        .First(kv => kv.Value.physical_size > 0 && trimTypes.Contains(kv.Value.type));
+    var srRef = srEntry.Key;
+    var sr = srEntry.Value;
     // A host with a currently-attached PBD can reach the SR to run the plugin.
     var host = sr.PBDs.Select(r => PBD.get_record(session, r))
         .First(pbd => pbd.currently_attached).host;
+
+    Console.WriteLine($"  {sr.name_label}: {sr.physical_utilisation / GiB} / {sr.physical_size / GiB} GiB used");
+
     var args = new Dictionary<string, string> { ["sr_uuid"] = sr.uuid };
     var result = Host.call_plugin(session, host, "trim", "do_trim", args);
     Console.WriteLine($"  reclaimed freed space on {sr.name_label}: {result}");
     // Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
     if (result.Trim().ToLowerInvariant() != "true") throw new Exception($"trim plugin returned '{result}'");
+
+    // Rescan to refresh utilisation from the backend, the same way SrUsage does, before reporting it.
+    SR.scan(session, srRef);
+    var usedAfter = SR.get_physical_utilisation(session, srRef);
+    Console.WriteLine($"  {sr.name_label}: {usedAfter / GiB} / {sr.physical_size / GiB} GiB used");
     Console.WriteLine("OK: reclaim-space");
     session.logout();
 }
@@ -185,7 +231,9 @@ public static void ReclaimSpace(string url, string user, string password)
 <details><summary>Example output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   reclaimed freed space on iSCSI storage: True
+  iSCSI storage: 22 / 200 GiB used
 OK: reclaim-space
 ```
 
@@ -210,6 +258,8 @@ import (
 // Reclaim space freed by deleted disks on a thin-provisioned storage repository: find a
 // trim-capable SR, pick a host with a live connection to it, and run the trim operation.
 func reclaimSpace(url, user, password string) {
+	const GiB = 1024 * 1024 * 1024
+
 	session := connect(url, user, password)
 
 	// Storage-manager backends that advertise SR_TRIM in their features map are trim-capable.
@@ -222,13 +272,18 @@ func reclaimSpace(url, user, password string) {
 		}
 	}
 
-	srs, err := xenapi.SR.GetAllRecords(session)
+	// SR.GetAll keeps the server's order (GetAllRecords returns a map, which Go ranges in random order),
+	// so this takes the same SR as the other languages.
+	srRefs, err := xenapi.SR.GetAll(session)
 	check(err)
+	var srRef xenapi.SRRef
 	var sr xenapi.SRRecord
 	found := false
-	for _, r := range srs {
+	for _, ref := range srRefs {
+		r, err := xenapi.SR.GetRecord(session, ref)
+		check(err)
 		if r.PhysicalSize > 0 && trimTypes[r.Type] {
-			sr, found = r, true
+			srRef, sr, found = ref, r, true
 			break
 		}
 	}
@@ -247,6 +302,8 @@ func reclaimSpace(url, user, password string) {
 		}
 	}
 
+	fmt.Printf("  %s: %d / %d GiB used\n", sr.NameLabel, sr.PhysicalUtilisation/GiB, sr.PhysicalSize/GiB)
+
 	result, err := xenapi.Host.CallPlugin(session, host, "trim", "do_trim",
 		map[string]string{"sr_uuid": sr.UUID})
 	check(err)
@@ -255,6 +312,12 @@ func reclaimSpace(url, user, password string) {
 	if strings.ToLower(strings.TrimSpace(result)) != "true" {
 		panic("trim plugin returned " + result)
 	}
+
+	// Rescan to refresh utilisation from the backend, the same way srUsage does, before reporting it.
+	check(xenapi.SR.Scan(session, srRef))
+	usedAfter, err := xenapi.SR.GetPhysicalUtilisation(session, srRef)
+	check(err)
+	fmt.Printf("  %s: %d / %d GiB used\n", sr.NameLabel, usedAfter/GiB, sr.PhysicalSize/GiB)
 	fmt.Println("OK: reclaim-space")
 	session.Logout()
 }
@@ -263,7 +326,9 @@ func reclaimSpace(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-  reclaimed freed space on Local storage: True
+  iSCSI storage: 25 / 200 GiB used
+  reclaimed freed space on iSCSI storage: True
+  iSCSI storage: 22 / 200 GiB used
 OK: reclaim-space
 ```
 
@@ -282,6 +347,8 @@ import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.SM;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
+
+import java.util.Map;
 
 import static com.xenserver.samples.PoolConnection.connect;
 
@@ -302,28 +369,44 @@ public final class ReclaimSpace {
      * }</pre>
      */
     public static void run(String url, String user, String password) throws Exception {
+        final long GiB = 1024L * 1024 * 1024;
         Connection conn = connect(url, user, password);
         try {
             // Storage-manager backends that advertise SR_TRIM in their features map are trim-capable.
             java.util.Set<String> trimTypes = new java.util.HashSet<>();
             for (SM.Record sm : SM.getAllRecords(conn).values())
                 if (sm.features.containsKey("SR_TRIM")) trimTypes.add(sm.type);
-            SR.Record sr = null;
-            for (SR.Record r : SR.getAllRecords(conn).values())
-                if (r.physicalSize > 0 && trimTypes.contains(r.type)) { sr = r; break; }
+            SR sr = null;
+            SR.Record srRecord = null;
+            for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet())
+                if (e.getValue().physicalSize > 0 && trimTypes.contains(e.getValue().type)) {
+                    sr = e.getKey();
+                    srRecord = e.getValue();
+                    break;
+                }
             // A host with a currently-attached PBD can reach the SR to run the plugin.
             Host host = null;
-            for (PBD pbd : sr.PBDs) {
+            for (PBD pbd : srRecord.PBDs) {
                 PBD.Record pr = pbd.getRecord(conn);
                 if (pr.currentlyAttached) { host = pr.host; break; }
             }
+
+            System.out.println("  " + srRecord.nameLabel + ": " + srRecord.physicalUtilisation / GiB
+                    + " / " + srRecord.physicalSize / GiB + " GiB used");
+
             java.util.Map<String, String> pargs = new java.util.HashMap<>();
-            pargs.put("sr_uuid", sr.uuid);
+            pargs.put("sr_uuid", srRecord.uuid);
             String result = host.callPlugin(conn, "trim", "do_trim", pargs);
-            System.out.println("  reclaimed freed space on " + sr.nameLabel + ": " + result);
+            System.out.println("  reclaimed freed space on " + srRecord.nameLabel + ": " + result);
             // Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
             if (!"true".equalsIgnoreCase(result.trim()))
                 throw new RuntimeException("trim plugin returned '" + result + "'");
+
+            // Rescan to refresh utilisation from the backend, the same way SrUsage does, before reporting it.
+            sr.scan(conn);
+            long usedAfter = sr.getRecord(conn).physicalUtilisation;
+            System.out.println("  " + srRecord.nameLabel + ": " + usedAfter / GiB
+                    + " / " + srRecord.physicalSize / GiB + " GiB used");
             System.out.println("OK: reclaim-space");
         } finally {
             Session.logout(conn);
@@ -335,7 +418,9 @@ public final class ReclaimSpace {
 <details><summary>Example output</summary>
 
 ```text
+  iSCSI storage: 25 / 200 GiB used
   reclaimed freed space on iSCSI storage: True
+  iSCSI storage: 22 / 200 GiB used
 OK: reclaim-space
 ```
 

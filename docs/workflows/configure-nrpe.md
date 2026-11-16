@@ -138,10 +138,10 @@ configure_nrpe() {
 <details><summary>Example output</summary>
 
 ```text
-sdk-host1: NRPE status before: active disabled
+sdk-host1: NRPE status before: inactive disabled
   status after:  active enabled
   allowed hosts: 127.0.0.1,::1,192.0.2.60
-sdk-host2: NRPE status before: active disabled
+sdk-host2: NRPE status before: inactive disabled
   status after:  active enabled
   allowed hosts: 127.0.0.1,::1,192.0.2.60
 OK: configure-nrpe

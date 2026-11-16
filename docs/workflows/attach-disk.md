@@ -101,8 +101,8 @@ attach_disk() {
 ```text
 Attached an 8 GiB disk; VM now has 2 VBD(s)
 The following items are about to be destroyed
-VM : 00000001-0000-0000-bd0a-000000000000 (xe-example-attachdisk)
-VDI: 00000001-0000-0000-c00a-000000000000 (0) 
+VM : 00000001-0000-0000-f609-000000000000 (xe-example-attachdisk)
+VDI: 00000001-0000-0000-f909-000000000000 (0) 
 All objects destroyed
 OK: attach-disk
 ```

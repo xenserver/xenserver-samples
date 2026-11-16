@@ -40,6 +40,7 @@ function Invoke-ConvertToTemplate {
     Write-Host "is_a_template after convert:  $((Get-XenVM -Ref $ref).is_a_template)"
 
     Remove-VmAndDisks -Ref $vm
+    Write-Host "Cleaned up the example template."
     Write-Host "OK: convert-to-template"
     $session | Disconnect-XenServer
 }
@@ -50,6 +51,7 @@ function Invoke-ConvertToTemplate {
 ```text
 is_a_template after provision: False
 is_a_template after convert:  True
+Cleaned up the example template.
 OK: convert-to-template
 ```
 
@@ -78,6 +80,7 @@ convert_to_template() {
     echo "is-a-template after convert: $(xe vm-param-get uuid=$vm param-name=is-a-template)"
     # It is a template now, so template-uninstall removes it and the disks it owns.
     xe template-uninstall template-uuid=$vm force=true
+    echo "Cleaned up the example template."
     ok convert-to-template
 }
 ```
@@ -88,9 +91,10 @@ convert_to_template() {
 is-a-template after install: false
 is-a-template after convert: true
 The following items are about to be destroyed
-VM : 00000001-0000-0000-340a-000000000000 (xe-example-totemplate)
-VDI: 00000001-0000-0000-370a-000000000000 (0) 
+VM : 00000001-0000-0000-f609-000000000000 (xe-example-totemplate)
+VDI: 00000001-0000-0000-f909-000000000000 (0) 
 All objects destroyed
+Cleaned up the example template.
 OK: convert-to-template
 ```
 
@@ -126,6 +130,7 @@ def convert_to_template(url, username, password, template_name, new_vm_name="sdk
     print("is_a_template after convert:  %s" % session.xenapi.VM.get_is_a_template(vm))
 
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example template.")
     print("OK: convert-to-template")
     session.xenapi.session.logout()
 ```
@@ -135,6 +140,7 @@ def convert_to_template(url, username, password, template_name, new_vm_name="sdk
 ```text
 is_a_template after provision: False
 is_a_template after convert:  True
+Cleaned up the example template.
 OK: convert-to-template
 ```
 
@@ -166,6 +172,7 @@ public static void ConvertToTemplate(string url, string user, string password,
     Console.WriteLine($"is_a_template after convert:  {VM.get_is_a_template(session, vm)}");
 
     DestroyVmAndDisks(session, vm);
+    Console.WriteLine("Cleaned up the example template.");
     Console.WriteLine("OK: convert-to-template");
     session.logout();
 }
@@ -176,6 +183,7 @@ public static void ConvertToTemplate(string url, string user, string password,
 ```text
 is_a_template after provision: False
 is_a_template after convert:  True
+Cleaned up the example template.
 OK: convert-to-template
 ```
 
@@ -215,6 +223,7 @@ func convertToTemplate(url, user, password, templateName, newVMName string) {
 	fmt.Printf("is_a_template after convert:  %v\n", isTemplate)
 
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example template.")
 	fmt.Println("OK: convert-to-template")
 	session.Logout()
 }
@@ -225,6 +234,7 @@ func convertToTemplate(url, user, password, templateName, newVMName string) {
 ```text
 is_a_template after provision: false
 is_a_template after convert:  true
+Cleaned up the example template.
 OK: convert-to-template
 ```
 
@@ -273,6 +283,7 @@ public final class ConvertToTemplate {
         System.out.println("is_a_template after convert:  " + vm.getIsATemplate(conn));
 
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example template.");
         System.out.println("OK: convert-to-template");
         Session.logout(conn);
     }
@@ -284,6 +295,7 @@ public final class ConvertToTemplate {
 ```text
 is_a_template after provision: false
 is_a_template after convert:  true
+Cleaned up the example template.
 OK: convert-to-template
 ```
 

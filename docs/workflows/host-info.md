@@ -265,12 +265,12 @@ func hostInfo(url, user, password string) {
 <details><summary>Example output</summary>
 
 ```text
-Host:     sdk-host2
+Host:     sdk-host1
 Version:  9.0.0
 Edition:  cloud
 CPUs:     8 across 1 socket(s)
 Hardware: Dell Inc. PowerEdge R750
-Serial:   XPSIM027RT
+Serial:   XPSIM017RT
 BIOS:     2.15.1
 OK: host-info
 ```

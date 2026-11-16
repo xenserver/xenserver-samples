@@ -30,11 +30,14 @@ function Invoke-ManageVapp {
 
     $vapp = New-XenVMAppliance -NameLabel "sdk-example-vapp" `
         -NameDescription "Created by the SDK example" -PassThru
+    Write-Host "Created:        $($vapp.name_label)"
 
     # `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     # reason to use a vApp rather than selecting several VMs.
     Set-XenVM -VM $vm -Appliance $vapp
     Set-XenVM -VM $vm -Order 0 -StartDelay 5
+    # $vapp is the record as created; read the appliance again to see the VM just assigned to it.
+    Write-Host "Members:        $(@((Get-XenVMAppliance -Ref $vapp.opaque_ref).VMs).Count)"
 
     Invoke-XenVMAppliance -VMAppliance $vapp -XenAction Start -Paused $false
     Write-Host "Started:        $((Get-XenVM -Name $VmName).power_state)"
@@ -46,6 +49,11 @@ function Invoke-ManageVapp {
 
     Set-XenVM -VM (Get-XenVM -Name $VmName) -Appliance "OpaqueRef:NULL"
     Remove-XenVMAppliance -VMAppliance $vapp
+    if (Get-XenVMAppliance | Where-Object { $_.uuid -eq $vapp.uuid }) {
+        Write-Host "Appliance still present"
+    } else {
+        Write-Host "Appliance removed"
+    }
     Write-Host "OK: manage-vapp"
     $session | Disconnect-XenServer
 }
@@ -54,8 +62,11 @@ function Invoke-ManageVapp {
 <details><summary>Example output</summary>
 
 ```text
+Created:        sdk-example-vapp
+Members:        1
 Started:        Running
 Shut down:      Halted
+Appliance removed
 OK: manage-vapp
 ```
 
@@ -83,10 +94,12 @@ manage_vapp() {
     vm_uuid=$(xe vm-list name-label="$(param vm_name db-01)" --minimal)
     vapp_uuid=$(xe appliance-create name-label=sdk-example-vapp \
         name-description="Created by the SDK example")
+    echo "Created:        $(xe appliance-param-get uuid="$vapp_uuid" param-name=name-label)"
 
     # `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     # reason to use a vApp rather than selecting several VMs.
     xe vm-param-set uuid="$vm_uuid" appliance="$vapp_uuid" order=0 start-delay=5
+    echo "Members:        $(count_csv "$(set_to_csv "$(xe appliance-param-get uuid="$vapp_uuid" param-name=VMs)")")"
 
     xe appliance-start uuid="$vapp_uuid"
     echo "Started:        $(xe vm-list uuid="$vm_uuid" params=power-state --minimal)"
@@ -105,6 +118,11 @@ manage_vapp() {
 
     xe vm-param-set uuid="$vm_uuid" appliance=
     xe appliance-destroy uuid="$vapp_uuid"
+    if [ -z "$(xe appliance-list uuid="$vapp_uuid" --minimal)" ]; then
+        echo "Appliance removed"
+    else
+        echo "Appliance still present"
+    fi
     ok manage-vapp
 }
 ```
@@ -112,8 +130,11 @@ manage_vapp() {
 <details><summary>Example output</summary>
 
 ```text
+Created:        sdk-example-vapp
+Members:        1
 Started:        running
 Shut down:      halted
+Appliance removed
 OK: manage-vapp
 ```
 
@@ -148,12 +169,14 @@ def manage_vapp(url, username, password, vm_name):
         "name_label": "sdk-example-vapp",
         "name_description": "Created by the SDK example",
     })
+    print(f"Created:        {x.VM_appliance.get_name_label(vapp)}")
 
     # `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     # reason to use a vApp at all rather than selecting several VMs.
     x.VM.set_appliance(vm, vapp)
     x.VM.set_order(vm, "0")
     x.VM.set_start_delay(vm, "5")
+    print(f"Members:        {len(x.VM_appliance.get_VMs(vapp))}")
 
     x.VM_appliance.start(vapp, False)
     print(f"Started:        {x.VM.get_power_state(vm)}")
@@ -165,6 +188,7 @@ def manage_vapp(url, username, password, vm_name):
 
     x.VM.set_appliance(vm, NULL_REF)
     x.VM_appliance.destroy(vapp)
+    print("Appliance removed" if vapp not in x.VM_appliance.get_all() else "Appliance still present")
     print("OK: manage-vapp")
     x.session.logout()
 ```
@@ -172,8 +196,11 @@ def manage_vapp(url, username, password, vm_name):
 <details><summary>Example output</summary>
 
 ```text
+Created:        sdk-example-vapp
+Members:        1
 Started:        Running
 Shut down:      Halted
+Appliance removed
 OK: manage-vapp
 ```
 
@@ -203,6 +230,7 @@ public static void ManageVapp(string url, string user, string password, string v
         name_label = "sdk-example-vapp",
         name_description = "Created by the SDK example",
     });
+    Console.WriteLine($"Created:        {VM_appliance.get_name_label(session, vapp)}");
 
     // `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     // reason to use a vApp at all rather than selecting several VMs — the database comes up first and
@@ -210,6 +238,7 @@ public static void ManageVapp(string url, string user, string password, string v
     VM.set_appliance(session, vm, vapp);
     VM.set_order(session, vm, 0);
     VM.set_start_delay(session, vm, 5);
+    Console.WriteLine($"Members:        {VM_appliance.get_VMs(session, vapp).Count}");
 
     VM_appliance.start(session, vapp, false);
     Console.WriteLine($"Started:        {VM.get_power_state(session, vm)}");
@@ -221,6 +250,7 @@ public static void ManageVapp(string url, string user, string password, string v
 
     VM.set_appliance(session, vm, Helper.NullOpaqueRef); // the null reference, spelled out: null would send ""
     VM_appliance.destroy(session, vapp);
+    Console.WriteLine(VM_appliance.get_all(session).Contains(vapp) ? "Appliance still present" : "Appliance removed");
     Console.WriteLine("OK: manage-vapp");
     session.logout();
 }
@@ -229,8 +259,11 @@ public static void ManageVapp(string url, string user, string password, string v
 <details><summary>Example output</summary>
 
 ```text
+Created:        sdk-example-vapp
+Members:        1
 Started:        Running
 Shut down:      Halted
+Appliance removed
 OK: manage-vapp
 ```
 
@@ -264,12 +297,18 @@ func manageVapp(url, user, password, vmName string) {
 		NameDescription: "Created by the SDK example",
 	})
 	check(err)
+	name, err := xenapi.VMAppliance.GetNameLabel(session, vapp)
+	check(err)
+	fmt.Printf("Created:        %s\n", name)
 
 	// `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
 	// reason to use a vApp rather than selecting several VMs.
 	check(xenapi.VM.SetAppliance(session, vm, vapp))
 	check(xenapi.VM.SetOrder(session, vm, 0))
 	check(xenapi.VM.SetStartDelay(session, vm, 5))
+	members, err := xenapi.VMAppliance.GetVMs(session, vapp)
+	check(err)
+	fmt.Printf("Members:        %d\n", len(members))
 
 	check(xenapi.VMAppliance.Start(session, vapp, false))
 	state, _ := xenapi.VM.GetPowerState(session, vm)
@@ -283,6 +322,19 @@ func manageVapp(url, user, password, vmName string) {
 
 	check(xenapi.VM.SetAppliance(session, vm, nullRef)) // the null reference: "" is not one
 	check(xenapi.VMAppliance.Destroy(session, vapp))
+	remaining, err := xenapi.VMAppliance.GetAll(session)
+	check(err)
+	removed := true
+	for _, r := range remaining {
+		if r == vapp {
+			removed = false
+		}
+	}
+	if removed {
+		fmt.Println("Appliance removed")
+	} else {
+		fmt.Println("Appliance still present")
+	}
 	fmt.Println("OK: manage-vapp")
 	session.Logout()
 }
@@ -291,8 +343,11 @@ func manageVapp(url, user, password, vmName string) {
 <details><summary>Example output</summary>
 
 ```text
+Created:        sdk-example-vapp
+Members:        1
 Started:        Running
 Shut down:      Halted
+Appliance removed
 OK: manage-vapp
 ```
 
@@ -339,12 +394,14 @@ public final class ManageVapp {
             spec.nameLabel = "sdk-example-vapp";
             spec.nameDescription = "Created by the SDK example";
             VMAppliance vapp = VMAppliance.create(conn, spec);
+            System.out.println("Created:        " + vapp.getNameLabel(conn));
 
             // `order` decides the sequence: ascending to start, descending to shut down. That ordering
             // is the reason to use a vApp rather than selecting several VMs.
             vm.setAppliance(conn, vapp);
             vm.setOrder(conn, 0L);
             vm.setStartDelay(conn, 5L);
+            System.out.println("Members:        " + vapp.getVMs(conn).size());
 
             vapp.start(conn, false);
             System.out.println("Started:        " + vm.getPowerState(conn));
@@ -358,6 +415,7 @@ public final class ManageVapp {
             // null reference, and a real host refuses what it sends with INTERNAL_ERROR.
             vm.setAppliance(conn, new VMAppliance(NULL_REF));
             vapp.destroy(conn);
+            System.out.println(VMAppliance.getAll(conn).contains(vapp) ? "Appliance still present" : "Appliance removed");
             System.out.println("OK: manage-vapp");
         } finally {
             Session.logout(conn);
@@ -369,8 +427,11 @@ public final class ManageVapp {
 <details><summary>Example output</summary>
 
 ```text
+Created:        sdk-example-vapp
+Members:        1
 Started:        Running
 Shut down:      Halted
+Appliance removed
 OK: manage-vapp
 ```
 

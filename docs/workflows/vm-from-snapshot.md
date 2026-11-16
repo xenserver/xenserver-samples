@@ -48,6 +48,7 @@ function Invoke-VmFromSnapshot {
     foreach ($ref in @($newVm, $template, $snapshot)) {
         Remove-VmAndDisks -Ref $ref
     }
+    Write-Host "Cleaned up the example VM, template and snapshot."
     Write-Host "OK: vm-from-snapshot"
     $session | Disconnect-XenServer
 }
@@ -59,6 +60,7 @@ function Invoke-VmFromSnapshot {
 Snapshot of db-01 taken
   new VM:      sdk-example-vm-from-snapshot (is_a_template=False)
   new template:sdk-example-template-from-snapshot (is_a_template=True)
+Cleaned up the example VM, template and snapshot.
 OK: vm-from-snapshot
 ```
 
@@ -92,10 +94,12 @@ vm_from_snapshot() {
     echo "  new template:$(xe template-param-get uuid=$tmpl param-name=name-label) (is-a-template=$(xe template-param-get uuid=$tmpl param-name=is-a-template))"
 
     # Each made its own disks, and the snapshot has its own snapshot disks; the -uninstall commands destroy
-    # them along with the records.
-    xe vm-uninstall uuid=$newvm force=true
-    xe template-uninstall template-uuid=$tmpl force=true
-    xe snapshot-uninstall snapshot-uuid=$snap force=true
+    # them along with the records. Three destroy banners in a row is noisy, so quiet them and report the
+    # clean-up as one line instead.
+    xe vm-uninstall uuid=$newvm force=true >/dev/null
+    xe template-uninstall template-uuid=$tmpl force=true >/dev/null
+    xe snapshot-uninstall snapshot-uuid=$snap force=true >/dev/null
+    echo "Cleaned up the example VM, template and snapshot."
     ok vm-from-snapshot
 }
 ```
@@ -106,18 +110,7 @@ vm_from_snapshot() {
 Snapshot of db-01 taken
   new VM:      xe-example-vm-from-snapshot (is-a-template=false)
   new template:xe-example-template-from-snapshot (is-a-template=true)
-The following items are about to be destroyed
-VM : 00000001-0000-0000-680a-000000000000 (xe-example-vm-from-snapshot)
-VDI: 00000001-0000-0000-6b0a-000000000000 (db-01 root disk) 
-All objects destroyed
-The following items are about to be destroyed
-VM : 00000001-0000-0000-710a-000000000000 (xe-example-template-from-snapshot)
-VDI: 00000001-0000-0000-740a-000000000000 (db-01 root disk) 
-All objects destroyed
-The following items are about to be destroyed
-VM : 00000001-0000-0000-610a-000000000000 (xe-example-source-snapshot)
-VDI: 00000001-0000-0000-620a-000000000000 (db-01 root disk) 
-All objects destroyed
+Cleaned up the example VM, template and snapshot.
 OK: vm-from-snapshot
 ```
 
@@ -170,6 +163,7 @@ def vm_from_snapshot(url, username, password, vm_name="db-01"):
     for ref in (new_vm, template):
         destroy_vm_and_disks(session, ref)
     destroy_vm_and_disks(session, snapshot)
+    print("Cleaned up the example VM, template and snapshot.")
     print("OK: vm-from-snapshot")
     session.logout()
 ```
@@ -180,6 +174,7 @@ def vm_from_snapshot(url, username, password, vm_name="db-01"):
 Snapshot of db-01 taken
   new VM:      sdk-example-vm-from-snapshot (is_a_template=False)
   new template:sdk-example-template-from-snapshot (is_a_template=True)
+Cleaned up the example VM, template and snapshot.
 OK: vm-from-snapshot
 ```
 
@@ -221,6 +216,7 @@ public static void VmFromSnapshot(string url, string user, string password, stri
                       + $"(is_a_template={VM.get_is_a_template(session, template)})");
 
     foreach (var r in new[] { newVm, template, snapshot }) DestroyVmAndDisks(session, r);
+    Console.WriteLine("Cleaned up the example VM, template and snapshot.");
     Console.WriteLine("OK: vm-from-snapshot");
     session.logout();
 }
@@ -232,6 +228,7 @@ public static void VmFromSnapshot(string url, string user, string password, stri
 Snapshot of db-01 taken
   new VM:      sdk-example-vm-from-snapshot (is_a_template=False)
   new template:sdk-example-template-from-snapshot (is_a_template=True)
+Cleaned up the example VM, template and snapshot.
 OK: vm-from-snapshot
 ```
 
@@ -288,6 +285,7 @@ func vmFromSnapshot(url, user, password, vmName string) {
 	for _, ref := range []xenapi.VMRef{newVM, template, snapshot} {
 		destroyVMAndDisks(session, ref)
 	}
+	fmt.Println("Cleaned up the example VM, template and snapshot.")
 	fmt.Println("OK: vm-from-snapshot")
 }
 ```
@@ -298,6 +296,7 @@ func vmFromSnapshot(url, user, password, vmName string) {
 Snapshot of db-01 taken
   new VM:      sdk-example-vm-from-snapshot (is_a_template=false)
   new template:sdk-example-template-from-snapshot (is_a_template=true)
+Cleaned up the example VM, template and snapshot.
 OK: vm-from-snapshot
 ```
 
@@ -360,6 +359,7 @@ public final class VmFromSnapshot {
             destroyVmAndDisks(conn, newVm);
             destroyVmAndDisks(conn, template);
             destroyVmAndDisks(conn, snapshot);
+            System.out.println("Cleaned up the example VM, template and snapshot.");
             System.out.println("OK: vm-from-snapshot");
         } finally {
             Session.logout(conn);
@@ -374,6 +374,7 @@ public final class VmFromSnapshot {
 Snapshot of db-01 taken
   new VM:      sdk-example-vm-from-snapshot (is_a_template=false)
   new template:sdk-example-template-from-snapshot (is_a_template=true)
+Cleaned up the example VM, template and snapshot.
 OK: vm-from-snapshot
 ```
 

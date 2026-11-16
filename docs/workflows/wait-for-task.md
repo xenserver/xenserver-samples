@@ -59,7 +59,7 @@ function Invoke-WaitForTask {
 <details><summary>Example output</summary>
 
 ```text
-Started task: 00000001-0000-0000-ec09-000000000000
+Started task: 00000001-0000-0000-fa09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task
@@ -146,7 +146,7 @@ def wait_for_task(url, username, password, template_name, new_vm_name="sdk-examp
 <details><summary>Example output</summary>
 
 ```text
-Started task: 00000001-0000-0000-ed09-000000000000
+Started task: 00000001-0000-0000-fa09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task
@@ -199,7 +199,7 @@ public static void WaitForTask(string url, string user, string password,
 <details><summary>Example output</summary>
 
 ```text
-Started task: 00000001-0000-0000-ec09-000000000000
+Started task: 00000001-0000-0000-fa09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task
@@ -270,7 +270,7 @@ func waitForTask(url, user, password, templateName, newVMName string) {
 <details><summary>Example output</summary>
 
 ```text
-Started task: 00000001-0000-0000-ec09-000000000000
+Started task: 00000001-0000-0000-fa09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task
@@ -341,7 +341,7 @@ public final class WaitForTask {
 <details><summary>Example output</summary>
 
 ```text
-Started task: 00000001-0000-0000-ed09-000000000000
+Started task: 00000001-0000-0000-fa09-000000000000
 Task status: success
 Task produced VM: sdk-example-asynctask
 OK: wait-for-task

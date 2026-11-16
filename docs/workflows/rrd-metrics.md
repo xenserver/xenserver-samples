@@ -29,21 +29,27 @@ function Invoke-RrdMetrics {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     # The module ships no RRD cmdlet, so read the last 5 minutes of samples from the rrd_updates HTTP API
-    # (the module already trusts the server cert). Legends look like "AVERAGE:host:<uuid>:<datasource>".
+    # (the module already trusts the server cert) - but only the host that physically accepts the
+    # connection answers for itself (the same "no forwarding to another pool member" behaviour
+    # Invoke-BackupHostConfig works around for /host_backup and /host_restore), so query each host at its
+    # own address rather than the pool's (coordinator) URL. Legends look like
+    # "AVERAGE:host:<uuid>:<datasource>".
     $start = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - 300
-    $resp = Invoke-RestMethod -Uri "$($session.Url)/rrd_updates?session_id=$($session.opaque_ref)&host=true&start=$start" `
-        -Headers @{ accept = 'application/json' }
-    $legends = @($resp.meta.legend)
-
     $peak = @{}
-    foreach ($point in $resp.data) {
-        for ($k = 0; $k -lt $legends.Count; $k++) {
-            $parts = $legends[$k] -split ':'
-            if ($parts[1] -eq 'host' -and $parts[3] -eq 'pvsaccelerator_space_utilization') {
-                $u = [double]$point.values[$k]
-                # NaN: a gap in the series, not a real sample - never let it stick.
-                if ([double]::IsNaN($u)) { continue }
-                if (-not $peak.ContainsKey($parts[2]) -or $u -gt $peak[$parts[2]]) { $peak[$parts[2]] = $u }
+    foreach ($xenHost in Get-XenHost) {
+        $hostUrl = Get-HostUrl -Url $Url -Address $xenHost.address
+        $resp = Invoke-RestMethod -Uri "$hostUrl/rrd_updates?session_id=$($session.opaque_ref)&host=true&start=$start" `
+            -Headers @{ accept = 'application/json' }
+        $legends = @($resp.meta.legend)
+        foreach ($point in $resp.data) {
+            for ($k = 0; $k -lt $legends.Count; $k++) {
+                $parts = $legends[$k] -split ':'
+                if ($parts[1] -eq 'host' -and $parts[3] -eq 'pvsaccelerator_space_utilization') {
+                    $u = [double]$point.values[$k]
+                    # NaN: a gap in the series, not a real sample - never let it stick.
+                    if ([double]::IsNaN($u)) { continue }
+                    if (-not $peak.ContainsKey($parts[2]) -or $u -gt $peak[$parts[2]]) { $peak[$parts[2]] = $u }
+                }
             }
         }
     }
@@ -61,6 +67,7 @@ function Invoke-RrdMetrics {
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
+  sdk-host2: peak PVS cache utilisation 78%
 OK: rrd-metrics
 ```
 
@@ -120,29 +127,35 @@ import time
 import urllib.request
 
 from connection import connect
+from helpers import host_url
 
 
 def rrd_metrics(url, username, password):
     session = connect(url, username, password)
-    # The RRD time-series isn't a XenAPI call; read the last 5 minutes over HTTP from rrd_updates.
+    # The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP - but only the host that
+    # physically accepts the connection answers for itself (the same "no forwarding to another pool
+    # member" behaviour backup_host_config works around for /host_backup and /host_restore), so query
+    # each host at its own address rather than the pool's (coordinator) url.
     # Legends look like "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
+    ctx = ssl._create_unverified_context()
     start = int(time.time()) - 300
-    req = urllib.request.Request(
-        "%s/rrd_updates?session_id=%s&host=true&start=%d" % (url, session._session, start),
-        headers={"accept": "application/json"})
-    data = json.load(urllib.request.urlopen(req, context=ssl._create_unverified_context()))
-    legends = data["meta"]["legend"]
-
     peak = {}
-    for point in data["data"]:
-        for k, legend in enumerate(legends):
-            parts = legend.split(":")
-            if parts[1] == "host" and parts[3] == "pvsaccelerator_space_utilization":
-                value = float(point["values"][k])
-                if value != value:  # NaN: a gap in the series, not a real sample - never let it stick
-                    continue
-                if parts[2] not in peak or value > peak[parts[2]]:
-                    peak[parts[2]] = value
+    for host in session.xenapi.host.get_all_records().values():
+        req = urllib.request.Request(
+            "%s/rrd_updates?session_id=%s&host=true&start=%d"
+            % (host_url(url, host["address"]), session._session, start),
+            headers={"accept": "application/json"})
+        data = json.load(urllib.request.urlopen(req, context=ctx))
+        legends = data["meta"]["legend"]
+        for point in data["data"]:
+            for k, legend in enumerate(legends):
+                parts = legend.split(":")
+                if parts[1] == "host" and parts[3] == "pvsaccelerator_space_utilization":
+                    value = float(point["values"][k])
+                    if value != value:  # NaN: a gap in the series, not a real sample
+                        continue
+                    if parts[2] not in peak or value > peak[parts[2]]:
+                        peak[parts[2]] = value
     for host in session.xenapi.host.get_all_records().values():
         if host["uuid"] in peak:
             print("  %s: peak PVS cache utilisation %d%%" % (host["name_label"], peak[host["uuid"]]))
@@ -154,6 +167,7 @@ def rrd_metrics(url, username, password):
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
+  sdk-host2: peak PVS cache utilisation 78%
 OK: rrd-metrics
 ```
 
@@ -172,9 +186,13 @@ Source: [`csharp/HostsAndPools/RrdMetrics.cs`](../../csharp/HostsAndPools/RrdMet
 public static void RrdMetrics(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    var nameByUuid = Host.get_all_records(session).Values.ToDictionary(h => h.uuid, h => h.name_label);
+    var hosts = Host.get_all_records(session);
+    var nameByUuid = hosts.Values.ToDictionary(h => h.uuid, h => h.name_label);
 
-    // The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP. Legends look like
+    // The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP - but only the host that
+    // physically accepts the connection answers for itself (the same "no forwarding to another pool
+    // member" behaviour BackupHostConfig works around for /host_backup and /host_restore), so query
+    // each host at its own address rather than the pool's (coordinator) url. Legends look like
     // "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
     var start = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 300;
     using var http = new HttpClient(new HttpClientHandler
@@ -182,26 +200,32 @@ public static void RrdMetrics(string url, string user, string password)
         ServerCertificateCustomValidationCallback = (_, _, _, _) => true
     });
     http.DefaultRequestHeaders.Add("accept", "application/json");
-    var json = http.GetStringAsync($"{url}/rrd_updates?session_id={session.opaque_ref}&host=true&start={start}").Result;
 
-    using var doc = JsonDocument.Parse(json);
-    var legends = doc.RootElement.GetProperty("meta").GetProperty("legend")
-        .EnumerateArray().Select(e => e.GetString()!).ToArray();
     var peak = new Dictionary<string, double>();
-    foreach (var point in doc.RootElement.GetProperty("data").EnumerateArray())
+    foreach (var h in hosts.Values)
     {
-        var values = point.GetProperty("values");
-        for (int k = 0; k < legends.Length; k++)
+        var hostUrl = HostUrl(url, h.address);
+        var json = http.GetStringAsync(
+            $"{hostUrl}/rrd_updates?session_id={session.opaque_ref}&host=true&start={start}").Result;
+
+        using var doc = JsonDocument.Parse(json);
+        var legends = doc.RootElement.GetProperty("meta").GetProperty("legend")
+            .EnumerateArray().Select(e => e.GetString()!).ToArray();
+        foreach (var point in doc.RootElement.GetProperty("data").EnumerateArray())
         {
-            var parts = legends[k].Split(':');
-            if (parts[1] == "host" && parts[3] == "pvsaccelerator_space_utilization")
+            var values = point.GetProperty("values");
+            for (int k = 0; k < legends.Length; k++)
             {
-                // A host sends each value as a string ("0.0", or "NaN" for a gap in the series).
-                var v = values[k].ValueKind == JsonValueKind.String
-                    ? double.Parse(values[k].GetString()!, CultureInfo.InvariantCulture)
-                    : values[k].GetDouble();
-                if (double.IsNaN(v)) continue;
-                if (!peak.TryGetValue(parts[2], out var cur) || v > cur) peak[parts[2]] = v;
+                var parts = legends[k].Split(':');
+                if (parts[1] == "host" && parts[3] == "pvsaccelerator_space_utilization")
+                {
+                    // A host sends each value as a string ("0.0", or "NaN" for a gap in the series).
+                    var v = values[k].ValueKind == JsonValueKind.String
+                        ? double.Parse(values[k].GetString()!, CultureInfo.InvariantCulture)
+                        : values[k].GetDouble();
+                    if (double.IsNaN(v)) continue;
+                    if (!peak.TryGetValue(parts[2], out var cur) || v > cur) peak[parts[2]] = v;
+                }
             }
         }
     }
@@ -216,6 +240,7 @@ public static void RrdMetrics(string url, string user, string password)
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
+  sdk-host2: peak PVS cache utilisation 78%
 OK: rrd-metrics
 ```
 
@@ -255,16 +280,14 @@ func rrdMetrics(url, user, password string) {
 		nameByUUID[h.UUID] = h.NameLabel
 	}
 
-	// The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP. It needs a session id (the SDK
-	// keeps its own private), so obtain one with a small JSON-RPC login. Legends are
+	// The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP - but only the host that
+	// physically accepts the connection answers for itself (the same "no forwarding to another pool
+	// member" behaviour backupHostConfig works around for /host_backup and /host_restore), so query
+	// each host at its own address rather than the pool's (coordinator) url. It needs a session id
+	// (the SDK keeps its own private), so obtain one with a small JSON-RPC login. Legends are
 	// "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
 	sid := rawLogin(url, user, password)
 	start := time.Now().Unix() - 300
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/rrd_updates?session_id=%s&host=true&start=%d", url, sid, start), nil)
-	req.Header.Set("accept", "application/json")
-	resp, err := insecureClient().Do(req)
-	check(err)
-	defer resp.Body.Close()
 
 	var rrd struct {
 		Meta struct {
@@ -274,31 +297,41 @@ func rrdMetrics(url, user, password string) {
 			Values []any `json:"values"`
 		} `json:"data"`
 	}
-	check(json.NewDecoder(resp.Body).Decode(&rrd))
-
 	peak := map[string]float64{}
-	for _, point := range rrd.Data {
-		for k, legend := range rrd.Meta.Legend {
-			parts := strings.Split(legend, ":")
-			if parts[1] != "host" || parts[3] != "pvsaccelerator_space_utilization" {
-				continue
-			}
-			// A host sends each value as a string ("0.0", or "NaN" for a gap in the series).
-			var v float64
-			switch x := point.Values[k].(type) {
-			case string:
-				v, _ = strconv.ParseFloat(x, 64)
-			case float64:
-				v = x
-			}
-			if v != v { // NaN: a gap in the series, not a real sample - never let it stick
-				continue
-			}
-			// A plain `v > peak[key]` relies on a zero-valued map default, so a real 0.0 reading
-			// (the common, unconfigured-PVS case) would never get inserted and the whole per-host
-			// loop would silently print nothing - track presence explicitly instead.
-			if cur, ok := peak[parts[2]]; !ok || v > cur {
-				peak[parts[2]] = v
+	for _, h := range hosts {
+		hostURLStr := hostURL(url, h.Address)
+		req, _ := http.NewRequest("GET",
+			fmt.Sprintf("%s/rrd_updates?session_id=%s&host=true&start=%d", hostURLStr, sid, start), nil)
+		req.Header.Set("accept", "application/json")
+		resp, err := insecureClient().Do(req)
+		check(err)
+		err = json.NewDecoder(resp.Body).Decode(&rrd)
+		resp.Body.Close()
+		check(err)
+
+		for _, point := range rrd.Data {
+			for k, legend := range rrd.Meta.Legend {
+				parts := strings.Split(legend, ":")
+				if parts[1] != "host" || parts[3] != "pvsaccelerator_space_utilization" {
+					continue
+				}
+				// A host sends each value as a string ("0.0", or "NaN" for a gap in the series).
+				var v float64
+				switch x := point.Values[k].(type) {
+				case string:
+					v, _ = strconv.ParseFloat(x, 64)
+				case float64:
+					v = x
+				}
+				if v != v { // NaN: a gap in the series, not a real sample - never let it stick
+					continue
+				}
+				// A plain `v > peak[key]` relies on a zero-valued map default, so a real 0.0 reading
+				// (the common, unconfigured-PVS case) would never get inserted and the whole per-host
+				// loop would silently print nothing - track presence explicitly instead.
+				if cur, ok := peak[parts[2]]; !ok || v > cur {
+					peak[parts[2]] = v
+				}
 			}
 		}
 	}
@@ -313,6 +346,7 @@ func rrdMetrics(url, user, password string) {
 
 ```text
   sdk-host1: peak PVS cache utilisation 94%
+  sdk-host2: peak PVS cache utilisation 78%
 OK: rrd-metrics
 ```
 
@@ -337,6 +371,7 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import java.util.Map;
 
+import static com.xenserver.samples.Helpers.hostUrl;
 import static com.xenserver.samples.PoolConnection.connect;
 import static com.xenserver.samples.PoolConnection.trustingHttpClient;
 
@@ -357,26 +392,34 @@ public final class RrdMetrics {
             Map<String, String> nameByUuid = new java.util.HashMap<>();
             for (Host.Record h : Host.getAllRecords(conn).values()) nameByUuid.put(h.uuid, h.nameLabel);
 
-            // The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP. Legends look like
-            // "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
+            // The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP - but only the host
+            // that physically accepts the connection answers for itself (the same "no forwarding to
+            // another pool member" behaviour BackupHostConfig works around for /host_backup and
+            // /host_restore), so query each host at its own address rather than the pool's (coordinator)
+            // url. Legends look like "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
             long start = System.currentTimeMillis() / 1000 - 300;
-            HttpGet get = new HttpGet(url + "/rrd_updates?session_id=" + conn.getSessionReference() + "&host=true&start=" + start);
-            get.addHeader("accept", "application/json");
-            String body;
-            try (CloseableHttpClient http = trustingHttpClient()) {
-                body = http.execute(get, resp -> EntityUtils.toString(resp.getEntity()));
-            }
-            JsonNode root = new ObjectMapper().readTree(body);
-            JsonNode legends = root.get("meta").get("legend");
             Map<String, Double> peak = new java.util.HashMap<>();
-            for (JsonNode point : root.get("data")) {
-                JsonNode values = point.get("values");
-                for (int k = 0; k < legends.size(); k++) {
-                    String[] parts = legends.get(k).asText().split(":");
-                    if (parts[1].equals("host") && parts[3].equals("pvsaccelerator_space_utilization")) {
-                        double value = values.get(k).asDouble();
-                        if (Double.isNaN(value)) continue; // a gap in the series, not a real sample
-                        peak.merge(parts[2], value, Math::max);
+            ObjectMapper mapper = new ObjectMapper();
+            for (Host.Record h : Host.getAllRecords(conn).values()) {
+                String hostUrl = hostUrl(url, h.address);
+                HttpGet get = new HttpGet(hostUrl + "/rrd_updates?session_id=" + conn.getSessionReference()
+                        + "&host=true&start=" + start);
+                get.addHeader("accept", "application/json");
+                String body;
+                try (CloseableHttpClient http = trustingHttpClient()) {
+                    body = http.execute(get, resp -> EntityUtils.toString(resp.getEntity()));
+                }
+                JsonNode root = mapper.readTree(body);
+                JsonNode legends = root.get("meta").get("legend");
+                for (JsonNode point : root.get("data")) {
+                    JsonNode values = point.get("values");
+                    for (int k = 0; k < legends.size(); k++) {
+                        String[] parts = legends.get(k).asText().split(":");
+                        if (parts[1].equals("host") && parts[3].equals("pvsaccelerator_space_utilization")) {
+                            double value = values.get(k).asDouble();
+                            if (Double.isNaN(value)) continue; // a gap in the series, not a real sample
+                            peak.merge(parts[2], value, Math::max);
+                        }
                     }
                 }
             }
@@ -393,6 +436,7 @@ public final class RrdMetrics {
 <details><summary>Example output</summary>
 
 ```text
+  sdk-host2: peak PVS cache utilisation 78%
   sdk-host1: peak PVS cache utilisation 94%
 OK: rrd-metrics
 ```
