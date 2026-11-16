@@ -24,7 +24,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- The version of the SDK jar you installed into your local Maven repository (see README.md).
              Override on the command line with -Dxenapi.version=... -->
-        <xenapi.version>26.16.1</xenapi.version>
+        <xenapi.version>26.22.0</xenapi.version>
     </properties>
     <dependencies>
         <dependency>

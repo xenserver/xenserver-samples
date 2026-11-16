@@ -10,7 +10,7 @@
     <Company>XenServer</Company>
     <Copyright>Copyright (c) Cloud Software Group, Inc.</Copyright>
     <!-- The SDK release to build against; override with -p:XenServerSdkVersion=... -->
-    <XenServerSdkVersion>26.16.1</XenServerSdkVersion>
+    <XenServerSdkVersion>26.22.0</XenServerSdkVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="XenServer.NET" Version="[$(XenServerSdkVersion)]" />

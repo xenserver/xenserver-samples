@@ -14,7 +14,7 @@ go/
 
 ## Build and run
 
-You need Go 1.27 or later. The SDK's Go binding is not published as a module: copy
+You need Go 1.27.1 or later. The SDK's Go binding is not published as a module: copy
 `XenServerGo/src` from the SDK into `goSDK/` here (`go.mod` points at it), then:
 
 ```
