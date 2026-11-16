@@ -48,6 +48,7 @@ function Invoke-LiveMigrate {
     # Tidy up so the example is repeatable.
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $vm
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: live-migrate"
     $session | Disconnect-XenServer
 }

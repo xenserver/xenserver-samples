@@ -34,8 +34,15 @@ function Invoke-ManageVmGroups {
     foreach ($m in $members) { Write-Host "  $((Get-XenVM -Ref $m).name_label)" }
 
     # VM_group.destroy already clears the group from every member VM's groups field - no need to remove
-    # membership ourselves first.
+    # membership ourselves first. Read both back afterwards to confirm.
     Remove-XenVMGroup -Ref $group
+    $stillGrouped = @((Get-XenVM -Ref $vm).groups) -contains $group.opaque_ref
+    $stillExists = @(Get-XenVMGroup) | Where-Object { $_.opaque_ref -eq $group.opaque_ref }
+    if (-not $stillGrouped -and -not $stillExists) {
+        Write-Host "Removed $VmName from the group; group deleted"
+    } else {
+        Write-Host "Group teardown incomplete: stillGrouped=$stillGrouped, stillExists=$([bool]$stillExists)"
+    }
     Write-Host "OK: manage-vm-groups"
     Disconnect-XenServer -Session $session
 }

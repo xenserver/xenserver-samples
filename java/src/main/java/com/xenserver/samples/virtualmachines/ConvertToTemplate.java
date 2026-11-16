@@ -36,6 +36,7 @@ public final class ConvertToTemplate {
         System.out.println("is_a_template after convert:  " + vm.getIsATemplate(conn));
 
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example template.");
         System.out.println("OK: convert-to-template");
         Session.logout(conn);
     }

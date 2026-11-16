@@ -54,6 +54,7 @@ public final class CheckpointVm {
         destroyVmAndDisks(conn, checkpoint);
         vm.hardShutdown(conn);
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM and its checkpoint.");
         System.out.println("OK: checkpoint-vm");
         Session.logout(conn);
     }

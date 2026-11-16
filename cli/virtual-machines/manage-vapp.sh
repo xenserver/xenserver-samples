@@ -15,10 +15,12 @@ manage_vapp() {
     vm_uuid=$(xe vm-list name-label="$(param vm_name db-01)" --minimal)
     vapp_uuid=$(xe appliance-create name-label=sdk-example-vapp \
         name-description="Created by the SDK example")
+    echo "Created:        $(xe appliance-param-get uuid="$vapp_uuid" param-name=name-label)"
 
     # `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     # reason to use a vApp rather than selecting several VMs.
     xe vm-param-set uuid="$vm_uuid" appliance="$vapp_uuid" order=0 start-delay=5
+    echo "Members:        $(count_csv "$(set_to_csv "$(xe appliance-param-get uuid="$vapp_uuid" param-name=VMs)")")"
 
     xe appliance-start uuid="$vapp_uuid"
     echo "Started:        $(xe vm-list uuid="$vm_uuid" params=power-state --minimal)"
@@ -37,5 +39,10 @@ manage_vapp() {
 
     xe vm-param-set uuid="$vm_uuid" appliance=
     xe appliance-destroy uuid="$vapp_uuid"
+    if [ -z "$(xe appliance-list uuid="$vapp_uuid" --minimal)" ]; then
+        echo "Appliance removed"
+    else
+        echo "Appliance still present"
+    fi
     ok manage-vapp
 }

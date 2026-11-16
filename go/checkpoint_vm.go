@@ -42,6 +42,7 @@ func checkpointVM(url, user, password, sourceVM, newVMName string) {
 	destroyVMAndDisks(session, checkpoint)
 	check(xenapi.VM.HardShutdown(session, vm))
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example VM and its checkpoint.")
 	fmt.Println("OK: checkpoint-vm")
 	session.Logout()
 }

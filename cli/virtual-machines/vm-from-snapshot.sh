@@ -21,9 +21,11 @@ vm_from_snapshot() {
     echo "  new template:$(xe template-param-get uuid=$tmpl param-name=name-label) (is-a-template=$(xe template-param-get uuid=$tmpl param-name=is-a-template))"
 
     # Each made its own disks, and the snapshot has its own snapshot disks; the -uninstall commands destroy
-    # them along with the records.
-    xe vm-uninstall uuid=$newvm force=true
-    xe template-uninstall template-uuid=$tmpl force=true
-    xe snapshot-uninstall snapshot-uuid=$snap force=true
+    # them along with the records. Three destroy banners in a row is noisy, so quiet them and report the
+    # clean-up as one line instead.
+    xe vm-uninstall uuid=$newvm force=true >/dev/null
+    xe template-uninstall template-uuid=$tmpl force=true >/dev/null
+    xe snapshot-uninstall snapshot-uuid=$snap force=true >/dev/null
+    echo "Cleaned up the example VM, template and snapshot."
     ok vm-from-snapshot
 }

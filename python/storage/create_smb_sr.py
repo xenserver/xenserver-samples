@@ -26,6 +26,7 @@ def create_smb_sr(url, username, password, server, share, smb_username, smb_pass
     print("Created SR: %s (%d GiB)"
           % (session.xenapi.SR.get_uuid(sr), int(session.xenapi.SR.get_physical_size(sr)) // GIB))
     detach_and_forget_sr(session, sr)
+    print("Detached and forgot the SR.")
     session.xenapi.secret.destroy(secret)
     print("OK: create-smb-sr")
     session.logout()

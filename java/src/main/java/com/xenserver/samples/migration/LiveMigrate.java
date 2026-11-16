@@ -61,6 +61,7 @@ public final class LiveMigrate {
         // Tidy up so the example is repeatable.
         vm.hardShutdown(conn);
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: live-migrate");
         Session.logout(conn);
     }

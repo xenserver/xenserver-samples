@@ -12,6 +12,8 @@ import (
 // Reclaim space freed by deleted disks on a thin-provisioned storage repository: find a
 // trim-capable SR, pick a host with a live connection to it, and run the trim operation.
 func reclaimSpace(url, user, password string) {
+	const GiB = 1024 * 1024 * 1024
+
 	session := connect(url, user, password)
 
 	// Storage-manager backends that advertise SR_TRIM in their features map are trim-capable.
@@ -24,13 +26,18 @@ func reclaimSpace(url, user, password string) {
 		}
 	}
 
-	srs, err := xenapi.SR.GetAllRecords(session)
+	// SR.GetAll keeps the server's order (GetAllRecords returns a map, which Go ranges in random order),
+	// so this takes the same SR as the other languages.
+	srRefs, err := xenapi.SR.GetAll(session)
 	check(err)
+	var srRef xenapi.SRRef
 	var sr xenapi.SRRecord
 	found := false
-	for _, r := range srs {
+	for _, ref := range srRefs {
+		r, err := xenapi.SR.GetRecord(session, ref)
+		check(err)
 		if r.PhysicalSize > 0 && trimTypes[r.Type] {
-			sr, found = r, true
+			srRef, sr, found = ref, r, true
 			break
 		}
 	}
@@ -49,6 +56,8 @@ func reclaimSpace(url, user, password string) {
 		}
 	}
 
+	fmt.Printf("  %s: %d / %d GiB used\n", sr.NameLabel, sr.PhysicalUtilisation/GiB, sr.PhysicalSize/GiB)
+
 	result, err := xenapi.Host.CallPlugin(session, host, "trim", "do_trim",
 		map[string]string{"sr_uuid": sr.UUID})
 	check(err)
@@ -57,6 +66,12 @@ func reclaimSpace(url, user, password string) {
 	if strings.ToLower(strings.TrimSpace(result)) != "true" {
 		panic("trim plugin returned " + result)
 	}
+
+	// Rescan to refresh utilisation from the backend, the same way srUsage does, before reporting it.
+	check(xenapi.SR.Scan(session, srRef))
+	usedAfter, err := xenapi.SR.GetPhysicalUtilisation(session, srRef)
+	check(err)
+	fmt.Printf("  %s: %d / %d GiB used\n", sr.NameLabel, usedAfter/GiB, sr.PhysicalSize/GiB)
 	fmt.Println("OK: reclaim-space")
 	session.Logout()
 }

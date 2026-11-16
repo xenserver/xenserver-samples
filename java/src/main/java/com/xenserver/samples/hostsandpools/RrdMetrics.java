@@ -12,6 +12,7 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 
 import java.util.Map;
 
+import static com.xenserver.samples.Helpers.hostUrl;
 import static com.xenserver.samples.PoolConnection.connect;
 import static com.xenserver.samples.PoolConnection.trustingHttpClient;
 
@@ -32,26 +33,34 @@ public final class RrdMetrics {
             Map<String, String> nameByUuid = new java.util.HashMap<>();
             for (Host.Record h : Host.getAllRecords(conn).values()) nameByUuid.put(h.uuid, h.nameLabel);
 
-            // The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP. Legends look like
-            // "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
+            // The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP - but only the host
+            // that physically accepts the connection answers for itself (the same "no forwarding to
+            // another pool member" behaviour BackupHostConfig works around for /host_backup and
+            // /host_restore), so query each host at its own address rather than the pool's (coordinator)
+            // url. Legends look like "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
             long start = System.currentTimeMillis() / 1000 - 300;
-            HttpGet get = new HttpGet(url + "/rrd_updates?session_id=" + conn.getSessionReference() + "&host=true&start=" + start);
-            get.addHeader("accept", "application/json");
-            String body;
-            try (CloseableHttpClient http = trustingHttpClient()) {
-                body = http.execute(get, resp -> EntityUtils.toString(resp.getEntity()));
-            }
-            JsonNode root = new ObjectMapper().readTree(body);
-            JsonNode legends = root.get("meta").get("legend");
             Map<String, Double> peak = new java.util.HashMap<>();
-            for (JsonNode point : root.get("data")) {
-                JsonNode values = point.get("values");
-                for (int k = 0; k < legends.size(); k++) {
-                    String[] parts = legends.get(k).asText().split(":");
-                    if (parts[1].equals("host") && parts[3].equals("pvsaccelerator_space_utilization")) {
-                        double value = values.get(k).asDouble();
-                        if (Double.isNaN(value)) continue; // a gap in the series, not a real sample
-                        peak.merge(parts[2], value, Math::max);
+            ObjectMapper mapper = new ObjectMapper();
+            for (Host.Record h : Host.getAllRecords(conn).values()) {
+                String hostUrl = hostUrl(url, h.address);
+                HttpGet get = new HttpGet(hostUrl + "/rrd_updates?session_id=" + conn.getSessionReference()
+                        + "&host=true&start=" + start);
+                get.addHeader("accept", "application/json");
+                String body;
+                try (CloseableHttpClient http = trustingHttpClient()) {
+                    body = http.execute(get, resp -> EntityUtils.toString(resp.getEntity()));
+                }
+                JsonNode root = mapper.readTree(body);
+                JsonNode legends = root.get("meta").get("legend");
+                for (JsonNode point : root.get("data")) {
+                    JsonNode values = point.get("values");
+                    for (int k = 0; k < legends.size(); k++) {
+                        String[] parts = legends.get(k).asText().split(":");
+                        if (parts[1].equals("host") && parts[3].equals("pvsaccelerator_space_utilization")) {
+                            double value = values.get(k).asDouble();
+                            if (Double.isNaN(value)) continue; // a gap in the series, not a real sample
+                            peak.merge(parts[2], value, Math::max);
+                        }
                     }
                 }
             }

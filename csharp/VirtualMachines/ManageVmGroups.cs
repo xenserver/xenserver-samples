@@ -40,8 +40,13 @@ internal static partial class Workflows
             Console.WriteLine($"  {VM.get_name_label(session, m)}");
 
         // VM_group.destroy already clears the group from every member VM's groups field - no need to
-        // remove membership ourselves first.
+        // remove membership ourselves first. Read both back afterwards to confirm.
         VM_group.destroy(session, groupRef);
+        var stillGrouped = VM.get_groups(session, vmRef).Contains(groupRef);
+        var stillExists = VM_group.get_all(session).Contains(groupRef);
+        Console.WriteLine(!stillGrouped && !stillExists
+            ? $"Removed {vmName} from the group; group deleted"
+            : $"Group teardown incomplete: stillGrouped={stillGrouped}, stillExists={stillExists}");
         Console.WriteLine("OK: manage-vm-groups");
         session.logout();
     }

@@ -27,16 +27,14 @@ func rrdMetrics(url, user, password string) {
 		nameByUUID[h.UUID] = h.NameLabel
 	}
 
-	// The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP. It needs a session id (the SDK
-	// keeps its own private), so obtain one with a small JSON-RPC login. Legends are
+	// The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP - but only the host that
+	// physically accepts the connection answers for itself (the same "no forwarding to another pool
+	// member" behaviour backupHostConfig works around for /host_backup and /host_restore), so query
+	// each host at its own address rather than the pool's (coordinator) url. It needs a session id
+	// (the SDK keeps its own private), so obtain one with a small JSON-RPC login. Legends are
 	// "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
 	sid := rawLogin(url, user, password)
 	start := time.Now().Unix() - 300
-	req, _ := http.NewRequest("GET", fmt.Sprintf("%s/rrd_updates?session_id=%s&host=true&start=%d", url, sid, start), nil)
-	req.Header.Set("accept", "application/json")
-	resp, err := insecureClient().Do(req)
-	check(err)
-	defer resp.Body.Close()
 
 	var rrd struct {
 		Meta struct {
@@ -46,31 +44,41 @@ func rrdMetrics(url, user, password string) {
 			Values []any `json:"values"`
 		} `json:"data"`
 	}
-	check(json.NewDecoder(resp.Body).Decode(&rrd))
-
 	peak := map[string]float64{}
-	for _, point := range rrd.Data {
-		for k, legend := range rrd.Meta.Legend {
-			parts := strings.Split(legend, ":")
-			if parts[1] != "host" || parts[3] != "pvsaccelerator_space_utilization" {
-				continue
-			}
-			// A host sends each value as a string ("0.0", or "NaN" for a gap in the series).
-			var v float64
-			switch x := point.Values[k].(type) {
-			case string:
-				v, _ = strconv.ParseFloat(x, 64)
-			case float64:
-				v = x
-			}
-			if v != v { // NaN: a gap in the series, not a real sample - never let it stick
-				continue
-			}
-			// A plain `v > peak[key]` relies on a zero-valued map default, so a real 0.0 reading
-			// (the common, unconfigured-PVS case) would never get inserted and the whole per-host
-			// loop would silently print nothing - track presence explicitly instead.
-			if cur, ok := peak[parts[2]]; !ok || v > cur {
-				peak[parts[2]] = v
+	for _, h := range hosts {
+		hostURLStr := hostURL(url, h.Address)
+		req, _ := http.NewRequest("GET",
+			fmt.Sprintf("%s/rrd_updates?session_id=%s&host=true&start=%d", hostURLStr, sid, start), nil)
+		req.Header.Set("accept", "application/json")
+		resp, err := insecureClient().Do(req)
+		check(err)
+		err = json.NewDecoder(resp.Body).Decode(&rrd)
+		resp.Body.Close()
+		check(err)
+
+		for _, point := range rrd.Data {
+			for k, legend := range rrd.Meta.Legend {
+				parts := strings.Split(legend, ":")
+				if parts[1] != "host" || parts[3] != "pvsaccelerator_space_utilization" {
+					continue
+				}
+				// A host sends each value as a string ("0.0", or "NaN" for a gap in the series).
+				var v float64
+				switch x := point.Values[k].(type) {
+				case string:
+					v, _ = strconv.ParseFloat(x, 64)
+				case float64:
+					v = x
+				}
+				if v != v { // NaN: a gap in the series, not a real sample - never let it stick
+					continue
+				}
+				// A plain `v > peak[key]` relies on a zero-valued map default, so a real 0.0 reading
+				// (the common, unconfigured-PVS case) would never get inserted and the whole per-host
+				// loop would silently print nothing - track presence explicitly instead.
+				if cur, ok := peak[parts[2]]; !ok || v > cur {
+					peak[parts[2]] = v
+				}
 			}
 		}
 	}

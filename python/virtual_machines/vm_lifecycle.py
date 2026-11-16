@@ -48,6 +48,7 @@ def vm_lifecycle(url, username, password, source_vm, new_vm_name="sdk-example-li
     print("After shutdown:%s" % state())
 
     destroy_vm_and_disks(session, vm_ref)
+    print("Cleaned up the example VM.")
     print("OK: vm-lifecycle")
     session.xenapi.session.logout()
 

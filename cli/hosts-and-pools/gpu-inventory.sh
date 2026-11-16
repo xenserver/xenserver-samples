@@ -10,10 +10,13 @@ gpu_inventory() {
     echo "GPU groups ($(count_csv "$groups")):"
     for g in ${groups//,/ }; do
         vtypes=$(set_to_csv "$(xe gpu-group-param-get uuid=$g param-name=supported-VGPU-types)")
-        models=""
-        for t in ${vtypes//,/ }; do models="$models $(xe vgpu-type-param-get uuid=$t param-name=model-name)"; done
+        models="" sep=""
+        for t in ${vtypes//,/ }; do
+            models="$models$sep$(xe vgpu-type-param-get uuid=$t param-name=model-name)"
+            sep=", "
+        done
         npgpu=$(count_csv "$(set_to_csv "$(xe gpu-group-param-get uuid=$g param-name=PGPU-uuids)")")
-        echo "  - $(xe gpu-group-param-get uuid=$g param-name=name-label): $npgpu pGPU(s), vGPU types:$models"
+        echo "  - $(xe gpu-group-param-get uuid=$g param-name=name-label): $npgpu pGPU(s), vGPU types: $models"
     done
 
     # How the pool spreads vGPUs across the physical GPUs in a group: depth-first packs each pGPU

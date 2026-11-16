@@ -26,6 +26,7 @@ function Invoke-CreateNfsSr {
     Write-Host "Created SR: $($sr.uuid)"
 
     Invoke-DetachAndForgetSr -Ref $sr
+    Write-Host "Detached and forgot the SR."
     Write-Host "OK: create-nfs-sr"
     $session | Disconnect-XenServer
 }

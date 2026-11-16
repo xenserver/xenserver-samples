@@ -57,18 +57,6 @@ function Invoke-BackupHostConfig {
     $session | Disconnect-XenServer
 }
 
-function Get-HostUrl {
-    <#
-    .SYNOPSIS
-        Build the URL for a given host's own address, keeping the scheme and port the caller originally
-        connected with (a host's management address carries no port of its own).
-    #>
-    param([string]$Url, [string]$Address)
-    $uri = [System.Uri]$Url
-    $port = if ($uri.Port -gt 0) { ":$($uri.Port)" } else { "" }
-    return "$($uri.Scheme)://$Address$port"
-}
-
 function Restore-ExampleHostConfig {
     <#
     .SYNOPSIS

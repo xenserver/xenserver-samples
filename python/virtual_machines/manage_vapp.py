@@ -22,12 +22,14 @@ def manage_vapp(url, username, password, vm_name):
         "name_label": "sdk-example-vapp",
         "name_description": "Created by the SDK example",
     })
+    print(f"Created:        {x.VM_appliance.get_name_label(vapp)}")
 
     # `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     # reason to use a vApp at all rather than selecting several VMs.
     x.VM.set_appliance(vm, vapp)
     x.VM.set_order(vm, "0")
     x.VM.set_start_delay(vm, "5")
+    print(f"Members:        {len(x.VM_appliance.get_VMs(vapp))}")
 
     x.VM_appliance.start(vapp, False)
     print(f"Started:        {x.VM.get_power_state(vm)}")
@@ -39,5 +41,6 @@ def manage_vapp(url, username, password, vm_name):
 
     x.VM.set_appliance(vm, NULL_REF)
     x.VM_appliance.destroy(vapp)
+    print("Appliance removed" if vapp not in x.VM_appliance.get_all() else "Appliance still present")
     print("OK: manage-vapp")
     x.session.logout()

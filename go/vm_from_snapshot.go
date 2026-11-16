@@ -44,5 +44,6 @@ func vmFromSnapshot(url, user, password, vmName string) {
 	for _, ref := range []xenapi.VMRef{newVM, template, snapshot} {
 		destroyVMAndDisks(session, ref)
 	}
+	fmt.Println("Cleaned up the example VM, template and snapshot.")
 	fmt.Println("OK: vm-from-snapshot")
 }

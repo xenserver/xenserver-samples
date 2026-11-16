@@ -72,17 +72,6 @@ internal static partial class Workflows
     }
 
     /// <summary>
-    /// Build the URL for a given host's own address, keeping the scheme and port the caller originally
-    /// connected with (a host's management address carries no port of its own).
-    /// </summary>
-    private static string HostUrl(string url, string address)
-    {
-        var uri = new Uri(url);
-        var port = uri.IsDefaultPort ? "" : $":{uri.Port}";
-        return $"{uri.Scheme}://{address}{port}";
-    }
-
-    /// <summary>
     /// Upload a backup to a host - over a connection opened to THAT host's own address - and throw if
     /// the task reports it was refused.
     /// </summary>

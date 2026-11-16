@@ -50,6 +50,7 @@ public final class VmFromSnapshot {
             destroyVmAndDisks(conn, newVm);
             destroyVmAndDisks(conn, template);
             destroyVmAndDisks(conn, snapshot);
+            System.out.println("Cleaned up the example VM, template and snapshot.");
             System.out.println("OK: vm-from-snapshot");
         } finally {
             Session.logout(conn);

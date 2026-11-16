@@ -79,6 +79,7 @@ function Invoke-CreateIscsiSr {
         Get-XenPBD | Where-Object { $_.SR -eq $sr -and $_.currently_attached } |
             ForEach-Object { $_ | Invoke-XenPBD -XenAction Unplug }
         Remove-XenSR -Ref $sr
+        Write-Host "Destroyed the SR."
     }
     finally {
         if ($secret) { Remove-XenSecret -Ref $secret }

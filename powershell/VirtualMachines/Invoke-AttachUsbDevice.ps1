@@ -15,7 +15,9 @@ function Invoke-AttachUsbDevice {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $vm = Get-XenVM -Name $VmName
 
-    $pusb = Get-XenPUSB | Select-Object -First 1
+    # Pick deterministically (lowest description, then uuid), not whatever order the server happens
+    # to list them in, so the example behaves the same way every run.
+    $pusb = Get-XenPUSB | Sort-Object description, uuid | Select-Object -First 1
     Write-Host "Device:         $($pusb.description)"
 
     # Passthrough is off until an administrator releases the device: attaching one that has not been
@@ -31,7 +33,8 @@ function Invoke-AttachUsbDevice {
         Invoke-XenVUSB -Ref $vusb -XenAction Unplug
     }
     Remove-XenVUSB -VUSB $vusb
-    Set-XenPUSB -PUSB (Get-XenPUSB | Select-Object -First 1) -PassthroughEnabled $false
+    Write-Host "Detached:       $(@((Get-XenVM -Name $VmName).VUSBs).Count) device(s)"
+    Set-XenPUSB -PUSB $pusb -PassthroughEnabled $false
     Write-Host "OK: attach-usb-device"
     $session | Disconnect-XenServer
 }

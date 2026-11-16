@@ -26,6 +26,7 @@ internal static partial class Workflows
         Console.WriteLine($"is_a_template after convert:  {VM.get_is_a_template(session, vm)}");
 
         DestroyVmAndDisks(session, vm);
+        Console.WriteLine("Cleaned up the example template.");
         Console.WriteLine("OK: convert-to-template");
         session.logout();
     }

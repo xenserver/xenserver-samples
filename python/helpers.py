@@ -2,6 +2,7 @@
 tidying up what an example created."""
 
 import time
+import urllib.parse
 import xml.etree.ElementTree as ET
 import xmlrpc.client
 
@@ -11,6 +12,17 @@ from connection import connect
 
 # A reference field that points at nothing holds this value; set a field to it to clear it.
 NULL_REF = "OpaqueRef:NULL"
+
+
+def host_url(url, address):
+    """Build the URL for a given host's own address, keeping the scheme and port the caller
+    originally connected with (a host's management address carries no port of its own). Needed
+    anywhere a workflow does raw HTTP against a SPECIFIC host rather than the pool's connection
+    url - a host answers a direct HTTP request only for itself, with no forwarding to another
+    pool member."""
+    parts = urllib.parse.urlsplit(url)
+    port = ":%d" % parts.port if parts.port else ""
+    return "%s://%s%s" % (parts.scheme, address, port)
 
 
 def is_set(ref):

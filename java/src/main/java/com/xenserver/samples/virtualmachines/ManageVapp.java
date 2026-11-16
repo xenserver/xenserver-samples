@@ -34,12 +34,14 @@ public final class ManageVapp {
             spec.nameLabel = "sdk-example-vapp";
             spec.nameDescription = "Created by the SDK example";
             VMAppliance vapp = VMAppliance.create(conn, spec);
+            System.out.println("Created:        " + vapp.getNameLabel(conn));
 
             // `order` decides the sequence: ascending to start, descending to shut down. That ordering
             // is the reason to use a vApp rather than selecting several VMs.
             vm.setAppliance(conn, vapp);
             vm.setOrder(conn, 0L);
             vm.setStartDelay(conn, 5L);
+            System.out.println("Members:        " + vapp.getVMs(conn).size());
 
             vapp.start(conn, false);
             System.out.println("Started:        " + vm.getPowerState(conn));
@@ -53,6 +55,7 @@ public final class ManageVapp {
             // null reference, and a real host refuses what it sends with INTERNAL_ERROR.
             vm.setAppliance(conn, new VMAppliance(NULL_REF));
             vapp.destroy(conn);
+            System.out.println(VMAppliance.getAll(conn).contains(vapp) ? "Appliance still present" : "Appliance removed");
             System.out.println("OK: manage-vapp");
         } finally {
             Session.logout(conn);

@@ -6,10 +6,18 @@
 #   ./workflows.sh attach-usb-device https://xenserver root "$password"
 
 attach_usb_device() {
-    local vm_uuid pusb_uuid group_uuid vusb_uuid
+    local vm_uuid pusb_uuid group_uuid vusb_uuid p desc key best_key
     vm_uuid=$(xe vm-list name-label=web-01 --minimal)
-    pusb_uuid=$(first_csv "$(xe pusb-list --minimal)")
-    # param-get, not --minimal: --minimal escapes any comma in the value ("Ours Technology\, Inc.").
+    # Pick deterministically (lowest description, then uuid), not whatever order the server lists them in.
+    pusb_uuid="" best_key=""
+    for p in $(each_csv "$(xe pusb-list --minimal)"); do
+        # param-get, not --minimal: --minimal escapes any comma in the value ("Ours Technology\, Inc.").
+        desc=$(xe pusb-param-get uuid="$p" param-name=description)
+        key="$desc"$'\t'"$p"
+        if [ -z "$pusb_uuid" ] || [[ "$key" < "$best_key" ]]; then
+            best_key=$key; pusb_uuid=$p
+        fi
+    done
     echo "Device:         $(xe pusb-param-get uuid="$pusb_uuid" param-name=description)"
 
     # Passthrough is off until an administrator releases the device: attaching one that has not been
@@ -26,6 +34,7 @@ attach_usb_device() {
         xe vusb-unplug uuid="$vusb_uuid"
     fi
     xe vusb-destroy uuid="$vusb_uuid"
+    echo "Detached:       $(count_csv "$(xe vusb-list vm-uuid="$vm_uuid" --minimal)") device(s)"
     xe pusb-param-set uuid="$pusb_uuid" passthrough-enabled=false
     ok attach-usb-device
 }

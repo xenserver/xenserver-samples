@@ -51,6 +51,7 @@ public final class CreateSmbSr {
                 "smb", "user", true, new java.util.HashMap<>());
             System.out.println("Created SR: " + sr.getUuid(conn) + " (" + sr.getPhysicalSize(conn) / GiB + " GiB)");
             detachAndForgetSr(conn, sr);
+            System.out.println("Detached and forgot the SR.");
             secret.destroy(conn);
             System.out.println("OK: create-smb-sr");
         } finally {

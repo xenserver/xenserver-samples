@@ -38,6 +38,7 @@ func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, s
 	uuid, _ := xenapi.SR.GetUUID(session, sr)
 	fmt.Printf("Created SR: %s (%d GiB)\n", uuid, size/GiB)
 	detachAndForgetSR(session, sr)
+	fmt.Println("Detached and forgot the SR.")
 	check(xenapi.Secret.Destroy(session, secret))
 	fmt.Println("OK: create-smb-sr")
 	session.Logout()

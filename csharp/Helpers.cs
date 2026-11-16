@@ -280,4 +280,17 @@ internal static partial class Workflows
 
     internal static bool HostLive(Session session, XenRef<Host> host) =>
         Host_metrics.get_live(session, Host.get_metrics(session, host));
+
+    /// <summary>
+    /// Build the URL for a given host's own address, keeping the scheme and port the caller originally
+    /// connected with (a host's management address carries no port of its own). Needed anywhere a
+    /// workflow does raw HTTP against a SPECIFIC host rather than the pool's connection URL - a host
+    /// answers a direct HTTP request only for itself, with no forwarding to another pool member.
+    /// </summary>
+    internal static string HostUrl(string url, string address)
+    {
+        var uri = new Uri(url);
+        var port = uri.IsDefaultPort ? "" : $":{uri.Port}";
+        return $"{uri.Scheme}://{address}{port}";
+    }
 }

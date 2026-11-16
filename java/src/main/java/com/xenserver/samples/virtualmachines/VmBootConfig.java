@@ -54,6 +54,7 @@ public final class VmBootConfig {
                 + " (resolved against pool certificates at boot)");
 
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: vm-boot-config");
         Session.logout(conn);
     }

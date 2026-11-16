@@ -25,5 +25,6 @@ def create_nfs_sr(url, username, password, nfs_server, nfs_path, sr_name="sdk-ex
     print("Created SR: %s" % session.xenapi.SR.get_uuid(sr_ref))
 
     detach_and_forget_sr(session, sr_ref)
+    print("Detached and forgot the SR.")
     print("OK: create-nfs-sr")
     session.xenapi.session.logout()

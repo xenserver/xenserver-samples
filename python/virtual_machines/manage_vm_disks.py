@@ -68,5 +68,6 @@ def manage_vm_disks(url, username, password, source_vm, sr_name, new_vm_name="sd
 
     session.xenapi.VM.hard_shutdown(vm_ref)
     destroy_vm_and_disks(session, vm_ref)
+    print("Cleaned up the example VM.")
     print("OK: manage-vm-disks")
     session.xenapi.session.logout()

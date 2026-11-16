@@ -107,6 +107,7 @@ public final class ManageVmDisks {
 
         vm.hardShutdown(conn);
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: manage-vm-disks");
         Session.logout(conn);
     }

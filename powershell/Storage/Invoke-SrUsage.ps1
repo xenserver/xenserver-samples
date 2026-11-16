@@ -21,6 +21,7 @@ function Invoke-SrUsage {
     # A rescan refreshes an SR's utilisation from its backend.
     $scanMe = Get-XenSR | Where-Object { $_.physical_size -gt 0 } | Select-Object -First 1
     $scanMe | Invoke-XenSR -XenAction Scan
+    Write-Host "Rescanned $($scanMe.name_label)"
     Write-Host "OK: sr-usage"
     $session | Disconnect-XenServer
 }

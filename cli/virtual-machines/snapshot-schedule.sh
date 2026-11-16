@@ -17,7 +17,8 @@ snapshot_schedule() {
 
     # xe has no command to run a schedule on demand (the API's VMSS.snapshot_now has no CLI form), so it
     # takes its first snapshot when it next falls due, and from then on keeps the newest retained-snapshots.
-    echo "Keeps:            $(xe vmss-param-get uuid=$vmss param-name=retained-snapshots) snapshot(s)"
+    echo "Schedule keeps the newest $(xe vmss-param-get uuid=$vmss param-name=retained-snapshots)" \
+         "snapshot(s) each time it runs (xe cannot trigger a run on demand)"
 
     # A schedule with VMs still on it cannot be destroyed, so take the VM off it first.
     xe vm-param-set uuid=$vm snapshot-schedule=

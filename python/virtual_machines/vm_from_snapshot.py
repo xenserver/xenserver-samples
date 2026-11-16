@@ -40,5 +40,6 @@ def vm_from_snapshot(url, username, password, vm_name="db-01"):
     for ref in (new_vm, template):
         destroy_vm_and_disks(session, ref)
     destroy_vm_and_disks(session, snapshot)
+    print("Cleaned up the example VM, template and snapshot.")
     print("OK: vm-from-snapshot")
     session.logout()

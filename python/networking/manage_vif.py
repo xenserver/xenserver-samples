@@ -28,6 +28,8 @@ def manage_vif(url, username, password, template_name, new_vm_name="sdk-example-
           % (device, len(session.xenapi.VM.get_VIFs(vm))))
 
     session.xenapi.VIF.destroy(vif)
+    print("Removed the VIF; VM now has %d NIC(s)" % len(session.xenapi.VM.get_VIFs(vm)))
+
     destroy_vm_and_disks(session, vm)
     print("OK: manage-vif")
     session.xenapi.session.logout()

@@ -24,6 +24,7 @@ internal static partial class Workflows
             name_label = "sdk-example-vapp",
             name_description = "Created by the SDK example",
         });
+        Console.WriteLine($"Created:        {VM_appliance.get_name_label(session, vapp)}");
 
         // `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
         // reason to use a vApp at all rather than selecting several VMs — the database comes up first and
@@ -31,6 +32,7 @@ internal static partial class Workflows
         VM.set_appliance(session, vm, vapp);
         VM.set_order(session, vm, 0);
         VM.set_start_delay(session, vm, 5);
+        Console.WriteLine($"Members:        {VM_appliance.get_VMs(session, vapp).Count}");
 
         VM_appliance.start(session, vapp, false);
         Console.WriteLine($"Started:        {VM.get_power_state(session, vm)}");
@@ -42,6 +44,7 @@ internal static partial class Workflows
 
         VM.set_appliance(session, vm, Helper.NullOpaqueRef); // the null reference, spelled out: null would send ""
         VM_appliance.destroy(session, vapp);
+        Console.WriteLine(VM_appliance.get_all(session).Contains(vapp) ? "Appliance still present" : "Appliance removed");
         Console.WriteLine("OK: manage-vapp");
         session.logout();
     }

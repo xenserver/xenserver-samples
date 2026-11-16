@@ -43,6 +43,7 @@ func cloneVM(url, user, password, vmName, cloneName string) {
 
 	// Tidy up: destroy the clone and its (owned) disks.
 	destroyVMAndDisks(session, clone)
+	fmt.Println("Cleaned up the cloned VM (left the source intact).")
 	fmt.Println("OK: clone-vm")
 	session.Logout()
 }

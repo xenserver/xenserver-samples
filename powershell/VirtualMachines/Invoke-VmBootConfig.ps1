@@ -37,6 +37,7 @@ function Invoke-VmBootConfig {
     Write-Host "Boot mode: firmware=$($configured.HVM_boot_params['firmware']), secureboot=$($configured.platform['secureboot']) (resolved against pool certificates at boot)"
 
     Remove-VmAndDisks -Ref $vm
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: vm-boot-config"
     $session | Disconnect-XenServer
 }

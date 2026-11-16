@@ -23,5 +23,6 @@ def convert_to_template(url, username, password, template_name, new_vm_name="sdk
     print("is_a_template after convert:  %s" % session.xenapi.VM.get_is_a_template(vm))
 
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example template.")
     print("OK: convert-to-template")
     session.xenapi.session.logout()

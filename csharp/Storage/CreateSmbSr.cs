@@ -42,6 +42,7 @@ internal static partial class Workflows
             "smb", "user", true, new Dictionary<string, string>());
         Console.WriteLine($"Created SR: {SR.get_uuid(session, sr)} ({SR.get_physical_size(session, sr) / GiB} GiB)");
         DetachAndForgetSr(session, sr);
+        Console.WriteLine("Detached and forgot the SR.");
         Secret.destroy(session, secret);
         Console.WriteLine("OK: create-smb-sr");
         session.logout();

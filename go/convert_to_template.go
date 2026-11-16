@@ -27,6 +27,7 @@ func convertToTemplate(url, user, password, templateName, newVMName string) {
 	fmt.Printf("is_a_template after convert:  %v\n", isTemplate)
 
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example template.")
 	fmt.Println("OK: convert-to-template")
 	session.Logout()
 }

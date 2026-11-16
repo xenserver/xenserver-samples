@@ -41,6 +41,7 @@ public final class CreateNfsSr {
         System.out.println("Created SR: " + sr.getUuid(conn));
 
         detachAndForgetSr(conn, sr);
+        System.out.println("Detached and forgot the SR.");
         System.out.println("OK: create-nfs-sr");
         Session.logout(conn);
     }

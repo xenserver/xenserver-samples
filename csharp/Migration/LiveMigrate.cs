@@ -48,6 +48,7 @@ internal static partial class Workflows
         // Tidy up so the example is repeatable.
         VM.hard_shutdown(session, vm);
         DestroyVmAndDisks(session, vm);
+        Console.WriteLine("Cleaned up the example VM.");
         Console.WriteLine("OK: live-migrate");
         session.logout();
     }

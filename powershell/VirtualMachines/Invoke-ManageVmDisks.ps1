@@ -67,6 +67,7 @@ function Invoke-ManageVmDisks {
 
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $ref
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: manage-vm-disks"
     Disconnect-XenServer -Session $session
 }

@@ -36,6 +36,7 @@ function Invoke-CreateSmbSr {
         -Type "smb" -ContentType "user" -Shared $true -PassThru
     Write-Host "Created SR: $($sr.uuid) ($([math]::Floor([long]($sr.physical_size) / 1GB)) GiB)"
     Invoke-DetachAndForgetSr -Ref $sr
+    Write-Host "Detached and forgot the SR."
     Remove-XenSecret -Ref $secret
     Write-Host "OK: create-smb-sr"
     $session | Disconnect-XenServer

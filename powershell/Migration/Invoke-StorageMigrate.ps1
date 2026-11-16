@@ -52,6 +52,7 @@ function Invoke-StorageMigrate {
     # Tidy up: the VM and the disks it now owns.
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $ref
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: storage-migrate"
     $session | Disconnect-XenServer
 }

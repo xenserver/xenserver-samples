@@ -80,6 +80,7 @@ create_iscsi_sr() {
         xe pbd-unplug uuid=$pbd
     done
     xe sr-destroy uuid=$sr
+    echo "Destroyed the SR."
     if [ -n "$secret" ]; then
         xe secret-destroy uuid=$secret
         trap - EXIT

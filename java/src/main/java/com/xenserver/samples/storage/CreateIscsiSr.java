@@ -104,6 +104,7 @@ public final class CreateIscsiSr {
             for (com.xensource.xenapi.PBD pbd : sr.getPBDs(conn))
                 if (pbd.getCurrentlyAttached(conn)) pbd.unplug(conn);
             sr.destroy(conn);
+            System.out.println("Destroyed the SR.");
         } finally {
             if (secret != null) secret.destroy(conn);
             Session.logout(conn);

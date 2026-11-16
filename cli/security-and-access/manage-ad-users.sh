@@ -47,7 +47,8 @@ manage_ad_users() {
     subj=$(xe subject-add subject-name="$subject_name")
     xe subject-role-add uuid=$subj role-name=pool-admin
     name=$(xe subject-param-get uuid=$subj param-name=other-config param-key=subject-displayname)
-    echo "Added subject $name with role pool-admin"
+    echo "Added subject $name ($(xe subject-param-get uuid=$subj param-name=other-config param-key=subject-name))" \
+         "as $(xe subject-param-get uuid=$subj param-name=roles)"
 
     # Revoking access does not end sessions the user already has: logging the subject out is a
     # separate act, and the one that actually gets them off the pool now rather than at next login.

@@ -44,6 +44,7 @@ internal static partial class Workflows
         DestroyVmAndDisks(session, checkpoint);
         VM.hard_shutdown(session, vm);
         DestroyVmAndDisks(session, vm);
+        Console.WriteLine("Cleaned up the example VM and its checkpoint.");
         Console.WriteLine("OK: checkpoint-vm");
         session.logout();
     }

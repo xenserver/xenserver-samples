@@ -21,7 +21,9 @@ def attach_usb_device(url, username, password, vm_name):
     x = session.xenapi
     vm = x.VM.get_by_name_label(vm_name)[0]
 
-    pusb_ref, pusb = next(iter(x.PUSB.get_all_records().items()))
+    # Pick deterministically (lowest description, then uuid), not whatever order the server happens
+    # to list them in, so the example behaves the same way every run.
+    pusb_ref, pusb = min(x.PUSB.get_all_records().items(), key=lambda kv: (kv[1]["description"], kv[1]["uuid"]))
     print(f"Device:         {pusb['description']}")
 
     # Passthrough is off until an administrator enables it on the device: attaching one that has not
@@ -34,6 +36,7 @@ def attach_usb_device(url, username, password, vm_name):
     if x.VUSB.get_currently_attached(vusb):
         x.VUSB.unplug(vusb)
     x.VUSB.destroy(vusb)
+    print(f"Detached:       {len(x.VM.get_VUSBs(vm))} device(s)")
     x.PUSB.set_passthrough_enabled(pusb_ref, False)
     print("OK: attach-usb-device")
     x.session.logout()

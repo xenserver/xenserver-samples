@@ -95,6 +95,7 @@ func manageVMDisks(url, user, password, sourceVM, srName, newVMName string) {
 
 	check(xenapi.VM.HardShutdown(session, vmRef))
 	destroyVMAndDisks(session, vmRef)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: manage-vm-disks")
 	session.Logout()
 }

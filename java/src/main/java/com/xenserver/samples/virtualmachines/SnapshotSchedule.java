@@ -30,6 +30,7 @@ public final class SnapshotSchedule {
             String vmName, String scheduleName) throws Exception {
         Connection conn = connect(url, user, password);
         VM vm = vmByName(conn, vmName);
+        final int runs = 3, retention = 2;
 
         // retainedSnapshots is the interesting field: the schedule prunes to it every time it runs.
         VMSS.Record spec = new VMSS.Record();
@@ -38,7 +39,7 @@ public final class SnapshotSchedule {
         spec.enabled = true;
         spec.type = Types.VmssType.SNAPSHOT;
         spec.frequency = Types.VmssFrequency.DAILY;
-        spec.retainedSnapshots = 2L;
+        spec.retainedSnapshots = (long) retention;
         Map<String, String> when = new HashMap<>();
         when.put("hour", "2");
         when.put("min", "0");
@@ -49,15 +50,18 @@ public final class SnapshotSchedule {
         vm.setSnapshotSchedule(conn, vmss);
         System.out.println("Members:          " + vmss.getVMs(conn).size());
 
-        // Run it three times against a retention of two: the oldest is pruned away. Compare against the
-        // snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+        // Run it three times against a retention of two: the oldest is pruned away each time it runs
+        // over the limit. Compare against the snapshots the VM already had, so only the schedule's own
+        // are counted (and tidied up below).
         Set<VM> before = vm.getSnapshots(conn);
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < runs; i++) {
             vmss.snapshotNow(conn);
         }
         Set<VM> kept = new HashSet<>(vm.getSnapshots(conn));
         kept.removeAll(before);
-        System.out.println("Snapshots kept:   " + kept.size() + " (retention 2)");
+        String pruned = runs > kept.size() ? "the oldest was pruned" : "nothing needed pruning yet";
+        System.out.println("Ran the schedule " + runs + " times; kept " + kept.size()
+                + " (retention " + retention + "): " + pruned);
 
         // Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
         // first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.

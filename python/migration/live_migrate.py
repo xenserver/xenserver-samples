@@ -44,5 +44,6 @@ def live_migrate(url, username, password, source_vm, sr_name, new_vm_name="sdk-e
     # Tidy up so the example is repeatable.
     session.xenapi.VM.hard_shutdown(vm)
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example VM.")
     print("OK: live-migrate")
     session.xenapi.session.logout()

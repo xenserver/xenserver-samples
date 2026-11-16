@@ -35,7 +35,13 @@ def manage_vm_groups(url, username, password, vm_name, group_name="sdk-example-g
         print("  %s" % session.xenapi.VM.get_name_label(m))
 
     # VM_group.destroy already clears the group from every member VM's groups field - no need to
-    # remove membership ourselves first.
+    # remove membership ourselves first. Read both back afterwards to confirm.
     session.xenapi.VM_group.destroy(group_ref)
+    still_grouped = group_ref in session.xenapi.VM.get_groups(vm_ref)
+    still_exists = group_ref in session.xenapi.VM_group.get_all()
+    if not still_grouped and not still_exists:
+        print("Removed %s from the group; group deleted" % vm_name)
+    else:
+        print("Group teardown incomplete: still_grouped=%s, still_exists=%s" % (still_grouped, still_exists))
     print("OK: manage-vm-groups")
     session.xenapi.session.logout()

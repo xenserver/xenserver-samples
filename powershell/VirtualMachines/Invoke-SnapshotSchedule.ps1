@@ -19,22 +19,27 @@ function Invoke-SnapshotSchedule {
         Select-Object -First 1
     if (-not $vm) { throw "No VM named '$VmName' was found." }
 
+    $runs = 3
+    $retention = 2
+
     # RetainedSnapshots is the interesting field: the schedule prunes to it every time it runs.
     $vmss = New-XenVMSS -NameLabel $ScheduleName `
         -NameDescription 'Scheduled snapshots created by the SDK example' `
-        -Enabled $true -Type snapshot -Frequency daily -RetainedSnapshots 2 `
+        -Enabled $true -Type snapshot -Frequency daily -RetainedSnapshots $retention `
         -Schedule @{ hour = '2'; min = '0' } -PassThru
     Write-Host "Created schedule: $($vmss.uuid)"
 
     Set-XenVM -VM $vm -SnapshotSchedule $vmss
     Write-Host "Members:          $((Get-XenVMSS -Ref $vmss).VMs.Count)"
 
-    # Run it three times against a retention of two: the oldest is pruned away. Compare against the
-    # snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+    # Run it three times against a retention of two: the oldest is pruned away each time it runs over the
+    # limit. Compare against the snapshots the VM already had, so only the schedule's own are counted
+    # (and tidied up below).
     $before = @((Get-XenVM -Ref $vm).snapshots)
-    1..3 | ForEach-Object { Invoke-XenVMSS -Ref $vmss -XenAction SnapshotNow | Out-Null }
+    1..$runs | ForEach-Object { Invoke-XenVMSS -Ref $vmss -XenAction SnapshotNow | Out-Null }
     $kept = @((Get-XenVM -Ref $vm).snapshots | Where-Object { $before -notcontains $_ })
-    Write-Host "Snapshots kept:   $($kept.Count) (retention 2)"
+    $pruned = if ($runs -gt $kept.Count) { 'the oldest was pruned' } else { 'nothing needed pruning yet' }
+    Write-Host "Ran the schedule $runs times; kept $($kept.Count) (retention $retention): $pruned"
 
     # Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
     # first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.

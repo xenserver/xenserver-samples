@@ -43,5 +43,6 @@ storage_migrate() {
     # (vm-destroy would leave the disks behind).
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
+    echo "Cleaned up the example VM."
     ok storage-migrate
 }

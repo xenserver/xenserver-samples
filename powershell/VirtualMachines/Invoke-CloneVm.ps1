@@ -37,6 +37,7 @@ function Invoke-CloneVm {
 
     # Tidy up: destroy the clone and its (owned) disks.
     Remove-VmAndDisks -Ref $clone
+    Write-Host "Cleaned up the cloned VM (left the source intact)."
     Write-Host "OK: clone-vm"
     $session | Disconnect-XenServer
 }

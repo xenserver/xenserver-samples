@@ -43,5 +43,6 @@ def storage_migrate(url, username, password, source_vm, new_vm_name="sdk-example
     # Tidy up: the VM and the disks it now owns.
     session.xenapi.VM.hard_shutdown(vm)
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example VM.")
     print("OK: storage-migrate")
     session.xenapi.session.logout()

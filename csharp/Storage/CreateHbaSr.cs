@@ -65,6 +65,7 @@ internal static partial class Workflows
             if (PBD.get_currently_attached(session, pbd))
                 PBD.unplug(session, pbd);
         SR.destroy(session, sr);
+        Console.WriteLine("Destroyed the SR.");
         Console.WriteLine("OK: create-hba-sr");
         session.logout();
     }

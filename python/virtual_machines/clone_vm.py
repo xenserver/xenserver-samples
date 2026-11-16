@@ -36,5 +36,6 @@ def clone_vm(url, username, password, vm_name, clone_name="sdk-example-clone"):
 
     # Tidy up: destroy the clone and its (owned) disks.
     destroy_vm_and_disks(session, clone)
+    print("Cleaned up the cloned VM (left the source intact).")
     print("OK: clone-vm")
     session.xenapi.session.logout()

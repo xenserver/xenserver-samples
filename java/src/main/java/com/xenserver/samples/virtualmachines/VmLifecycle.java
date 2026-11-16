@@ -59,6 +59,7 @@ public final class VmLifecycle {
         System.out.println("After shutdown:" + vm.getPowerState(conn));
 
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: vm-lifecycle");
         Session.logout(conn);
     }

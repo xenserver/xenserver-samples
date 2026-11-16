@@ -17,11 +17,14 @@ function Invoke-ManageVapp {
 
     $vapp = New-XenVMAppliance -NameLabel "sdk-example-vapp" `
         -NameDescription "Created by the SDK example" -PassThru
+    Write-Host "Created:        $($vapp.name_label)"
 
     # `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
     # reason to use a vApp rather than selecting several VMs.
     Set-XenVM -VM $vm -Appliance $vapp
     Set-XenVM -VM $vm -Order 0 -StartDelay 5
+    # $vapp is the record as created; read the appliance again to see the VM just assigned to it.
+    Write-Host "Members:        $(@((Get-XenVMAppliance -Ref $vapp.opaque_ref).VMs).Count)"
 
     Invoke-XenVMAppliance -VMAppliance $vapp -XenAction Start -Paused $false
     Write-Host "Started:        $((Get-XenVM -Name $VmName).power_state)"
@@ -33,6 +36,11 @@ function Invoke-ManageVapp {
 
     Set-XenVM -VM (Get-XenVM -Name $VmName) -Appliance "OpaqueRef:NULL"
     Remove-XenVMAppliance -VMAppliance $vapp
+    if (Get-XenVMAppliance | Where-Object { $_.uuid -eq $vapp.uuid }) {
+        Write-Host "Appliance still present"
+    } else {
+        Write-Host "Appliance removed"
+    }
     Write-Host "OK: manage-vapp"
     $session | Disconnect-XenServer
 }

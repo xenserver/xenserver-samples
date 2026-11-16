@@ -51,6 +51,7 @@ func liveMigrate(url, user, password, sourceVM, srName, newVMName string) {
 	// Tidy up so the example is repeatable.
 	check(xenapi.VM.HardShutdown(session, vm))
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: live-migrate")
 	session.Logout()
 }

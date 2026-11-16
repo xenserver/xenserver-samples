@@ -98,6 +98,7 @@ public final class ExportImportVm {
 
                 // The import brought its own disks along; destroy those too, not just the VM record.
                 destroyVmAndDisks(conn, importedVm);
+                System.out.println("Cleaned up the imported VM.");
                 System.out.println("OK: export-import-vm");
             } finally {
                 // Always clean up the file, on failure too: a real export is gigabytes, not worth

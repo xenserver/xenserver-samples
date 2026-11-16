@@ -16,21 +16,27 @@ function Invoke-RrdMetrics {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     # The module ships no RRD cmdlet, so read the last 5 minutes of samples from the rrd_updates HTTP API
-    # (the module already trusts the server cert). Legends look like "AVERAGE:host:<uuid>:<datasource>".
+    # (the module already trusts the server cert) - but only the host that physically accepts the
+    # connection answers for itself (the same "no forwarding to another pool member" behaviour
+    # Invoke-BackupHostConfig works around for /host_backup and /host_restore), so query each host at its
+    # own address rather than the pool's (coordinator) URL. Legends look like
+    # "AVERAGE:host:<uuid>:<datasource>".
     $start = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - 300
-    $resp = Invoke-RestMethod -Uri "$($session.Url)/rrd_updates?session_id=$($session.opaque_ref)&host=true&start=$start" `
-        -Headers @{ accept = 'application/json' }
-    $legends = @($resp.meta.legend)
-
     $peak = @{}
-    foreach ($point in $resp.data) {
-        for ($k = 0; $k -lt $legends.Count; $k++) {
-            $parts = $legends[$k] -split ':'
-            if ($parts[1] -eq 'host' -and $parts[3] -eq 'pvsaccelerator_space_utilization') {
-                $u = [double]$point.values[$k]
-                # NaN: a gap in the series, not a real sample - never let it stick.
-                if ([double]::IsNaN($u)) { continue }
-                if (-not $peak.ContainsKey($parts[2]) -or $u -gt $peak[$parts[2]]) { $peak[$parts[2]] = $u }
+    foreach ($xenHost in Get-XenHost) {
+        $hostUrl = Get-HostUrl -Url $Url -Address $xenHost.address
+        $resp = Invoke-RestMethod -Uri "$hostUrl/rrd_updates?session_id=$($session.opaque_ref)&host=true&start=$start" `
+            -Headers @{ accept = 'application/json' }
+        $legends = @($resp.meta.legend)
+        foreach ($point in $resp.data) {
+            for ($k = 0; $k -lt $legends.Count; $k++) {
+                $parts = $legends[$k] -split ':'
+                if ($parts[1] -eq 'host' -and $parts[3] -eq 'pvsaccelerator_space_utilization') {
+                    $u = [double]$point.values[$k]
+                    # NaN: a gap in the series, not a real sample - never let it stick.
+                    if ([double]::IsNaN($u)) { continue }
+                    if (-not $peak.ContainsKey($parts[2]) -or $u -gt $peak[$parts[2]]) { $peak[$parts[2]] = $u }
+                }
             }
         }
     }

@@ -51,6 +51,7 @@ func vmLifecycle(url, user, password, sourceVM, newVMName string) {
 	fmt.Printf("After shutdown: %s\n", state())
 
 	destroyVMAndDisks(session, vmRef)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: vm-lifecycle")
 	session.Logout()
 }

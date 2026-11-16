@@ -20,7 +20,10 @@ internal static partial class Workflows
         var session = Connect(url, user, password);
         var vm = VM.get_by_name_label(session, vmName)[0];
 
-        var pusb = PUSB.get_all_records(session).First();
+        // Pick deterministically (lowest description, then uuid), not whatever order the server
+        // happens to list them in, so the example behaves the same way every run.
+        var pusb = PUSB.get_all_records(session)
+            .OrderBy(p => p.Value.description).ThenBy(p => p.Value.uuid).First();
         Console.WriteLine($"Device:         {pusb.Value.description}");
 
         // Passthrough is off until an administrator enables it on the device — a VUSB.create against a
@@ -34,6 +37,7 @@ internal static partial class Workflows
         // it gets plugged in as soon as it's created, so unplug it first.
         if (VUSB.get_currently_attached(session, vusb)) VUSB.unplug(session, vusb);
         VUSB.destroy(session, vusb);
+        Console.WriteLine($"Detached:       {VM.get_VUSBs(session, vm).Count} device(s)");
         PUSB.set_passthrough_enabled(session, pusb.Key, false);
         Console.WriteLine("OK: attach-usb-device");
         session.logout();

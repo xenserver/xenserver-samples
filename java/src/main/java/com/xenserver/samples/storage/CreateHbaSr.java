@@ -81,6 +81,7 @@ public final class CreateHbaSr {
             for (com.xensource.xenapi.PBD pbd : sr.getPBDs(conn))
                 if (pbd.getCurrentlyAttached(conn)) pbd.unplug(conn);
             sr.destroy(conn);
+            System.out.println("Destroyed the SR.");
             System.out.println("OK: create-hba-sr");
         } finally {
             Session.logout(conn);

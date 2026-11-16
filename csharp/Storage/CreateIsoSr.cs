@@ -26,7 +26,14 @@ internal static partial class Workflows
         var sr = SR.create(session, host, dc, 0, "sdk-example-iso", "ISO library created by the SDK example",
             "iso", "iso", true, new Dictionary<string, string>());
         Console.WriteLine($"Created ISO SR: {SR.get_uuid(session, sr)}");
+
+        // A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+        // installation media.
+        SR.scan(session, sr);
+        Console.WriteLine($"ISO images: {SR.get_VDIs(session, sr).Count}");
+
         DetachAndForgetSr(session, sr);
+        Console.WriteLine("Detached and forgot the SR.");
         Console.WriteLine("OK: create-iso-sr");
         session.logout();
     }

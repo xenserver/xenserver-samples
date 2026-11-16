@@ -35,9 +35,11 @@ public final class SrUsage {
         }
         // A rescan refreshes an SR's utilisation from its backend.
         SR scanMe = null;
+        String scanName = null;
         for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet())
-            if (e.getValue().physicalSize > 0) { scanMe = e.getKey(); break; }
+            if (e.getValue().physicalSize > 0) { scanMe = e.getKey(); scanName = e.getValue().nameLabel; break; }
         scanMe.scan(conn);
+        System.out.println("Rescanned " + scanName);
         System.out.println("OK: sr-usage");
         Session.logout(conn);
     }

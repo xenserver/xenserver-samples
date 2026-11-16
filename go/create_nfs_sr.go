@@ -37,6 +37,7 @@ func createNfsSR(url, user, password, nfsServer, nfsPath, srName string) {
 	fmt.Printf("Created SR: %s\n", uuid)
 
 	detachAndForgetSR(session, srRef)
+	fmt.Println("Detached and forgot the SR.")
 	fmt.Println("OK: create-nfs-sr")
 	session.Logout()
 }

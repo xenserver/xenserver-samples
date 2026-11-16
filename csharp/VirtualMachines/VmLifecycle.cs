@@ -56,6 +56,7 @@ internal static partial class Workflows
         Console.WriteLine($"After shutdown: {State()}");
 
         DestroyVmAndDisks(session, vmRef);
+        Console.WriteLine("Cleaned up the example VM.");
         Console.WriteLine("OK: vm-lifecycle");
         session.logout();
     }

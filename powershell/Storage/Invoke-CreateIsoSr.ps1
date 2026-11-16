@@ -24,7 +24,14 @@ function Invoke-CreateIsoSr {
         -NameLabel "sdk-example-iso" -NameDescription "ISO library created by the SDK example" `
         -Type "iso" -ContentType "iso" -Shared $true -PassThru
     Write-Host "Created ISO SR: $($sr.uuid)"
+
+    # A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+    # installation media.
+    $sr | Invoke-XenSR -XenAction Scan
+    Write-Host "ISO images: $((Get-XenSR -Ref $sr).VDIs.Count)"
+
     Invoke-DetachAndForgetSr -Ref $sr
+    Write-Host "Detached and forgot the SR."
     Write-Host "OK: create-iso-sr"
     $session | Disconnect-XenServer
 }

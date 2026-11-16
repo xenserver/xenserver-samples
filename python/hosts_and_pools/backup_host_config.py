@@ -9,10 +9,10 @@ import shutil
 import ssl
 import tempfile
 import time
-import urllib.parse
 import urllib.request
 
 from connection import connect
+from helpers import host_url as build_host_url
 
 
 def backup_host_config(url, username, password, restore=False):
@@ -42,7 +42,7 @@ def backup_host_config(url, username, password, restore=False):
 
     # The coordinator: always reachable at the pool's address. (Back up every host, in practice.)
     host = x.pool.get_master(x.pool.get_all()[0])
-    host_url = _host_url(url, x.host.get_address(host))
+    host_url = build_host_url(url, x.host.get_address(host))
     print("Backing up %s" % x.host.get_name_label(host))
 
     path = os.path.join(tempfile.gettempdir(), "sdk-example-host.backup")
@@ -67,14 +67,6 @@ def backup_host_config(url, username, password, restore=False):
     os.remove(path)
     print("OK: backup-host-config")
     session.logout()
-
-
-def _host_url(url, address):
-    """Build the URL for a given host's own address, keeping the scheme and port the caller
-    originally connected with (a host's management address carries no port of its own)."""
-    parts = urllib.parse.urlsplit(url)
-    port = ":%d" % parts.port if parts.port else ""
-    return "%s://%s%s" % (parts.scheme, address, port)
 
 
 def _drop_idle_connection(session):

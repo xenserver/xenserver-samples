@@ -50,6 +50,7 @@ internal static partial class Workflows
         // Tidy up: the VM and the disks it now owns.
         VM.hard_shutdown(session, vm);
         DestroyVmAndDisks(session, vm);
+        Console.WriteLine("Cleaned up the example VM.");
         Console.WriteLine("OK: storage-migrate");
         session.logout();
     }

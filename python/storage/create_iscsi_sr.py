@@ -73,6 +73,7 @@ def create_iscsi_sr(url, username, password, target, port=None, chap_user=None, 
             if session.xenapi.PBD.get_currently_attached(pbd):
                 session.xenapi.PBD.unplug(pbd)
         session.xenapi.SR.destroy(sr)
+        print("Destroyed the SR.")
     finally:
         if secret:
             session.xenapi.secret.destroy(secret)

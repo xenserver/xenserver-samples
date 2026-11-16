@@ -23,7 +23,16 @@ func createIsoSr(url, user, password, location string) {
 	check(err)
 	uuid, _ := xenapi.SR.GetUUID(session, sr)
 	fmt.Printf("Created ISO SR: %s\n", uuid)
+
+	// A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+	// installation media.
+	check(xenapi.SR.Scan(session, sr))
+	vdis, err := xenapi.SR.GetVDIs(session, sr)
+	check(err)
+	fmt.Printf("ISO images: %d\n", len(vdis))
+
 	detachAndForgetSR(session, sr)
+	fmt.Println("Detached and forgot the SR.")
 	fmt.Println("OK: create-iso-sr")
 	session.Logout()
 }

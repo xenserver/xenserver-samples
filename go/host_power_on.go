@@ -15,6 +15,13 @@ func hostPowerOn(url, user, password string) {
 	check(err)
 	hostRef := hosts[0]
 
+	// Save the original mode and config so the example restores the host to how it found it, not to a
+	// blank "no power-on configured" state.
+	originalMode, err := xenapi.Host.GetPowerOnMode(session, hostRef)
+	check(err)
+	originalConfig, err := xenapi.Host.GetPowerOnConfig(session, hostRef)
+	check(err)
+
 	// Mode and config travel together: the config carries the credentials the mode needs.
 	// "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/
 	// "DRAC" modes were removed from the real power-on plugin and fail the moment host.power_on is
@@ -23,11 +30,20 @@ func hostPowerOn(url, user, password string) {
 	mode, _ := xenapi.Host.GetPowerOnMode(session, hostRef)
 	fmt.Printf("Power-on mode:  %s\n", mode)
 	cfg, _ := xenapi.Host.GetPowerOnConfig(session, hostRef)
-	for k, v := range cfg {
-		fmt.Printf("  %s = %s\n", k, v)
+	if len(cfg) > 0 {
+		for k, v := range cfg {
+			fmt.Printf("  %s = %s\n", k, v)
+		}
+	} else {
+		fmt.Println("  no credentials needed")
 	}
 
-	check(xenapi.Host.SetPowerOnMode(session, hostRef, "", map[string]string{}))
+	check(xenapi.Host.SetPowerOnMode(session, hostRef, originalMode, originalConfig))
+	restored, _ := xenapi.Host.GetPowerOnMode(session, hostRef)
+	if restored == "" {
+		restored = "(none)"
+	}
+	fmt.Printf("Restored power-on mode: %s\n", restored)
 	fmt.Println("OK: host-power-on")
 	session.Logout()
 }

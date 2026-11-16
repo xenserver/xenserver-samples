@@ -17,5 +17,6 @@ create_nfs_sr() {
         device-config:server="$nfs_server" device-config:serverpath="$nfs_path" device-config:nfsversion=3 shared=true)
     echo "Created SR: $sr"
     detach_and_forget_sr $sr
+    echo "Detached and forgot the SR."
     ok create-nfs-sr
 }

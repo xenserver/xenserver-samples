@@ -35,6 +35,7 @@ function Invoke-VmFromSnapshot {
     foreach ($ref in @($newVm, $template, $snapshot)) {
         Remove-VmAndDisks -Ref $ref
     }
+    Write-Host "Cleaned up the example VM, template and snapshot."
     Write-Host "OK: vm-from-snapshot"
     $session | Disconnect-XenServer
 }

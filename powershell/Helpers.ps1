@@ -308,3 +308,19 @@ function Get-HostLive {
     param($XenHost)
     (Get-XenHostMetrics -Ref (Get-XenHost -Ref $XenHost).metrics).live
 }
+
+function Get-HostUrl {
+    <#
+    .SYNOPSIS
+        Build the URL for a given host's own address, keeping the scheme and port the caller originally
+        connected with (a host's management address carries no port of its own).
+    .DESCRIPTION
+        Needed anywhere a workflow does raw HTTP against a SPECIFIC host rather than the pool's
+        connection URL - a host answers a direct HTTP request only for itself, with no forwarding to
+        another pool member.
+    #>
+    param([string]$Url, [string]$Address)
+    $uri = [System.Uri]$Url
+    $port = if ($uri.Port -gt 0) { ":$($uri.Port)" } else { "" }
+    return "$($uri.Scheme)://$Address$port"
+}

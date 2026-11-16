@@ -28,6 +28,8 @@ function Invoke-ManageVif {
     Write-Host "Attached a VIF on device $device; VM now has $(@((Get-XenVM -Ref $ref).VIFs).Count) NIC(s)"
 
     $vif | Remove-XenVIF
+    Write-Host "Removed the VIF; VM now has $(@((Get-XenVM -Ref $ref).VIFs).Count) NIC(s)"
+
     Remove-VmAndDisks -Ref $vm
     Write-Host "OK: manage-vif"
     $session | Disconnect-XenServer

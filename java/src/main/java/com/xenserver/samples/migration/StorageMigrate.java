@@ -70,6 +70,7 @@ public final class StorageMigrate {
         // Tidy up: the VM and the disks it now owns.
         vm.hardShutdown(conn);
         destroyVmAndDisks(conn, vm);
+        System.out.println("Cleaned up the example VM.");
         System.out.println("OK: storage-migrate");
         Session.logout(conn);
     }

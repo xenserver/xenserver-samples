@@ -7,7 +7,8 @@
 #   ./workflows.sh manage-vm-groups https://xenserver root "$password"
 
 manage_vm_groups() {
-    vm=$(vm_uuid web-01)
+    local vm_name=web-01
+    vm=$(vm_uuid "$vm_name")
     # anti-affinity asks the pool to keep the group's members on different hosts.
     group=$(xe vm-group-create name-label=xe-example-group placement=anti-affinity)
     echo "Created group:  $group"
@@ -21,7 +22,13 @@ manage_vm_groups() {
     done
 
     # vm-group-destroy already clears the group from every member VM on its own - no need to remove
-    # membership ourselves first.
+    # membership ourselves first. Read both back afterwards to confirm.
     xe vm-group-destroy uuid=$group
+    if [ -z "$(set_to_csv "$(xe vm-param-get uuid=$vm param-name=groups)")" ] \
+        && [ -z "$(xe vm-group-list uuid=$group --minimal)" ]; then
+        echo "Removed $vm_name from the group; group deleted"
+    else
+        echo "group teardown incomplete" >&2
+    fi
     ok manage-vm-groups
 }

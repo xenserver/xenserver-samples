@@ -23,8 +23,9 @@ def sr_usage(url, username, password):
                  int(sr["physical_utilisation"]) // GIB, int(sr["physical_size"]) // GIB))
 
     # A rescan refreshes an SR's utilisation from its backend.
-    scan_me = next(ref for ref, r in session.xenapi.SR.get_all_records().items()
-                   if int(r["physical_size"]) > 0)
-    session.xenapi.SR.scan(scan_me)
+    scan_ref, scan_rec = next((ref, r) for ref, r in session.xenapi.SR.get_all_records().items()
+                              if int(r["physical_size"]) > 0)
+    session.xenapi.SR.scan(scan_ref)
+    print("Rescanned %s" % scan_rec["name_label"])
     print("OK: sr-usage")
     session.xenapi.session.logout()

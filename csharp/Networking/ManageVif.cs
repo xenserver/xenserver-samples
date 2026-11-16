@@ -37,6 +37,8 @@ internal static partial class Workflows
         Console.WriteLine($"Attached a VIF on device {device}; VM now has {VM.get_VIFs(session, vm).Count} NIC(s)");
 
         VIF.destroy(session, vif);
+        Console.WriteLine($"Removed the VIF; VM now has {VM.get_VIFs(session, vm).Count} NIC(s)");
+
         DestroyVmAndDisks(session, vm);
         Console.WriteLine("OK: manage-vif");
         session.logout();

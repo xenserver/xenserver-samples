@@ -21,6 +21,7 @@ internal static partial class Workflows
     {
         var session = Connect(url, user, password);
         var vmRef = VmByName(session, vmName);
+        const int runs = 3, retention = 2;
 
         // retained_snapshots is the interesting field: the schedule prunes to it every time it runs.
         var vmssRef = VMSS.create(session, new VMSS
@@ -30,7 +31,7 @@ internal static partial class Workflows
             enabled = true,
             type = vmss_type.snapshot,
             frequency = vmss_frequency.daily,
-            retained_snapshots = 2,
+            retained_snapshots = retention,
             schedule = new Dictionary<string, string> { ["hour"] = "2", ["min"] = "0" },
         });
         Console.WriteLine($"Created schedule: {VMSS.get_uuid(session, vmssRef)}");
@@ -38,12 +39,14 @@ internal static partial class Workflows
         VM.set_snapshot_schedule(session, vmRef, vmssRef);
         Console.WriteLine($"Members:          {VMSS.get_VMs(session, vmssRef).Count}");
 
-        // Run it three times against a retention of two: the oldest is pruned away. Compare against the
-        // snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+        // Run it three times against a retention of two: the oldest is pruned away each time it runs
+        // over the limit. Compare against the snapshots the VM already had, so only the schedule's own
+        // are counted (and tidied up below).
         var before = VM.get_snapshots(session, vmRef).ToHashSet();
-        for (var i = 0; i < 3; i++) VMSS.snapshot_now(session, vmssRef);
+        for (var i = 0; i < runs; i++) VMSS.snapshot_now(session, vmssRef);
         var kept = VM.get_snapshots(session, vmRef).Where(s => !before.Contains(s)).ToList();
-        Console.WriteLine($"Snapshots kept:   {kept.Count} (retention 2)");
+        var pruned = runs > kept.Count ? "the oldest was pruned" : "nothing needed pruning yet";
+        Console.WriteLine($"Ran the schedule {runs} times; kept {kept.Count} (retention {retention}): {pruned}");
 
         // Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
         // first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.

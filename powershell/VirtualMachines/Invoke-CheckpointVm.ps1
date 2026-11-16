@@ -42,6 +42,7 @@ function Invoke-CheckpointVm {
     Remove-VmAndDisks -Ref $checkpoint
     $vm | Invoke-XenVM -XenAction HardShutdown
     Remove-VmAndDisks -Ref $ref
+    Write-Host "Cleaned up the example VM and its checkpoint."
     Write-Host "OK: checkpoint-vm"
     $session | Disconnect-XenServer
 }

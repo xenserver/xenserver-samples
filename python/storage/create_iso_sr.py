@@ -17,6 +17,13 @@ def create_iso_sr(url, username, password, location):
     sr = session.xenapi.SR.create(host, dc, "0", "sdk-example-iso",
                                   "ISO library created by the SDK example", "iso", "iso", True, {})
     print("Created ISO SR: %s" % session.xenapi.SR.get_uuid(sr))
+
+    # A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+    # installation media.
+    session.xenapi.SR.scan(sr)
+    print("ISO images: %d" % len(session.xenapi.SR.get_VDIs(sr)))
+
     detach_and_forget_sr(session, sr)
+    print("Detached and forgot the SR.")
     print("OK: create-iso-sr")
     session.logout()

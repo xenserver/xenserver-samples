@@ -54,5 +54,6 @@ def create_hba_sr(url, username, password, scsi_id="", sr_name="sdk-example-hba"
         if session.xenapi.PBD.get_currently_attached(pbd):
             session.xenapi.PBD.unplug(pbd)
     session.xenapi.SR.destroy(sr)
+    print("Destroyed the SR.")
     print("OK: create-hba-sr")
     session.logout()

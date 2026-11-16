@@ -66,6 +66,7 @@ function Invoke-ExportImportVm {
 
         # The import brought its own disks along; destroy those too, not just the VM record.
         Remove-VmAndDisks -Ref $imported
+        Write-Host "Cleaned up the imported VM."
         Write-Host "OK: export-import-vm"
     }
     finally {

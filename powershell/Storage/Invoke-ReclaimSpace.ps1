@@ -20,10 +20,20 @@ function Invoke-ReclaimSpace {
     # A host with a currently-attached PBD can reach the SR to run the plugin.
     $pbd = $sr.PBDs | ForEach-Object { Get-XenPBD -Ref $_ } | Where-Object { $_.currently_attached } | Select-Object -First 1
     $xenHost = Get-XenHost -Ref $pbd.host
+
+    $used = [long]($sr.physical_utilisation / 1GB)
+    $total = [long]($sr.physical_size / 1GB)
+    Write-Host "  $($sr.name_label): $used / $total GiB used"
+
     $result = $xenHost | Invoke-XenHost -XenAction CallPlugin -Plugin "trim" -Fn "do_trim" -Args @{ sr_uuid = $sr.uuid } -PassThru
     Write-Host "  reclaimed freed space on $($sr.name_label): $result"
     # Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
     if ($result.Trim().ToLowerInvariant() -ne "true") { throw "trim plugin returned '$result'" }
+
+    # Rescan to refresh utilisation from the backend, the same way Invoke-SrUsage does, before reporting it.
+    $sr | Invoke-XenSR -XenAction Scan
+    $usedAfter = [long]((Get-XenSR -Ref $sr).physical_utilisation / 1GB)
+    Write-Host "  $($sr.name_label): $usedAfter / $total GiB used"
     Write-Host "OK: reclaim-space"
     $session | Disconnect-XenServer
 }

@@ -64,5 +64,6 @@ manage_vm_disks() {
     xe vm-shutdown uuid=$vm force=true
     xe vm-uninstall uuid=$vm force=true
     xe vdi-destroy uuid=$vdi
+    echo "Cleaned up the example VM."
     ok manage-vm-disks
 }

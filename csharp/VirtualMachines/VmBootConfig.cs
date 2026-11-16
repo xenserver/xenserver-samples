@@ -40,6 +40,7 @@ internal static partial class Workflows
                           "(resolved against pool certificates at boot)");
 
         DestroyVmAndDisks(session, vm);
+        Console.WriteLine("Cleaned up the example VM.");
         Console.WriteLine("OK: vm-boot-config");
         session.logout();
     }

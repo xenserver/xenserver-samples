@@ -13,6 +13,11 @@ function Invoke-HostPowerOn {
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $xenHost = Get-XenHost | Select-Object -First 1
 
+    # Save the original mode and config so the example restores the host to how it found it, not to a
+    # blank "no power-on configured" state.
+    $originalMode = $xenHost.power_on_mode
+    $originalConfig = $xenHost.power_on_config
+
     # Mode and config travel together — host.set_power_on_mode takes both in one call, because the
     # config carries the out-of-band credentials the mode needs. The module exposes only
     # Set-XenHost -PowerOnMode (no -PowerOnConfig), so this calls the method directly over JSON-RPC,
@@ -25,12 +30,18 @@ function Invoke-HostPowerOn {
         $xenHost.opaque_ref, 'wake-on-lan', @{}) | Out-Null
     $updated = Get-XenHost -Ref $xenHost
     Write-Host "Power-on mode:  $($updated.power_on_mode)"
-    foreach ($k in ($updated.power_on_config.Keys | Sort-Object)) {
-        Write-Host "  $k = $($updated.power_on_config[$k])"
+    if ($updated.power_on_config.Count -gt 0) {
+        foreach ($k in ($updated.power_on_config.Keys | Sort-Object)) {
+            Write-Host "  $k = $($updated.power_on_config[$k])"
+        }
+    } else {
+        Write-Host "  no credentials needed"
     }
 
-    Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @($xenHost.opaque_ref, '', @{}) |
-        Out-Null
+    Invoke-XenMethod -Session $session -Method 'host.set_power_on_mode' -Params @(
+        $xenHost.opaque_ref, $originalMode, $originalConfig) | Out-Null
+    $restored = (Get-XenHost -Ref $xenHost).power_on_mode
+    Write-Host "Restored power-on mode: $(if ($restored) { $restored } else { '(none)' })"
     Write-Host "OK: host-power-on"
     Disconnect-XenServer -Session $session
 }

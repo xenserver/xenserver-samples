@@ -36,6 +36,7 @@ internal static partial class Workflows
                           + $"(is_a_template={VM.get_is_a_template(session, template)})");
 
         foreach (var r in new[] { newVm, template, snapshot }) DestroyVmAndDisks(session, r);
+        Console.WriteLine("Cleaned up the example VM, template and snapshot.");
         Console.WriteLine("OK: vm-from-snapshot");
         session.logout();
     }

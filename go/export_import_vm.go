@@ -119,6 +119,7 @@ func exportImportVm(url, user, password, vmName string) {
 
 	// The import brought its own disks along; destroy those too, not just the VM record.
 	destroyVMAndDisks(session, imported)
+	fmt.Println("Cleaned up the imported VM.")
 	fmt.Println("OK: export-import-vm")
 }
 

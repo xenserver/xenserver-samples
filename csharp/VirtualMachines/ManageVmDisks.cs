@@ -85,6 +85,7 @@ internal static partial class Workflows
 
         VM.hard_shutdown(session, vmRef);
         DestroyVmAndDisks(session, vmRef);
+        Console.WriteLine("Cleaned up the example VM.");
         Console.WriteLine("OK: manage-vm-disks");
         session.logout();
     }

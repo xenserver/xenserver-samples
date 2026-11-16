@@ -93,6 +93,7 @@ internal static partial class Workflows
             Console.WriteLine($"  imported as {VM.get_name_label(session, imported)}");
 
             DestroyVmAndDisks(session, imported);
+            Console.WriteLine("Cleaned up the imported VM.");
             Console.WriteLine("OK: export-import-vm");
         }
         finally

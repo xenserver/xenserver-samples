@@ -34,6 +34,7 @@ internal static partial class Workflows
         Console.WriteLine($"Created SR: {SR.get_uuid(session, srRef)}");
 
         DetachAndForgetSr(session, srRef);
+        Console.WriteLine("Detached and forgot the SR.");
         Console.WriteLine("OK: create-nfs-sr");
         session.logout();
     }

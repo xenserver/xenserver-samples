@@ -18,11 +18,16 @@ func attachUsbDevice(url, user, password, vmName string) {
 
 	pusbs, err := xenapi.PUSB.GetAllRecords(session)
 	check(err)
+	// Pick deterministically (lowest description, then uuid), not whatever order map iteration gives.
 	var pusbRef xenapi.PUSBRef
 	var pusb xenapi.PUSBRecord
+	first := true
 	for ref, rec := range pusbs {
-		pusbRef, pusb = ref, rec
-		break
+		if first || rec.Description < pusb.Description ||
+			(rec.Description == pusb.Description && rec.UUID < pusb.UUID) {
+			pusbRef, pusb = ref, rec
+			first = false
+		}
 	}
 	fmt.Printf("Device:         %s\n", pusb.Description)
 
@@ -43,6 +48,8 @@ func attachUsbDevice(url, user, password, vmName string) {
 		check(xenapi.VUSB.Unplug(session, vusb))
 	}
 	check(xenapi.VUSB.Destroy(session, vusb))
+	detached, _ := xenapi.VM.GetVUSBs(session, vm)
+	fmt.Printf("Detached:       %d device(s)\n", len(detached))
 	check(xenapi.PUSB.SetPassthroughEnabled(session, pusbRef, false))
 	fmt.Println("OK: attach-usb-device")
 	session.Logout()

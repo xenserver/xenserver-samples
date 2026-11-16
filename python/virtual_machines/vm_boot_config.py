@@ -38,5 +38,6 @@ def vm_boot_config(url, username, password, template_name, new_vm_name="sdk-exam
            session.xenapi.VM.get_platform(vm)["secureboot"]))
 
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example VM.")
     print("OK: vm-boot-config")
     session.xenapi.session.logout()

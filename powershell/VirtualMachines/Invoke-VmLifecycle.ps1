@@ -58,6 +58,7 @@ function Invoke-VmLifecycle {
     Write-Host "After shutdown: $(State)"
 
     Remove-VmAndDisks -Ref $ref
+    Write-Host "Cleaned up the example VM."
     Write-Host "OK: vm-lifecycle"
     $session | Disconnect-XenServer
 }

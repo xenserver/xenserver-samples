@@ -35,6 +35,7 @@ func srUsage(url, user, password string) {
 	})
 
 	var scanMe xenapi.SRRef
+	var scanName string
 	haveScan := false
 	for _, sr := range ordered {
 		if sr.rec.PhysicalSize <= 0 { // skip ISO/DVD pseudo-SRs
@@ -42,12 +43,13 @@ func srUsage(url, user, password string) {
 		}
 		fmt.Printf("  %s: %d / %d GiB used\n", sr.rec.NameLabel, sr.rec.PhysicalUtilisation/GiB, sr.rec.PhysicalSize/GiB)
 		if !haveScan {
-			scanMe, haveScan = sr.ref, true
+			scanMe, scanName, haveScan = sr.ref, sr.rec.NameLabel, true
 		}
 	}
 	// A rescan refreshes an SR's utilisation from its backend.
 	if haveScan {
 		check(xenapi.SR.Scan(session, scanMe))
+		fmt.Printf("Rescanned %s\n", scanName)
 	}
 	fmt.Println("OK: sr-usage")
 	session.Logout()

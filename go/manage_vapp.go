@@ -21,12 +21,18 @@ func manageVapp(url, user, password, vmName string) {
 		NameDescription: "Created by the SDK example",
 	})
 	check(err)
+	name, err := xenapi.VMAppliance.GetNameLabel(session, vapp)
+	check(err)
+	fmt.Printf("Created:        %s\n", name)
 
 	// `order` decides the sequence: ascending to start, descending to shut down. That ordering is the
 	// reason to use a vApp rather than selecting several VMs.
 	check(xenapi.VM.SetAppliance(session, vm, vapp))
 	check(xenapi.VM.SetOrder(session, vm, 0))
 	check(xenapi.VM.SetStartDelay(session, vm, 5))
+	members, err := xenapi.VMAppliance.GetVMs(session, vapp)
+	check(err)
+	fmt.Printf("Members:        %d\n", len(members))
 
 	check(xenapi.VMAppliance.Start(session, vapp, false))
 	state, _ := xenapi.VM.GetPowerState(session, vm)
@@ -40,6 +46,19 @@ func manageVapp(url, user, password, vmName string) {
 
 	check(xenapi.VM.SetAppliance(session, vm, nullRef)) // the null reference: "" is not one
 	check(xenapi.VMAppliance.Destroy(session, vapp))
+	remaining, err := xenapi.VMAppliance.GetAll(session)
+	check(err)
+	removed := true
+	for _, r := range remaining {
+		if r == vapp {
+			removed = false
+		}
+	}
+	if removed {
+		fmt.Println("Appliance removed")
+	} else {
+		fmt.Println("Appliance still present")
+	}
 	fmt.Println("OK: manage-vapp")
 	session.Logout()
 }

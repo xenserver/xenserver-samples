@@ -44,6 +44,7 @@ public final class CloneVm {
 
         // Tidy up: destroy the clone and its (owned) disks.
         destroyVmAndDisks(conn, clone);
+        System.out.println("Cleaned up the cloned VM (left the source intact).");
         System.out.println("OK: clone-vm");
         Session.logout(conn);
     }

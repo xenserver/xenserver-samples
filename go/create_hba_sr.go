@@ -61,6 +61,7 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 		}
 	}
 	check(xenapi.SR.Destroy(session, sr))
+	fmt.Println("Destroyed the SR.")
 	fmt.Println("OK: create-hba-sr")
 	session.Logout()
 }

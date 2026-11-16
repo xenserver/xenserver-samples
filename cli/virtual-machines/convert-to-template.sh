@@ -16,5 +16,6 @@ convert_to_template() {
     echo "is-a-template after convert: $(xe vm-param-get uuid=$vm param-name=is-a-template)"
     # It is a template now, so template-uninstall removes it and the disks it owns.
     xe template-uninstall template-uuid=$vm force=true
+    echo "Cleaned up the example template."
     ok convert-to-template
 }

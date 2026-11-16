@@ -19,9 +19,13 @@ internal static partial class Workflows
     public static void RrdMetrics(string url, string user, string password)
     {
         var session = Connect(url, user, password);
-        var nameByUuid = Host.get_all_records(session).Values.ToDictionary(h => h.uuid, h => h.name_label);
+        var hosts = Host.get_all_records(session);
+        var nameByUuid = hosts.Values.ToDictionary(h => h.uuid, h => h.name_label);
 
-        // The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP. Legends look like
+        // The RRD time-series isn't a XenAPI call; read rrd_updates over HTTP - but only the host that
+        // physically accepts the connection answers for itself (the same "no forwarding to another pool
+        // member" behaviour BackupHostConfig works around for /host_backup and /host_restore), so query
+        // each host at its own address rather than the pool's (coordinator) url. Legends look like
         // "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
         var start = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 300;
         using var http = new HttpClient(new HttpClientHandler
@@ -29,26 +33,32 @@ internal static partial class Workflows
             ServerCertificateCustomValidationCallback = (_, _, _, _) => true
         });
         http.DefaultRequestHeaders.Add("accept", "application/json");
-        var json = http.GetStringAsync($"{url}/rrd_updates?session_id={session.opaque_ref}&host=true&start={start}").Result;
 
-        using var doc = JsonDocument.Parse(json);
-        var legends = doc.RootElement.GetProperty("meta").GetProperty("legend")
-            .EnumerateArray().Select(e => e.GetString()!).ToArray();
         var peak = new Dictionary<string, double>();
-        foreach (var point in doc.RootElement.GetProperty("data").EnumerateArray())
+        foreach (var h in hosts.Values)
         {
-            var values = point.GetProperty("values");
-            for (int k = 0; k < legends.Length; k++)
+            var hostUrl = HostUrl(url, h.address);
+            var json = http.GetStringAsync(
+                $"{hostUrl}/rrd_updates?session_id={session.opaque_ref}&host=true&start={start}").Result;
+
+            using var doc = JsonDocument.Parse(json);
+            var legends = doc.RootElement.GetProperty("meta").GetProperty("legend")
+                .EnumerateArray().Select(e => e.GetString()!).ToArray();
+            foreach (var point in doc.RootElement.GetProperty("data").EnumerateArray())
             {
-                var parts = legends[k].Split(':');
-                if (parts[1] == "host" && parts[3] == "pvsaccelerator_space_utilization")
+                var values = point.GetProperty("values");
+                for (int k = 0; k < legends.Length; k++)
                 {
-                    // A host sends each value as a string ("0.0", or "NaN" for a gap in the series).
-                    var v = values[k].ValueKind == JsonValueKind.String
-                        ? double.Parse(values[k].GetString()!, CultureInfo.InvariantCulture)
-                        : values[k].GetDouble();
-                    if (double.IsNaN(v)) continue;
-                    if (!peak.TryGetValue(parts[2], out var cur) || v > cur) peak[parts[2]] = v;
+                    var parts = legends[k].Split(':');
+                    if (parts[1] == "host" && parts[3] == "pvsaccelerator_space_utilization")
+                    {
+                        // A host sends each value as a string ("0.0", or "NaN" for a gap in the series).
+                        var v = values[k].ValueKind == JsonValueKind.String
+                            ? double.Parse(values[k].GetString()!, CultureInfo.InvariantCulture)
+                            : values[k].GetDouble();
+                        if (double.IsNaN(v)) continue;
+                        if (!peak.TryGetValue(parts[2], out var cur) || v > cur) peak[parts[2]] = v;
+                    }
                 }
             }
         }

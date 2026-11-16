@@ -55,6 +55,8 @@ public final class ManageVif {
                 + vm.getVIFs(conn).size() + " NIC(s)");
 
         vif.destroy(conn);
+        System.out.println("Removed the VIF; VM now has " + vm.getVIFs(conn).size() + " NIC(s)");
+
         destroyVmAndDisks(conn, vm);
         System.out.println("OK: manage-vif");
         Session.logout(conn);

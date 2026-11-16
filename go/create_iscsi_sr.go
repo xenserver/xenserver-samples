@@ -102,6 +102,7 @@ func createIscsiSr(url, user, password, target, port, chapUser, chapPassword, ta
 		}
 	}
 	check(xenapi.SR.Destroy(session, sr))
+	fmt.Println("Destroyed the SR.")
 	if !secretDestroyed {
 		check(xenapi.Secret.Destroy(session, secret))
 		secretDestroyed = true

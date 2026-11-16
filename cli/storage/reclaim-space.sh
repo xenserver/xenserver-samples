@@ -7,7 +7,7 @@
 #   ./workflows.sh reclaim-space https://xenserver root "$password"
 
 reclaim_space() {
-    local sr candidate type pbd h name result
+    local sr candidate type pbd h name result size before after
     # A thin-provisioned SR (local LVM here) can return space freed by deleted disks to the backend via
     # the trim plugin. Find one via its storage manager's SR_TRIM feature, instead of hard-coding a
     # type.
@@ -24,9 +24,18 @@ reclaim_space() {
     pbd=$(first_csv "$(xe pbd-list sr-uuid=$sr currently-attached=true --minimal)")
     h=$(xe pbd-param-get uuid=$pbd param-name=host)
     name=$(xe sr-param-get uuid=$sr param-name=name-label)
+    size=$(xe sr-param-get uuid=$sr param-name=physical-size)
+    before=$(xe sr-param-get uuid=$sr param-name=physical-utilisation)
+    echo "  $name: $((before / 1073741824)) / $((size / 1073741824)) GiB used"
+
     result=$(xe host-call-plugin host-uuid=$h plugin=trim fn=do_trim args:sr_uuid=$sr)
     echo "  reclaimed freed space on $name: $result"
     # Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
     [ "${result,,}" = "true" ] || { echo "trim failed: $result" >&2; exit 1; }
+
+    # Rescan to refresh utilisation from the backend, the same way sr-usage does, before reporting it.
+    xe sr-scan uuid=$sr
+    after=$(xe sr-param-get uuid=$sr param-name=physical-utilisation)
+    echo "  $name: $((after / 1073741824)) / $((size / 1073741824)) GiB used"
     ok reclaim-space
 }

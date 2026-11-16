@@ -13,6 +13,7 @@ import (
 func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 	session := connect(url, user, password)
 	vmRef := vmByName(session, vmName)
+	const runs, retention = 3, 2
 
 	// RetainedSnapshots is the interesting field: the schedule prunes to it every time it runs.
 	vmssRef, err := xenapi.VMSS.Create(session, xenapi.VMSSRecord{
@@ -21,7 +22,7 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 		Enabled:           true,
 		Type:              xenapi.VmssTypeSnapshot,
 		Frequency:         xenapi.VmssFrequencyDaily,
-		RetainedSnapshots: 2,
+		RetainedSnapshots: retention,
 		Schedule:          map[string]string{"hour": "2", "min": "0"},
 	})
 	check(err)
@@ -32,15 +33,16 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 	members, _ := xenapi.VMSS.GetVMs(session, vmssRef)
 	fmt.Printf("Members:          %d\n", len(members))
 
-	// Run it three times against a retention of two: the oldest is pruned away. Compare against the
-	// snapshots the VM already had, so only the schedule's own are counted (and tidied up below).
+	// Run it three times against a retention of two: the oldest is pruned away each time it runs over
+	// the limit. Compare against the snapshots the VM already had, so only the schedule's own are
+	// counted (and tidied up below).
 	existing, err := xenapi.VM.GetSnapshots(session, vmRef)
 	check(err)
 	before := map[xenapi.VMRef]bool{}
 	for _, s := range existing {
 		before[s] = true
 	}
-	for i := 0; i < 3; i++ {
+	for i := 0; i < runs; i++ {
 		_, err = xenapi.VMSS.SnapshotNow(session, vmssRef)
 		check(err)
 	}
@@ -52,7 +54,11 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 			kept = append(kept, s)
 		}
 	}
-	fmt.Printf("Snapshots kept:   %d (retention 2)\n", len(kept))
+	pruned := "nothing needed pruning yet"
+	if runs > len(kept) {
+		pruned = "the oldest was pruned"
+	}
+	fmt.Printf("Ran the schedule %d times; kept %d (retention %d): %s\n", runs, len(kept), retention, pruned)
 
 	// Tidy up: a schedule with VMs still on it cannot be destroyed (VMSS_HAS_VM), so take the VM off it
 	// first. Destroying the schedule leaves the snapshots it took, so destroy those too, with their disks.

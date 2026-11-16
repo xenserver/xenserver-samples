@@ -68,6 +68,7 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 	// Tidy up: the VM and the disks it now owns.
 	check(xenapi.VM.HardShutdown(session, vm))
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: storage-migrate")
 	session.Logout()
 }

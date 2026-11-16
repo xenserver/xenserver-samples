@@ -39,7 +39,14 @@ public final class CreateIsoSr {
             SR sr = SR.create(conn, host, dc, 0L, "sdk-example-iso", "ISO library created by the SDK example",
                 "iso", "iso", true, new java.util.HashMap<>());
             System.out.println("Created ISO SR: " + sr.getUuid(conn));
+
+            // A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+            // installation media.
+            sr.scan(conn);
+            System.out.println("ISO images: " + sr.getVDIs(conn).size());
+
             detachAndForgetSr(conn, sr);
+            System.out.println("Detached and forgot the SR.");
             System.out.println("OK: create-iso-sr");
         } finally {
             Session.logout(conn);

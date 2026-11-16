@@ -42,5 +42,6 @@ def checkpoint_vm(url, username, password, source_vm, new_vm_name="sdk-example-c
     destroy_vm_and_disks(session, checkpoint)
     session.xenapi.VM.hard_shutdown(vm)
     destroy_vm_and_disks(session, vm)
+    print("Cleaned up the example VM and its checkpoint.")
     print("OK: checkpoint-vm")
     session.xenapi.session.logout()

@@ -76,6 +76,8 @@ function Invoke-CreateVmFull {
     $vm | Invoke-XenVM -XenAction HardShutdown
     $vm | Remove-XenVM
     $vdi | Remove-XenVDI
+    Write-Host "Cleaned up the example VM."
+
     Write-Host "OK: create-vm-full"
     $session | Disconnect-XenServer
 }

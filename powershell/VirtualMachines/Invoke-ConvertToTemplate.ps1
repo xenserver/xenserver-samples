@@ -27,6 +27,7 @@ function Invoke-ConvertToTemplate {
     Write-Host "is_a_template after convert:  $((Get-XenVM -Ref $ref).is_a_template)"
 
     Remove-VmAndDisks -Ref $vm
+    Write-Host "Cleaned up the example template."
     Write-Host "OK: convert-to-template"
     $session | Disconnect-XenServer
 }

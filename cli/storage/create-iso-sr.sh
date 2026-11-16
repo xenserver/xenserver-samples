@@ -17,6 +17,13 @@ create_iso_sr() {
     sr=$(xe sr-create host-uuid=$(first_host) type=iso name-label=xe-example-iso content-type=iso \
         device-config:location="$location" device-config:type=nfs_iso shared=true)
     echo "Created ISO SR: $sr"
+
+    # A scan picks up the ISOs on the share as VDIs, which is what makes them selectable as
+    # installation media.
+    xe sr-scan uuid=$sr
+    echo "ISO images: $(count_csv "$(xe vdi-list sr-uuid=$sr --minimal)")"
+
     detach_and_forget_sr $sr
+    echo "Detached and forgot the SR."
     ok create-iso-sr
 }

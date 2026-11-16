@@ -41,5 +41,6 @@ export_import_vm() {
 
     # The import brought its own disks along; vm-uninstall destroys those too, not just the VM record.
     xe vm-uninstall uuid=$imported force=true
+    echo "Cleaned up the imported VM."
     ok export-import-vm
 }

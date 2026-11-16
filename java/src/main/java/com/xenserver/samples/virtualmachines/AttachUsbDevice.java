@@ -6,6 +6,7 @@ import com.xensource.xenapi.Session;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VUSB;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,8 +34,12 @@ public final class AttachUsbDevice {
         try {
             VM vm = VM.getByNameLabel(conn, vmName).iterator().next();
 
-            Map.Entry<PUSB, PUSB.Record> entry =
-                    PUSB.getAllRecords(conn).entrySet().iterator().next();
+            // Pick deterministically (lowest description, then uuid), not whatever order the server
+            // happens to list them in, so the example behaves the same way every run.
+            Map.Entry<PUSB, PUSB.Record> entry = PUSB.getAllRecords(conn).entrySet().stream()
+                    .min(Comparator.<Map.Entry<PUSB, PUSB.Record>, String>comparing(e -> e.getValue().description)
+                            .thenComparing(e -> e.getValue().uuid))
+                    .orElseThrow();
             System.out.println("Device:         " + entry.getValue().description);
 
             // Passthrough is off until an administrator releases the device: attaching one that has
@@ -49,6 +54,7 @@ public final class AttachUsbDevice {
             // it gets plugged in as soon as it's created, so unplug it first.
             if (vusb.getCurrentlyAttached(conn)) vusb.unplug(conn);
             vusb.destroy(conn);
+            System.out.println("Detached:       " + vm.getVUSBs(conn).size() + " device(s)");
             entry.getKey().setPassthroughEnabled(conn, false);
             System.out.println("OK: attach-usb-device");
         } finally {

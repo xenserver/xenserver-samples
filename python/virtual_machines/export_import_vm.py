@@ -96,5 +96,6 @@ def export_import_vm(url, username, password, vm_name):
     # The import brought its own disks along; destroy those too, not just the VM record.
     destroy_vm_and_disks(session, imported)
     os.remove(path)
+    print("Cleaned up the imported VM.")
     print("OK: export-import-vm")
     session.logout()

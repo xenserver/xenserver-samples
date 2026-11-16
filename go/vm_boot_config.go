@@ -41,6 +41,7 @@ func vmBootConfig(url, user, password, templateName, newVMName string) {
 		bootParams["firmware"], platform["secureboot"])
 
 	destroyVMAndDisks(session, vm)
+	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: vm-boot-config")
 	session.Logout()
 }

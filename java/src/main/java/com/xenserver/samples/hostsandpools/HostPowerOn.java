@@ -23,6 +23,11 @@ public final class HostPowerOn {
         Connection conn = connect(url, user, password);
         Host host = Host.getAll(conn).iterator().next();
 
+        // Save the original mode and config so the example restores the host to how it found it, not
+        // to a blank "no power-on configured" state.
+        String originalMode = host.getPowerOnMode(conn);
+        Map<String, String> originalConfig = host.getPowerOnConfig(conn);
+
         // Mode and config travel together: the config carries the credentials the mode needs.
         // "wake-on-lan" is a real, still-supported mode and needs no credentials; the legacy "iLO"/"DRAC"
         // modes were removed from the real power-on plugin and fail the moment host.power_on is actually
@@ -30,11 +35,18 @@ public final class HostPowerOn {
         Map<String, String> cfg = new HashMap<>();
         host.setPowerOnMode(conn, "wake-on-lan", cfg);
         System.out.println("Power-on mode:  " + host.getPowerOnMode(conn));
-        for (Map.Entry<String, String> e : new TreeMap<>(host.getPowerOnConfig(conn)).entrySet()) {
-            System.out.println("  " + e.getKey() + " = " + e.getValue());
+        Map<String, String> config = host.getPowerOnConfig(conn);
+        if (!config.isEmpty()) {
+            for (Map.Entry<String, String> e : new TreeMap<>(config).entrySet()) {
+                System.out.println("  " + e.getKey() + " = " + e.getValue());
+            }
+        } else {
+            System.out.println("  no credentials needed");
         }
 
-        host.setPowerOnMode(conn, "", new HashMap<String, String>());
+        host.setPowerOnMode(conn, originalMode, originalConfig);
+        String restored = host.getPowerOnMode(conn);
+        System.out.println("Restored power-on mode: " + (restored.isEmpty() ? "(none)" : restored));
         System.out.println("OK: host-power-on");
         Session.logout(conn);
     }

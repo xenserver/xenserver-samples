@@ -40,6 +40,9 @@ func manageVif(url, user, password, templateName, newVMName string) {
 	fmt.Printf("Attached a VIF on device %s; VM now has %d NIC(s)\n", device, len(vifs))
 
 	check(xenapi.VIF.Destroy(session, vif))
+	vifsAfter, _ := xenapi.VM.GetVIFs(session, vm)
+	fmt.Printf("Removed the VIF; VM now has %d NIC(s)\n", len(vifsAfter))
+
 	destroyVMAndDisks(session, vm)
 	fmt.Println("OK: manage-vif")
 	session.Logout()

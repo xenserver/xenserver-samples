@@ -35,6 +35,7 @@ internal static partial class Workflows
 
         // Tidy up: destroy the clone and its (owned) disks.
         DestroyVmAndDisks(session, clone);
+        Console.WriteLine("Cleaned up the cloned VM (left the source intact).");
         Console.WriteLine("OK: clone-vm");
         session.logout();
     }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 
 	"go/xenapi"
 )
@@ -37,8 +38,18 @@ func manageVMGroups(url, user, password, vmName, groupName string) {
 	}
 
 	// VM_group.destroy already clears the group from every member VM's groups field - no need to
-	// remove membership ourselves first.
+	// remove membership ourselves first. Read both back afterwards to confirm.
 	check(xenapi.VMGroup.Destroy(session, groupRef))
+	groups, err := xenapi.VM.GetGroups(session, vmRef)
+	check(err)
+	allGroups, err := xenapi.VMGroup.GetAll(session)
+	check(err)
+	stillGrouped, stillExists := slices.Contains(groups, groupRef), slices.Contains(allGroups, groupRef)
+	if !stillGrouped && !stillExists {
+		fmt.Printf("Removed %s from the group; group deleted\n", vmName)
+	} else {
+		fmt.Printf("Group teardown incomplete: stillGrouped=%t, stillExists=%t\n", stillGrouped, stillExists)
+	}
 	fmt.Println("OK: manage-vm-groups")
 	session.Logout()
 }

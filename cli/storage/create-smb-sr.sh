@@ -28,6 +28,7 @@ create_smb_sr() {
         device-config:username="$smb_username" device-config:password_secret=$secret)
     echo "Created SMB SR: $sr ($(( $(xe sr-param-get uuid=$sr param-name=physical-size) / 1024 / 1024 / 1024 )) GiB)"
     detach_and_forget_sr $sr
+    echo "Detached and forgot the SR."
     xe secret-destroy uuid=$secret
     ok create-smb-sr
 }
