@@ -37,15 +37,20 @@ function Invoke-SnapshotRevert {
             ForEach-Object { Get-XenConsole -Ref $_ } | Where-Object { $_.protocol -eq 'rfb' } |
             Select-Object -First 1
         # An HTTP error status throws in both Windows PowerShell 5.1 and PowerShell 7, with the response
-        # (and its status code) on the exception; anything else - no response at all - is a real failure.
+        # (and its status code) on the exception. Bound the whole request: a host's 404 here can leave
+        # the connection open, and PowerShell 7 then waits for the end of the error body indefinitely -
+        # its -TimeoutSec bounds only connecting, -OperationTimeoutSeconds the rest; 5.1's -TimeoutSec
+        # covers both. A picture isn't worth stalling the workflow for.
+        $wait = if ($PSVersionTable.PSEdition -eq 'Core') { @{ OperationTimeoutSeconds = 30 } } else { @{ TimeoutSec = 30 } }
         try {
-            $thumb = Invoke-WebRequest -UseBasicParsing `
+            $thumb = Invoke-WebRequest -UseBasicParsing @wait `
                 -Uri "$Url/vncsnapshot?session_id=$($session.opaque_ref)&ref=$($console.opaque_ref)"
             Write-Host "Thumbnail:      $($thumb.RawContentLength) bytes of PNG"
         }
         catch {
-            if (-not $_.Exception.Response) { throw }
-            Write-Host "Thumbnail:      none (the host answered HTTP $([int]$_.Exception.Response.StatusCode))"
+            $reason = if ($_.Exception.Response) { "the host answered HTTP $([int]$_.Exception.Response.StatusCode)" }
+                      else { "no answer: $($_.Exception.Message)" }
+            Write-Host "Thumbnail:      none ($reason)"
         }
     }
     else {
