@@ -90,7 +90,7 @@ cli	vbd-inventory	115d15600f09	Disks of db-01:\n  - device 0: 25 GiB\nOK: vbd-in
 cli	vm-boot-config	c0f4c9c6a9cf	vCPUs: 2/4\nBoot order: cdn\nBoot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)\nThe following items are about to be destroyed\nVM : 00000001-0000-0000-f609-000000000000 (xe-example-boot)\nVDI: 00000001-0000-0000-f909-000000000000 (0) \nAll objects destroyed\nCleaned up the example VM.\nOK: vm-boot-config
 cli	vm-from-snapshot	221842a1d3d3	Snapshot of db-01 taken\n  new VM:      xe-example-vm-from-snapshot (is-a-template=false)\n  new template:xe-example-template-from-snapshot (is-a-template=true)\nCleaned up the example VM, template and snapshot.\nOK: vm-from-snapshot
 cli	vm-ip-address	87eb51618b7c	  web-01: 198.51.100.51\nOK: vm-ip-address
-cli	vm-lifecycle	a71d5e966b56	Initial: halted\nAfter start:    running\nDevice models restarted; still running\nAfter suspend:  suspended\nAfter resume:   running\nAfter shutdown: halted\nThe following items are about to be destroyed\nVM : 00000001-0000-0000-fd09-000000000000 (xe-example-lifecycle)\nVDI: 00000001-0000-0000-000a-000000000000 (web-01 root disk) \nAll objects destroyed\nCleaned up the example VM.\nOK: vm-lifecycle
+cli	vm-lifecycle	e9af1821d1e7	Initial: halted\nAfter start:    running\nDevice models restarted; still running\nAfter suspend:  suspended\nAfter resume:   running\nAfter shutdown: halted\nThe following items are about to be destroyed\nVM : 00000001-0000-0000-fd09-000000000000 (xe-example-lifecycle)\nVDI: 00000001-0000-0000-000a-000000000000 (web-01 root disk) \nAll objects destroyed\nCleaned up the example VM.\nOK: vm-lifecycle
 cli	wait-for-task	c36a9dae9de5	Current tasks: 0\nxe waits for each command to finish, so no async polling is needed.\nOK: wait-for-task
 cli	wlb-recommendations	28287bd6c437	WLB: wlb.example:8012\nsdk-host1: wlb 1.0 id-00000001\nsdk-host2: wlb 3.7 id-00000001\n  appliance configuration: ReportingCronString: 0 3 * * *\nOK: wlb-recommendations
 csharp	apply-update	ca884a240b1e	Synced updates; hash length 64\n  sdk-host1: applied; pending guidance = []\n  sdk-host2: applied; pending guidance = []\nOK: apply-update
@@ -185,7 +185,7 @@ csharp	vbd-inventory	3d2989877098	Disks of 'db-01':\n  - device 0: 25 GiB\nOK: v
 csharp	vm-boot-config	5514b3620a18	vCPUs: 2/4\nBoot order: cdn\nBoot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)\nCleaned up the example VM.\nOK: vm-boot-config
 csharp	vm-from-snapshot	951fd79a8c9c	Snapshot of db-01 taken\n  new VM:      sdk-example-vm-from-snapshot (is_a_template=False)\n  new template:sdk-example-template-from-snapshot (is_a_template=True)\nCleaned up the example VM, template and snapshot.\nOK: vm-from-snapshot
 csharp	vm-ip-address	b794d2531162	  web-01: 198.51.100.51\nOK: vm-ip-address
-csharp	vm-lifecycle	950e4e4e34b9	Initial power state: Halted\nAfter start:    Running\nDevice models restarted; still Running\nAfter suspend:  Suspended\nAfter resume:   Running\nAfter shutdown: Halted\nCleaned up the example VM.\nOK: vm-lifecycle
+csharp	vm-lifecycle	785ea53fd011	Initial power state: Halted\nAfter start:    Running\nDevice models restarted; still Running\nAfter suspend:  Suspended\nAfter resume:   Running\nAfter shutdown: Halted\nCleaned up the example VM.\nOK: vm-lifecycle
 csharp	wait-for-task	8d3ff17c6678	Started task: 00000001-0000-0000-fa09-000000000000\nTask status: success\nTask produced VM: sdk-example-asynctask\nOK: wait-for-task
 csharp	wlb-recommendations	259495057b70	WLB: wlb.example:8012\n  sdk-host1 rated 1.0\n  sdk-host2 rated 3.7\n  appliance configuration: ReportingCronString=0 3 * * *\nOK: wlb-recommendations
 go	apply-update	806041f476d6	Synced updates; hash length 64\n  sdk-host1: applied; pending guidance = []\n  sdk-host2: applied; pending guidance = []\nOK: apply-update
@@ -280,7 +280,7 @@ go	vbd-inventory	7f4e0e7e4283	Disks of 'db-01':\n  - device 0: 25 GiB\nOK: vbd-i
 go	vm-boot-config	5bc446c61c7e	vCPUs: 2/4\nBoot order: cdn\nBoot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)\nCleaned up the example VM.\nOK: vm-boot-config
 go	vm-from-snapshot	c4d54fdf2d1e	Snapshot of db-01 taken\n  new VM:      sdk-example-vm-from-snapshot (is_a_template=false)\n  new template:sdk-example-template-from-snapshot (is_a_template=true)\nCleaned up the example VM, template and snapshot.\nOK: vm-from-snapshot
 go	vm-ip-address	14d1a43cfa12	  web-01: 198.51.100.51\nOK: vm-ip-address
-go	vm-lifecycle	970dd58e4680	Initial power state: Halted\nAfter start:    Running\nDevice models restarted; still Running\nAfter suspend:  Suspended\nAfter resume:   Running\nAfter shutdown: Halted\nCleaned up the example VM.\nOK: vm-lifecycle
+go	vm-lifecycle	38df1d9ed615	Initial power state: Halted\nAfter start:    Running\nDevice models restarted; still Running\nAfter suspend:  Suspended\nAfter resume:   Running\nAfter shutdown: Halted\nCleaned up the example VM.\nOK: vm-lifecycle
 go	wait-for-task	852701f5439c	Started task: 00000001-0000-0000-fa09-000000000000\nTask status: success\nTask produced VM: sdk-example-asynctask\nOK: wait-for-task
 go	wlb-recommendations	6eba7a2d3f3a	WLB: wlb.example:8012\n  sdk-host1 rated 1.0\n  sdk-host2 rated 3.7\n  appliance configuration: ReportingCronString=0 3 * * *\nOK: wlb-recommendations
 java	apply-update	d5c7da757acc	Synced updates; hash length 64\n  sdk-host1: applied; pending guidance = []\n  sdk-host2: applied; pending guidance = []\nOK: apply-update
@@ -374,7 +374,7 @@ java	vbd-inventory	2c49892d0ed8	Disks of 'db-01':\n  - device 0: 25 GiB\nOK: vbd
 java	vm-boot-config	63c70ccb8d1a	vCPUs: 2/4\nBoot order: cdn\nBoot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)\nCleaned up the example VM.\nOK: vm-boot-config
 java	vm-from-snapshot	70a139e8b657	Snapshot of db-01 taken\n  new VM:      sdk-example-vm-from-snapshot (is_a_template=false)\n  new template:sdk-example-template-from-snapshot (is_a_template=true)\nCleaned up the example VM, template and snapshot.\nOK: vm-from-snapshot
 java	vm-ip-address	7b83f77661d6	  web-01: 198.51.100.51\nOK: vm-ip-address
-java	vm-lifecycle	efb8527816f0	Initial power state: Halted\nAfter start:   Running\nDevice models restarted; still Running\nAfter suspend: Suspended\nAfter resume:  Running\nAfter shutdown:Halted\nCleaned up the example VM.\nOK: vm-lifecycle
+java	vm-lifecycle	cdadd285a10a	Initial power state: Halted\nAfter start:   Running\nDevice models restarted; still Running\nAfter suspend: Suspended\nAfter resume:  Running\nAfter shutdown:Halted\nCleaned up the example VM.\nOK: vm-lifecycle
 java	wait-for-task	09d11def1c23	Started task: 00000001-0000-0000-fa09-000000000000\nTask status: success\nTask produced VM: sdk-example-asynctask\nOK: wait-for-task
 java	wlb-recommendations	e5ac0761ddae	WLB: wlb.example:8012\n  sdk-host1: 1.0 id-00000001 wlb\n  sdk-host2: 3.7 id-00000001 wlb\n  appliance configuration: ReportingCronString=0 3 * * *\nOK: wlb-recommendations
 powershell	apply-update	5d35f3f35b76	Synced updates; hash length 64\n  sdk-host1: applied; pending guidance = []\n  sdk-host2: applied; pending guidance = []\nOK: apply-update
@@ -469,7 +469,7 @@ powershell	vbd-inventory	c6f20dad0d38	Disks of 'db-01':\n  - device 0: 25 GiB\nO
 powershell	vm-boot-config	0df99fac4598	vCPUs: 2/4\nBoot order: cdn\nBoot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)\nCleaned up the example VM.\nOK: vm-boot-config
 powershell	vm-from-snapshot	598c8b699caf	Snapshot of db-01 taken\n  new VM:      sdk-example-vm-from-snapshot (is_a_template=False)\n  new template:sdk-example-template-from-snapshot (is_a_template=True)\nCleaned up the example VM, template and snapshot.\nOK: vm-from-snapshot
 powershell	vm-ip-address	90725c1dd38f	  web-01: 198.51.100.51\nOK: vm-ip-address
-powershell	vm-lifecycle	1163f94545c2	Initial power state: Halted\nAfter start:    Running\nDevice models restarted; still Running\nAfter suspend:  Suspended\nAfter resume:   Running\nAfter shutdown: Halted\nCleaned up the example VM.\nOK: vm-lifecycle
+powershell	vm-lifecycle	c3291b172cff	Initial power state: Halted\nAfter start:    Running\nDevice models restarted; still Running\nAfter suspend:  Suspended\nAfter resume:   Running\nAfter shutdown: Halted\nCleaned up the example VM.\nOK: vm-lifecycle
 powershell	wait-for-task	b604fd5fb23a	Started task: 00000001-0000-0000-fa09-000000000000\nTask status: success\nTask produced VM: sdk-example-asynctask\nOK: wait-for-task
 powershell	wlb-recommendations	fd5ef101f585	WLB: wlb.example:8012\n  sdk-host1 rated 1.0\n  sdk-host2 rated 3.7\n  appliance configuration: ReportingCronString=0 3 * * *\nOK: wlb-recommendations
 python	apply-update	4c10c5e80712	Synced updates; hash length 64\n  sdk-host1: applied; pending guidance = []\n  sdk-host2: applied; pending guidance = []\nOK: apply-update
@@ -564,6 +564,6 @@ python	vbd-inventory	3980dee4bb15	Disks of 'db-01':\n  - device 0: 25 GiB\nOK: v
 python	vm-boot-config	eb15a8c01ca0	vCPUs: 2/4\nBoot order: cdn\nBoot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)\nCleaned up the example VM.\nOK: vm-boot-config
 python	vm-from-snapshot	75f05e0e6777	Snapshot of db-01 taken\n  new VM:      sdk-example-vm-from-snapshot (is_a_template=False)\n  new template:sdk-example-template-from-snapshot (is_a_template=True)\nCleaned up the example VM, template and snapshot.\nOK: vm-from-snapshot
 python	vm-ip-address	1e4ef67e74a4	  web-01: 198.51.100.51\nOK: vm-ip-address
-python	vm-lifecycle	d666ae1224bb	Initial power state: Halted\nAfter start:   Running\nDevice models restarted; still Running\nAfter suspend: Suspended\nAfter resume:  Running\nAfter shutdown:Halted\nCleaned up the example VM.\nOK: vm-lifecycle
+python	vm-lifecycle	69dd04d351c6	Initial power state: Halted\nAfter start:   Running\nDevice models restarted; still Running\nAfter suspend: Suspended\nAfter resume:  Running\nAfter shutdown:Halted\nCleaned up the example VM.\nOK: vm-lifecycle
 python	wait-for-task	43957cf32ff8	Started task: 00000001-0000-0000-fa09-000000000000\nTask status: success\nTask produced VM: sdk-example-asynctask\nOK: wait-for-task
 python	wlb-recommendations	93d391b1a33c	WLB: wlb.example:8012\n  sdk-host1 rated 1.0\n  sdk-host2 rated 3.7\n  appliance configuration: ReportingCronString=0 3 * * *\nOK: wlb-recommendations

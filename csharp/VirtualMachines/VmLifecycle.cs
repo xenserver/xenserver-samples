@@ -43,7 +43,7 @@ internal static partial class Workflows
             VM.suspend(session, vmRef);
             Console.WriteLine($"After suspend:  {State()}");
             VM.resume(session, vmRef, false, true);
-            WaitForGuestAgent(session, vmRef); // the PV drivers reconnect after a resume
+            WaitForGuestAgent(session, vmRef, settleSeconds: 0); // the PV drivers reconnect after a resume (no boot)
             Console.WriteLine($"After resume:   {State()}");
         }
         else

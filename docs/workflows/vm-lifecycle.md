@@ -59,7 +59,7 @@ function Invoke-VmLifecycle {
         $vm | Invoke-XenVM -XenAction Suspend
         Write-Host "After suspend:  $(State)"
         $vm | Invoke-XenVM -XenAction Resume
-        Wait-GuestAgent -Ref $ref   # the PV drivers reconnect after a resume
+        Wait-GuestAgent -Ref $ref -SettleSeconds 0   # the PV drivers reconnect after a resume (no boot)
         Write-Host "After resume:   $(State)"
     }
     else {
@@ -139,7 +139,7 @@ vm_lifecycle() {
     if has_suspend_sr "$vm"; then
         xe vm-suspend uuid=$vm; echo "After suspend:  $(xe vm-param-get uuid=$vm param-name=power-state)"
         xe vm-resume uuid=$vm;  echo "After resume:   $(xe vm-param-get uuid=$vm param-name=power-state)"
-        wait_for_guest_agent "$vm"   # the PV drivers reconnect after a resume
+        wait_for_guest_agent "$vm" 300 2 0   # the PV drivers reconnect after a resume (no boot to settle)
     else
         echo "Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host"
     fi
@@ -237,7 +237,7 @@ def vm_lifecycle(url, username, password, source_vm, new_vm_name="sdk-example-li
         session.xenapi.VM.suspend(vm_ref)
         print("After suspend: %s" % state())
         session.xenapi.VM.resume(vm_ref, False, True)
-        wait_for_guest_agent(session, vm_ref)   # the PV drivers reconnect after a resume
+        wait_for_guest_agent(session, vm_ref, settle=0)   # the PV drivers reconnect after a resume (no boot)
         print("After resume:  %s" % state())
     else:
         print("Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host")
@@ -323,7 +323,7 @@ public static void VmLifecycle(string url, string user, string password,
         VM.suspend(session, vmRef);
         Console.WriteLine($"After suspend:  {State()}");
         VM.resume(session, vmRef, false, true);
-        WaitForGuestAgent(session, vmRef); // the PV drivers reconnect after a resume
+        WaitForGuestAgent(session, vmRef, settleSeconds: 0); // the PV drivers reconnect after a resume (no boot)
         Console.WriteLine($"After resume:   {State()}");
     }
     else
@@ -417,7 +417,7 @@ func vmLifecycle(url, user, password, sourceVM, newVMName string) {
 		check(xenapi.VM.Suspend(session, vmRef))
 		fmt.Printf("After suspend:  %s\n", state())
 		check(xenapi.VM.Resume(session, vmRef, false, true))
-		waitForGuestAgent(session, vmRef) // the PV drivers reconnect after a resume
+		waitForGuestAgentSettle(session, vmRef, 0) // the PV drivers reconnect after a resume (no boot to settle)
 		fmt.Printf("After resume:   %s\n", state())
 	} else {
 		fmt.Println("Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host")
@@ -521,7 +521,7 @@ public final class VmLifecycle {
             vm.suspend(conn);
             System.out.println("After suspend: " + vm.getPowerState(conn));
             vm.resume(conn, false, true);
-            waitForGuestAgent(conn, vm);   // the PV drivers reconnect after a resume
+            waitForGuestAgent(conn, vm, 0);   // the PV drivers reconnect after a resume (no boot to settle)
             System.out.println("After resume:  " + vm.getPowerState(conn));
         } else {
             System.out.println("Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host");

@@ -137,11 +137,17 @@ function Wait-GuestAgent {
         refuses it with VM_LACKS_FEATURE beforehand). A Linux kernel offers that early in boot, before the
         agent runs (hot-plug needs the agent, and suspend needs its emulated disk unplugged), so wait for
         the guest metrics to report the PV drivers too. A booting OS takes a while.
+
+        Even then the guest may still be booting, and a guest asked to suspend mid-boot (suspend, checkpoint,
+        live migration) can fail to freeze a process that is busy starting up: it then abandons the suspend
+        without telling the host, which waits until VM_SUSPEND_TIMEOUT. xapi has no "boot finished" signal,
+        so also wait for the guest to report an IP address, then settle a while.
     #>
     param(
         [Parameter(Mandatory = $true)]$Ref,
         [int]$TimeoutSeconds = 300,
-        [int]$IntervalSeconds = 2
+        [int]$IntervalSeconds = 2,
+        [int]$SettleSeconds = 30
     )
     $ready = {
         $vm = Get-XenVM -Ref $Ref
@@ -149,14 +155,23 @@ function Wait-GuestAgent {
             $vm.guest_metrics -ne 'OpaqueRef:NULL' -and
             (Get-XenVMGuestMetrics -Ref $vm.guest_metrics).PV_drivers_detected
     }
-    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
-    while (-not (& $ready)) {
-        if ((Get-Date) -gt $deadline) {
-            throw ("the guest's PV drivers did not report in within ${TimeoutSeconds}s; does the " +
-                   "source VM have a guest OS with PV drivers (XenServer VM Tools)?")
-        }
-        Start-Sleep -Seconds $IntervalSeconds
+    $hasIp = {
+        $vm = Get-XenVM -Ref $Ref
+        $vm.guest_metrics -ne 'OpaqueRef:NULL' -and
+            @((Get-XenVMGuestMetrics -Ref $vm.guest_metrics).networks.Keys |
+                Where-Object { $_ -like '*/ip' -or $_ -like '*/ipv4/*' }).Count -gt 0
     }
+    $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+    foreach ($done in $ready, $hasIp) {
+        while (-not (& $done)) {
+            if ((Get-Date) -gt $deadline) {
+                throw ("the guest did not finish booting (PV drivers, then an IP address) within " +
+                       "${TimeoutSeconds}s; does the source VM have a guest OS with PV drivers (XenServer VM Tools)?")
+            }
+            Start-Sleep -Seconds $IntervalSeconds
+        }
+    }
+    Start-Sleep -Seconds $SettleSeconds
 }
 
 function Invoke-ProbeForFailure {

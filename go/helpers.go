@@ -151,19 +151,49 @@ func guestAgentReady(session *xenapi.Session, vm xenapi.VMRef) bool {
 }
 
 func waitForGuestAgent(session *xenapi.Session, vm xenapi.VMRef) {
+	// Even with the PV drivers in, the guest may still be booting, and a guest asked to suspend mid-boot
+	// (suspend, checkpoint, live migration) can fail to freeze a process that is busy starting up: it then
+	// abandons the suspend without telling the host, which waits until VM_SUSPEND_TIMEOUT. xapi has no
+	// "boot finished" signal, so also wait for the guest to report an IP address, then settle a while.
+	waitForGuestAgentSettle(session, vm, 30*time.Second)
+}
+
+// waitForGuestAgentSettle is waitForGuestAgent with the settle chosen: none after a resume, where the
+// guest isn't booting.
+func waitForGuestAgentSettle(session *xenapi.Session, vm xenapi.VMRef, settle time.Duration) {
 	const timeout = 300 * time.Second
 	const interval = 2 * time.Second
 	deadline := time.Now().Add(timeout)
-	for {
-		if guestAgentReady(session, vm) {
-			return
+	for _, done := range []func() bool{
+		func() bool { return guestAgentReady(session, vm) },
+		func() bool { return guestReportsIP(session, vm) },
+	} {
+		for !done() {
+			if time.Now().After(deadline) {
+				panic(fmt.Sprintf("the guest did not finish booting (PV drivers, then an IP address) within %s; "+
+					"does the source VM have a guest OS with PV drivers (XenServer VM Tools)?", timeout))
+			}
+			time.Sleep(interval)
 		}
-		if time.Now().After(deadline) {
-			panic(fmt.Sprintf("the guest's PV drivers did not report in within %s; does the source "+
-				"VM have a guest OS with PV drivers (XenServer VM Tools)?", timeout))
-		}
-		time.Sleep(interval)
 	}
+	time.Sleep(settle)
+}
+
+// guestReportsIP reports whether the guest agent has reported an IP address (VM_guest_metrics.networks).
+func guestReportsIP(session *xenapi.Session, vm xenapi.VMRef) bool {
+	metrics, err := xenapi.VM.GetGuestMetrics(session, vm)
+	check(err)
+	if !isSet(metrics) {
+		return false
+	}
+	networks, err := xenapi.VMGuestMetrics.GetNetworks(session, metrics)
+	check(err)
+	for key := range networks {
+		if strings.HasSuffix(key, "/ip") || strings.Contains(key, "/ipv4/") {
+			return true
+		}
+	}
+	return false
 }
 
 // probeForFailure runs SR.probe's deliberately-incomplete discovery call and returns the XML

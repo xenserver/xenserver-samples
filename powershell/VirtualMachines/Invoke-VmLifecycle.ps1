@@ -46,7 +46,7 @@ function Invoke-VmLifecycle {
         $vm | Invoke-XenVM -XenAction Suspend
         Write-Host "After suspend:  $(State)"
         $vm | Invoke-XenVM -XenAction Resume
-        Wait-GuestAgent -Ref $ref   # the PV drivers reconnect after a resume
+        Wait-GuestAgent -Ref $ref -SettleSeconds 0   # the PV drivers reconnect after a resume (no boot)
         Write-Host "After resume:   $(State)"
     }
     else {

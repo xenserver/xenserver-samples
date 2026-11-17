@@ -25,7 +25,7 @@ vm_lifecycle() {
     if has_suspend_sr "$vm"; then
         xe vm-suspend uuid=$vm; echo "After suspend:  $(xe vm-param-get uuid=$vm param-name=power-state)"
         xe vm-resume uuid=$vm;  echo "After resume:   $(xe vm-param-get uuid=$vm param-name=power-state)"
-        wait_for_guest_agent "$vm"   # the PV drivers reconnect after a resume
+        wait_for_guest_agent "$vm" 300 2 0   # the PV drivers reconnect after a resume (no boot to settle)
     else
         echo "Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host"
     fi

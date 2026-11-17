@@ -207,7 +207,7 @@ internal static partial class Workflows
     /// VM_LACKS_FEATURE beforehand). A booting OS takes a while.
     /// </summary>
     internal static void WaitForGuestAgent(Session session, XenRef<VM> vm, int timeoutSeconds = 300,
-        int intervalSeconds = 2)
+        int intervalSeconds = 2, int settleSeconds = 30)
     {
         // clean_shutdown in allowed_operations says the guest can shut down; a Linux kernel offers that early
         // in boot, before the agent runs (hot-plug needs the agent, and suspend needs its emulated disk
@@ -220,14 +220,29 @@ internal static partial class Workflows
                    && VM_guest_metrics.get_PV_drivers_detected(session, metrics);
         }
 
-        var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
-        while (!Ready())
+        // Even then the guest may still be booting, and a guest asked to suspend mid-boot (suspend,
+        // checkpoint, live migration) can fail to freeze a process that is busy starting up: it then abandons
+        // the suspend without telling the host, which waits until VM_SUSPEND_TIMEOUT. xapi has no "boot
+        // finished" signal, so also wait for the guest to report an IP address, then settle a while.
+        bool HasIp()
         {
-            if (DateTime.UtcNow > deadline)
-                throw new Exception($"the guest's PV drivers did not report in within {timeoutSeconds}s; " +
-                    "does the source VM have a guest OS with PV drivers (XenServer VM Tools)?");
-            System.Threading.Thread.Sleep(intervalSeconds * 1000);
+            var metrics = VM.get_guest_metrics(session, vm);
+            return !Helper.IsNullOrEmptyOpaqueRef(metrics) && VM_guest_metrics.get_networks(session, metrics)
+                .Keys.Any(key => key.EndsWith("/ip") || key.Contains("/ipv4/"));
         }
+
+        var deadline = DateTime.UtcNow.AddSeconds(timeoutSeconds);
+        foreach (var done in new Func<bool>[] { Ready, HasIp })
+        {
+            while (!done())
+            {
+                if (DateTime.UtcNow > deadline)
+                    throw new Exception("the guest did not finish booting (PV drivers, then an IP address) within " +
+                        $"{timeoutSeconds}s; does the source VM have a guest OS with PV drivers (XenServer VM Tools)?");
+                System.Threading.Thread.Sleep(intervalSeconds * 1000);
+            }
+        }
+        System.Threading.Thread.Sleep(settleSeconds * 1000);
     }
 
     /// <summary>The VDIs backing a VM's disk VBDs (used to clean up a full copy's independent

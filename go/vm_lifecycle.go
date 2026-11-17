@@ -40,7 +40,7 @@ func vmLifecycle(url, user, password, sourceVM, newVMName string) {
 		check(xenapi.VM.Suspend(session, vmRef))
 		fmt.Printf("After suspend:  %s\n", state())
 		check(xenapi.VM.Resume(session, vmRef, false, true))
-		waitForGuestAgent(session, vmRef) // the PV drivers reconnect after a resume
+		waitForGuestAgentSettle(session, vmRef, 0) // the PV drivers reconnect after a resume (no boot to settle)
 		fmt.Printf("After resume:   %s\n", state())
 	} else {
 		fmt.Println("Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host")

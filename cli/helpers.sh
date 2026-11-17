@@ -159,20 +159,29 @@ copy_of_guest() {
 # beforehand). A Linux kernel offers that early in boot, before the agent runs (hot-plug needs the agent,
 # and suspend needs its emulated disk unplugged), so wait for PV-drivers-detected too. A booting OS takes a
 # while.
+#
+# Even then the guest may still be booting, and a guest asked to suspend mid-boot (suspend, checkpoint, live
+# migration) can fail to freeze a process that is busy starting up: it then abandons the suspend without
+# telling the host, which waits until VM_SUSPEND_TIMEOUT. xapi has no "boot finished" signal, so also wait
+# for the guest to report an IP address, then settle a while.
 wait_for_guest_agent() {
-    local vm=$1 timeout=${2:-300} interval=${3:-2}
+    local vm=$1 timeout=${2:-300} interval=${3:-2} settle=${4:-30}
     local deadline=$((SECONDS + timeout))
-    local pv
+    local pv networks
     while true; do
         case "$(xe vm-param-get uuid=$vm param-name=allowed-operations)" in
             *clean_shutdown*)
                 # Deliberately xe_try: the guest metrics this reads are not there yet on every round.
                 pv=$(xe_try vm-param-get uuid=$vm param-name=PV-drivers-detected 2>/dev/null) || pv=""
-                [ "$pv" = true ] && return 0 ;;
+                networks=$(xe_try vm-param-get uuid=$vm param-name=networks 2>/dev/null) || networks=""
+                if [ "$pv" = true ] && [[ $networks == */ip:* || $networks == */ipv4/* ]]; then
+                    sleep "$settle"
+                    return 0
+                fi ;;
         esac
         if [ $SECONDS -gt $deadline ]; then
-            echo "the guest's PV drivers did not report in within ${timeout}s; does the source VM have" \
-                 "a guest OS with PV drivers (XenServer VM Tools)?" >&2
+            echo "the guest did not finish booting (PV drivers, then an IP address) within ${timeout}s; does" \
+                 "the source VM have a guest OS with PV drivers (XenServer VM Tools)?" >&2
             return 1
         fi
         sleep "$interval"

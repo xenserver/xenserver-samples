@@ -38,7 +38,7 @@ def vm_lifecycle(url, username, password, source_vm, new_vm_name="sdk-example-li
         session.xenapi.VM.suspend(vm_ref)
         print("After suspend: %s" % state())
         session.xenapi.VM.resume(vm_ref, False, True)
-        wait_for_guest_agent(session, vm_ref)   # the PV drivers reconnect after a resume
+        wait_for_guest_agent(session, vm_ref, settle=0)   # the PV drivers reconnect after a resume (no boot)
         print("After resume:  %s" % state())
     else:
         print("Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host")

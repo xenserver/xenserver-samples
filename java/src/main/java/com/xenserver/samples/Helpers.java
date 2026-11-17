@@ -319,19 +319,41 @@ public final class Helpers {
         return !metrics.isNull() && metrics.getPVDriversDetected(conn);
     }
 
-    public static void waitForGuestAgent(Connection conn, VM vm) throws Exception {
-        waitForGuestAgent(conn, vm, 300, 2);
+    /**
+     * Whether the guest agent has reported an IP address (VM_guest_metrics.networks).
+     */
+    private static boolean guestReportsIp(Connection conn, VM vm) throws Exception {
+        VMGuestMetrics metrics = vm.getGuestMetrics(conn);
+        if (metrics.isNull()) return false;
+        return metrics.getNetworks(conn).keySet().stream()
+                .anyMatch(key -> key.endsWith("/ip") || key.contains("/ipv4/"));
     }
 
-    private static void waitForGuestAgent(Connection conn, VM vm, int timeoutSeconds, int intervalSeconds)
-            throws Exception {
+    public static void waitForGuestAgent(Connection conn, VM vm) throws Exception {
+        waitForGuestAgent(conn, vm, 30);
+    }
+
+    /** waitForGuestAgent with the settle chosen: none after a resume, where the guest isn't booting. */
+    public static void waitForGuestAgent(Connection conn, VM vm, int settleSeconds) throws Exception {
+        waitForGuestAgent(conn, vm, 300, 2, settleSeconds);
+    }
+
+    /**
+     * Even with the PV drivers in, the guest may still be booting, and a guest asked to suspend mid-boot
+     * (suspend, checkpoint, live migration) can fail to freeze a process that is busy starting up: it then
+     * abandons the suspend without telling the host, which waits until VM_SUSPEND_TIMEOUT. xapi has no "boot
+     * finished" signal, so also wait for the guest to report an IP address, then settle a while.
+     */
+    private static void waitForGuestAgent(Connection conn, VM vm, int timeoutSeconds, int intervalSeconds,
+            int settleSeconds) throws Exception {
         long deadline = System.currentTimeMillis() + timeoutSeconds * 1000L;
-        while (!guestAgentReady(conn, vm)) {
+        while (!guestAgentReady(conn, vm) || !guestReportsIp(conn, vm)) {
             if (System.currentTimeMillis() > deadline)
-                throw new RuntimeException("the guest's PV drivers did not report in within " + timeoutSeconds
-                        + "s; does the source VM have a guest OS with PV drivers (XenServer VM Tools)?");
+                throw new RuntimeException("the guest did not finish booting (PV drivers, then an IP address) within "
+                        + timeoutSeconds + "s; does the source VM have a guest OS with PV drivers (XenServer VM Tools)?");
             Thread.sleep(intervalSeconds * 1000L);
         }
+        Thread.sleep(settleSeconds * 1000L);
     }
 
     /**

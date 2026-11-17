@@ -48,7 +48,7 @@ public final class VmLifecycle {
             vm.suspend(conn);
             System.out.println("After suspend: " + vm.getPowerState(conn));
             vm.resume(conn, false, true);
-            waitForGuestAgent(conn, vm);   // the PV drivers reconnect after a resume
+            waitForGuestAgent(conn, vm, 0);   // the PV drivers reconnect after a resume (no boot to settle)
             System.out.println("After resume:  " + vm.getPowerState(conn));
         } else {
             System.out.println("Skipping suspend/resume: no suspend-image SR is configured for this VM/pool/host");

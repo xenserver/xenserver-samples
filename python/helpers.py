@@ -104,26 +104,44 @@ def copy_of_guest(session, source_vm_name, new_vm_name):
     return vm
 
 
-def wait_for_guest_agent(session, vm, timeout=300, interval=2):
-    """Wait, after VM.start, until the guest's PV drivers have reported in.
+def wait_for_guest_agent(session, vm, timeout=300, interval=2, settle=30):
+    """Wait, after VM.start, until the guest's PV drivers have reported in and it has finished booting.
 
     xapi only offers the guest-dependent operations once the guest says it can do them, and
     allowed_operations is where it says so: wait for clean_shutdown to appear there (the same
     check that refuses it with VM_LACKS_FEATURE beforehand). A Linux kernel offers that early in
     boot, before the agent runs (hot-plug needs the agent, and suspend needs its emulated disk
-    unplugged), so wait for the guest metrics to report the PV drivers too. A booting OS takes a while."""
+    unplugged), so wait for the guest metrics to report the PV drivers too. A booting OS takes a while.
+
+    Even then the guest may still be booting, and a guest asked to suspend mid-boot (suspend,
+    checkpoint, live migration) can fail to freeze a process that is busy starting up: it then
+    abandons the suspend without telling the host, which waits until VM_SUSPEND_TIMEOUT. xapi has no
+    "boot finished" signal, so also wait for the guest to report an IP address, then settle seconds
+    more."""
+    def metrics_ref():
+        metrics = session.xenapi.VM.get_guest_metrics(vm)
+        return metrics if is_set(metrics) else None
+
     def ready():
         if "clean_shutdown" not in session.xenapi.VM.get_allowed_operations(vm):
             return False
-        metrics = session.xenapi.VM.get_guest_metrics(vm)
-        return is_set(metrics) and session.xenapi.VM_guest_metrics.get_PV_drivers_detected(metrics)
+        metrics = metrics_ref()
+        return metrics is not None and session.xenapi.VM_guest_metrics.get_PV_drivers_detected(metrics)
+
+    def has_ip():
+        metrics = metrics_ref()
+        networks = session.xenapi.VM_guest_metrics.get_networks(metrics) if metrics else {}
+        return any(k.endswith("/ip") or "/ipv4/" in k for k in networks)
 
     deadline = time.time() + timeout
-    while not ready():
-        if time.time() > deadline:
-            raise RuntimeError("the guest's PV drivers did not report in within %ds; does the source "
-                               "VM have a guest OS with PV drivers (XenServer VM Tools)?" % timeout)
-        time.sleep(interval)
+    for done in (ready, has_ip):
+        while not done():
+            if time.time() > deadline:
+                raise RuntimeError("the guest did not finish booting (PV drivers, then an IP address) within "
+                                   "%ds; does the source VM have a guest OS with PV drivers (XenServer VM "
+                                   "Tools)?" % timeout)
+            time.sleep(interval)
+    time.sleep(settle)
 
 
 def xml_from_failure(e):
