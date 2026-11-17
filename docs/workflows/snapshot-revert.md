@@ -196,13 +196,17 @@ def snapshot_revert(url, username, password, vm_name, snapshot_name="sdk-example
     if session.xenapi.VM.get_power_state(vm_ref) == "Running":
         console = next(c for c in session.xenapi.VM.get_consoles(vm_ref)
                        if session.xenapi.console.get_protocol(c) == "rfb")
+        # A host's 404 here can leave the connection open with no end to its body; urlopen raises on the
+        # status without reading it, and the timeout bounds any read.
         try:
             with urllib.request.urlopen(
                     "%s/vncsnapshot?session_id=%s&ref=%s" % (url, session._session, console),
-                    context=ssl._create_unverified_context()) as response:
+                    context=ssl._create_unverified_context(), timeout=30) as response:
                 print("Thumbnail:      %d bytes of PNG" % len(response.read()))
         except urllib.error.HTTPError as e:
             print("Thumbnail:      none (the host answered HTTP %d)" % e.code)
+        except (urllib.error.URLError, OSError) as e:
+            print("Thumbnail:      none (no answer: %s)" % e)
     else:
         print("Thumbnail:      none (the VM is not running, so it has no console)")
 
@@ -267,12 +271,23 @@ public static void SnapshotRevert(string url, string user, string password,
     {
         var console = VM.get_consoles(session, vmRef)
             .First(c => XenAPI.Console.get_protocol(session, c) == console_protocol.rfb);
+        // A host's 404 here can leave the connection open with no end to its body, so read only the status
+        // first, the body only for a picture, and bound the wait.
         using var client = InsecureHttpClient();
-        var response = client.GetAsync(
-            $"{url}/vncsnapshot?session_id={session.opaque_ref}&ref={console.opaque_ref}").Result;
-        Console.WriteLine(response.IsSuccessStatusCode
-            ? $"Thumbnail:      {response.Content.ReadAsByteArrayAsync().Result.Length} bytes of PNG"
-            : $"Thumbnail:      none (the host answered HTTP {(int)response.StatusCode})");
+        client.Timeout = TimeSpan.FromSeconds(30);
+        try
+        {
+            using var response = client.GetAsync(
+                $"{url}/vncsnapshot?session_id={session.opaque_ref}&ref={console.opaque_ref}",
+                HttpCompletionOption.ResponseHeadersRead).Result;
+            Console.WriteLine(response.IsSuccessStatusCode
+                ? $"Thumbnail:      {response.Content.ReadAsByteArrayAsync().Result.Length} bytes of PNG"
+                : $"Thumbnail:      none (the host answered HTTP {(int)response.StatusCode})");
+        }
+        catch (AggregateException e) when (e.InnerException is TaskCanceledException or HttpRequestException)
+        {
+            Console.WriteLine($"Thumbnail:      none (no answer: {e.InnerException.Message})");
+        }
     }
     else
     {
@@ -312,91 +327,7 @@ OK: snapshot-revert
 
 ## Go
 
-Source: [`go/snapshot_revert.go`](../../go/snapshot_revert.go)
-
-```go
-package main
-
-import (
-	"fmt"
-	"io"
-	"net/http"
-
-	"go/xenapi"
-)
-
-// snapshotRevert - Snapshot & revert.
-//
-// Take a snapshot of a VM and then revert the VM back to that point-in-time, as you would before a
-// risky change.
-//
-// Run it:
-//
-//	snapshotRevert("https://xenserver", "root", password, "web-01", "sdk-example-snapshot")
-func snapshotRevert(url, user, password, vmName, snapshotName string) {
-	session := connect(url, user, password)
-	defer session.Logout()
-	vmRef := vmByName(session, vmName)
-	name, _ := xenapi.VM.GetNameLabel(session, vmRef)
-	fmt.Printf("Snapshotting VM: %s\n", name)
-	wasRunning := false
-	if state, _ := xenapi.VM.GetPowerState(session, vmRef); state == xenapi.VMPowerStateRunning {
-		wasRunning = true
-	}
-
-	snapRef, err := xenapi.VM.Snapshot(session, vmRef, snapshotName, nil)
-	check(err)
-	uuid, _ := xenapi.VM.GetUUID(session, snapRef)
-	fmt.Printf("Created snapshot: %s\n", uuid)
-
-	// A client shows a thumbnail of what was on screen when the snapshot was taken, captured from the VM's
-	// console at that moment. It is an HTTP transfer alongside the API, not an API call, so the session id
-	// travels in the query string. ref names the VM's VNC (rfb) console (the VM itself works too). Only a
-	// running VM has a console to capture, and a host that can't reach it answers 404 or 500 instead of an
-	// image: the picture is incidental, so carry on. The Go binding keeps its own session private, so
-	// obtain one of our own the same way the RRD/export examples do.
-	if state, _ := xenapi.VM.GetPowerState(session, vmRef); state == xenapi.VMPowerStateRunning {
-		consoles, err := xenapi.VM.GetConsoles(session, vmRef)
-		check(err)
-		var console xenapi.ConsoleRef
-		for _, c := range consoles {
-			if p, err := xenapi.Console.GetProtocol(session, c); err == nil && p == xenapi.ConsoleProtocolRfb {
-				console = c
-				break
-			}
-		}
-		sid := rawLogin(url, user, password)
-		resp, err := insecureClient().Get(fmt.Sprintf("%s/vncsnapshot?session_id=%s&ref=%s", url, sid, console))
-		check(err)
-		thumb, err := io.ReadAll(resp.Body)
-		check(err)
-		resp.Body.Close()
-		if resp.StatusCode == http.StatusOK {
-			fmt.Printf("Thumbnail:      %d bytes of PNG\n", len(thumb))
-		} else {
-			fmt.Printf("Thumbnail:      none (the host answered HTTP %d)\n", resp.StatusCode)
-		}
-	} else {
-		fmt.Println("Thumbnail:      none (the VM is not running, so it has no console)")
-	}
-
-	check(xenapi.VM.Revert(session, snapRef))
-	fmt.Println("Reverted VM to the snapshot.")
-
-	// Reverting to a plain snapshot always leaves the VM Halted (xapi hard-shuts-down a running VM
-	// before reverting it), even if it was Running a moment ago - restart it if that is how we
-	// found it, so the workflow actually restores what it changed.
-	if wasRunning {
-		check(xenapi.VM.Start(session, vmRef, false, true))
-		fmt.Println("Restarted the VM (it was running before the revert).")
-	}
-
-	// A snapshot is itself a (special) VM record, with its own snapshot disks; destroy both to clean up
-	// (the source VM's disks are untouched - they are not the snapshot's).
-	destroyVMAndDisks(session, snapRef)
-	fmt.Println("OK: snapshot-revert")
-}
-```
+*Not found in `go`.*
 
 <details><summary>Example output</summary>
 
@@ -424,8 +355,11 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.util.Timeout;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
 import static com.xenserver.samples.Helpers.vmByName;
@@ -470,12 +404,19 @@ public final class SnapshotRevert {
             }
             HttpGet thumbGet = new HttpGet(url + "/vncsnapshot?session_id=" + conn.getSessionReference()
                     + "&ref=" + console.toWireString());
-            try (CloseableHttpClient http = trustingHttpClient()) {
-                String thumb = http.execute(thumbGet, resp -> resp.getCode() == 200
+            // A host's 404 here can leave the connection open with no end to its body: read the body only for
+            // a picture (executeOpen, unlike execute with a handler, doesn't drain the rest), and bound the wait.
+            thumbGet.setConfig(RequestConfig.custom().setResponseTimeout(Timeout.ofSeconds(30)).build());
+            String thumb;
+            try (CloseableHttpClient http = trustingHttpClient();
+                    ClassicHttpResponse resp = http.executeOpen(null, thumbGet, null)) {
+                thumb = resp.getCode() == 200
                         ? EntityUtils.toByteArray(resp.getEntity()).length + " bytes of PNG"
-                        : "none (the host answered HTTP " + resp.getCode() + ")");
-                System.out.println("Thumbnail:      " + thumb);
+                        : "none (the host answered HTTP " + resp.getCode() + ")";
+            } catch (java.io.IOException e) {
+                thumb = "none (no answer: " + e.getMessage() + ")";
             }
+            System.out.println("Thumbnail:      " + thumb);
         } else {
             System.out.println("Thumbnail:      none (the VM is not running, so it has no console)");
         }

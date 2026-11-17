@@ -38,13 +38,17 @@ def snapshot_revert(url, username, password, vm_name, snapshot_name="sdk-example
     if session.xenapi.VM.get_power_state(vm_ref) == "Running":
         console = next(c for c in session.xenapi.VM.get_consoles(vm_ref)
                        if session.xenapi.console.get_protocol(c) == "rfb")
+        # A host's 404 here can leave the connection open with no end to its body; urlopen raises on the
+        # status without reading it, and the timeout bounds any read.
         try:
             with urllib.request.urlopen(
                     "%s/vncsnapshot?session_id=%s&ref=%s" % (url, session._session, console),
-                    context=ssl._create_unverified_context()) as response:
+                    context=ssl._create_unverified_context(), timeout=30) as response:
                 print("Thumbnail:      %d bytes of PNG" % len(response.read()))
         except urllib.error.HTTPError as e:
             print("Thumbnail:      none (the host answered HTTP %d)" % e.code)
+        except (urllib.error.URLError, OSError) as e:
+            print("Thumbnail:      none (no answer: %s)" % e)
     else:
         print("Thumbnail:      none (the VM is not running, so it has no console)")
 

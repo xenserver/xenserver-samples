@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"go/xenapi"
 )
@@ -49,15 +50,25 @@ func snapshotRevert(url, user, password, vmName, snapshotName string) {
 			}
 		}
 		sid := rawLogin(url, user, password)
-		resp, err := insecureClient().Get(fmt.Sprintf("%s/vncsnapshot?session_id=%s&ref=%s", url, sid, console))
-		check(err)
-		thumb, err := io.ReadAll(resp.Body)
-		check(err)
-		resp.Body.Close()
-		if resp.StatusCode == http.StatusOK {
-			fmt.Printf("Thumbnail:      %d bytes of PNG\n", len(thumb))
-		} else {
+		// A host's 404 here can leave the connection open with no end to its body, so read the body only for
+		// a picture, and bound the whole request.
+		client := insecureClient()
+		client.Timeout = 30 * time.Second
+		resp, err := client.Get(fmt.Sprintf("%s/vncsnapshot?session_id=%s&ref=%s", url, sid, console))
+		switch {
+		case err != nil:
+			fmt.Printf("Thumbnail:      none (no answer: %v)\n", err)
+		case resp.StatusCode != http.StatusOK:
+			resp.Body.Close()
 			fmt.Printf("Thumbnail:      none (the host answered HTTP %d)\n", resp.StatusCode)
+		default:
+			thumb, err := io.ReadAll(resp.Body)
+			resp.Body.Close()
+			if err != nil {
+				fmt.Printf("Thumbnail:      none (no answer: %v)\n", err)
+			} else {
+				fmt.Printf("Thumbnail:      %d bytes of PNG\n", len(thumb))
+			}
 		}
 	} else {
 		fmt.Println("Thumbnail:      none (the VM is not running, so it has no console)")

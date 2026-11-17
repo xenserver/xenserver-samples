@@ -6,8 +6,11 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.util.Timeout;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
 import static com.xenserver.samples.Helpers.vmByName;
@@ -52,12 +55,19 @@ public final class SnapshotRevert {
             }
             HttpGet thumbGet = new HttpGet(url + "/vncsnapshot?session_id=" + conn.getSessionReference()
                     + "&ref=" + console.toWireString());
-            try (CloseableHttpClient http = trustingHttpClient()) {
-                String thumb = http.execute(thumbGet, resp -> resp.getCode() == 200
+            // A host's 404 here can leave the connection open with no end to its body: read the body only for
+            // a picture (executeOpen, unlike execute with a handler, doesn't drain the rest), and bound the wait.
+            thumbGet.setConfig(RequestConfig.custom().setResponseTimeout(Timeout.ofSeconds(30)).build());
+            String thumb;
+            try (CloseableHttpClient http = trustingHttpClient();
+                    ClassicHttpResponse resp = http.executeOpen(null, thumbGet, null)) {
+                thumb = resp.getCode() == 200
                         ? EntityUtils.toByteArray(resp.getEntity()).length + " bytes of PNG"
-                        : "none (the host answered HTTP " + resp.getCode() + ")");
-                System.out.println("Thumbnail:      " + thumb);
+                        : "none (the host answered HTTP " + resp.getCode() + ")";
+            } catch (java.io.IOException e) {
+                thumb = "none (no answer: " + e.getMessage() + ")";
             }
+            System.out.println("Thumbnail:      " + thumb);
         } else {
             System.out.println("Thumbnail:      none (the VM is not running, so it has no console)");
         }

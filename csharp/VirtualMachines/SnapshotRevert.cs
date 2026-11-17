@@ -1,4 +1,7 @@
+using System;
 using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using XenAPI;
 using Console = System.Console; // XenAPI also defines a Console class
 
@@ -35,12 +38,23 @@ internal static partial class Workflows
         {
             var console = VM.get_consoles(session, vmRef)
                 .First(c => XenAPI.Console.get_protocol(session, c) == console_protocol.rfb);
+            // A host's 404 here can leave the connection open with no end to its body, so read only the status
+            // first, the body only for a picture, and bound the wait.
             using var client = InsecureHttpClient();
-            var response = client.GetAsync(
-                $"{url}/vncsnapshot?session_id={session.opaque_ref}&ref={console.opaque_ref}").Result;
-            Console.WriteLine(response.IsSuccessStatusCode
-                ? $"Thumbnail:      {response.Content.ReadAsByteArrayAsync().Result.Length} bytes of PNG"
-                : $"Thumbnail:      none (the host answered HTTP {(int)response.StatusCode})");
+            client.Timeout = TimeSpan.FromSeconds(30);
+            try
+            {
+                using var response = client.GetAsync(
+                    $"{url}/vncsnapshot?session_id={session.opaque_ref}&ref={console.opaque_ref}",
+                    HttpCompletionOption.ResponseHeadersRead).Result;
+                Console.WriteLine(response.IsSuccessStatusCode
+                    ? $"Thumbnail:      {response.Content.ReadAsByteArrayAsync().Result.Length} bytes of PNG"
+                    : $"Thumbnail:      none (the host answered HTTP {(int)response.StatusCode})");
+            }
+            catch (AggregateException e) when (e.InnerException is TaskCanceledException or HttpRequestException)
+            {
+                Console.WriteLine($"Thumbnail:      none (no answer: {e.InnerException.Message})");
+            }
         }
         else
         {
