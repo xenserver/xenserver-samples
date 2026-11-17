@@ -433,7 +433,7 @@ import (
 // Run it:
 //
 //	exportImportVdi("https://xenserver", "root", password, "Shared NFS")
-func exportImportVdi(url, user, password, srName string) {
+func exportImportVDI(url, user, password, srName string) {
 	session := connect(url, user, password)
 	defer session.Logout()
 	// The Go binding keeps its own session id private, so log in once more for the HTTP transfers.

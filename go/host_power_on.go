@@ -11,6 +11,7 @@ import (
 // Set a host's out-of-band power-on mode and credentials, then read them back.
 func hostPowerOn(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	hostRef := hosts[0]
@@ -45,5 +46,4 @@ func hostPowerOn(url, user, password string) {
 	}
 	fmt.Printf("Restored power-on mode: %s\n", restored)
 	fmt.Println("OK: host-power-on")
-	session.Logout()
 }

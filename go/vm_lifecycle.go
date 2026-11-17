@@ -15,6 +15,7 @@ import (
 // else the pool's, else the host's); check one is actually configured before trying.
 func vmLifecycle(url, user, password, sourceVM, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vmRef := copyOfGuest(session, sourceVM, newVMName)
 
 	state := func() xenapi.VMPowerState {
@@ -53,7 +54,6 @@ func vmLifecycle(url, user, password, sourceVM, newVMName string) {
 	destroyVMAndDisks(session, vmRef)
 	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: vm-lifecycle")
-	session.Logout()
 }
 
 // hasSuspendSR reports whether VM.Suspend has a suspend-image SR to use: the VM's own, else the

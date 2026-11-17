@@ -15,6 +15,7 @@ import (
 //	createVM("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-vm")
 func createVM(url, user, password, templateName, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	templateRef := templateByName(session, templateName)
 	name, _ := xenapi.VM.GetNameLabel(session, templateRef)
 	fmt.Printf("Using template: %s\n", name)
@@ -32,5 +33,4 @@ func createVM(url, user, password, templateName, newVMName string) {
 	fmt.Println("Cleaned up the example VM.")
 
 	fmt.Println("OK: create-vm")
-	session.Logout()
 }

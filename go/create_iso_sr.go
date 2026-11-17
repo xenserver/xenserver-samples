@@ -13,8 +13,9 @@ import (
 //
 // Connect an ISO-library SR to a file share of ISO images (here an NFS export, location
 // "server:/path").
-func createIsoSr(url, user, password, location string) {
+func createIsoSR(url, user, password, location string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	dc := map[string]string{"location": location, "type": "nfs_iso"}
@@ -34,5 +35,4 @@ func createIsoSr(url, user, password, location string) {
 	detachAndForgetSR(session, sr)
 	fmt.Println("Detached and forgot the SR.")
 	fmt.Println("OK: create-iso-sr")
-	session.Logout()
 }

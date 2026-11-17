@@ -236,6 +236,7 @@ import (
 //	manageVif("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-vif")
 func manageVif(url, user, password, templateName, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm, err := xenapi.VM.Clone(session, templateByName(session, templateName), newVMName)
 	check(err)
 	provision(session, vm)
@@ -266,7 +267,6 @@ func manageVif(url, user, password, templateName, newVMName string) {
 
 	destroyVMAndDisks(session, vm)
 	fmt.Println("OK: manage-vif")
-	session.Logout()
 }
 ```
 

@@ -420,6 +420,7 @@ import (
 func manageVMDisks(url, user, password, sourceVM, srName, newVMName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
+	defer session.Logout()
 	vmRef := copyOfGuest(session, sourceVM, newVMName)
 	check(xenapi.VM.Start(session, vmRef, false, true))
 	waitForGuestAgent(session, vmRef)
@@ -495,7 +496,6 @@ func manageVMDisks(url, user, password, sourceVM, srName, newVMName string) {
 	destroyVMAndDisks(session, vmRef)
 	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: manage-vm-disks")
-	session.Logout()
 }
 ```
 

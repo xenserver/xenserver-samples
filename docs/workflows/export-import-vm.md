@@ -462,7 +462,7 @@ import (
 // Run it:
 //
 //	exportImportVm("https://xenserver", "root", password, "db-01")
-func exportImportVm(url, user, password, vmName string) {
+func exportImportVM(url, user, password, vmName string) {
 	session := connect(url, user, password)
 	defer session.Logout()
 
@@ -585,7 +585,7 @@ func tarNames(path string) []string {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-3565246778.xva
+  wrote 4.0 MiB to sdk-example-export-1720325905.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
 Cleaned up the imported VM.

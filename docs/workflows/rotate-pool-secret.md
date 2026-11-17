@@ -223,6 +223,7 @@ import (
 // Rotate the shared secret that authenticates pool members to each other.
 func rotatePoolSecret(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
 	name, _ := xenapi.Pool.GetNameLabel(session, pools[0])
@@ -251,7 +252,6 @@ func rotatePoolSecret(url, user, password string) {
 		fmt.Printf("Rotated. Still connected: %t\n", len(after) == 1)
 	}
 	fmt.Println("OK: rotate-pool-secret")
-	session.Logout()
 }
 ```
 

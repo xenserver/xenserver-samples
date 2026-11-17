@@ -252,6 +252,7 @@ import (
 // Change the local superuser password, then change it back.
 func changeRootPassword(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	randomBytes := make([]byte, 18)
 	_, err := rand.Read(randomBytes)
 	check(err)
@@ -290,7 +291,6 @@ func changeRootPassword(url, user, password string) {
 	restored = true
 	fmt.Println("Password restored.")
 	fmt.Println("OK: change-root-password")
-	session.Logout()
 }
 ```
 

@@ -261,6 +261,7 @@ func reclaimSpace(url, user, password string) {
 	const GiB = 1024 * 1024 * 1024
 
 	session := connect(url, user, password)
+	defer session.Logout()
 
 	// Storage-manager backends that advertise SR_TRIM in their features map are trim-capable.
 	sms, err := xenapi.SM.GetAllRecords(session)
@@ -319,7 +320,6 @@ func reclaimSpace(url, user, password string) {
 	check(err)
 	fmt.Printf("  %s: %d / %d GiB used\n", sr.NameLabel, usedAfter/GiB, sr.PhysicalSize/GiB)
 	fmt.Println("OK: reclaim-space")
-	session.Logout()
 }
 ```
 

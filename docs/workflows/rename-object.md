@@ -178,6 +178,7 @@ import (
 //	renameObject("https://xenserver", "root", password, "web-01")
 func renameObject(url, user, password, vmName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm := vmByName(session, vmName)
 	original, _ := xenapi.VM.GetNameLabel(session, vm)
 	check(xenapi.VM.SetNameLabel(session, vm, "sdk-renamed"))
@@ -185,7 +186,6 @@ func renameObject(url, user, password, vmName string) {
 	fmt.Printf("Renamed '%s' -> '%s'\n", original, now)
 	check(xenapi.VM.SetNameLabel(session, vm, original)) // restore so the example is repeatable
 	fmt.Println("OK: rename-object")
-	session.Logout()
 }
 ```
 

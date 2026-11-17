@@ -287,6 +287,7 @@ import (
 //	checkpointVM("https://xenserver", "root", password, "web-01", "sdk-example-checkpoint")
 func checkpointVM(url, user, password, sourceVM, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm := copyOfGuest(session, sourceVM, newVMName)
 	check(xenapi.VM.Start(session, vm, false, true))
 	waitForGuestAgent(session, vm)
@@ -314,7 +315,6 @@ func checkpointVM(url, user, password, sourceVM, newVMName string) {
 	destroyVMAndDisks(session, vm)
 	fmt.Println("Cleaned up the example VM and its checkpoint.")
 	fmt.Println("OK: checkpoint-vm")
-	session.Logout()
 }
 ```
 

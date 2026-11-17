@@ -208,6 +208,7 @@ import (
 //	editVMProperties("https://xenserver", "root", password, "web-01")
 func editVMProperties(url, user, password, vmName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vmRef := vmByName(session, vmName)
 
 	originalDesc, _ := xenapi.VM.GetNameDescription(session, vmRef)
@@ -221,7 +222,6 @@ func editVMProperties(url, user, password, vmName string) {
 	check(xenapi.VM.SetNameDescription(session, vmRef, originalDesc))
 	check(xenapi.VM.RemoveFromOtherConfig(session, vmRef, "sdk_example"))
 	fmt.Println("OK: edit-vm-properties")
-	session.Logout()
 }
 ```
 

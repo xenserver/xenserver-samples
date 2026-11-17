@@ -16,6 +16,7 @@ import (
 //	errorHandling("https://xenserver", "root", password)
 func errorHandling(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// XenAPI errors surface as an error whose text carries the XenAPI error code.
 	_, err := xenapi.Host.GetByUUID(session, "this-uuid-does-not-exist")
 	if err != nil {
@@ -24,5 +25,4 @@ func errorHandling(url, user, password string) {
 		fmt.Println("unexpected: no error")
 	}
 	fmt.Println("OK: error-handling")
-	session.Logout()
 }

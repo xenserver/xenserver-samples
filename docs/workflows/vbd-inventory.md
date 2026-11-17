@@ -202,6 +202,7 @@ func vbdInventory(url, user, password, vmName string) {
 	const GiB = 1024 * 1024 * 1024
 
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm := vmByName(session, vmName)
 	name, _ := xenapi.VM.GetNameLabel(session, vm)
 	fmt.Printf("Disks of '%s':\n", name)
@@ -222,7 +223,6 @@ func vbdInventory(url, user, password, vmName string) {
 		fmt.Printf("  - device %s: %d GiB\n", vbd.Userdevice, size)
 	}
 	fmt.Println("OK: vbd-inventory")
-	session.Logout()
 }
 ```
 

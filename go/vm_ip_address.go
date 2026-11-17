@@ -16,12 +16,13 @@ import (
 // empty networks map) - retry for a while before concluding it has no guest agent reporting.
 // timeoutStr and intervalStr take seconds, as decimal strings (Go's dispatcher passes key=value
 // arguments as strings).
-func vmIpAddress(url, user, password, vmName, timeoutStr, intervalStr string) {
+func vmIPAddress(url, user, password, vmName, timeoutStr, intervalStr string) {
 	timeout, err := strconv.Atoi(timeoutStr)
 	check(err)
 	interval, err := strconv.Atoi(intervalStr)
 	check(err)
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm := vmByName(session, vmName)
 
 	deadline := time.Now().Add(time.Duration(timeout) * time.Second)
@@ -47,5 +48,4 @@ func vmIpAddress(url, user, password, vmName, timeoutStr, intervalStr string) {
 		fmt.Printf("  %s: no IP address reported yet (no guest agent running?)\n", vmName)
 	}
 	fmt.Println("OK: vm-ip-address")
-	session.Logout()
 }

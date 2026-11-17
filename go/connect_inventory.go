@@ -16,6 +16,7 @@ import (
 //	connectInventory("https://xenserver", "root", password)
 func connectInventory(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	pools, err := xenapi.Pool.GetAllRecords(session)
 	check(err)
 	for _, pool := range pools {
@@ -50,5 +51,4 @@ func connectInventory(url, user, password string) {
 	}
 
 	fmt.Println("OK: connect-inventory")
-	session.Logout()
 }

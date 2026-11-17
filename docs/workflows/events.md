@@ -250,6 +250,7 @@ import (
 //	events("https://xenserver", "root", password, "web-01")
 func events(url, user, password, vmName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	classes := []string{"VM"}
 	batch, err := xenapi.Event.From(session, classes, "", 1.0)
 	check(err)
@@ -273,7 +274,6 @@ func events(url, user, password, vmName string) {
 
 	check(xenapi.VM.SetNameDescription(session, vmRef, original)) // put it back
 	fmt.Println("OK: events")
-	session.Logout()
 }
 ```
 

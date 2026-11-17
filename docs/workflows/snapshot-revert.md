@@ -330,6 +330,7 @@ import (
 //	snapshotRevert("https://xenserver", "root", password, "web-01", "sdk-example-snapshot")
 func snapshotRevert(url, user, password, vmName, snapshotName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vmRef := vmByName(session, vmName)
 	name, _ := xenapi.VM.GetNameLabel(session, vmRef)
 	fmt.Printf("Snapshotting VM: %s\n", name)
@@ -389,7 +390,6 @@ func snapshotRevert(url, user, password, vmName, snapshotName string) {
 	// (the source VM's disks are untouched - they are not the snapshot's).
 	destroyVMAndDisks(session, snapRef)
 	fmt.Println("OK: snapshot-revert")
-	session.Logout()
 }
 ```
 

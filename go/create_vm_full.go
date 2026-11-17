@@ -20,6 +20,7 @@ func createVMFull(url, user, password, templateName, newVMName string) {
 	const MiB = 1024 * 1024
 
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Step 1 - Template.
 	templateRef := templateByName(session, templateName)
 	tname, _ := xenapi.VM.GetNameLabel(session, templateRef)
@@ -131,5 +132,4 @@ func createVMFull(url, user, password, templateName, newVMName string) {
 	fmt.Println("Cleaned up the example VM.")
 
 	fmt.Println("OK: create-vm-full")
-	session.Logout()
 }

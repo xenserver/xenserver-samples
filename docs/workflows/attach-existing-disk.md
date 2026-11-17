@@ -351,7 +351,7 @@ func attachExistingDisk(url, user, password string) {
 	srName, _ := xenapi.SR.GetNameLabel(session, sr)
 	fmt.Printf("Disk %s created on %s\n", vdiName, srName)
 
-	vbd := attachVdi(session, halted[0], vdi)
+	vbd := attachVDI(session, halted[0], vdi)
 	firstName, _ := xenapi.VM.GetNameLabel(session, halted[0])
 	fmt.Printf("  attached to %s\n", firstName)
 
@@ -360,7 +360,7 @@ func attachExistingDisk(url, user, password string) {
 	size, _ := xenapi.VDI.GetVirtualSize(session, vdi)
 	fmt.Printf("  detached:   the disk still exists (%d bytes)\n", size)
 
-	attachVdi(session, halted[1], vdi)
+	attachVDI(session, halted[1], vdi)
 	secondName, _ := xenapi.VM.GetNameLabel(session, halted[1])
 	fmt.Printf("  attached to %s\n", secondName)
 	vbds, _ := xenapi.VDI.GetVBDs(session, vdi)
@@ -374,7 +374,7 @@ func attachExistingDisk(url, user, password string) {
 }
 
 // attachVdi joins an existing disk to a VM on its next free device slot.
-func attachVdi(session *xenapi.Session, vm xenapi.VMRef, vdi xenapi.VDIRef) xenapi.VBDRef {
+func attachVDI(session *xenapi.Session, vm xenapi.VMRef, vdi xenapi.VDIRef) xenapi.VBDRef {
 	devices, err := xenapi.VM.GetAllowedVBDDevices(session, vm)
 	check(err)
 	vbd, err := xenapi.VBD.Create(session, xenapi.VBDRecord{

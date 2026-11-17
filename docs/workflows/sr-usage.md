@@ -225,6 +225,7 @@ func srUsage(url, user, password string) {
 	const GiB = 1024 * 1024 * 1024
 
 	session := connect(url, user, password)
+	defer session.Logout()
 	srs, err := xenapi.SR.GetAllRecords(session)
 	check(err)
 
@@ -258,7 +259,6 @@ func srUsage(url, user, password string) {
 		fmt.Printf("Rescanned %s\n", scanName)
 	}
 	fmt.Println("OK: sr-usage")
-	session.Logout()
 }
 ```
 

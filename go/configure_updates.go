@@ -18,6 +18,7 @@ import (
 //	"https://repo-src.ops.xenserver.com/xs9")
 func configureUpdates(url, user, password, repoURL, sourceURL string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	repos := introduceUpdateRepositories(session, repoURL, sourceURL)
 	var names []string
 	for _, repo := range repos {
@@ -45,5 +46,4 @@ func configureUpdates(url, user, password, repoURL, sourceURL string) {
 		check(xenapi.Repository.Forget(session, repo))
 	}
 	fmt.Println("OK: configure-updates")
-	session.Logout()
 }

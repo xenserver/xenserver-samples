@@ -22,7 +22,7 @@ import (
 // Run it:
 //
 //	exportImportVm("https://xenserver", "root", password, "db-01")
-func exportImportVm(url, user, password, vmName string) {
+func exportImportVM(url, user, password, vmName string) {
 	session := connect(url, user, password)
 	defer session.Logout()
 

@@ -15,6 +15,9 @@ import (
 // is still good, and re-resolve pool/host refs from the fresh session each time.
 func managePoolMembership(url, user, password string) {
 	session := connect(url, user, password)
+	// A closure, not defer session.Logout(): the workflow replaces session part-way, and it is
+	// the last one that is still logged in.
+	defer func() { session.Logout() }()
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
 
@@ -65,7 +68,6 @@ func managePoolMembership(url, user, password string) {
 	fmt.Printf("Restored:    %s\n", masterName)
 
 	fmt.Println("OK: manage-pool-membership")
-	session.Logout()
 }
 
 // reconnectAfterMasterChange waits out a pool-wide xapi restart (pool.DesignateNewMaster) and

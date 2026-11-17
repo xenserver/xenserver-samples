@@ -16,6 +16,7 @@ import (
 //	configureHa("https://xenserver", "root", password, "Shared NFS")
 func configureHa(url, user, password, heartbeatSRName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	pools, err := xenapi.Pool.GetAllRecords(session)
 	check(err)
 	var poolRef xenapi.PoolRef
@@ -81,5 +82,4 @@ func configureHa(url, user, password, heartbeatSRName string) {
 	enabled, _ = xenapi.Pool.GetHaEnabled(session, poolRef)
 	fmt.Printf("HA enabled:    %v\n", enabled)
 	fmt.Println("OK: configure-ha")
-	session.Logout()
 }

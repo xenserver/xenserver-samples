@@ -258,6 +258,7 @@ import (
 // again.
 func attachUsbDevice(url, user, password, vmName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vms, err := xenapi.VM.GetByNameLabel(session, vmName)
 	check(err)
 	vm := vms[0]
@@ -298,7 +299,6 @@ func attachUsbDevice(url, user, password, vmName string) {
 	fmt.Printf("Detached:       %d device(s)\n", len(detached))
 	check(xenapi.PUSB.SetPassthroughEnabled(session, pusbRef, false))
 	fmt.Println("OK: attach-usb-device")
-	session.Logout()
 }
 ```
 

@@ -325,10 +325,11 @@ import (
 // Run it:
 //
 //	createVMWithVgpu("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-vgpu-vm")
-func createVMWithVgpu(url, user, password, templateName, newVMName string) {
+func createVMWithVGPU(url, user, password, templateName, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Find a GPU group that offers a real (non-passthrough) vGPU type, plus that type.
-	groupRef, typeRef := gpuGroupWithVgpuType(session)
+	groupRef, typeRef := gpuGroupWithVGPUType(session)
 	typeRec, err := xenapi.VGPUType.GetRecord(session, typeRef)
 	check(err)
 	fmt.Printf("Using vGPU type: %s (%d MB framebuffer)\n", typeRec.ModelName, typeRec.FramebufferSize/(1024*1024))
@@ -356,13 +357,12 @@ func createVMWithVgpu(url, user, password, templateName, newVMName string) {
 	fmt.Println("Cleaned up the example VM and its vGPU.")
 
 	fmt.Println("OK: create-vm-with-vgpu")
-	session.Logout()
 }
 
 // gpuGroupWithVgpuType finds a (GPU_group, VGPU_type) pair where the group offers a non-passthrough
 // type. Picked by the type's model name, not simply the first one iteration happens to return -
 // SupportedVGPUTypes is a set server-side, so its order isn't something to rely on.
-func gpuGroupWithVgpuType(session *xenapi.Session) (xenapi.GPUGroupRef, xenapi.VGPUTypeRef) {
+func gpuGroupWithVGPUType(session *xenapi.Session) (xenapi.GPUGroupRef, xenapi.VGPUTypeRef) {
 	groups, err := xenapi.GPUGroup.GetAllRecords(session)
 	check(err)
 	var bestModel string

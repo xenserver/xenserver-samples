@@ -13,6 +13,7 @@ import (
 // then take the VM out again and delete the group.
 func manageVMGroups(url, user, password, vmName, groupName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vmRef := vmByName(session, vmName)
 
 	// anti_affinity asks the pool to keep the group's members on different hosts.
@@ -51,5 +52,4 @@ func manageVMGroups(url, user, password, vmName, groupName string) {
 		fmt.Printf("Group teardown incomplete: stillGrouped=%t, stillExists=%t\n", stillGrouped, stillExists)
 	}
 	fmt.Println("OK: manage-vm-groups")
-	session.Logout()
 }

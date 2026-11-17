@@ -299,6 +299,7 @@ import (
 //	liveMigrate("https://xenserver", "root", password, "web-01", "Shared NFS", "sdk-example-migrate")
 func liveMigrate(url, user, password, sourceVM, srName, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm := copyOfGuest(session, sourceVM, newVMName)
 	moveDisksToSR(session, vm, srByName(session, srName, true))
 	check(xenapi.VM.Start(session, vm, false, true))
@@ -335,7 +336,6 @@ func liveMigrate(url, user, password, sourceVM, srName, newVMName string) {
 	destroyVMAndDisks(session, vm)
 	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: live-migrate")
-	session.Logout()
 }
 ```
 

@@ -290,6 +290,7 @@ import (
 // back, then dissolve it.
 func createBond(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 
@@ -339,7 +340,6 @@ func createBond(url, user, password string) {
 	left, _ := xenapi.Bond.GetAll(session)
 	fmt.Printf("Bonds left:   %d\n", len(left))
 	fmt.Println("OK: create-bond")
-	session.Logout()
 }
 ```
 

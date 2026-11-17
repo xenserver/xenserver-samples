@@ -10,7 +10,7 @@ import (
 //
 // Take a storage repository offline and bring it back: disconnect it from every host, reconnect and
 // rescan it, then disconnect it once more and forget it for good.
-func manageSrLifecycle(url, user, password, nfsServer, nfsPath string) {
+func manageSRLifecycle(url, user, password, nfsServer, nfsPath string) {
 	session := connect(url, user, password)
 	defer session.Logout()
 

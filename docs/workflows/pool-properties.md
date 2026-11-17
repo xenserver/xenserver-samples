@@ -203,14 +203,15 @@ import (
 //	poolProperties("https://xenserver", "root", password)
 func poolProperties(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
 	poolRef := pools[0]
 	original, _ := xenapi.Pool.GetNameLabel(session, poolRef)
-	defaultSr, _ := xenapi.Pool.GetDefaultSR(session, poolRef)
+	defaultSR, _ := xenapi.Pool.GetDefaultSR(session, poolRef)
 	srName := "(none)"
-	if isSet(defaultSr) {
-		srName, _ = xenapi.SR.GetNameLabel(session, defaultSr)
+	if isSet(defaultSR) {
+		srName, _ = xenapi.SR.GetNameLabel(session, defaultSR)
 	}
 	fmt.Printf("Pool:       '%s'\n", original)
 	fmt.Printf("Default SR: %s\n", srName)
@@ -220,7 +221,6 @@ func poolProperties(url, user, password string) {
 	fmt.Printf("Renamed to: '%s'\n", now)
 	check(xenapi.Pool.SetNameLabel(session, poolRef, original)) // restore
 	fmt.Println("OK: pool-properties")
-	session.Logout()
 }
 ```
 

@@ -221,6 +221,7 @@ import (
 //	deleteVM("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-delete")
 func deleteVM(url, user, password, templateName, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Make a throwaway VM to delete. VM.Destroy removes the VM but leaves its disks, so the
 	// owned VDIs are destroyed explicitly afterward.
 	vm, err := xenapi.VM.Clone(session, templateByName(session, templateName), newVMName)
@@ -246,7 +247,6 @@ func deleteVM(url, user, password, templateName, newVMName string) {
 	}
 	fmt.Printf("VM still present: %v\n", stillThere)
 	fmt.Println("OK: delete-vm")
-	session.Logout()
 }
 ```
 

@@ -17,6 +17,7 @@ import (
 //	poolTags("https://xenserver", "root", password)
 func poolTags(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
 	poolRef := pools[0]
@@ -25,5 +26,4 @@ func poolTags(url, user, password string) {
 	fmt.Printf("Pool tags: %s\n", strings.Join(tags, ", "))
 	check(xenapi.Pool.RemoveTags(session, poolRef, "sdk-managed"))
 	fmt.Println("OK: pool-tags")
-	session.Logout()
 }

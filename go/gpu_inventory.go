@@ -16,6 +16,7 @@ import (
 //	gpuInventory("https://xenserver", "root", password)
 func gpuInventory(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	groups, err := xenapi.GPUGroup.GetAllRecords(session)
 	check(err)
 	fmt.Printf("GPU groups (%d):\n", len(groups))
@@ -44,5 +45,4 @@ func gpuInventory(url, user, password string) {
 	check(xenapi.GPUGroup.SetAllocationAlgorithm(session, firstGroup, before))
 
 	fmt.Println("OK: gpu-inventory")
-	session.Logout()
 }

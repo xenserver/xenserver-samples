@@ -12,6 +12,7 @@ import (
 // down as a unit, then remove it.
 func manageVapp(url, user, password, vmName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vms, err := xenapi.VM.GetByNameLabel(session, vmName)
 	check(err)
 	vm := vms[0]
@@ -60,5 +61,4 @@ func manageVapp(url, user, password, vmName string) {
 		fmt.Println("Appliance still present")
 	}
 	fmt.Println("OK: manage-vapp")
-	session.Logout()
 }

@@ -212,6 +212,7 @@ import (
 //	createNfsSR("https://xenserver", "root", password, "192.0.2.10", "/export/sdk", "sdk-example-nfs")
 func createNfsSR(url, user, password, nfsServer, nfsPath, srName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAllRecords(session)
 	check(err)
 	var hostRef xenapi.HostRef
@@ -235,7 +236,6 @@ func createNfsSR(url, user, password, nfsServer, nfsPath, srName string) {
 	detachAndForgetSR(session, srRef)
 	fmt.Println("Detached and forgot the SR.")
 	fmt.Println("OK: create-nfs-sr")
-	session.Logout()
 }
 ```
 

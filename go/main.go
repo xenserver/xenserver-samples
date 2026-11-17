@@ -87,7 +87,7 @@ var workflows = map[string]workflow{
 		func(u, n, p string, m map[string]string) { copyVM(u, n, p, m["vm_name"], m["sr_name"], m["copy_name"]) }),
 	"create-vm-with-vgpu": wf(map[string]string{"template_name": "Rocky Linux 8", "new_vm_name": "sdk-example-vgpu-vm"},
 		func(u, n, p string, m map[string]string) {
-			createVMWithVgpu(u, n, p, m["template_name"], m["new_vm_name"])
+			createVMWithVGPU(u, n, p, m["template_name"], m["new_vm_name"])
 		}),
 	"tags-and-folders": wf(map[string]string{"vm_name": "web-01"},
 		func(u, n, p string, m map[string]string) { tagsAndFolders(u, n, p, m["vm_name"]) }),
@@ -150,23 +150,23 @@ var workflows = map[string]workflow{
 	"manage-ssh-access": wf(nil, func(u, n, p string, m map[string]string) { manageSSHAccess(u, n, p) }),
 	"manage-vtpm":       wf(nil, func(u, n, p string, m map[string]string) { manageVtpm(u, n, p) }),
 	"export-import-vm": wf(map[string]string{"vm_name": "db-01"},
-		func(u, n, p string, m map[string]string) { exportImportVm(u, n, p, m["vm_name"]) }),
+		func(u, n, p string, m map[string]string) { exportImportVM(u, n, p, m["vm_name"]) }),
 	"configure-dynamic-memory": wf(nil, func(u, n, p string, m map[string]string) { configureDynamicMemory(u, n, p) }),
-	"manage-vm-media":          wf(nil, func(u, n, p string, m map[string]string) { manageVmMedia(u, n, p) }),
+	"manage-vm-media":          wf(nil, func(u, n, p string, m map[string]string) { manageVMMedia(u, n, p) }),
 	"backup-host-config": wf(map[string]string{"restore": "false"},
 		func(u, n, p string, m map[string]string) { backupHostConfig(u, n, p, m["restore"] == "true") }),
 	"manage-sr-lifecycle": wf(map[string]string{"nfs_server": "192.0.2.10", "nfs_path": "/export/spare"},
-		func(u, n, p string, m map[string]string) { manageSrLifecycle(u, n, p, m["nfs_server"], m["nfs_path"]) }),
+		func(u, n, p string, m map[string]string) { manageSRLifecycle(u, n, p, m["nfs_server"], m["nfs_path"]) }),
 	"reconnect-sr-storage": wf(map[string]string{"nfs_server": "192.0.2.10", "nfs_path": "/export/spare"},
 		func(u, n, p string, m map[string]string) {
-			reconnectSrStorage(u, n, p, m["nfs_server"], m["nfs_path"], m["new_nfs_server"])
+			reconnectSRStorage(u, n, p, m["nfs_server"], m["nfs_path"], m["new_nfs_server"])
 		}),
 	"export-import-vdi": wf(map[string]string{"sr_name": "Shared NFS"},
-		func(u, n, p string, m map[string]string) { exportImportVdi(u, n, p, m["sr_name"]) }),
+		func(u, n, p string, m map[string]string) { exportImportVDI(u, n, p, m["sr_name"]) }),
 	"configure-offline-updates": wf(nil,
 		func(u, n, p string, m map[string]string) { configureOfflineUpdates(u, n, p, m["bundle_path"]) }),
 	"set-default-sr": wf(map[string]string{"nfs_server": "192.0.2.10", "nfs_path": "/export/spare"},
-		func(u, n, p string, m map[string]string) { setDefaultSr(u, n, p, m["nfs_server"], m["nfs_path"]) }),
+		func(u, n, p string, m map[string]string) { setDefaultSR(u, n, p, m["nfs_server"], m["nfs_path"]) }),
 	"server-status-report": wf(nil, func(u, n, p string, m map[string]string) { serverStatusReport(u, n, p) }),
 	"configure-disaster-recovery": wf(map[string]string{"sr_name": ""},
 		func(u, n, p string, m map[string]string) { configureDisasterRecovery(u, n, p, m["sr_name"]) }),
@@ -189,7 +189,7 @@ var workflows = map[string]workflow{
 	"reclaim-space":          wf(nil, func(u, n, p string, m map[string]string) { reclaimSpace(u, n, p) }),
 	"vm-ip-address": wf(map[string]string{"vm_name": "web-01", "timeout": "60", "interval": "2"},
 		func(u, n, p string, m map[string]string) {
-			vmIpAddress(u, n, p, m["vm_name"], m["timeout"], m["interval"])
+			vmIPAddress(u, n, p, m["vm_name"], m["timeout"], m["interval"])
 		}),
 	"manage-ad-users": wf(map[string]string{
 		"domain": "", "admin_user": "alice", "admin_password": "Password1", "new_user": "alice",
@@ -201,19 +201,19 @@ var workflows = map[string]workflow{
 		"target": "192.0.2.30", "port": "", "chap_user": "", "chap_password": "", "target_iqn": "",
 		"scsi_id": "360a980004265656d5f4a2d63764e5734", "sr_name": "sdk-example-iscsi",
 	}, func(u, n, p string, m map[string]string) {
-		createIscsiSr(u, n, p, m["target"], m["port"], m["chap_user"], m["chap_password"], m["target_iqn"],
+		createIscsiSR(u, n, p, m["target"], m["port"], m["chap_user"], m["chap_password"], m["target_iqn"],
 			m["scsi_id"], m["sr_name"])
 	}),
 	"create-smb-sr": wf(map[string]string{
 		"server": "192.0.2.40", "share": "/vmstore", "smb_username": "Administrator",
 		"smb_password": "Password1", "sr_name": "sdk-example-smb",
 	}, func(u, n, p string, m map[string]string) {
-		createSmbSr(u, n, p, m["server"], m["share"], m["smb_username"], m["smb_password"], m["sr_name"])
+		createSmbSR(u, n, p, m["server"], m["share"], m["smb_username"], m["smb_password"], m["sr_name"])
 	}),
 	"create-hba-sr": wf(map[string]string{"scsi_id": "", "sr_name": "sdk-example-hba"},
-		func(u, n, p string, m map[string]string) { createHbaSr(u, n, p, m["scsi_id"], m["sr_name"]) }),
+		func(u, n, p string, m map[string]string) { createHbaSR(u, n, p, m["scsi_id"], m["sr_name"]) }),
 	"create-iso-sr": wf(map[string]string{"location": "192.0.2.10:/isos"},
-		func(u, n, p string, m map[string]string) { createIsoSr(u, n, p, m["location"]) }),
+		func(u, n, p string, m map[string]string) { createIsoSR(u, n, p, m["location"]) }),
 	"configure-nrpe": wf(nil, func(u, n, p string, m map[string]string) { configureNrpe(u, n, p) }),
 	"configure-snmp": wf(map[string]string{"trap_destination": "192.0.2.50"},
 		func(u, n, p string, m map[string]string) { configureSnmp(u, n, p, m["trap_destination"]) }),
@@ -257,7 +257,9 @@ func main() {
 		if n == 9 {
 			vmName = os.Args[8]
 		}
-		crossPoolCopyVM(os.Args[2], os.Args[3], os.Args[4], os.Args[5], vmName, destUser, destPassword)
+		exitOnError(runWorkflow(func() {
+			crossPoolCopyVM(os.Args[2], os.Args[3], os.Args[4], os.Args[5], vmName, destUser, destPassword)
+		}))
 		return
 	}
 	if len(os.Args) < 5 {
@@ -285,5 +287,25 @@ func main() {
 		params[key] = value
 	}
 
-	workflow.run(os.Args[2], os.Args[3], os.Args[4], params)
+	exitOnError(runWorkflow(func() { workflow.run(os.Args[2], os.Args[3], os.Args[4], params) }))
+}
+
+// runWorkflow runs one workflow and turns its panic-on-error (see check) into a returned error, so main
+// can print a one-line message instead of a stack trace. Deferred cleanup (logging out, destroying what
+// the workflow made) still runs: recover happens after the stack has unwound through those defers.
+func runWorkflow(fn func()) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("%v", r)
+		}
+	}()
+	fn()
+	return nil
+}
+
+func exitOnError(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "error:", err)
+		os.Exit(1)
+	}
 }

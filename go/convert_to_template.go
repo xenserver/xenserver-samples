@@ -15,6 +15,7 @@ import (
 //	convertToTemplate("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-totemplate")
 func convertToTemplate(url, user, password, templateName, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm, err := xenapi.VM.Clone(session, templateByName(session, templateName), newVMName)
 	check(err)
 	provision(session, vm) // now a real (halted) VM
@@ -29,5 +30,4 @@ func convertToTemplate(url, user, password, templateName, newVMName string) {
 	destroyVMAndDisks(session, vm)
 	fmt.Println("Cleaned up the example template.")
 	fmt.Println("OK: convert-to-template")
-	session.Logout()
 }

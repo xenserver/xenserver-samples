@@ -16,6 +16,7 @@ import (
 //	hostMaintenance("https://xenserver", "root", password, "web-01", "Shared NFS", "sdk-example-maint")
 func hostMaintenance(url, user, password, sourceVM, srName, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Choose a host that is not the pool coordinator, so the coordinator can receive its guests.
 	pools, err := xenapi.Pool.GetAllRecords(session)
 	check(err)
@@ -68,5 +69,4 @@ func hostMaintenance(url, user, password, sourceVM, srName, newVMName string) {
 	check(xenapi.VM.HardShutdown(session, vm))
 	destroyVMAndDisks(session, vm)
 	fmt.Println("OK: host-maintenance")
-	session.Logout()
 }

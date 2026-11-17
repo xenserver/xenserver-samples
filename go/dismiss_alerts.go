@@ -12,6 +12,7 @@ import (
 // List the pool's alerts, then dismiss one — what the Notifications view does.
 func dismissAlerts(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	messages, err := xenapi.Message.GetAllRecords(session)
 	check(err)
 	fmt.Printf("Alerts:         %d\n", len(messages))
@@ -33,5 +34,4 @@ func dismissAlerts(url, user, password string) {
 		fmt.Printf("Alerts left:    %d\n", len(left))
 	}
 	fmt.Println("OK: dismiss-alerts")
-	session.Logout()
 }

@@ -309,24 +309,25 @@ import (
 //	storageMigrate("https://xenserver", "root", password, "web-01", "sdk-example-storagemigrate")
 func storageMigrate(url, user, password, sourceVM, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm := copyOfGuest(session, sourceVM, newVMName)
 	check(xenapi.VM.Start(session, vm, false, true))
 	waitForGuestAgent(session, vm)
 	vdi := diskVdis(session, vm)[0]
-	sourceSr, err := xenapi.VDI.GetSR(session, vdi)
+	sourceSR, err := xenapi.VDI.GetSR(session, vdi)
 	check(err)
-	srcSrName, _ := xenapi.SR.GetNameLabel(session, sourceSr)
-	fmt.Printf("Disk is on SR: %s\n", srcSrName)
+	srcSRName, _ := xenapi.SR.GetNameLabel(session, sourceSR)
+	fmt.Printf("Disk is on SR: %s\n", srcSRName)
 
 	// Pick a different SR that holds disks and that the VM's host can reach (an attached PBD there).
 	host, err := xenapi.VM.GetResidentOn(session, vm)
 	check(err)
 	srs, err := xenapi.SR.GetAllRecords(session)
 	check(err)
-	var destSr xenapi.SRRef
+	var destSR xenapi.SRRef
 	found := false
 	for ref, sr := range srs {
-		if ref == sourceSr || sr.ContentType == "iso" || sr.Type == "iso" || sr.Type == "udev" {
+		if ref == sourceSR || sr.ContentType == "iso" || sr.Type == "iso" || sr.Type == "udev" {
 			continue
 		}
 		for _, pbdRef := range sr.PBDs {
@@ -335,7 +336,7 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 			attached, err := xenapi.PBD.GetCurrentlyAttached(session, pbdRef)
 			check(err)
 			if pbdHost == host && attached {
-				destSr, found = ref, true
+				destSR, found = ref, true
 				break
 			}
 		}
@@ -348,7 +349,7 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 	}
 
 	// PoolMigrate returns the disk's new VDI: the copy on the destination SR replaces the original.
-	vdi, err = xenapi.VDI.PoolMigrate(session, vdi, destSr, map[string]string{})
+	vdi, err = xenapi.VDI.PoolMigrate(session, vdi, destSR, map[string]string{})
 	check(err)
 
 	nowOn, _ := xenapi.VDI.GetSR(session, vdi)
@@ -360,7 +361,6 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 	destroyVMAndDisks(session, vm)
 	fmt.Println("Cleaned up the example VM.")
 	fmt.Println("OK: storage-migrate")
-	session.Logout()
 }
 ```
 
@@ -368,7 +368,7 @@ func storageMigrate(url, user, password, sourceVM, newVMName string) {
 
 ```text
 Disk is on SR: Shared NFS
-Disk moved to:  iSCSI storage
+Disk moved to:  Local storage
 Cleaned up the example VM.
 OK: storage-migrate
 ```

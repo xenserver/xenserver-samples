@@ -16,6 +16,7 @@ import (
 //	listNetworks("https://xenserver", "root", password)
 func listNetworks(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	nets, err := xenapi.Network.GetAllRecords(session)
 	check(err)
 	ordered := make([]xenapi.NetworkRecord, 0, len(nets))
@@ -28,5 +29,4 @@ func listNetworks(url, user, password string) {
 		fmt.Printf("  - %s: %d PIF(s), %d VIF(s)\n", net.NameLabel, len(net.PIFs), len(net.VIFs))
 	}
 	fmt.Println("OK: list-networks")
-	session.Logout()
 }

@@ -26,9 +26,10 @@ import (
 //
 // The CHAP password (if any) travels as a Secret, not plaintext device-config, as createSmbSr
 // already does for its share password.
-func createIscsiSr(url, user, password, target, port, chapUser, chapPassword, targetIQN, scsiID, srName string) {
+func createIscsiSR(url, user, password, target, port, chapUser, chapPassword, targetIQN, scsiID, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Discover from the pool master: a shared SR is created there, and the probes log in to the target
 	// and rescan only on the host they run on.
 	pools, err := xenapi.Pool.GetAll(session)
@@ -111,7 +112,6 @@ func createIscsiSr(url, user, password, target, port, chapUser, chapPassword, ta
 		secretDestroyed = true
 	}
 	fmt.Println("OK: create-iscsi-sr")
-	session.Logout()
 }
 
 // findXMLElements scans an XML document for every element named tag, at any depth (the root

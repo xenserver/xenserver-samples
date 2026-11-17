@@ -277,6 +277,7 @@ import (
 // limit prune the oldest snapshot away.
 func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vmRef := vmByName(session, vmName)
 	const runs, retention = 3, 2
 
@@ -333,7 +334,6 @@ func snapshotSchedule(url, user, password, vmName, scheduleName string) {
 		destroyVMAndDisks(session, s)
 	}
 	fmt.Println("OK: snapshot-schedule")
-	session.Logout()
 }
 ```
 

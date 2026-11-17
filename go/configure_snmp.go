@@ -19,6 +19,7 @@ import (
 // afterwards.
 func configureSnmp(url, user, password, trapDestination string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	config := `{"common":{"enabled":"yes","debug_log":"no"},` +
@@ -57,7 +58,6 @@ func configureSnmp(url, user, password, trapDestination string) {
 		snmp("set-config", map[string]string{"config": `{"common":{"enabled":"no"}}`}) // restore
 	}
 	fmt.Println("OK: configure-snmp")
-	session.Logout()
 }
 
 // newUUID returns a random (version 4) UUID.

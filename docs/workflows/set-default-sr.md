@@ -334,7 +334,7 @@ import (
 //
 // Choose where the pool puts new disks, suspended VMs' memory images and host crash dumps by
 // default, then put the original choice back.
-func setDefaultSr(url, user, password, nfsServer, nfsPath string) {
+func setDefaultSR(url, user, password, nfsServer, nfsPath string) {
 	session := connect(url, user, password)
 	defer session.Logout()
 

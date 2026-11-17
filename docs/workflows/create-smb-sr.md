@@ -246,9 +246,10 @@ import (
 //
 // Connect a shared SR to an SMB/CIFS file share. The password travels as a Secret, not plaintext
 // device-config.
-func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, srName string) {
+func createSmbSR(url, user, password, server, share, smbUsername, smbPassword, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	host := hosts[0]
@@ -274,7 +275,6 @@ func createSmbSr(url, user, password, server, share, smbUsername, smbPassword, s
 	fmt.Println("Detached and forgot the SR.")
 	check(xenapi.Secret.Destroy(session, secret))
 	fmt.Println("OK: create-smb-sr")
-	session.Logout()
 }
 ```
 

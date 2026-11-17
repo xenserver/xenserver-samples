@@ -357,9 +357,10 @@ import (
 // it occurs.
 //
 // SR.create formats the chosen LUN - this is destructive, so pick carefully on a real target.
-func createHbaSr(url, user, password, scsiID, srName string) {
+func createHbaSR(url, user, password, scsiID, srName string) {
 	const GiB = 1024 * 1024 * 1024
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Discover from the pool master: a shared SR is created there, and a probe rescans only the host
 	// it runs on (destroying an HBA SR removes the LUN's devices from the host until one does).
 	pools, err := xenapi.Pool.GetAll(session)
@@ -404,7 +405,6 @@ func createHbaSr(url, user, password, scsiID, srName string) {
 	check(xenapi.SR.Destroy(session, sr))
 	fmt.Println("Destroyed the SR.")
 	fmt.Println("OK: create-hba-sr")
-	session.Logout()
 }
 ```
 

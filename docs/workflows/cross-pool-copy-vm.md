@@ -424,17 +424,19 @@ func crossPoolCopyVM(url, user, password, destURL, vmName, destUser, destPasswor
 // an empty transferNetwork falls back to the management network.
 func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, destPassword, transferNetwork string) {
 	source := connect(url, user, password)
+	defer source.Logout()
 	if destUser == "" {
 		destUser, destPassword = user, password
 	}
 	dest := connect(destURL, destUser, destPassword)
+	defer dest.Logout()
 	// Destination: choose a host, network and SR, then ask for a receiver token. The disks go to
 	// the destination pool's default SR.
 	destPools, err := xenapi.Pool.GetAll(dest)
 	check(err)
 	destHost, err := xenapi.Pool.GetMaster(dest, destPools[0])
 	check(err)
-	destSr, err := xenapi.Pool.GetDefaultSR(dest, destPools[0])
+	destSR, err := xenapi.Pool.GetDefaultSR(dest, destPools[0])
 	check(err)
 	pifs, err := xenapi.Host.GetPIFs(dest, destHost)
 	check(err)
@@ -471,7 +473,7 @@ func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, 
 			continue
 		}
 		vdi, _ := xenapi.VBD.GetVDI(source, vbd)
-		vdiMap[vdi] = destSr
+		vdiMap[vdi] = destSR
 	}
 	vifs, _ := xenapi.VM.GetVIFs(source, vm)
 	vifMap := map[xenapi.VIFRef]xenapi.NetworkRef{}
@@ -496,8 +498,6 @@ func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, 
 	// Tidy up so the example is repeatable: the copy and its disks, on the destination pool.
 	destroyVMAndDisks(dest, copied)
 	fmt.Println("OK: cross-pool-copy-vm")
-	dest.Logout()
-	source.Logout()
 }
 ```
 
@@ -505,7 +505,7 @@ func crossPoolCopyVMOverNetwork(url, user, password, destURL, vmName, destUser, 
 
 ```text
 Sent 'db-01' to the destination pool (copy); source still present: true
-  the copy on the destination: db-01 (00000001-0000-0000-f909-000000000000)
+  the copy on the destination: db-01 (00000001-0000-0000-f809-000000000000)
 OK: cross-pool-copy-vm
 ```
 

@@ -232,6 +232,7 @@ import (
 //	waitForTask("https://xenserver", "root", password, "Rocky Linux 8", "sdk-example-asynctask")
 func waitForTask(url, user, password, templateName, newVMName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Every message has an Async.* twin that returns a Task ref immediately; poll it to completion.
 	task, err := xenapi.VM.AsyncClone(session, templateByName(session, templateName), newVMName)
 	check(err)
@@ -263,7 +264,6 @@ func waitForTask(url, user, password, templateName, newVMName string) {
 	check(xenapi.VM.Destroy(session, vmRef))
 	check(xenapi.Task.Destroy(session, task))
 	fmt.Println("OK: wait-for-task")
-	session.Logout()
 }
 ```
 

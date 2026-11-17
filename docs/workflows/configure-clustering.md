@@ -333,6 +333,7 @@ import (
 // quorum as a host leaves the cluster and rejoins it.
 func configureClustering(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 
 	// Clustering is what shared block storage needs before GFS2 thin provisioning. Run it over a network
 	// every host is on - the management network - since corosync is latency-sensitive and a cluster that
@@ -399,7 +400,6 @@ func configureClustering(url, user, password string) {
 	}
 
 	fmt.Println("OK: configure-clustering")
-	session.Logout()
 }
 ```
 

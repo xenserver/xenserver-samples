@@ -18,6 +18,7 @@ import (
 //	listRoles("https://xenserver", "root", password)
 func listRoles(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// RBAC subjects map to these roles. Role records include every permission too; the roles a user
 	// can be granted are the ones made of permissions (non-empty subroles), as xe role-list shows.
 	roles, err := xenapi.Role.GetAllRecords(session)
@@ -37,5 +38,4 @@ func listRoles(url, user, password string) {
 	}
 	fmt.Printf("Roles (%d): %s\n", len(names), strings.Join(shown, ", "))
 	fmt.Println("OK: list-roles")
-	session.Logout()
 }

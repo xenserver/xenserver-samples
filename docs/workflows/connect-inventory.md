@@ -250,6 +250,7 @@ import (
 //	connectInventory("https://xenserver", "root", password)
 func connectInventory(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	pools, err := xenapi.Pool.GetAllRecords(session)
 	check(err)
 	for _, pool := range pools {
@@ -284,7 +285,6 @@ func connectInventory(url, user, password string) {
 	}
 
 	fmt.Println("OK: connect-inventory")
-	session.Logout()
 }
 ```
 
@@ -293,13 +293,13 @@ func connectInventory(url, user, password string) {
 ```text
 Connected to pool: sdk-pool
 Hosts (2):
-  - sdk-host2 (127.0.1.43)
   - sdk-host1 (127.0.0.43)
+  - sdk-host2 (127.0.1.43)
 VMs (4):
-  - db-01 [Halted]
   - cache-01 [Running]
-  - secure-01 [Halted]
+  - db-01 [Halted]
   - web-01 [Running]
+  - secure-01 [Halted]
 OK: connect-inventory
 ```
 

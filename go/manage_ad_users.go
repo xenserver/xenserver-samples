@@ -19,6 +19,7 @@ import (
 // are placeholders: pass your own domain, administrator account and user.
 func manageAdUsers(url, user, password, domain, adminUser, adminPassword, newUser, ldaps string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 
 	pools, err := xenapi.Pool.GetAll(session)
 	check(err)
@@ -98,5 +99,4 @@ func manageAdUsers(url, user, password, domain, adminUser, adminPassword, newUse
 			map[string]string{"user": adminUser, "pass": adminPassword}))
 	}
 	fmt.Println("OK: manage-ad-users")
-	session.Logout()
 }

@@ -16,6 +16,7 @@ import (
 //	listTemplates("https://xenserver", "root", password)
 func listTemplates(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vms, err := xenapi.VM.GetAllRecords(session)
 	check(err)
 	// A snapshot is a template too (is_a_template is set on every snapshot), so leave those out.
@@ -38,5 +39,4 @@ func listTemplates(url, user, password string) {
 		fmt.Printf("  - %s%s\n", t.NameLabel, badge)
 	}
 	fmt.Println("OK: list-templates")
-	session.Logout()
 }

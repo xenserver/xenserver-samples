@@ -494,6 +494,7 @@ func createVMFull(url, user, password, templateName, newVMName string) {
 	const MiB = 1024 * 1024
 
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Step 1 - Template.
 	templateRef := templateByName(session, templateName)
 	tname, _ := xenapi.VM.GetNameLabel(session, templateRef)
@@ -605,7 +606,6 @@ func createVMFull(url, user, password, templateName, newVMName string) {
 	fmt.Println("Cleaned up the example VM.")
 
 	fmt.Println("OK: create-vm-full")
-	session.Logout()
 }
 ```
 
@@ -617,8 +617,8 @@ Created VM:    00000001-0000-0000-f709-000000000000
 Install media: network repository
 Home server:   sdk-host1
 CPU/memory:    2 vCPUs, 2 GiB
-Storage:       24 GiB disk on Local storage
-Networking:    NIC on Pool-wide network 2
+Storage:       24 GiB disk on iSCSI storage
+Networking:    NIC on Pool-wide network 0
 --- Result ---
 power state:   Running
 vCPUs:         2

@@ -321,6 +321,7 @@ import (
 // state (enabled or not, and its configuration) it was found in afterwards.
 func configureNrpe(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	for _, host := range hosts {
@@ -367,7 +368,6 @@ func configureNrpe(url, user, password string) {
 		}
 	}
 	fmt.Println("OK: configure-nrpe")
-	session.Logout()
 }
 ```
 

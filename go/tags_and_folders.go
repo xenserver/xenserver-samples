@@ -16,6 +16,7 @@ import (
 //	tagsAndFolders("https://xenserver", "root", password, "web-01")
 func tagsAndFolders(url, user, password, vmName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm := vmByName(session, vmName)
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
@@ -38,5 +39,4 @@ func tagsAndFolders(url, user, password, vmName string) {
 	check(xenapi.Host.RemoveTags(session, host, "gold"))
 	check(xenapi.VM.RemoveFromOtherConfig(session, vm, "folder"))
 	fmt.Println("OK: tags-and-folders")
-	session.Logout()
 }

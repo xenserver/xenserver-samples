@@ -258,20 +258,20 @@ func traceAPICalls(url, user, password string) {
 		}
 	}
 	check(err)
+	defer session.Logout()
 	fmt.Printf("Trace %x: each call sends traceparent: %s\n", traceID, traceparent)
 
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	fmt.Printf("The pool has %d hosts\n", len(hosts))
 	fmt.Println("OK: trace-api-calls")
-	session.Logout()
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Trace dc2e5a5855c85b45be495f27942953fc: each call sends traceparent: 00-dc2e5a5855c85b45be495f27942953fc-ad19f67163ab8053-01
+Trace 0acb32343200451b811e428f20835061: each call sends traceparent: 00-0acb32343200451b811e428f20835061-64e5eb8f6f8ba0e0-01
 The pool has 2 hosts
 OK: trace-api-calls
 ```

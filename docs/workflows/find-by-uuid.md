@@ -180,6 +180,7 @@ import (
 // across sessions.
 func findByUUID(url, user, password, vmName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// UUIDs are stable identifiers you can persist and resolve back to a (session-scoped) ref.
 	vm := vmByName(session, vmName)
 	uuid, _ := xenapi.VM.GetUUID(session, vm)
@@ -189,7 +190,6 @@ func findByUUID(url, user, password, vmName string) {
 	fmt.Printf("UUID %s resolves to %s\n", uuid, name)
 	fmt.Printf("Same object: %v\n", resolved == vm)
 	fmt.Println("OK: find-by-uuid")
-	session.Logout()
 }
 ```
 

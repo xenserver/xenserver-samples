@@ -17,6 +17,7 @@ func attachDisk(url, user, password, templateName, srName, newVMName string) {
 	const GiB = 1024 * 1024 * 1024
 
 	session := connect(url, user, password)
+	defer session.Logout()
 	vm, err := xenapi.VM.Clone(session, templateByName(session, templateName), newVMName)
 	check(err)
 	provision(session, vm)
@@ -52,5 +53,4 @@ func attachDisk(url, user, password, templateName, srName, newVMName string) {
 	// behind), including the one just attached.
 	destroyVMAndDisks(session, vm)
 	fmt.Println("OK: attach-disk")
-	session.Logout()
 }

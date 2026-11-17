@@ -16,6 +16,7 @@ import (
 //	cloneVM("https://xenserver", "root", password, "db-01", "sdk-example-clone")
 func cloneVM(url, user, password, vmName, cloneName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// Unlike Copy (a full, independent copy onto a chosen SR), Clone is a fast copy-on-write
 	// duplicate on the same SR - ideal for a halted "golden" VM.
 	source := vmByName(session, vmName)
@@ -45,5 +46,4 @@ func cloneVM(url, user, password, vmName, cloneName string) {
 	destroyVMAndDisks(session, clone)
 	fmt.Println("Cleaned up the cloned VM (left the source intact).")
 	fmt.Println("OK: clone-vm")
-	session.Logout()
 }

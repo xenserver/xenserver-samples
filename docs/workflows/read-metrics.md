@@ -210,6 +210,7 @@ func readMetrics(url, user, password string) {
 	const MiB = 1024 * 1024
 
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAllRecords(session)
 	check(err)
 	var hostRef xenapi.HostRef
@@ -247,14 +248,13 @@ func readMetrics(url, user, password string) {
 	name, _ := xenapi.VM.GetNameLabel(session, vmRef)
 	fmt.Printf("VM %s: %d vCPU(s), %d MiB\n", name, vcpus, mem/MiB)
 	fmt.Println("OK: read-metrics")
-	session.Logout()
 }
 ```
 
 <details><summary>Example output</summary>
 
 ```text
-Host sdk-host2: 65536 MiB total, 57344 MiB free, live = true
+Host sdk-host1: 65536 MiB total, 57344 MiB free, live = true
 VM web-01: 2 vCPU(s), 4096 MiB
 OK: read-metrics
 ```

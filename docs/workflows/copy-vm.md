@@ -255,6 +255,7 @@ import (
 //	copyVM("https://xenserver", "root", password, "db-01", "Shared NFS", "sdk-example-copy")
 func copyVM(url, user, password, vmName, srName, copyName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	// A full copy needs a halted source; it places an independent set of disks on the chosen SR.
 	source := vmByName(session, vmName)
 	srRef := srByName(session, srName, false)
@@ -287,7 +288,6 @@ func copyVM(url, user, password, vmName, srName, copyName string) {
 	destroyVMAndDisks(session, copyRef)
 	fmt.Println("Cleaned up the copied VM (left the source intact).")
 	fmt.Println("OK: copy-vm")
-	session.Logout()
 }
 ```
 

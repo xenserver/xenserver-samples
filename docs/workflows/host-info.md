@@ -230,6 +230,7 @@ import (
 //	hostInfo("https://xenserver", "root", password)
 func hostInfo(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAllRecords(session)
 	check(err)
 	var host xenapi.HostRecord
@@ -258,7 +259,6 @@ func hostInfo(url, user, password string) {
 	fmt.Printf("Serial:   %s\n", get(host.BiosStrings, "system-serial-number"))
 	fmt.Printf("BIOS:     %s\n", get(host.BiosStrings, "bios-version"))
 	fmt.Println("OK: host-info")
-	session.Logout()
 }
 ```
 

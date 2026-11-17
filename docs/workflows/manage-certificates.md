@@ -413,6 +413,7 @@ import (
 // fingerprints back, and turn on verification of the certificates members present to each other.
 func manageCertificates(url, user, password string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	hosts, err := xenapi.Host.GetAll(session)
 	check(err)
 	pools, err := xenapi.Pool.GetAll(session)
@@ -467,7 +468,6 @@ func manageCertificates(url, user, password string) {
 	verifying, _ = xenapi.Pool.GetTLSVerificationEnabled(session, poolRef)
 	fmt.Printf("  after enabling: %t\n", verifying)
 	fmt.Println("OK: manage-certificates")
-	session.Logout()
 }
 
 // selfSignedCertPEM generates a throwaway self-signed certificate and private key (PEM). Go's

@@ -16,6 +16,7 @@ import (
 //	createNetwork("https://xenserver", "root", password, "sdk-example-net")
 func createNetwork(url, user, password, networkName string) {
 	session := connect(url, user, password)
+	defer session.Logout()
 	netRef, err := xenapi.Network.Create(session, xenapi.NetworkRecord{
 		NameLabel:       networkName,
 		NameDescription: "Internal network created by the SDK example",
@@ -37,5 +38,4 @@ func createNetwork(url, user, password, networkName string) {
 
 	check(xenapi.Network.Destroy(session, netRef))
 	fmt.Println("OK: create-network")
-	session.Logout()
 }

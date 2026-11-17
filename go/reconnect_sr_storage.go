@@ -21,7 +21,7 @@ import (
 // Run it:
 //
 //	reconnectSrStorage("https://xenserver", "root", password, "192.0.2.10", "/export/spare", "192.0.2.11")
-func reconnectSrStorage(url, user, password, nfsServer, nfsPath, newNfsServer string) {
+func reconnectSRStorage(url, user, password, nfsServer, nfsPath, newNfsServer string) {
 	session := connect(url, user, password)
 	defer session.Logout()
 	if newNfsServer == "" {

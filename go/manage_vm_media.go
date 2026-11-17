@@ -10,7 +10,7 @@ import (
 // manageVmMedia - Manage a VM's CD drive.
 //
 // Add a DVD drive to a VM, insert an ISO from the library and eject it again.
-func manageVmMedia(url, user, password string) {
+func manageVMMedia(url, user, password string) {
 	session := connect(url, user, password)
 	defer session.Logout()
 
@@ -51,14 +51,14 @@ func manageVmMedia(url, user, password string) {
 	// The ISO library is an SR of content type "iso"; its VDIs are the available images.
 	srs, err := xenapi.SR.GetAllRecords(session)
 	check(err)
-	var isoSr xenapi.SRRef
+	var isoSR xenapi.SRRef
 	for ref, s := range srs {
 		if s.ContentType == "iso" && s.Type != "udev" {
-			isoSr = ref
+			isoSR = ref
 			break
 		}
 	}
-	vdis, err := xenapi.SR.GetVDIs(session, isoSr)
+	vdis, err := xenapi.SR.GetVDIs(session, isoSR)
 	check(err)
 	names := map[xenapi.VDIRef]string{}
 	for _, v := range vdis {
