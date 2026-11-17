@@ -10,7 +10,9 @@ checked against all of them before it ships.
 
 ### From xen-api's CI
 
-xen-api's CI builds every SDK on each push. Fetch the build from the latest run on a branch, then use it:
+xen-api's CI builds every SDK on each push. Fetch the build from the latest run on a branch, then use it.
+This needs the [GitHub CLI](https://cli.github.com/) (`gh`), logged in (`gh auth login`): it reads the
+run and downloads its artifacts through it.
 
 ```
 tools/stage-ci-sdk.sh                                    # xapi-project/xen-api master

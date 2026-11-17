@@ -18,4 +18,4 @@ the `xe` CLI, Python, C#, Go and Java, side by side, with the output of running 
 Then browse the [workflow examples](workflows/README.md), starting with [Connecting](workflows/connecting.md).
 
 For the full API reference and SDK downloads, see the
-[XenServer SDK Guide](https://docs.xenserver.com/en-us/xenserver/8/developer/sdk-guide).
+[XenServer SDK Guide](https://docs.xenserver.com/en-us/xenserver/developer/sdk-guide).

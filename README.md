@@ -8,7 +8,7 @@ and in Python, C#, Go and Java**, so you can read it in the language you know an
 you need.
 
 The samples are a companion to the
-[XenServer SDK Guide](https://docs.xenserver.com/en-us/xenserver/8/developer/sdk-guide), which has the
+[XenServer SDK Guide](https://docs.xenserver.com/en-us/xenserver/developer/sdk-guide), which has the
 full API reference and the SDK downloads.
 
 ## What's inside
@@ -24,7 +24,7 @@ full API reference and the SDK downloads.
 
 1. **Pick a language** and set it up as its README describes. Mostly that means getting the SDK binding
    for your language from the
-   [XenServer SDK Guide](https://docs.xenserver.com/en-us/xenserver/8/developer/sdk-guide).
+   [XenServer SDK Guide](https://docs.xenserver.com/en-us/xenserver/developer/sdk-guide).
 2. **Run your first workflow**, `connect-inventory`, against your pool's coordinator. It logs in and
    lists the pool's hosts and VMs:
 

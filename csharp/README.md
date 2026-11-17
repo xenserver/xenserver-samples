@@ -1,6 +1,6 @@
 # XenServer.NET (C#) examples
 
-This folder holds the C# version of every workflow example ([the full list](../README.md#workflow-examples)),
+This folder holds the C# version of every workflow example ([the full list](../README.md#the-workflows)),
 one file per workflow, grouped in a folder per area:
 
 ```

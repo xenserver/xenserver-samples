@@ -1,6 +1,6 @@
 # XenServer Python examples
 
-This folder holds the Python version of every workflow example ([the full list](../README.md#workflow-examples)),
+This folder holds the Python version of every workflow example ([the full list](../README.md#the-workflows)),
 one module per workflow, in a package per area:
 
 ```

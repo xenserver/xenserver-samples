@@ -110,7 +110,7 @@ choose_target_iqn() {
 # otherwise make the caller choose - picking blindly on a shared target risks formatting someone else's
 # disk. Echoes the chosen <LUN>...</LUN> fragment.
 choose_lun() {
-    local xml=$1 wanted=$2 rest=$xml block scsi_id
+    local xml=$1 wanted=$2 rest=$1 block scsi_id
     local -a blocks=()
     while [[ $rest == *"<LUN>"* ]]; do
         block=${rest#*<LUN>}; rest=${block#*</LUN>}; block="<LUN>${block%%</LUN>*}"

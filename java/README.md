@@ -1,6 +1,6 @@
 # XenServer Java examples
 
-This folder holds the Java version of every workflow example ([the full list](../README.md#workflow-examples))
+This folder holds the Java version of every workflow example ([the full list](../README.md#the-workflows))
 except `trace-api-calls` (the Java SDK cannot add a header to its requests), as a Maven project with one
 class per workflow, in a package per area:
 
@@ -16,8 +16,8 @@ java/src/main/java/com/xenserver/samples/
 
 ## Build and run
 
-You need Java 11 or later and Maven. The SDK jar is not published to Maven Central, so install it into
-your local repository first, then build and run:
+You need Java 17 or later (the SDK jar is built for Java 17) and Maven. The SDK jar is not published
+to Maven Central, so install it into your local repository first, then build and run:
 
 ```
 mvn install:install-file -Dfile=xen-api-<version>.jar -DgroupId=com.xenserver -DartifactId=xen-api -Dversion=<version> -Dpackaging=jar

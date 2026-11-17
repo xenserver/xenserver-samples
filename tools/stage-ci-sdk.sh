@@ -40,6 +40,12 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 stage=$root/.ci-sdk
 artifacts="SDK_Artifacts_Go SDK_Artifacts_Java SDK_Binaries_CSharp SDK_Binaries_XenServerPowerShell_NET10"
 
+# Check before clearing the stage, so a missing gh doesn't throw away the SDK staged last time.
+if [ -z "$from" ] && ! command -v gh >/dev/null; then
+    echo "fetching a CI build needs the GitHub CLI (gh), logged in: https://cli.github.com/" >&2
+    exit 1
+fi
+
 rm -rf "$stage"
 mkdir -p "$stage/python" "$stage/java" "$stage/nuget" "$stage/powershell"
 

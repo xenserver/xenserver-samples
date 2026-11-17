@@ -1,6 +1,6 @@
 # XenServer Go examples
 
-This folder holds the Go version of every workflow example ([the full list](../README.md#workflow-examples)),
+This folder holds the Go version of every workflow example ([the full list](../README.md#the-workflows)),
 one file per workflow, all in one `main` package:
 
 ```

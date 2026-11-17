@@ -36,10 +36,17 @@ function Invoke-SnapshotRevert {
         $console = (Get-XenVM -Ref $vm).consoles |
             ForEach-Object { Get-XenConsole -Ref $_ } | Where-Object { $_.protocol -eq 'rfb' } |
             Select-Object -First 1
-        $thumb = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck `
-            -Uri "$Url/vncsnapshot?session_id=$($session.opaque_ref)&ref=$($console.opaque_ref)"
-        if ($thumb.StatusCode -eq 200) { Write-Host "Thumbnail:      $($thumb.Content.Length) bytes of PNG" }
-        else { Write-Host "Thumbnail:      none (the host answered HTTP $($thumb.StatusCode))" }
+        # An HTTP error status throws in both Windows PowerShell 5.1 and PowerShell 7, with the response
+        # (and its status code) on the exception; anything else - no response at all - is a real failure.
+        try {
+            $thumb = Invoke-WebRequest -UseBasicParsing `
+                -Uri "$Url/vncsnapshot?session_id=$($session.opaque_ref)&ref=$($console.opaque_ref)"
+            Write-Host "Thumbnail:      $($thumb.RawContentLength) bytes of PNG"
+        }
+        catch {
+            if (-not $_.Exception.Response) { throw }
+            Write-Host "Thumbnail:      none (the host answered HTTP $([int]$_.Exception.Response.StatusCode))"
+        }
     }
     else {
         Write-Host "Thumbnail:      none (the VM is not running, so it has no console)"

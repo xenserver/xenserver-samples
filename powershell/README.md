@@ -1,6 +1,6 @@
 # XenServer PowerShell examples
 
-This folder holds the PowerShell version of every workflow example ([the full list](../README.md#workflow-examples)),
+This folder holds the PowerShell version of every workflow example ([the full list](../README.md#the-workflows)),
 written with the SDK module's cmdlets: one script per workflow function, in a folder per area:
 
 ```

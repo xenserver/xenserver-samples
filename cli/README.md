@@ -1,6 +1,6 @@
 # XenServer CLI (xe) examples
 
-This folder holds the `xe` version of every workflow example ([the full list](../README.md#workflow-examples)),
+This folder holds the `xe` version of every workflow example ([the full list](../README.md#the-workflows)),
 written entirely with `xe` commands: the same commands you would type at a host's console. One file per
 workflow, in a folder per area:
 
