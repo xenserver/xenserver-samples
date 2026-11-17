@@ -46,10 +46,9 @@ function Invoke-ExportImportVm {
     # once would otherwise fight over it.
     $path = Join-Path ([IO.Path]::GetTempPath()) "sdk-example-export-$([guid]::NewGuid().Guid).xva"
     try {
-        # Stream both directions: -OutFile/-InFile stream to and from the file rather than buffering the
-        # whole transfer in memory, as a real VM's export can be gigabytes.
-        Invoke-WebRequest -Uri "$Url/export?session_id=$($session.opaque_ref)&uuid=$($vm.uuid)" `
-            -OutFile $path -UseBasicParsing
+        # Stream both directions rather than buffering the whole transfer in memory, as a real VM's
+        # export can be gigabytes (Save-/Send-HttpTransfer, Helpers.ps1, do that on PowerShell 5.1 too).
+        Save-HttpTransfer -Uri "$Url/export?session_id=$($session.opaque_ref)&uuid=$($vm.uuid)" -Path $path
         Write-Host ("  wrote {0:N1} MiB to {1}" -f ((Get-Item $path).Length / 1MB), (Split-Path $path -Leaf))
 
         # An XVA is a tar: ova.xml describes the VM, and the disk blocks follow in 1 MiB pieces, each with
@@ -63,8 +62,8 @@ function Invoke-ExportImportVm {
         # task's result once the upload finishes, the same pattern backup-host-config/wait-for-task use.
         $task = New-XenTask -Label 'vm_import' -Description "importing $VmName back" -PassThru
         try {
-            Invoke-WebRequest -Uri "$Url/import?session_id=$($session.opaque_ref)&task_id=$($task.opaque_ref)" `
-                -Method Put -InFile $path -UseBasicParsing | Out-Null
+            Send-HttpTransfer -Uri "$Url/import?session_id=$($session.opaque_ref)&task_id=$($task.opaque_ref)" `
+                -Path $path
             while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
             $finished = Get-XenTask -Ref $task
             if ($finished.status -ne 'success') { throw "import failed: $($finished.error_info -join ' ')" }
@@ -120,7 +119,7 @@ function Get-TarEntryName {
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-f268b73f-5aba-44d5-9d46-7d16e4b18b62.xva
+  wrote 4.0 MiB to sdk-example-export-c87221fa-e90e-4139-8547-0f5ae0d221d1.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
 Cleaned up the imported VM.

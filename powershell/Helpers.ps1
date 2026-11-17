@@ -324,3 +324,49 @@ function Get-HostUrl {
     $port = if ($uri.Port -gt 0) { ":$($uri.Port)" } else { "" }
     return "$($uri.Scheme)://$Address$port"
 }
+
+function Save-HttpTransfer {
+    <#
+    .SYNOPSIS
+        Download an HTTP transfer (an export, a report) to a file, streamed.
+    .DESCRIPTION
+        Windows PowerShell 5.1 redraws Invoke-WebRequest's progress bar for every block it writes, which
+        makes a download of gigabytes crawl, so the bar is off for this call.
+    #>
+    param([string]$Uri, [string]$Path)
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $Uri -OutFile $Path -UseBasicParsing
+}
+
+function Send-HttpTransfer {
+    <#
+    .SYNOPSIS
+        Upload a file as an HTTP transfer (an import), streamed.
+    .DESCRIPTION
+        PowerShell 7's Invoke-WebRequest -InFile streams the file. Windows PowerShell 5.1's reads all of it
+        into memory before sending (its request buffers the body), which a VM export of gigabytes doesn't
+        fit in, so there the file goes through HttpWebRequest with buffering off - still trusting the
+        certificate Connect-Example accepted.
+    #>
+    param([string]$Uri, [string]$Path, [string]$Method = 'PUT')
+    $ProgressPreference = 'SilentlyContinue'
+    if ($PSVersionTable.PSEdition -eq 'Core') {
+        Invoke-WebRequest -Uri $Uri -Method $Method -InFile $Path -UseBasicParsing | Out-Null
+        return
+    }
+    $request = [System.Net.HttpWebRequest]::Create($Uri)
+    $request.Method = $Method.ToUpperInvariant()
+    $request.AllowWriteStreamBuffering = $false
+    $request.ContentLength = (Get-Item $Path).Length
+    $request.Timeout = [System.Threading.Timeout]::Infinite
+    $request.ReadWriteTimeout = [System.Threading.Timeout]::Infinite
+    $file = [System.IO.File]::OpenRead($Path)
+    try {
+        $body = $request.GetRequestStream()
+        try { $file.CopyTo($body, 1MB) }
+        finally { $body.Dispose() }
+    }
+    finally { $file.Dispose() }
+    # An HTTP error status throws here, as Invoke-WebRequest does.
+    $request.GetResponse().Dispose()
+}

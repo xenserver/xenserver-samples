@@ -87,8 +87,8 @@ function Invoke-RawVdiTransfer {
     try {
         $uri = "$Url/$Endpoint" + "?session_id=$($Session.opaque_ref)&task_id=$($task.opaque_ref)" +
             "&vdi=$($Vdi.opaque_ref)&format=raw"
-        if ($Method -eq 'Put') { Invoke-WebRequest -Uri $uri -Method Put -InFile $Path -UseBasicParsing | Out-Null }
-        else { Invoke-WebRequest -Uri $uri -OutFile $Path -UseBasicParsing }
+        if ($Method -eq 'Put') { Send-HttpTransfer -Uri $uri -Path $Path }
+        else { Save-HttpTransfer -Uri $uri -Path $Path }
         while ((Get-XenTask -Ref $task).status -eq 'pending') { Start-Sleep -Milliseconds 500 }
         $finished = Get-XenTask -Ref $task
         if ($finished.status -ne 'success') { throw "$Endpoint failed: $($finished.error_info -join ' ')" }

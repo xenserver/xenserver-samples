@@ -421,8 +421,8 @@ powershell	dismiss-alerts	565f43220f07	Alerts:         14\nDismissing:     VM_ST
 powershell	edit-vm-properties	59837c16e82c	New description: Edited by the SDK example\nother_config[sdk_example] = true\nOK: edit-vm-properties
 powershell	error-handling	63abe5e355d7	Caught expected failure: UUID_INVALID\nOK: error-handling
 powershell	events	f5f1eec76f3a	Established event token after initial snapshot.\nReceived 1 event(s) after the change.\n  - mod vm\nOK: events
-powershell	export-import-vdi	0903e798b58c	Uploaded 8 MiB into sdk-example-raw-source\nDownloaded 8 MiB of raw contents\nCopied them into sdk-example-raw-copy\nThe copy matches the original\nOK: export-import-vdi
-powershell	export-import-vm	eee9ac5ce286	Exporting db-01\n  wrote 4.0 MiB to sdk-example-export-f268b73f-5aba-44d5-9d46-7d16e4b18b62.xva\n  archive holds ova.xml and 4 disk block(s)\n  imported as db-01\nCleaned up the imported VM.\nOK: export-import-vm
+powershell	export-import-vdi	80d899e76ac6	Uploaded 8 MiB into sdk-example-raw-source\nDownloaded 8 MiB of raw contents\nCopied them into sdk-example-raw-copy\nThe copy matches the original\nOK: export-import-vdi
+powershell	export-import-vm	852174ee933a	Exporting db-01\n  wrote 4.0 MiB to sdk-example-export-c87221fa-e90e-4139-8547-0f5ae0d221d1.xva\n  archive holds ova.xml and 4 disk block(s)\n  imported as db-01\nCleaned up the imported VM.\nOK: export-import-vm
 powershell	find-by-uuid	b049b1861fb3	UUID 00000001-0000-0000-8d00-000000000000 resolves to web-01\nSame object: True\nOK: find-by-uuid
 powershell	gpu-inventory	30ab2bc454f9	GPU groups (2):\n  - Group of NVIDIA GRID K1: 1 pGPU(s), vGPU types: passthrough, GRID K100\n  - Group of NVIDIA GRID K1: 1 pGPU(s), vGPU types: passthrough, GRID K100\nAllocation:      depth_first -> breadth_first\nOK: gpu-inventory
 powershell	host-info	a73ae94636cd	Host:     sdk-host1\nVersion:  9.0.0\nEdition:  cloud\nCPUs:     8 across 1 socket(s)\nHardware: Dell Inc. PowerEdge R750\nSerial:   XPSIM017RT\nBIOS:     2.15.1\nOK: host-info
@@ -464,7 +464,7 @@ powershell	snapshot-schedule	c41f555c2298	Created schedule: 00000001-0000-0000-f
 powershell	sr-usage	5afdcb158ee6	  iSCSI storage: 25 / 200 GiB used\n  ISO library: 4 / 100 GiB used\n  Local storage: 25 / 512 GiB used\n  Local storage: 25 / 512 GiB used\n  Shared NFS: 25 / 512 GiB used\nRescanned Shared NFS\nOK: sr-usage
 powershell	storage-migrate	0e41f39b037e	Disk is on SR: Shared NFS\nDisk moved to:  iSCSI storage\nCleaned up the example VM.\nOK: storage-migrate
 powershell	tags-and-folders	737356c804bb	VM tags:   web\nHost tags: gold\nVM folder: /Production/Web\nOK: tags-and-folders
-powershell	trace-api-calls	930a047558d6	Trace 844e8732610c3cbe783bb575b21250ad: each call sends traceparent: 00-844e8732610c3cbe783bb575b21250ad-315ef4de9f47be35-03\nThe pool has 2 hosts\nOK: trace-api-calls
+powershell	trace-api-calls	8bb72618b747	Trace 939cfeac6ad8a7c8b6a7f98f5992104f: each call sends traceparent: 00-939cfeac6ad8a7c8b6a7f98f5992104f-262d92779b5ed807-03\nThe pool has 2 hosts\nOK: trace-api-calls
 powershell	vbd-inventory	c6f20dad0d38	Disks of 'db-01':\n  - device 0: 25 GiB\nOK: vbd-inventory
 powershell	vm-boot-config	0df99fac4598	vCPUs: 2/4\nBoot order: cdn\nBoot mode: firmware=uefi, secureboot=auto (resolved against pool certificates at boot)\nCleaned up the example VM.\nOK: vm-boot-config
 powershell	vm-from-snapshot	598c8b699caf	Snapshot of db-01 taken\n  new VM:      sdk-example-vm-from-snapshot (is_a_template=False)\n  new template:sdk-example-template-from-snapshot (is_a_template=True)\nCleaned up the example VM, template and snapshot.\nOK: vm-from-snapshot
