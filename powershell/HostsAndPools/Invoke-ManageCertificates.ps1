@@ -58,14 +58,65 @@ function Get-SelfSignedCertPem {
     .SYNOPSIS
         A throwaway self-signed certificate and private key (PEM).
     .DESCRIPTION
-        PowerShell 7 runs on .NET, which has a native crypto API for this - no external tool needed (unlike
-        PowerShell 5.1, where New-SelfSignedCertificate, or an `openssl req -x509` shell-out would be the
-        fallback).
+        .NET creates the key and certificate itself (CertificateRequest, .NET Framework 4.7.2 and later), so
+        no external tool is needed on either PowerShell. Writing them as PEM differs: PowerShell 7 (.NET 7+)
+        exports the key directly; Windows PowerShell 5.1 (.NET Framework) has no PEM export, so the key is
+        encoded from its parameters (ConvertTo-Pkcs8Pem).
     #>
     $rsa = [System.Security.Cryptography.RSA]::Create(2048)
     $req = [System.Security.Cryptography.X509Certificates.CertificateRequest]::new(
         "CN=sdk-example", $rsa, [System.Security.Cryptography.HashAlgorithmName]::SHA256,
         [System.Security.Cryptography.RSASignaturePadding]::Pkcs1)
     $cert = $req.CreateSelfSigned([DateTimeOffset]::UtcNow.AddDays(-1), [DateTimeOffset]::UtcNow.AddDays(365))
-    return $cert.ExportCertificatePem(), $rsa.ExportPkcs8PrivateKeyPem()
+    $certPem = ConvertTo-Pem -Label 'CERTIFICATE' -Der $cert.RawData
+    $keyPem = if ($PSVersionTable.PSEdition -eq 'Core') { $rsa.ExportPkcs8PrivateKeyPem() } else { ConvertTo-Pkcs8Pem -Rsa $rsa }
+    return $certPem, $keyPem
+}
+
+function ConvertTo-Pem {
+    <#
+    .SYNOPSIS
+        DER bytes as PEM: base64 in 64-character lines between BEGIN/END lines.
+    #>
+    param([string]$Label, [byte[]]$Der)
+    $lines = [Convert]::ToBase64String($Der) -split '(.{64})' | Where-Object { $_ }
+    "-----BEGIN $Label-----`n" + ($lines -join "`n") + "`n-----END $Label-----`n"
+}
+
+function ConvertTo-Pkcs8Pem {
+    <#
+    .SYNOPSIS
+        An RSA private key as PKCS#8 PEM ("BEGIN PRIVATE KEY"), encoded from its parameters.
+    .DESCRIPTION
+        For Windows PowerShell 5.1, whose .NET Framework can't export a key as PKCS#8. The key is a DER
+        PrivateKeyInfo: version 0, the rsaEncryption algorithm, and the PKCS#1 RSAPrivateKey (version 0, n, e,
+        d, p, q, d mod (p-1), d mod (q-1), q^-1 mod p) as an OCTET STRING.
+    #>
+    param([System.Security.Cryptography.RSA]$Rsa)
+    function Get-Der([byte]$Tag, [byte[]]$Value) {
+        $length = $Value.Length
+        if ($length -lt 0x80) { $head = @($Tag, [byte]$length) }
+        else {
+            $lengthBytes = @()
+            while ($length -gt 0) { $lengthBytes = @([byte]($length -band 0xff)) + $lengthBytes; $length = $length -shr 8 }
+            $head = @($Tag, [byte](0x80 + $lengthBytes.Count)) + $lengthBytes
+        }
+        [byte[]](@($head) + @($Value))
+    }
+    function Get-DerInteger([byte[]]$BigEndian) {
+        # An unsigned big-endian number: drop leading zeros, then add one back if the top bit is set.
+        $i = 0
+        while ($i -lt $BigEndian.Length - 1 -and $BigEndian[$i] -eq 0) { $i++ }
+        $value = @($BigEndian[$i..($BigEndian.Length - 1)])
+        if ($value[0] -ge 0x80) { $value = @([byte]0) + $value }
+        Get-Der 0x02 $value
+    }
+    $p = $Rsa.ExportParameters($true)
+    $version = [byte[]](0x02, 0x01, 0x00)
+    $rsaKey = Get-Der 0x30 ([byte[]](@($version) + (@($p.Modulus, $p.Exponent, $p.D, $p.P, $p.Q, $p.DP, $p.DQ,
+        $p.InverseQ) | ForEach-Object { Get-DerInteger $_ })))
+    # SEQUENCE { OID 1.2.840.113549.1.1.1 (rsaEncryption), NULL }
+    $algorithm = [byte[]](0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00)
+    $privateKeyInfo = Get-Der 0x30 ([byte[]](@($version) + @($algorithm) + @(Get-Der 0x04 $rsaKey)))
+    ConvertTo-Pem -Label 'PRIVATE KEY' -Der $privateKeyInfo
 }
