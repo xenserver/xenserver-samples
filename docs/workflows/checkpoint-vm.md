@@ -40,6 +40,9 @@ function Invoke-CheckpointVm {
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     if ($vm.power_state -ne 'Running') { throw "$VmName must be running to be checkpointed" }
     $ref = $vm.opaque_ref
+    # Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does), so
+    # wait for its guest to finish booting first.
+    Wait-GuestAgent -Ref $ref
 
     $checkpoint = $vm | Invoke-XenVM -XenAction Checkpoint -NewName "sdk-example-checkpoint-1" -PassThru
     Write-Host "Created checkpoint: $($checkpoint.uuid)"
@@ -103,6 +106,9 @@ checkpoint_vm() {
         echo "$vm_name must be running to be checkpointed" >&2
         return 1
     fi
+    # Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does), so
+    # wait for its guest to finish booting first.
+    wait_for_guest_agent "$vm"
     cp=$(xe vm-checkpoint uuid=$vm new-name-label=xe-example-checkpoint-1)
     echo "Created checkpoint: $cp"
     xe snapshot-revert snapshot-uuid=$cp
@@ -154,7 +160,7 @@ Run it::
 """
 
 from connection import connect
-from helpers import destroy_vm_and_disks, vm_by_name
+from helpers import destroy_vm_and_disks, vm_by_name, wait_for_guest_agent
 
 
 def checkpoint_vm(url, username, password, vm_name):
@@ -169,6 +175,9 @@ def checkpoint_vm(url, username, password, vm_name):
     vm = vm_by_name(session, vm_name)
     if session.xenapi.VM.get_power_state(vm) != "Running":
         raise RuntimeError("%s must be running to be checkpointed" % vm_name)
+    # Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does), so
+    # wait for its guest to finish booting first.
+    wait_for_guest_agent(session, vm)
 
     checkpoint = session.xenapi.VM.checkpoint(vm, "sdk-example-checkpoint-1")
     print("Created checkpoint: %s" % session.xenapi.VM.get_uuid(checkpoint))
@@ -230,6 +239,9 @@ public static void CheckpointVm(string url, string user, string password, string
     var vm = VmByName(session, vmName);
     if (VM.get_power_state(session, vm) != vm_power_state.Running)
         throw new InvalidOperationException($"{vmName} must be running to be checkpointed");
+    // Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does), so
+    // wait for its guest to finish booting first.
+    WaitForGuestAgent(session, vm);
 
     var checkpoint = VM.checkpoint(session, vm, "sdk-example-checkpoint-1");
     Console.WriteLine($"Created checkpoint: {VM.get_uuid(session, checkpoint)}");
@@ -297,6 +309,9 @@ func checkpointVM(url, user, password, vmName string) {
 	if state != xenapi.VMPowerStateRunning {
 		panic(fmt.Sprintf("%s must be running to be checkpointed", vmName))
 	}
+	// Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does),
+	// so wait for its guest to finish booting first.
+	waitForGuestAgent(session, vm)
 
 	checkpoint, err := xenapi.VM.Checkpoint(session, vm, "sdk-example-checkpoint-1")
 	check(err)
@@ -350,6 +365,7 @@ import com.xensource.xenapi.VM;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
 import static com.xenserver.samples.Helpers.vmByName;
+import static com.xenserver.samples.Helpers.waitForGuestAgent;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class CheckpointVm {
@@ -381,6 +397,9 @@ public final class CheckpointVm {
         if (vm.getPowerState(conn) != Types.VmPowerState.RUNNING) {
             throw new IllegalStateException(vmName + " must be running to be checkpointed");
         }
+        // Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does),
+        // so wait for its guest to finish booting first.
+        waitForGuestAgent(conn, vm);
 
         VM checkpoint = vm.checkpoint(conn, "sdk-example-checkpoint-1");
         System.out.println("Created checkpoint: " + checkpoint.getUuid(conn));

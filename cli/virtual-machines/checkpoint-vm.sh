@@ -21,6 +21,9 @@ checkpoint_vm() {
         echo "$vm_name must be running to be checkpointed" >&2
         return 1
     fi
+    # Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does), so
+    # wait for its guest to finish booting first.
+    wait_for_guest_agent "$vm"
     cp=$(xe vm-checkpoint uuid=$vm new-name-label=xe-example-checkpoint-1)
     echo "Created checkpoint: $cp"
     xe snapshot-revert snapshot-uuid=$cp

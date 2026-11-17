@@ -10,7 +10,7 @@ Run it::
 """
 
 from connection import connect
-from helpers import destroy_vm_and_disks, vm_by_name
+from helpers import destroy_vm_and_disks, vm_by_name, wait_for_guest_agent
 
 
 def checkpoint_vm(url, username, password, vm_name):
@@ -25,6 +25,9 @@ def checkpoint_vm(url, username, password, vm_name):
     vm = vm_by_name(session, vm_name)
     if session.xenapi.VM.get_power_state(vm) != "Running":
         raise RuntimeError("%s must be running to be checkpointed" % vm_name)
+    # Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does), so
+    # wait for its guest to finish booting first.
+    wait_for_guest_agent(session, vm)
 
     checkpoint = session.xenapi.VM.checkpoint(vm, "sdk-example-checkpoint-1")
     print("Created checkpoint: %s" % session.xenapi.VM.get_uuid(checkpoint))

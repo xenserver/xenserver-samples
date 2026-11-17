@@ -27,6 +27,9 @@ internal static partial class Workflows
         var vm = VmByName(session, vmName);
         if (VM.get_power_state(session, vm) != vm_power_state.Running)
             throw new InvalidOperationException($"{vmName} must be running to be checkpointed");
+        // Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does), so
+        // wait for its guest to finish booting first.
+        WaitForGuestAgent(session, vm);
 
         var checkpoint = VM.checkpoint(session, vm, "sdk-example-checkpoint-1");
         Console.WriteLine($"Created checkpoint: {VM.get_uuid(session, checkpoint)}");

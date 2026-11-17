@@ -27,6 +27,9 @@ function Invoke-CheckpointVm {
     if (-not $vm) { throw "No VM named '$VmName' was found." }
     if ($vm.power_state -ne 'Running') { throw "$VmName must be running to be checkpointed" }
     $ref = $vm.opaque_ref
+    # Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does), so
+    # wait for its guest to finish booting first.
+    Wait-GuestAgent -Ref $ref
 
     $checkpoint = $vm | Invoke-XenVM -XenAction Checkpoint -NewName "sdk-example-checkpoint-1" -PassThru
     Write-Host "Created checkpoint: $($checkpoint.uuid)"

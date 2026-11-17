@@ -7,6 +7,7 @@ import com.xensource.xenapi.VM;
 
 import static com.xenserver.samples.Helpers.destroyVmAndDisks;
 import static com.xenserver.samples.Helpers.vmByName;
+import static com.xenserver.samples.Helpers.waitForGuestAgent;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class CheckpointVm {
@@ -38,6 +39,9 @@ public final class CheckpointVm {
         if (vm.getPowerState(conn) != Types.VmPowerState.RUNNING) {
             throw new IllegalStateException(vmName + " must be running to be checkpointed");
         }
+        // Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does),
+        // so wait for its guest to finish booting first.
+        waitForGuestAgent(conn, vm);
 
         VM checkpoint = vm.checkpoint(conn, "sdk-example-checkpoint-1");
         System.out.println("Created checkpoint: " + checkpoint.getUuid(conn));

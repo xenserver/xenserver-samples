@@ -25,6 +25,9 @@ func checkpointVM(url, user, password, vmName string) {
 	if state != xenapi.VMPowerStateRunning {
 		panic(fmt.Sprintf("%s must be running to be checkpointed", vmName))
 	}
+	// Running is not enough: the VM may have just been started (or restarted, as snapshot-revert does),
+	// so wait for its guest to finish booting first.
+	waitForGuestAgent(session, vm)
 
 	checkpoint, err := xenapi.VM.Checkpoint(session, vm, "sdk-example-checkpoint-1")
 	check(err)
