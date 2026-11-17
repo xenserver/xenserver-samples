@@ -55,13 +55,12 @@ func snapshotRevert(url, user, password, vmName, snapshotName string) {
 		client := insecureClient()
 		client.Timeout = 30 * time.Second
 		resp, err := client.Get(fmt.Sprintf("%s/vncsnapshot?session_id=%s&ref=%s", url, sid, console))
-		switch {
-		case err != nil:
+		if err != nil {
 			fmt.Printf("Thumbnail:      none (no answer: %v)\n", err)
-		case resp.StatusCode != http.StatusOK:
+		} else if resp.StatusCode != http.StatusOK {
 			resp.Body.Close()
 			fmt.Printf("Thumbnail:      none (the host answered HTTP %d)\n", resp.StatusCode)
-		default:
+		} else {
 			thumb, err := io.ReadAll(resp.Body)
 			resp.Body.Close()
 			if err != nil {
