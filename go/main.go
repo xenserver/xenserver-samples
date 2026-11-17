@@ -105,8 +105,8 @@ var workflows = map[string]workflow{
 	"apply-update": wf(map[string]string{
 		"repo_url": "https://repo.ops.xenserver.com/xs9", "source_url": "https://repo-src.ops.xenserver.com/xs9",
 	}, func(u, n, p string, m map[string]string) { applyUpdate(u, n, p, m["repo_url"], m["source_url"]) }),
-	"checkpoint-vm": wf(map[string]string{"source_vm": "web-01", "new_vm_name": "sdk-example-checkpoint"},
-		func(u, n, p string, m map[string]string) { checkpointVM(u, n, p, m["source_vm"], m["new_vm_name"]) }),
+	"checkpoint-vm": wf(map[string]string{"vm_name": "web-01"},
+		func(u, n, p string, m map[string]string) { checkpointVM(u, n, p, m["vm_name"]) }),
 	"attach-disk": wf(map[string]string{
 		"template_name": "Rocky Linux 8", "sr_name": "Shared NFS", "new_vm_name": "sdk-example-attachdisk",
 	}, func(u, n, p string, m map[string]string) {

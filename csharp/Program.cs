@@ -163,8 +163,8 @@ internal static class Program
         },
         ["checkpoint-vm"] = (u, n, p, ov) =>
         {
-            var d = Merge(new() { ["source_vm"] = "web-01", ["new_vm_name"] = "sdk-example-checkpoint" }, ov);
-            CheckpointVm(u, n, p, d["source_vm"], d["new_vm_name"]);
+            var d = Merge(new() { ["vm_name"] = "web-01" }, ov);
+            CheckpointVm(u, n, p, d["vm_name"]);
         },
         ["attach-disk"] = (u, n, p, ov) =>
         {

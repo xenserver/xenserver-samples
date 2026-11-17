@@ -101,7 +101,7 @@
         {
           "id": "checkpoint-vm",
           "title": "Checkpoint & revert",
-          "description": "Take a checkpoint of a running VM (disk AND memory, unlike a plain snapshot) and revert to it, as you would before a risky in-guest change. A checkpoint needs the guest's cooperation, so this works on a throwaway copy of a VM with a guest OS and PV drivers (source_vm)."
+          "description": "Take a checkpoint of a running VM (disk AND memory, unlike a plain snapshot) and revert to it, as you would before a risky in-guest change. A checkpoint needs the guest's cooperation, so the VM must have a guest OS with PV drivers and have finished booting (vm_name)."
         },
         {
           "id": "convert-to-template",

@@ -166,7 +166,7 @@ WORKFLOWS = {
     "storage-migrate": _wf(storage_migrate, source_vm="web-01"),
     "apply-update": _wf(apply_update, repo_url="https://repo.ops.xenserver.com/xs9",
                         source_url="https://repo-src.ops.xenserver.com/xs9"),
-    "checkpoint-vm": _wf(checkpoint_vm, source_vm="web-01"),
+    "checkpoint-vm": _wf(checkpoint_vm, vm_name="web-01"),
     "attach-disk": _wf(attach_disk, template_name="Rocky Linux 8", sr_name="Shared NFS"),
     "wait-for-task": _wf(wait_for_task, template_name="Rocky Linux 8"),
     "error-handling": _wf(error_handling),

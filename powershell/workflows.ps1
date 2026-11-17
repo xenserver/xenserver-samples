@@ -101,7 +101,7 @@ $WORKFLOWS = @{
     "delete-vm"                      = @{ Function = "Invoke-DeleteVm";                     Defaults = @{ TemplateName = "Rocky Linux 8" } }
     "storage-migrate"                = @{ Function = "Invoke-StorageMigrate";               Defaults = @{ SourceVm = "web-01" } }
     "apply-update"                   = @{ Function = "Invoke-ApplyUpdate";                  Defaults = @{ RepoUrl = "https://repo.ops.xenserver.com/xs9"; SourceUrl = "https://repo-src.ops.xenserver.com/xs9" } }
-    "checkpoint-vm"                  = @{ Function = "Invoke-CheckpointVm";                 Defaults = @{ SourceVm = "web-01" } }
+    "checkpoint-vm"                  = @{ Function = "Invoke-CheckpointVm";                 Defaults = @{ VmName = "web-01" } }
     "attach-disk"                    = @{ Function = "Invoke-AttachDisk";                   Defaults = @{ TemplateName = "Rocky Linux 8"; SrName = "Shared NFS" } }
     "wait-for-task"                  = @{ Function = "Invoke-WaitForTask";                  Defaults = @{ TemplateName = "Rocky Linux 8" } }
     "error-handling"                 = @{ Function = "Invoke-ErrorHandling";                Defaults = @{} }

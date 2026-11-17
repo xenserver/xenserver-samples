@@ -160,7 +160,7 @@ public final class Workflows {
         d.put("storage-migrate", mapOf("source_vm", "web-01", "new_vm_name", "sdk-example-storagemigrate"));
         d.put("apply-update", mapOf("repo_url", "https://repo.ops.xenserver.com/xs9",
                 "source_url", "https://repo-src.ops.xenserver.com/xs9"));
-        d.put("checkpoint-vm", mapOf("source_vm", "web-01", "new_vm_name", "sdk-example-checkpoint"));
+        d.put("checkpoint-vm", mapOf("vm_name", "web-01"));
         d.put("attach-disk", mapOf("template_name", "Rocky Linux 8", "sr_name", "Shared NFS",
                 "new_vm_name", "sdk-example-attachdisk"));
         d.put("wait-for-task", mapOf("template_name", "Rocky Linux 8", "new_vm_name", "sdk-example-asynctask"));
@@ -319,7 +319,7 @@ public final class Workflows {
                 StorageMigrate.run(url, user, password, p.get("source_vm"), p.get("new_vm_name")); break;
             case "apply-update":
                 ApplyUpdate.run(url, user, password, p.get("repo_url"), p.get("source_url")); break;
-            case "checkpoint-vm": CheckpointVm.run(url, user, password, p.get("source_vm"), p.get("new_vm_name")); break;
+            case "checkpoint-vm": CheckpointVm.run(url, user, password, p.get("vm_name")); break;
             case "attach-disk":
                 AttachDisk.run(url, user, password, p.get("template_name"), p.get("sr_name"), p.get("new_vm_name")); break;
             case "wait-for-task": WaitForTask.run(url, user, password, p.get("template_name"), p.get("new_vm_name")); break;
