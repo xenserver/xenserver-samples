@@ -1,5 +1,0 @@
-# The binary `go build` produces
-/workflows
-/workflows.exe
-# XS Go SDK directory
-goSDK/

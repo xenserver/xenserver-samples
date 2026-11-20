@@ -1,7 +1,7 @@
 # List of maintainers
 
 * Bengang Yuan <bengang.yuan@citrix.com>
-* Konstantina Chremmou <konstantina.chremmou@citrix.com>
+* Daniel Lamping <daniel.lamping@citrix.com>
 * Mohammed Zahid <mohammed.zahid@citrix.com>
 * Sola Zhang <sola.zhang@citrix.com>
 * Anita Thorose <anita.thorose@citrix.com>

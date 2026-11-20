@@ -1,38 +1,46 @@
-# How to submit changes
+# Contributing
 
-Please try to follow the guidelines below. They will make things
-easier on the maintainers. Not all of these guidelines matter for every
-trivial change so apply some common sense.
+Contributions are welcome: a new workflow, a fix, or a clearer explanation. Questions and suggestions are
+welcome too, on the [issues](https://github.com/xenserver/xenserver-samples/issues) page. Before starting
+something big, open an issue to discuss it first.
 
-If you are unsure about something written here, ask on the mailing list
-<xs-devel@lists.xenserver.org>.
+## How the repository fits together
 
-1. Before starting a big project, discuss it on the list first.
+Each workflow is one task, done the same way in every language: PowerShell, the `xe` CLI, Python, C#,
+Go and Java. [`workflows.json`](workflows.json) lists them all, with the description and cautions shown in
+the docs. Each language's folder holds one file per workflow, a connection helper, shared helpers, and a
+dispatcher that runs any workflow by name (see the folder's README). The pages in
+[`docs/workflows/`](docs/workflows/README.md) are generated from those sources.
 
-1. Always test your changes, however small, by both targeted manual testing
-    and by running unit tests.
+## Adding or changing a workflow
 
-1. When adding new functionality, include test cases for any new code that is
-    - important; or
-    - difficult to manually test; or
-    - easy to break
+1. **List it in `workflows.json`**, in the right section: its `id`, `title` and `description`, plus
+   `requires` and `caution` where they apply. If a language genuinely cannot do it, say why under
+   `unsupported` rather than leaving it out.
+2. **Write it in every language**, following the files around it, and register it in each language's
+   dispatcher with placeholder defaults that `key=value` arguments override. The versions should do the
+   same thing in the same order and print equivalent output, ending with `OK: <id>` when they succeed.
+3. **Keep it self-contained.** Connect with the folder's connection helper and log out at the end. Remove
+   what the workflow creates and put back what it changes, even when it fails partway (a `finally`, or a
+   trap in the CLI), so it can run again on the same pool. Explain why in comments, not what: the reader
+   is learning the API.
+4. **Run it against a test pool, in every language.** Never a production pool: many workflows change
+   pool-wide state. Check that it passes, that it leaves the pool as it found it, and that a second run
+   passes too.
+5. **Regenerate the docs** and commit them with the change, as [tools/README.md](tools/README.md#generating-the-workflow-docs)
+   describes, passing your runs' output so the pages show it. `python3 tools/docs/generate_docs.py --check`
+   must pass.
 
-1. All submissions must be made under the terms of the "Developer's
-    Certificate of Origin" (DCO) and should include a Signed-off-by: line.
+To try your change against an SDK that hasn't been released yet, see
+[Running against an unreleased SDK](tools/README.md#running-against-an-unreleased-sdk).
 
-1. Make your patch(es) available by creating one or more github pull requests.
-    Each pull request should be separately reviewable and mergeable. Only
-    patches that must be committed together should be in the same pull request.
+## Pull requests
 
-1. Each patch should include a descriptive commit comment that helps
-    understand why the patch is necessary and why it works. This will
-    be used both for initial review and for new people to understand
-    how the code works later.
+- Keep each pull request to one change that can be reviewed and merged on its own.
+- Write commit messages that explain why the change is needed and why it works.
+- Make sure every commit builds, so `git bisect` stays useful.
+- Sign off every commit (`git commit -s`): submissions are accepted under the
+  [Developer Certificate of Origin](https://developercertificate.org/). Make sure you have the right to
+  submit the change; if you made it at work, your employer may own it.
 
-1. For bonus points, ensure the project still builds in between every
-    patch in a set. This helps hunt down future regressions with 'bisect'.
-
-1. Make sure you have the right to submit any changes you make. If you make
-    changes at work you may find your employer owns the patches instead of you.
-
-For a list of maintainers, please see [MAINTAINERS](./MAINTAINERS.md).
+For the list of maintainers, see [MAINTAINERS](MAINTAINERS.md).
