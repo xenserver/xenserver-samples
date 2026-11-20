@@ -1,10 +1,9 @@
-module github.com/xenserver/xenserver-samples/go
+module github.com/xenserver/xenserver-samples/go/workflows
 
 go 1.27.1
 
-replace xenapi => ./goSDK
+require go/xenapi v0.0.0
 
-require (
-	github.com/google/uuid v1.6.0
-	xenapi v0.0.0-00010101000000-000000000000
-)
+// The SDK's Go binding is not published as a module: copy XenServerGo/src from the SDK into ./goSDK.
+// See README.md.
+replace go/xenapi => ./goSDK
