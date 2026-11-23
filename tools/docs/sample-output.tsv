@@ -138,7 +138,7 @@ csharp	edit-vm-properties	53cf432f9273	New description: Edited by the SDK exampl
 csharp	error-handling	92183019801b	Caught expected failure: UUID_INVALID\nShort message: The uuid you supplied was invalid.\nOK: error-handling
 csharp	events	942702b0d770	Established event token after initial snapshot.\nReceived 1 event(s) after the change.\n  - mod vm\nOK: events
 csharp	export-import-vdi	e7fa00c758d9	Uploaded 8 MiB into sdk-example-raw-source\nDownloaded 8 MiB of raw contents\nCopied them into sdk-example-raw-copy\nThe copy matches the original\nOK: export-import-vdi
-csharp	export-import-vm	be65a1192d5b	Exporting db-01\n  wrote 4.0 MiB to sdk-example-export-e9f61b38f50443cfbd6a7b4e8e920fd8.xva\n  archive holds ova.xml and 4 disk block(s)\n  imported as db-01\nCleaned up the imported VM.\nOK: export-import-vm
+csharp	export-import-vm	4ce8b948b20c	Exporting db-01\n  wrote 4.0 MiB to sdk-example-export-a808db1f43b14ebbb9db421d9ec29899.xva\n  archive holds ova.xml and 4 disk block(s)\n  imported as db-01\nCleaned up the imported VM.\nOK: export-import-vm
 csharp	find-by-uuid	55bc02c5fd02	UUID 00000001-0000-0000-8d00-000000000000 resolves to web-01\nSame object: True\nOK: find-by-uuid
 csharp	gpu-inventory	63880da524a0	GPU groups (2):\n  - Group of NVIDIA GRID K1: 1 pGPU(s), vGPU types: passthrough, GRID K100\n  - Group of NVIDIA GRID K1: 1 pGPU(s), vGPU types: passthrough, GRID K100\nAllocation:      depth_first -> breadth_first\nOK: gpu-inventory
 csharp	host-info	cf7b6123d9f1	Host:     sdk-host1\nVersion:  9.0.0\nEdition:  cloud\nCPUs:     8 across 1 socket(s)\nHardware: Dell Inc. PowerEdge R750\nSerial:   XPSIM017RT\nBIOS:     2.15.1\nOK: host-info

@@ -316,7 +316,7 @@ public final class Helpers {
      * Build the URL for a given host's own address, keeping the scheme and port the caller originally
      * connected with (a host's management address carries no port of its own).
      */
-    public static String hostUrl(String url, String address) throws Exception {
+    public static String hostUrl(String url, String address) {
         URI parsed = URI.create(url);
         int port = parsed.getPort();
         return parsed.getScheme() + "://" + address + (port >= 0 ? ":" + port : "");
