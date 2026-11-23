@@ -215,8 +215,11 @@ cross_pool_copy_vm() {
 <details><summary>Example output</summary>
 
 ```text
-Sent 'db-01' to 127.0.0.1 (copy); source still present: True
-  the copy on the destination: not found (nothing to tidy up)
+Sent 'db-01' to 127.0.0.31 (copy); source still present: True
+  the copy on the destination: db-01 (00000001-0000-0000-f709-000000000000)
+The following items are about to be destroyed
+VM : 00000001-0000-0000-f709-000000000000 (db-01)
+All objects destroyed
 OK: cross-pool-copy-vm
 ```
 
