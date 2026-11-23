@@ -506,21 +506,12 @@ public final class ManageDriverVariants {
             // Host_driver.select refuses a variant whose hardware isn't present (HOST_DRIVER_NO_HARDWARE)
             // - and a host lists drivers for plenty of devices it doesn't have - so pick a driver for
             // hardware this host actually has, and one of its variants that is usable.
-            HostDriver driverRef = null;
-            DriverVariant variant = null;
-            outer:
-            for (Map.Entry<HostDriver, HostDriver.Record> e : drivers) {
-                for (DriverVariant candidate : e.getValue().variants) {
-                    if (candidate.getHardwarePresent(conn)) {
-                        driverRef = e.getKey();
-                        variant = candidate;
-                        break outer;
-                    }
-                }
-            }
-            if (driverRef == null)
+            Map.Entry<HostDriver, DriverVariant> usable = variantWithHardware(conn, drivers);
+            if (usable == null)
                 throw new IllegalStateException("no driver on " + host.getNameLabel(conn)
                         + " has a variant for hardware it has");
+            HostDriver driverRef = usable.getKey();
+            DriverVariant variant = usable.getValue();
             DriverVariant previousVariant = driverRef.getRecord(conn).selectedVariant;
             driverRef.select(conn, variant);
             HostDriver.Record after = driverRef.getRecord(conn);
@@ -537,6 +528,17 @@ public final class ManageDriverVariants {
         } finally {
             Session.logout(conn);
         }
+    }
+
+    /**
+     * The first driver with a variant for hardware the host has, and that variant; null if there is none.
+     */
+    private static Map.Entry<HostDriver, DriverVariant> variantWithHardware(Connection conn,
+            java.util.List<Map.Entry<HostDriver, HostDriver.Record>> drivers) throws Exception {
+        for (Map.Entry<HostDriver, HostDriver.Record> e : drivers)
+            for (DriverVariant candidate : e.getValue().variants)
+                if (candidate.getHardwarePresent(conn)) return Map.entry(e.getKey(), candidate);
+        return null;
     }
 
     /**

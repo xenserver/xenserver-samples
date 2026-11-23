@@ -600,7 +600,7 @@ public static void DisasterRecoveryFailover(string url, string user, string pass
                 continue;
             // A session onto the replicated database, made from the id open_database returns.
             var database = new Session(url) { opaque_ref = VDI.open_database(session, vdi).opaque_ref };
-            database.JsonRpcClient.ServerCertificateValidationCallback = (req, cert, chain, errors) => true;
+            TrustHostCertificate(database);
 
             // A pool often has no name of its own; show its coordinator's name instead.
             var pool = Pool.get_all(database)[0];
@@ -1096,12 +1096,8 @@ public final class DisasterRecoveryFailover {
                             db.call("VM_appliance.get_all_records", new TypeReference<Map<VMAppliance, VMAppliance.Record>>() {});
                     for (Map.Entry<VMAppliance, VMAppliance.Record> e : vapps.entrySet()) {
                         String vapp = e.getKey().toWireString();
-                        try {
-                            db.call("VM_appliance.assert_can_be_recovered", vapp, sessionTo);
-                        } catch (Types.XenAPIException cannot) {
-                            System.out.println("  cannot recover vApp " + e.getValue().nameLabel + ": " + code(cannot));
+                        if (!canRecover(db, "VM_appliance", vapp, sessionTo, "vApp " + e.getValue().nameLabel))
                             continue;
-                        }
                         db.call("VM_appliance.recover", vapp, sessionTo, false);
                         recoveredVapps.add(e.getValue().uuid);
                         for (VM vm : e.getValue().VMs) {
@@ -1117,14 +1113,9 @@ public final class DisasterRecoveryFailover {
                     for (Map.Entry<VM, VM.Record> e : vms) {
                         VM.Record r = e.getValue();
                         String vm = e.getKey().toWireString();
-                        if (r.isATemplate || r.isControlDomain || r.isASnapshot || inRecoveredVapp.contains(vm))
+                        if (r.isATemplate || r.isControlDomain || r.isASnapshot || inRecoveredVapp.contains(vm)
+                                || !canRecover(db, "VM", vm, sessionTo, r.nameLabel))
                             continue;
-                        try {
-                            db.call("VM.assert_can_be_recovered", vm, sessionTo);
-                        } catch (Types.XenAPIException cannot) {
-                            System.out.println("  cannot recover " + r.nameLabel + ": " + code(cannot));
-                            continue;
-                        }
                         db.call("VM.recover", vm, sessionTo, false);
                         recoveredVms.add(r.uuid);
                         System.out.println("  recovered " + r.nameLabel);
@@ -1197,6 +1188,21 @@ public final class DisasterRecoveryFailover {
             all[0] = session;
             System.arraycopy(args, 0, all, 1, args.length);
             return all;
+        }
+    }
+
+    /**
+     * Whether the database's VM or vApp (its class and reference) can be recovered into this pool; if not,
+     * says why.
+     */
+    private static boolean canRecover(Database db, String cls, String ref, String sessionTo, String name)
+            throws Exception {
+        try {
+            db.call(cls + ".assert_can_be_recovered", ref, sessionTo);
+            return true;
+        } catch (Types.XenAPIException cannot) {
+            System.out.println("  cannot recover " + name + ": " + code(cannot));
+            return false;
         }
     }
 

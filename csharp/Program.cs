@@ -38,7 +38,7 @@ internal static class Program
     /// </summary>
     private static readonly Dictionary<string, Action<string, string, string, Dictionary<string, string>>> ById = new()
     {
-        ["connect-inventory"] = (u, n, p, ov) => ConnectInventory(u, n, p),
+        ["connect-inventory"] = (u, n, p, _) => ConnectInventory(u, n, p),
         ["create-vm"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["template_name"] = "Rocky Linux 8", ["new_vm_name"] = "sdk-example-vm" }, ov);
@@ -55,11 +55,11 @@ internal static class Program
                                    ["new_vm_name"] = "sdk-example-vm-disks" }, ov);
             ManageVmDisks(u, n, p, d["source_vm"], d["sr_name"], d["new_vm_name"]);
         },
-        ["dismiss-alerts"] = (u, n, p, ov) => DismissAlerts(u, n, p),
-        ["host-power-on"] = (u, n, p, ov) => HostPowerOn(u, n, p),
-        ["rotate-pool-secret"] = (u, n, p, ov) => RotatePoolSecret(u, n, p),
-        ["change-root-password"] = (u, n, p, ov) => ChangeRootPassword(u, n, p),
-        ["manage-certificates"] = (u, n, p, ov) => ManageCertificates(u, n, p),
+        ["dismiss-alerts"] = (u, n, p, _) => DismissAlerts(u, n, p),
+        ["host-power-on"] = (u, n, p, _) => HostPowerOn(u, n, p),
+        ["rotate-pool-secret"] = (u, n, p, _) => RotatePoolSecret(u, n, p),
+        ["change-root-password"] = (u, n, p, _) => ChangeRootPassword(u, n, p),
+        ["manage-certificates"] = (u, n, p, _) => ManageCertificates(u, n, p),
         ["snapshot-schedule"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "web-01", ["schedule_name"] = "sdk-example-schedule" }, ov);
@@ -178,16 +178,16 @@ internal static class Program
             var d = Merge(new() { ["template_name"] = "Rocky Linux 8", ["new_vm_name"] = "sdk-example-asynctask" }, ov);
             WaitForTask(u, n, p, d["template_name"], d["new_vm_name"]);
         },
-        ["error-handling"] = (u, n, p, ov) => ErrorHandling(u, n, p),
-        ["trace-api-calls"] = (u, n, p, ov) => TraceApiCalls(u, n, p),
-        ["list-templates"] = (u, n, p, ov) => ListTemplates(u, n, p),
+        ["error-handling"] = (u, n, p, _) => ErrorHandling(u, n, p),
+        ["trace-api-calls"] = (u, n, p, _) => TraceApiCalls(u, n, p),
+        ["list-templates"] = (u, n, p, _) => ListTemplates(u, n, p),
         ["custom-fields"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "web-01" }, ov);
             CustomFields(u, n, p, d["vm_name"]);
         },
-        ["gpu-inventory"] = (u, n, p, ov) => GpuInventory(u, n, p),
-        ["read-metrics"] = (u, n, p, ov) => ReadMetrics(u, n, p),
+        ["gpu-inventory"] = (u, n, p, _) => GpuInventory(u, n, p),
+        ["read-metrics"] = (u, n, p, _) => ReadMetrics(u, n, p),
         ["rename-object"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "web-01" }, ov);
@@ -198,22 +198,22 @@ internal static class Program
             var d = Merge(new() { ["template_name"] = "Rocky Linux 8", ["new_vm_name"] = "sdk-example-boot" }, ov);
             VmBootConfig(u, n, p, d["template_name"], d["new_vm_name"]);
         },
-        ["host-info"] = (u, n, p, ov) => HostInfo(u, n, p),
-        ["list-roles"] = (u, n, p, ov) => ListRoles(u, n, p),
-        ["pool-properties"] = (u, n, p, ov) => PoolProperties(u, n, p),
-        ["sr-usage"] = (u, n, p, ov) => SrUsage(u, n, p),
+        ["host-info"] = (u, n, p, _) => HostInfo(u, n, p),
+        ["list-roles"] = (u, n, p, _) => ListRoles(u, n, p),
+        ["pool-properties"] = (u, n, p, _) => PoolProperties(u, n, p),
+        ["sr-usage"] = (u, n, p, _) => SrUsage(u, n, p),
         ["manage-vif"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["template_name"] = "Rocky Linux 8", ["new_vm_name"] = "sdk-example-vif" }, ov);
             ManageVif(u, n, p, d["template_name"], d["new_vm_name"]);
         },
-        ["list-networks"] = (u, n, p, ov) => ListNetworks(u, n, p),
+        ["list-networks"] = (u, n, p, _) => ListNetworks(u, n, p),
         ["vbd-inventory"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "db-01" }, ov);
             VbdInventory(u, n, p, d["vm_name"]);
         },
-        ["pool-tags"] = (u, n, p, ov) => PoolTags(u, n, p),
+        ["pool-tags"] = (u, n, p, _) => PoolTags(u, n, p),
         ["convert-to-template"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["template_name"] = "Rocky Linux 8", ["new_vm_name"] = "sdk-example-totemplate" }, ov);
@@ -230,21 +230,21 @@ internal static class Program
                                    ["source_url"] = "https://repo-src.ops.xenserver.com/xs9" }, ov);
             RollingPoolUpdate(u, n, p, d["repo_url"], d["source_url"]);
         },
-        ["pvs-accelerator"] = (u, n, p, ov) => PvsAccelerator(u, n, p),
+        ["pvs-accelerator"] = (u, n, p, _) => PvsAccelerator(u, n, p),
         ["configure-pvs-accelerator"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "db-01" }, ov);
             ConfigurePvsAccelerator(u, n, p, d["vm_name"]);
         },
-        ["manage-ssh-access"] = (u, n, p, ov) => ManageSshAccess(u, n, p),
-        ["manage-vtpm"] = (u, n, p, ov) => ManageVtpm(u, n, p),
+        ["manage-ssh-access"] = (u, n, p, _) => ManageSshAccess(u, n, p),
+        ["manage-vtpm"] = (u, n, p, _) => ManageVtpm(u, n, p),
         ["export-import-vm"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "db-01" }, ov);
             ExportImportVm(u, n, p, d["vm_name"]);
         },
-        ["configure-dynamic-memory"] = (u, n, p, ov) => ConfigureDynamicMemory(u, n, p),
-        ["manage-vm-media"] = (u, n, p, ov) => ManageVmMedia(u, n, p),
+        ["configure-dynamic-memory"] = (u, n, p, _) => ConfigureDynamicMemory(u, n, p),
+        ["manage-vm-media"] = (u, n, p, _) => ManageVmMedia(u, n, p),
         ["backup-host-config"] = (u, n, p, ov) =>
             BackupHostConfig(u, n, p, ov.TryGetValue("restore", out var restore) && bool.Parse(restore)),
         ["manage-sr-lifecycle"] = (u, n, p, ov) =>
@@ -269,7 +269,7 @@ internal static class Program
             var d = Merge(new() { ["nfs_server"] = "192.0.2.10", ["nfs_path"] = "/export/spare" }, ov);
             SetDefaultSr(u, n, p, d["nfs_server"], d["nfs_path"]);
         },
-        ["server-status-report"] = (u, n, p, ov) => ServerStatusReport(u, n, p),
+        ["server-status-report"] = (u, n, p, _) => ServerStatusReport(u, n, p),
         ["configure-disaster-recovery"] = (u, n, p, ov) =>
             ConfigureDisasterRecovery(u, n, p, ov.GetValueOrDefault("sr_name")),
         ["disaster-recovery-failover"] = (u, n, p, ov) =>
@@ -283,19 +283,19 @@ internal static class Program
                 ov.TryGetValue("port", out var port) ? int.Parse(port) : null, d["sr_type"],
                 bool.Parse(d["test_failover"]));
         },
-        ["manage-secureboot-certificates"] = (u, n, p, ov) => ManageSecurebootCertificates(u, n, p),
-        ["restart-host"] = (u, n, p, ov) => RestartHost(u, n, p),
-        ["manage-crash-dumps"] = (u, n, p, ov) => ManageCrashDumps(u, n, p),
+        ["manage-secureboot-certificates"] = (u, n, p, _) => ManageSecurebootCertificates(u, n, p),
+        ["restart-host"] = (u, n, p, _) => RestartHost(u, n, p),
+        ["manage-crash-dumps"] = (u, n, p, _) => ManageCrashDumps(u, n, p),
         ["vm-from-snapshot"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "db-01" }, ov);
             VmFromSnapshot(u, n, p, d["vm_name"]);
         },
-        ["attach-existing-disk"] = (u, n, p, ov) => AttachExistingDisk(u, n, p),
-        ["changed-block-tracking"] = (u, n, p, ov) => ChangedBlockTracking(u, n, p),
-        ["control-domain-memory"] = (u, n, p, ov) => ControlDomainMemory(u, n, p),
-        ["rrd-metrics"] = (u, n, p, ov) => RrdMetrics(u, n, p),
-        ["reclaim-space"] = (u, n, p, ov) => ReclaimSpace(u, n, p),
+        ["attach-existing-disk"] = (u, n, p, _) => AttachExistingDisk(u, n, p),
+        ["changed-block-tracking"] = (u, n, p, _) => ChangedBlockTracking(u, n, p),
+        ["control-domain-memory"] = (u, n, p, _) => ControlDomainMemory(u, n, p),
+        ["rrd-metrics"] = (u, n, p, _) => RrdMetrics(u, n, p),
+        ["reclaim-space"] = (u, n, p, _) => ReclaimSpace(u, n, p),
         ["vm-ip-address"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "web-01", ["timeout"] = "60", ["interval"] = "2" }, ov);
@@ -334,15 +334,15 @@ internal static class Program
             var d = Merge(new() { ["location"] = "192.0.2.10:/isos" }, ov);
             CreateIsoSr(u, n, p, d["location"]);
         },
-        ["configure-nrpe"] = (u, n, p, ov) => ConfigureNrpe(u, n, p),
+        ["configure-nrpe"] = (u, n, p, _) => ConfigureNrpe(u, n, p),
         ["configure-snmp"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["trap_destination"] = "192.0.2.50" }, ov);
             ConfigureSnmp(u, n, p, d["trap_destination"]);
         },
-        ["configure-clustering"] = (u, n, p, ov) => ConfigureClustering(u, n, p),
-        ["manage-pool-membership"] = (u, n, p, ov) => ManagePoolMembership(u, n, p),
-        ["create-bond"] = (u, n, p, ov) => CreateBond(u, n, p),
+        ["configure-clustering"] = (u, n, p, _) => ConfigureClustering(u, n, p),
+        ["manage-pool-membership"] = (u, n, p, _) => ManagePoolMembership(u, n, p),
+        ["create-bond"] = (u, n, p, _) => CreateBond(u, n, p),
         ["manage-vapp"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["vm_name"] = "db-01" }, ov);
@@ -361,15 +361,15 @@ internal static class Program
             WlbRecommendations(u, n, p, d["vm_name"], d["wlb_host_port"], d["wlb_username"], d["wlb_password"],
                                 d["wlb_certificate"]);
         },
-        ["configure-pool-options"] = (u, n, p, ov) => ConfigurePoolOptions(u, n, p),
-        ["configure-console-access"] = (u, n, p, ov) => ConfigureConsoleAccess(u, n, p),
-        ["configure-host-storage"] = (u, n, p, ov) => ConfigureHostStorage(u, n, p),
+        ["configure-pool-options"] = (u, n, p, _) => ConfigurePoolOptions(u, n, p),
+        ["configure-console-access"] = (u, n, p, _) => ConfigureConsoleAccess(u, n, p),
+        ["configure-host-storage"] = (u, n, p, _) => ConfigureHostStorage(u, n, p),
         ["configure-syslog"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["syslog_server"] = "192.0.2.50" }, ov);
             ConfigureSyslog(u, n, p, d["syslog_server"]);
         },
-        ["manage-driver-variants"] = (u, n, p, ov) => ManageDriverVariants(u, n, p),
+        ["manage-driver-variants"] = (u, n, p, _) => ManageDriverVariants(u, n, p),
     };
 
     private static int Main(string[] args)

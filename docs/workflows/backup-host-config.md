@@ -597,7 +597,6 @@ package com.xenserver.samples.hostsandpools;
 
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
-import com.xensource.xenapi.JsonRpcClient;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
@@ -606,8 +605,6 @@ import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.classic.methods.HttpPut;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
-
-import java.net.URL;
 
 import static com.xenserver.samples.Helpers.hostUrl;
 import static com.xenserver.samples.PoolConnection.connect;
@@ -667,15 +664,11 @@ public final class BackupHostConfig {
             try {
                 if (file.length() == 0) throw new IllegalStateException(file + " came back empty");
                 System.out.printf("  wrote %d bytes to %s%n", file.length(), file.getName());
-                // The connection's one keep-alive HTTP connection sat idle for as long as the download
-                // took; a network that silently dropped it meanwhile would otherwise leave the next call
-                // (Task.create below) hanging until the socket times out, so get a fresh one for the same
-                // session before making another API call.
-                conn = dropIdleConnection(conn, url);
-
+                // The API connection sat idle for as long as the download took: connect() closes such a
+                // connection, so this next call opens a fresh one rather than hanging on a dropped one.
                 String name = host.getNameLabel(conn);
                 if (restore) {
-                    conn = restoreHostConfig(conn, url, hostUrl, session, host, file);
+                    restoreHostConfig(conn, hostUrl, session, host, file);
                     System.out.println("  staged it on " + name + "'s backup partition - it takes effect only "
                             + "after booting that host from the installer and choosing Restore");
                 } else {
@@ -692,32 +685,15 @@ public final class BackupHostConfig {
     }
 
     /**
-     * Close the connection's HTTP connection pool after a long transfer, so the next XenAPI call opens a
-     * fresh one - the previous JsonRpcClient's one keep-alive connection sat idle for as long as the
-     * transfer took, and a network that dropped it meanwhile leaves the next call hanging until the socket
-     * times out. Connection has no public way to discard its pooled connections or to attach a custom
-     * JsonRpcClient to an existing session at the same time, so build a fresh Connection (still trusting
-     * the host's certificate, like connect() does) and set its session reference directly - there is no
-     * public setter for that field.
-     */
-    private static Connection dropIdleConnection(Connection conn, String url) throws Exception {
-        Connection fresh = new Connection(new JsonRpcClient(trustingHttpClient(), new URL(url + "/jsonrpc")));
-        java.lang.reflect.Field sessionField = Connection.class.getDeclaredField("sessionReference");
-        sessionField.setAccessible(true);
-        sessionField.set(fresh, conn.getSessionReference());
-        return fresh;
-    }
-
-    /**
      * Uploads a backup to a host - over a connection opened to THAT host's own address - and throws if
-     * the task reports it was refused. Returns the (possibly renewed) connection to continue with.
+     * the task reports it was refused.
      *
      * <p>An upload answers 200 as soon as it has read the request headers, because the client waits for
      * that before it starts sending the file. The outcome therefore cannot be in the status line: it
      * arrives on a task you create first, name in the URL, and poll once the upload has finished.
      */
-    private static Connection restoreHostConfig(Connection conn, String apiUrl,
-            String hostUrl, String session, Host host, java.io.File file) throws Exception {
+    private static void restoreHostConfig(Connection conn, String hostUrl, String session, Host host,
+            java.io.File file) throws Exception {
         Task task = Task.create(conn, "host_restore", "restoring a configuration backup");
         try {
             HttpPut put = new HttpPut(hostUrl + "/host_restore?session_id=" + session
@@ -729,10 +705,6 @@ public final class BackupHostConfig {
             try (CloseableHttpClient http = trustingHttpClient()) {
                 http.execute(put, resp -> EntityUtils.toString(resp.getEntity()));
             }
-            // As above: the connection sat idle for as long as the upload took. Reconnect to the
-            // coordinator: the upload went to the host itself, but a pool member refuses API calls.
-            conn = dropIdleConnection(conn, apiUrl);
-
             while (task.getStatus(conn) == Types.TaskStatusType.PENDING) Thread.sleep(500);
             if (task.getStatus(conn) != Types.TaskStatusType.SUCCESS) {
                 // error_info is declared as a SET of strings, and the Java binding hands back a real
@@ -741,7 +713,6 @@ public final class BackupHostConfig {
                 // order silently lied.
                 throw new IllegalStateException("refused " + task.getErrorInfo(conn));
             }
-            return conn;
         } finally {
             task.destroy(conn);
         }
@@ -753,7 +724,7 @@ public final class BackupHostConfig {
 
 ```text
 Backing up sdk-host1
-  wrote 83 bytes to sdk-example-host7743377473072915920.backup
+  wrote 83 bytes to sdk-example-host548231143774787135.backup
   not restoring it (pass restore=true to stage it on sdk-host1's backup partition)
 OK: backup-host-config
 ```

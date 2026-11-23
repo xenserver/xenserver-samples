@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Text.Json;
 using XenAPI;
 using Console = System.Console; // XenAPI also defines a Console class
@@ -28,10 +27,7 @@ internal static partial class Workflows
         // each host at its own address rather than the pool's (coordinator) url. Legends look like
         // "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
         var start = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 300;
-        using var http = new HttpClient(new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-        });
+        using var http = InsecureHttpClient();
         http.DefaultRequestHeaders.Add("accept", "application/json");
 
         var peak = new Dictionary<string, double>();

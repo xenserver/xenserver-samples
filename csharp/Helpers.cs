@@ -4,7 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Xml.Linq;
 using XenAPI;
 
@@ -68,7 +67,7 @@ internal static partial class Workflows
     /// <summary>The first (from the end) Failure detail that looks like an XML fragment, or null.</summary>
     internal static string XmlFromFailure(Failure f) =>
         f.ErrorDescription.AsEnumerable().Reverse()
-            .FirstOrDefault(d => !string.IsNullOrEmpty(d) && d.TrimStart().StartsWith("<"));
+            .FirstOrDefault(d => !string.IsNullOrEmpty(d) && d.TrimStart().StartsWith('<'));
 
     /// <summary>
     /// Return the XML a backend sends back on its deliberately-failing discovery probe. Discover iSCSI/HBA
@@ -404,13 +403,6 @@ internal static partial class Workflows
         Pool.set_repositories(session, pool, previous);
         Repository.forget(session, repo);
     }
-
-    /// <summary>An HTTP client that accepts the host's self-signed certificate, as Connect does.</summary>
-    internal static HttpClient InsecureHttpClient() =>
-        new(new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true })
-        {
-            Timeout = TimeSpan.FromMinutes(5),
-        };
 
     internal static bool HostLive(Session session, XenRef<Host> host) =>
         Host_metrics.get_live(session, Host.get_metrics(session, host));

@@ -566,6 +566,7 @@ public final class ExportImportVdi {
     }
 
     private static final long SIZE = 8L * 1024 * 1024;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     /**
      * Copy a disk's contents.
@@ -595,7 +596,7 @@ public final class ExportImportVdi {
             original = newDisk(conn, sr, "sdk-example-raw-source");
             copy = newDisk(conn, sr, "sdk-example-raw-copy");
             byte[] data = new byte[(int) SIZE];
-            new SecureRandom().nextBytes(data);
+            RANDOM.nextBytes(data);
             transfer(conn, url, new HttpPut(url), "import_raw_vdi", original, data);
             System.out.printf("Uploaded %d MiB into %s%n", SIZE / (1024 * 1024), original.getNameLabel(conn));
 
@@ -636,8 +637,8 @@ public final class ExportImportVdi {
                                    byte[] data) throws Exception {
         Task task = Task.create(conn, "sdk-example-" + path, "");
         try {
-            request.setUri(new java.net.URI(url + "/" + path + "?session_id=" + conn.getSessionReference()
-                + "&task_id=" + task.toWireString() + "&vdi=" + vdi.toWireString() + "&format=raw"));
+            request.setUri(new java.net.URI(String.format("%s/%s?session_id=%s&task_id=%s&vdi=%s&format=raw",
+                url, path, conn.getSessionReference(), task.toWireString(), vdi.toWireString())));
             if (data != null) request.setEntity(new ByteArrayEntity(data, null));
             byte[] body;
             try (CloseableHttpClient http = trustingHttpClient()) {

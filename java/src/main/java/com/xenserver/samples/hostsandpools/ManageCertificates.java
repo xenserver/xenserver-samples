@@ -35,7 +35,8 @@ public final class ManageCertificates {
         Host host = Host.getAll(conn).iterator().next();
         Pool pool = Pool.getAll(conn).iterator().next();
         String[] certAndKey = selfSignedCertPem();
-        String certPem = certAndKey[0], keyPem = certAndKey[1];
+        String certPem = certAndKey[0];
+        String keyPem = certAndKey[1];
 
         System.out.println("Certificates:   " + Certificate.getAll(conn).size());
 

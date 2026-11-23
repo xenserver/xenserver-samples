@@ -172,7 +172,7 @@ Source: [`csharp/HostsAndPools/HostInfo.cs`](../../csharp/HostsAndPools/HostInfo
 public static void HostInfo(string url, string user, string password)
 {
     var session = Connect(url, user, password);
-    var (hostRef, host) = Host.get_all_records(session).First();
+    var (_, host) = Host.get_all_records(session).First();
     var sw = host.software_version;
     var cpu = host.cpu_info;
     Console.WriteLine($"Host:     {host.name_label}");

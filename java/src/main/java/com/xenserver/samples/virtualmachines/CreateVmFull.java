@@ -35,7 +35,8 @@ public final class CreateVmFull {
      */
     public static void run(String url, String user, String password,
             String templateName, String newVmName) throws Exception {
-        final long GiB = 1024L * 1024 * 1024, MiB = 1024L * 1024;
+        final long GiB = 1024L * 1024 * 1024;
+        final long MiB = 1024L * 1024;
 
         Connection conn = connect(url, user, password);
         // Step 1 - Template.

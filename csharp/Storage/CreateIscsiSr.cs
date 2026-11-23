@@ -110,11 +110,11 @@ internal static partial class Workflows
     /// else the first. An array usually offers many targets - one per LUN, often belonging to different users
     /// - so on shared storage always name yours: SR.create formats the LUN behind it.
     /// </summary>
-    private static string ChooseTargetIqn(XDocument iqnXml, string target, string targetIqn)
+    private static string ChooseTargetIqn(XDocument iqnXml, string targetAddress, string targetIqn)
     {
         var offered = iqnXml.Descendants("TargetIQN").Select(e => e.Value).ToList();
         if (!string.IsNullOrEmpty(targetIqn) && !offered.Contains(targetIqn))
-            throw new InvalidOperationException($"target {target} does not offer IQN {targetIqn}");
+            throw new InvalidOperationException($"target {targetAddress} does not offer IQN {targetIqn}");
         return string.IsNullOrEmpty(targetIqn) ? offered.First() : targetIqn;
     }
 

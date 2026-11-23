@@ -79,7 +79,7 @@ internal static partial class Workflows
                     continue;
                 // A session onto the replicated database, made from the id open_database returns.
                 var database = new Session(url) { opaque_ref = VDI.open_database(session, vdi).opaque_ref };
-                database.JsonRpcClient.ServerCertificateValidationCallback = (req, cert, chain, errors) => true;
+                TrustHostCertificate(database);
 
                 // A pool often has no name of its own; show its coordinator's name instead.
                 var pool = Pool.get_all(database)[0];

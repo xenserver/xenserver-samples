@@ -4,6 +4,8 @@
 // Accepting the certificate without checking it suits a test pool. In production, check it: give the
 // hosts a certificate from a CA you trust, or trust the pool's own certificate explicitly.
 
+using System;
+using System.Net.Http;
 using XenAPI;
 
 namespace XenServerWorkflows;
@@ -28,9 +30,21 @@ internal static partial class Workflows
     internal static Session Login(string url, string user, string password)
     {
         var session = new Session(url);
-        // Accept the host's self-signed certificate.
-        session.JsonRpcClient.ServerCertificateValidationCallback = (req, cert, chain, errors) => true;
+        TrustHostCertificate(session);
         session.login_with_password(user, password, "1.0", "sdk-examples");
         return session;
     }
+
+    /// <summary>Accept the host's self-signed certificate on a session's API calls.</summary>
+    internal static void TrustHostCertificate(Session session) =>
+        session.JsonRpcClient.ServerCertificateValidationCallback = (_, _, _, _) => true;
+
+    // --- HTTP transfers ---
+
+    /// <summary>An HTTP client that accepts the host's self-signed certificate, as Connect does.</summary>
+    internal static HttpClient InsecureHttpClient() =>
+        new(new HttpClientHandler { ServerCertificateCustomValidationCallback = (_, _, _, _) => true })
+        {
+            Timeout = TimeSpan.FromMinutes(5),
+        };
 }

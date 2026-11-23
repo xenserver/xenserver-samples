@@ -537,18 +537,13 @@ public final class StorageMigrate {
         long size = vdi.getVirtualSize(conn);
         SR destSr = null;
         for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet()) {
-            SR.Record r = e.getValue();
-            if (e.getKey().equals(sourceSr) || "iso".equals(r.contentType)
-                    || "iso".equals(r.type) || "udev".equals(r.type))
-                continue;
-            boolean reachable = false;
-            for (PBD pbd : r.PBDs)
-                if (pbd.getHost(conn).equals(host) && pbd.getCurrentlyAttached(conn)) { reachable = true; break; }
-            if (!reachable)
-                continue;
             SR sr = e.getKey();
-            sr.scan(conn);
-            if (sr.getPhysicalSize(conn) - sr.getPhysicalUtilisation(conn) >= 2 * size) { destSr = sr; break; }
+            SR.Record r = e.getValue();
+            boolean holdsDisks = !"iso".equals(r.contentType) && !"iso".equals(r.type) && !"udev".equals(r.type);
+            if (!sr.equals(sourceSr) && holdsDisks && attachedTo(conn, r, host)) {
+                sr.scan(conn);
+                if (sr.getPhysicalSize(conn) - sr.getPhysicalUtilisation(conn) >= 2 * size) { destSr = sr; break; }
+            }
         }
         if (destSr == null) {
             vm.hardShutdown(conn);
@@ -569,6 +564,15 @@ public final class StorageMigrate {
         System.out.println("OK: storage-migrate");
         Session.logout(conn);
     }
+
+    /**
+     * Whether an SR is attached to a host (it has a plugged PBD there).
+     */
+    private static boolean attachedTo(Connection conn, SR.Record sr, Host host) throws Exception {
+        for (PBD pbd : sr.PBDs)
+            if (pbd.getHost(conn).equals(host) && pbd.getCurrentlyAttached(conn)) return true;
+        return false;
+    }
 }
 ```
 
@@ -576,7 +580,7 @@ public final class StorageMigrate {
 
 ```text
 Disk is on SR: Shared NFS
-Disk moved to:  Local storage
+Disk moved to:  iSCSI storage
 Cleaned up the example VM.
 OK: storage-migrate
 ```

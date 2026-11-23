@@ -323,6 +323,8 @@ import java.util.Base64;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ChangeRootPassword {
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private ChangeRootPassword() {
     }
 
@@ -334,7 +336,7 @@ public final class ChangeRootPassword {
     public static void run(String url, String user, String password) throws Exception {
         Connection conn = connect(url, user, password);
         byte[] randomBytes = new byte[18];
-        new SecureRandom().nextBytes(randomBytes);
+        RANDOM.nextBytes(randomBytes);
         final String temporary = Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
 
         // changePassword takes the OLD password as well as the new one, even though you are already

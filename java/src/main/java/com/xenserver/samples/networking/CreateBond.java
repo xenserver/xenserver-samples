@@ -42,7 +42,7 @@ public final class CreateBond {
 
             // Spare NICs only. A bond that includes the management interface moves the management
             // address onto the bond master — on a real host that is how you lose your connection.
-            Set<PIF> spares = new LinkedHashSet<PIF>();
+            Set<PIF> spares = new LinkedHashSet<>();
             for (Map.Entry<PIF, PIF.Record> e : PIF.getAllRecords(conn).entrySet()) {
                 if (e.getValue().host.equals(xenHost) && !e.getValue().management && e.getValue().physical
                         && spares.size() < 2) {
