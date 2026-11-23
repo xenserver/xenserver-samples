@@ -701,12 +701,7 @@ public final class ManagePoolMembership {
         Object lastError = null;
         while (System.currentTimeMillis() < deadline) {
             try {
-                Connection conn;
-                try {
-                    conn = connect(url, user, password);
-                } catch (CoordinatorUnknown e) {
-                    conn = connect(newMasterUrl, user, password);
-                }
+                Connection conn = connectEither(url, newMasterUrl, user, password);
                 Host master = Pool.getAll(conn).iterator().next().getMaster(conn);
                 // The new coordinator answers before the pool has settled - calls made too soon fail
                 // (HANDLE_INVALID on the operation's own task) - so also wait for every host to be back,
@@ -729,6 +724,19 @@ public final class ManagePoolMembership {
             Thread.sleep(5000);
         }
         throw new IllegalStateException("the pool did not come back after the master change: " + lastError);
+    }
+
+    /**
+     * Log in at the pool's address, or at the new coordinator's when the old address is now a pool member
+     * whose SDK cannot say where the coordinator is (see PoolConnection.CoordinatorUnknown).
+     */
+    private static Connection connectEither(String url, String newMasterUrl, String user, String password)
+            throws Exception {
+        try {
+            return connect(url, user, password);
+        } catch (CoordinatorUnknown e) {
+            return connect(newMasterUrl, user, password);
+        }
     }
 
     /**

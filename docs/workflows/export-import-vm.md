@@ -398,8 +398,7 @@ public static void ExportImportVm(string url, string user, string password, stri
                 throw new InvalidOperationException($"import failed: {string.Join(", ", Task.get_error_info(session, task))}");
             // The result lists the imported VMs (<value><array><data>OpaqueRef:...</data></array></value>
             // on a real host), so take the first reference in it.
-            imported = new XenRef<VM>(System.Text.RegularExpressions.Regex.Match(
-                Task.get_result(session, task), "OpaqueRef:[^<]+").Value);
+            imported = new XenRef<VM>(OpaqueRef().Match(Task.get_result(session, task)).Value);
         }
         finally
         {
@@ -419,13 +418,16 @@ public static void ExportImportVm(string url, string user, string password, stri
     }
     session.logout();
 }
+
+[GeneratedRegex("OpaqueRef:[^<]+")]
+private static partial Regex OpaqueRef();
 ```
 
 <details><summary>Example output</summary>
 
 ```text
 Exporting db-01
-  wrote 4.0 MiB to sdk-example-export-e9f61b38f50443cfbd6a7b4e8e920fd8.xva
+  wrote 4.0 MiB to sdk-example-export-a808db1f43b14ebbb9db421d9ec29899.xva
   archive holds ova.xml and 4 disk block(s)
   imported as db-01
 Cleaned up the imported VM.

@@ -38,7 +38,7 @@ internal static partial class Workflows
         var result = Host.call_plugin(session, host, "trim", "do_trim", args);
         Console.WriteLine($"  reclaimed freed space on {sr.name_label}: {result}");
         // Compare case-insensitively: a real host's trim plugin answers "True" (capitalised).
-        if (result.Trim().ToLowerInvariant() != "true") throw new InvalidOperationException($"trim plugin returned '{result}'");
+        if (!string.Equals(result.Trim(), "true", StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException($"trim plugin returned '{result}'");
 
         // Rescan to refresh utilisation from the backend, the same way SrUsage does, before reporting it.
         SR.scan(session, srRef);

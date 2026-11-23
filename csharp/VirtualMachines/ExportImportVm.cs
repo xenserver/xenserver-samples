@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using XenAPI;
 using Console = System.Console; // XenAPI also defines a Console class
 
@@ -83,8 +84,7 @@ internal static partial class Workflows
                     throw new InvalidOperationException($"import failed: {string.Join(", ", Task.get_error_info(session, task))}");
                 // The result lists the imported VMs (<value><array><data>OpaqueRef:...</data></array></value>
                 // on a real host), so take the first reference in it.
-                imported = new XenRef<VM>(System.Text.RegularExpressions.Regex.Match(
-                    Task.get_result(session, task), "OpaqueRef:[^<]+").Value);
+                imported = new XenRef<VM>(OpaqueRef().Match(Task.get_result(session, task)).Value);
             }
             finally
             {
@@ -104,4 +104,7 @@ internal static partial class Workflows
         }
         session.logout();
     }
+
+    [GeneratedRegex("OpaqueRef:[^<]+")]
+    private static partial Regex OpaqueRef();
 }

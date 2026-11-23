@@ -304,6 +304,8 @@ OK: configure-pvs-accelerator
 Source: [`csharp/HostsAndPools/ConfigurePvsAccelerator.cs`](../../csharp/HostsAndPools/ConfigurePvsAccelerator.cs)
 
 ```csharp
+private static readonly string[] PvsServerAddresses = { "203.0.113.90" };
+
 /// <summary>
 /// Build a PVS Accelerator site from nothing and take it down again: introduce the site and a PVS server,
 /// put a read cache on each host's local storage, accelerate a VM by proxying its first NIC, then forget
@@ -331,7 +333,7 @@ public static void ConfigurePvsAccelerator(string url, string user, string passw
                                 $"'{PVS_site.get_name_label(session, existing.site)}'");
 
     var site = PVS_site.introduce(session, "sdk-example-pvs", "Created by the SDK examples", "");
-    PVS_server.introduce(session, new[] { "203.0.113.90" }, 6910, 6930, site);
+    PVS_server.introduce(session, PvsServerAddresses, 6910, 6930, site);
 
     // The read cache should be on LOCAL storage. The point of the accelerator is to keep reads off
     // the network; the server does not enforce that, but a cache on shared storage rarely makes

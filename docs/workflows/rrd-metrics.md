@@ -196,10 +196,7 @@ public static void RrdMetrics(string url, string user, string password)
     // each host at its own address rather than the pool's (coordinator) url. Legends look like
     // "AVERAGE:host:<uuid>:<datasource>"; values[] aligns to legend[].
     var start = DateTimeOffset.UtcNow.ToUnixTimeSeconds() - 300;
-    using var http = new HttpClient(new HttpClientHandler
-    {
-        ServerCertificateCustomValidationCallback = (_, _, _, _) => true
-    });
+    using var http = InsecureHttpClient();
     http.DefaultRequestHeaders.Add("accept", "application/json");
 
     var peak = new Dictionary<string, double>();

@@ -14,7 +14,7 @@ import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -316,10 +316,10 @@ public final class Helpers {
      * Build the URL for a given host's own address, keeping the scheme and port the caller originally
      * connected with (a host's management address carries no port of its own).
      */
-    public static String hostUrl(String url, String address) throws Exception {
-        URL parsed = new URL(url);
+    public static String hostUrl(String url, String address) {
+        URI parsed = URI.create(url);
         int port = parsed.getPort();
-        return parsed.getProtocol() + "://" + address + (port >= 0 ? ":" + port : "");
+        return parsed.getScheme() + "://" + address + (port >= 0 ? ":" + port : "");
     }
 
     /**

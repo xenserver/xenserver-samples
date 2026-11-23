@@ -13,9 +13,10 @@ import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuil
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.ssl.SSLContexts;
+import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 
-import java.net.URL;
+import java.net.URI;
 import javax.net.ssl.SSLContext;
 
 /**
@@ -70,11 +71,15 @@ public final class PoolConnection {
             .setSSLSocketFactory(sslsf)
             .setDefaultConnectionConfig(ConnectionConfig.custom().setSocketTimeout(Timeout.ofHours(1)).build())
             .build();
-        return HttpClients.custom().setConnectionManager(cm).build();
+        // Close a pooled connection once it has been idle for 30 seconds, so the next call opens a fresh one.
+        // While a long HTTP transfer (a host backup, a disk export) runs, the API connection sits idle, and a
+        // network that silently drops it meanwhile would leave the next call hanging until the socket
+        // times out.
+        return HttpClients.custom().setConnectionManager(cm).evictIdleConnections(TimeValue.ofSeconds(30)).build();
     }
 
     private static Connection login(CloseableHttpClient http, String url, String user, String password) throws Exception {
-        Connection conn = new Connection(new JsonRpcClient(http, new URL(url + "/jsonrpc")));
+        Connection conn = new Connection(new JsonRpcClient(http, URI.create(url + "/jsonrpc").toURL()));
         Session.loginWithPassword(conn, user, password, "1.0", "sdk-examples");
         return conn;
     }

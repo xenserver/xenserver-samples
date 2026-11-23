@@ -269,7 +269,10 @@ public final class Workflows {
             System.exit(2);
         }
 
-        String workflow = args[0], url = args[1], user = args[2], password = args[3];
+        String workflow = args[0];
+        String url = args[1];
+        String user = args[2];
+        String password = args[3];
         Map<String, String> p = new java.util.LinkedHashMap<>(defaults.get(workflow));
         for (int i = 4; i < args.length; i++) {
             int eq = args[i].indexOf('=');

@@ -398,7 +398,8 @@ public final class PvsAccelerator {
                     VIF vif = proxy.getRecord(conn).VIF;
                     accelerated.add(vif.getRecord(conn).VM.toWireString());
                 }
-                int total = 0, count = 0;
+                int total = 0;
+                int count = 0;
                 for (Map.Entry<VM, VM.Record> e : VM.getAllRecords(conn).entrySet()) {
                     VM.Record v = e.getValue();
                     if (v.isControlDomain || v.isATemplate || v.isASnapshot) continue;

@@ -385,7 +385,8 @@ public final class SnapshotSchedule {
             String vmName, String scheduleName) throws Exception {
         Connection conn = connect(url, user, password);
         VM vm = vmByName(conn, vmName);
-        final int runs = 3, retention = 2;
+        final int runs = 3;
+        final long retention = 2;
 
         // retainedSnapshots is the interesting field: the schedule prunes to it every time it runs.
         VMSS.Record spec = new VMSS.Record();
@@ -394,7 +395,7 @@ public final class SnapshotSchedule {
         spec.enabled = true;
         spec.type = Types.VmssType.SNAPSHOT;
         spec.frequency = Types.VmssFrequency.DAILY;
-        spec.retainedSnapshots = (long) retention;
+        spec.retainedSnapshots = retention;
         Map<String, String> when = new HashMap<>();
         when.put("hour", "2");
         when.put("min", "0");

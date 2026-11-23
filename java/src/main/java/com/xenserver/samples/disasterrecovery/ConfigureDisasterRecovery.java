@@ -47,14 +47,10 @@ public final class ConfigureDisasterRecovery {
             StringJoiner names = new StringJoiner(", ");
             for (Map.Entry<SR, SR.Record> e : SR.getAllRecords(conn).entrySet()) {
                 SR.Record r = e.getValue();
-                if (!r.shared || "iso".equals(r.contentType)) continue;
-                try {
-                    e.getKey().assertSupportsDatabaseReplication(conn);
-                } catch (Types.XenAPIException cannot) {
-                    continue;
+                if (r.shared && !"iso".equals(r.contentType) && supportsDatabaseReplication(conn, e.getKey())) {
+                    candidates.add(e.getKey());
+                    names.add(r.nameLabel);
                 }
-                candidates.add(e.getKey());
-                names.add(r.nameLabel);
             }
             System.out.println("SRs that can hold the pool metadata: "
                     + (candidates.isEmpty() ? "none" : names.toString()));
@@ -103,5 +99,17 @@ public final class ConfigureDisasterRecovery {
                     && v.getMetadataOfPool(conn).toWireString().equals(pool.toWireString()))
                 return v;
         return null;
+    }
+
+    /**
+     * Whether an SR can hold the pool's metadata.
+     */
+    private static boolean supportsDatabaseReplication(Connection conn, SR sr) throws Exception {
+        try {
+            sr.assertSupportsDatabaseReplication(conn);
+            return true;
+        } catch (Types.XenAPIException cannot) {
+            return false;
+        }
     }
 }
