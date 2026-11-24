@@ -115,6 +115,23 @@ function Invoke-OfflinePoolUpdate {
 }
 ```
 
+<details><summary>Example output</summary>
+
+```text
+Pool repositories: sdk-example-offline
+Uploaded sdk-example-bundle.xsbundle
+Updates in the bundle: 1
+  CITRIX-HYPERVISOR-2021-0000: This is an update for testing only
+Updating sdk-host1: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+Updating sdk-host2: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+VM guidance pending: none
+OK: offline-pool-update
+```
+
+</details>
+
 ## xe CLI
 
 Source: [`cli/updates/offline-pool-update.sh`](../../cli/updates/offline-pool-update.sh)
@@ -182,6 +199,22 @@ offline_pool_update() {
     ok offline-pool-update
 }
 ```
+
+<details><summary>Example output</summary>
+
+```text
+Pool repositories: sdk-example-offline
+Uploaded sdk-example-bundle.xsbundle
+Hosts with updates to apply: 2
+Updating sdk-host1: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+Updating sdk-host2: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+VM guidance pending: none
+OK: offline-pool-update
+```
+
+</details>
 
 ## Python
 
@@ -281,6 +314,23 @@ def offline_pool_update(url, username, password, bundle_path):
     print("OK: offline-pool-update")
     session.xenapi.session.logout()
 ```
+
+<details><summary>Example output</summary>
+
+```text
+Pool repositories: sdk-example-offline
+Uploaded sdk-example-bundle.xsbundle
+Updates in the bundle: 1
+  CITRIX-HYPERVISOR-2021-0000: This is an update for testing only
+Updating sdk-host1: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+Updating sdk-host2: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+VM guidance pending: none
+OK: offline-pool-update
+```
+
+</details>
 
 ## C# (.NET)
 
@@ -382,6 +432,23 @@ public static void OfflinePoolUpdate(string url, string user, string password, s
     session.logout();
 }
 ```
+
+<details><summary>Example output</summary>
+
+```text
+Pool repositories: sdk-example-offline
+Uploaded sdk-example-bundle.xsbundle
+Updates in the bundle: 1
+  CITRIX-HYPERVISOR-2021-0000: This is an update for testing only
+Updating sdk-host1: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+Updating sdk-host2: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+VM guidance pending: none
+OK: offline-pool-update
+```
+
+</details>
 
 ## Go
 
@@ -533,6 +600,23 @@ func uploadBundle(session *xenapi.Session, url, user, password, bundlePath strin
 }
 ```
 
+<details><summary>Example output</summary>
+
+```text
+Pool repositories: sdk-example-offline
+Uploaded sdk-example-bundle.xsbundle
+Updates in the bundle: 1
+  CITRIX-HYPERVISOR-2021-0000: This is an update for testing only
+Updating sdk-host1: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+Updating sdk-host2: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+VM guidance pending: none
+OK: offline-pool-update
+```
+
+</details>
+
 ## Java
 
 Source: [`java/src/main/java/com/xenserver/samples/updates/OfflinePoolUpdate.java`](../../java/src/main/java/com/xenserver/samples/updates/OfflinePoolUpdate.java)
@@ -661,3 +745,20 @@ public final class OfflinePoolUpdate {
     }
 }
 ```
+
+<details><summary>Example output</summary>
+
+```text
+Pool repositories: sdk-example-offline
+Uploaded sdk-example-bundle.xsbundle
+Updates in the bundle: 1
+  CITRIX-HYPERVISOR-2021-0000: This is an update for testing only
+Updating sdk-host1: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+Updating sdk-host2: moving its VMs to the rest of the pool
+  applied; pending guidance = []
+VM guidance pending: none
+OK: offline-pool-update
+```
+
+</details>
