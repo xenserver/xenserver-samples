@@ -314,19 +314,23 @@ def introduce_update_repository(session, repo_url, source_url):
         "%s/normal" % repo_url, "%s/normal" % source_url, True, "")
 
 
-def attach_update_repository(session, pool, repo_url, source_url):
-    """Get the pool ready to sync updates from `repo_url`: check that HA and Workload Balancing are
-    off, then introduce the update repository and make it the pool's only one. Returns the
-    repository and the pool's previous repositories, for detach_update_repository to put back.
-
-    Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks
-    for Workload Balancing to be switched off before you start updating - so check both up front and
-    stop rather than disabling either for you; turn them back on again once the update is done.
-    pool.sync_updates needs at least one repository with update=True enabled
-    (NO_REPOSITORY_ENABLED otherwise)."""
+def check_ha_and_wlb_off(session, pool):
+    """Stop if High Availability or Workload Balancing is on. Host.apply_updates refuses with
+    HA_IS_ENABLED while HA is on, and the documentation also asks for Workload Balancing to be
+    switched off before you start updating - so check both up front and stop rather than disabling
+    either for you; turn them back on again once the update is done."""
     if session.xenapi.pool.get_ha_enabled(pool) or session.xenapi.pool.get_wlb_enabled(pool):
         raise RuntimeError("HA and Workload Balancing must both be off before updating the pool; "
                            "disable them, run this again, then re-enable them once it finishes")
+
+
+def attach_update_repository(session, pool, repo_url, source_url):
+    """Get the pool ready to sync updates from `repo_url`: check that HA and Workload Balancing are
+    off (check_ha_and_wlb_off), then introduce the update repository and make it the pool's only one.
+    Returns the repository and the pool's previous repositories, for detach_update_repository to put
+    back. pool.sync_updates needs at least one repository with update=True enabled
+    (NO_REPOSITORY_ENABLED otherwise)."""
+    check_ha_and_wlb_off(session, pool)
     repo = introduce_update_repository(session, repo_url, source_url)
     previous = session.xenapi.pool.get_repositories(pool)
     try:

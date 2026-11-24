@@ -361,13 +361,24 @@ internal static partial class Workflows
             $"{repoUrl}/normal", $"{sourceUrl}/normal", true, "");
 
     /// <summary>
+    /// Stop if High Availability or Workload Balancing is on. Host.apply_updates refuses with HA_IS_ENABLED
+    /// while HA is on, and the documentation also asks for Workload Balancing to be switched off before you
+    /// start updating - so check both up front and stop rather than disabling either for you; turn them back
+    /// on again once the update is done.
+    /// </summary>
+    internal static void CheckHaAndWlbOff(Session session, XenRef<Pool> pool)
+    {
+        if (Pool.get_ha_enabled(session, pool) || Pool.get_wlb_enabled(session, pool))
+            throw new InvalidOperationException("HA and Workload Balancing must both be off before updating the pool; " +
+                                                "disable them, run this again, then re-enable them once it finishes");
+    }
+
+    /// <summary>
     /// Get the pool ready to sync updates from <paramref name="repoUrl"/>: check that HA and Workload
-    /// Balancing are off, then introduce the update repository and make it the pool's only one.
+    /// Balancing are off (CheckHaAndWlbOff), then introduce the update repository and make it the pool's
+    /// only one.
     /// </summary>
     /// <remarks>
-    /// Host.apply_updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-    /// Workload Balancing to be switched off before you start updating - so check both up front and stop
-    /// rather than disabling either for you; turn them back on again once the update is done.
     /// Pool.sync_updates needs at least one repository with update=true enabled (NO_REPOSITORY_ENABLED
     /// otherwise).
     /// </remarks>
@@ -376,9 +387,7 @@ internal static partial class Workflows
     internal static (XenRef<Repository> Repo, List<XenRef<Repository>> Previous) AttachUpdateRepository(
         Session session, XenRef<Pool> pool, string repoUrl, string sourceUrl)
     {
-        if (Pool.get_ha_enabled(session, pool) || Pool.get_wlb_enabled(session, pool))
-            throw new InvalidOperationException("HA and Workload Balancing must both be off before updating the pool; " +
-                                                "disable them, run this again, then re-enable them once it finishes");
+        CheckHaAndWlbOff(session, pool);
         var repo = IntroduceUpdateRepository(session, repoUrl, sourceUrl);
         var previous = Pool.get_repositories(session, pool);
         try

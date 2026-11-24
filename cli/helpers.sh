@@ -273,13 +273,24 @@ introduce_update_repository() {
         update=true
 }
 
-# Get the pool ready to sync updates from $1 (repo_url): check that HA and Workload Balancing are off,
-# then introduce the update repository and make it the pool's only one, putting the pool's own
-# repositories back and forgetting the new one when the script exits, however the rest goes.
+# Stop if High Availability or Workload Balancing is on in the pool ($pool). host-apply-updates refuses
+# with HA_IS_ENABLED while HA is on, and the documentation also asks for Workload Balancing to be switched
+# off before you start updating - so check both up front and stop rather than disabling either for you;
+# turn them back on again once the update is done.
+check_ha_and_wlb_off() {
+    if [ "$(remote_xe pool-param-get uuid=$pool param-name=ha-enabled)" = "true" ] ||
+       [ "$(remote_xe pool-param-get uuid=$pool param-name=wlb-enabled)" = "true" ]; then
+        echo "HA and Workload Balancing must both be off before updating the pool; disable them," \
+             "run this again, then re-enable them once it finishes" >&2
+        exit 1
+    fi
+}
+
+# Get the pool ready to sync updates from $1 (repo_url): check that HA and Workload Balancing are off
+# (check_ha_and_wlb_off), then introduce the update repository and make it the pool's only one, putting
+# the pool's own repositories back and forgetting the new one when the script exits, however the rest
+# goes.
 #
-# host-apply-updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-# Workload Balancing to be switched off before you start updating - so check both up front and stop
-# rather than disabling either for you; turn them back on again once the update is done.
 # pool-sync-updates syncs the pool's ENABLED repositories, and repository-introduce doesn't enable
 # anything (NO_REPOSITORY_ENABLED otherwise). The "repositories" field is DynamicRO at the API level,
 # but xe's generic pool-param-set still writes it - a set reads back "a; b" and is set as "a,b".
@@ -287,12 +298,7 @@ introduce_update_repository() {
 attach_update_repository() {
     local repo_url=$1 source_url=$2
     pool=$(remote_xe pool-list --minimal)
-    if [ "$(remote_xe pool-param-get uuid=$pool param-name=ha-enabled)" = "true" ] ||
-       [ "$(remote_xe pool-param-get uuid=$pool param-name=wlb-enabled)" = "true" ]; then
-        echo "HA and Workload Balancing must both be off before updating the pool; disable them," \
-             "run this again, then re-enable them once it finishes" >&2
-        exit 1
-    fi
+    check_ha_and_wlb_off
     repo=$(introduce_update_repository "$repo_url" "$source_url")
     before=$(remote_xe pool-param-get uuid=$pool param-name=repositories)
     trap 'remote_xe_try pool-param-set uuid=$pool repositories="${before//; /,}"; remote_xe_try repository-forget uuid=$repo' EXIT

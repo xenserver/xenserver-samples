@@ -394,18 +394,31 @@ function New-UpdateRepository {
         -BinaryUrl "$RepoUrl/normal" -SourceUrl "$SourceUrl/normal" -Update $true -GpgkeyPath '' -PassThru
 }
 
+function Assert-HaAndWlbOff {
+    <#
+    .SYNOPSIS
+        Stop if High Availability or Workload Balancing is on.
+    .DESCRIPTION
+        ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+        Workload Balancing to be switched off before you start updating - so check both up front and
+        stop rather than disabling either for you; turn them back on again once the update is done.
+    #>
+    param([Parameter(Mandatory = $true)]$Pool)
+    if ($Pool.ha_enabled -or $Pool.wlb_enabled) {
+        throw "HA and Workload Balancing must both be off before updating the pool; disable them, " +
+            "run this again, then re-enable them once it finishes"
+    }
+}
+
 function Connect-UpdateRepository {
     <#
     .SYNOPSIS
         Get the pool ready to sync updates from -RepoUrl.
     .DESCRIPTION
-        Check that HA and Workload Balancing are off, then introduce the update repository and make it
-        the pool's only one. Returns the repository and the pool's previous repositories, for
-        Disconnect-UpdateRepository to put back.
+        Check that HA and Workload Balancing are off (Assert-HaAndWlbOff), then introduce the update
+        repository and make it the pool's only one. Returns the repository and the pool's previous
+        repositories, for Disconnect-UpdateRepository to put back.
 
-        ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-        Workload Balancing to be switched off before you start updating - so check both up front and
-        stop rather than disabling either for you; turn them back on again once the update is done.
         pool.sync_updates needs at least one repository with Update enabled (NO_REPOSITORY_ENABLED
         otherwise).
     #>
@@ -415,10 +428,7 @@ function Connect-UpdateRepository {
         [Parameter(Mandatory = $true)][string]$RepoUrl,
         [Parameter(Mandatory = $true)][string]$SourceUrl
     )
-    if ($Pool.ha_enabled -or $Pool.wlb_enabled) {
-        throw "HA and Workload Balancing must both be off before updating the pool; disable them, " +
-            "run this again, then re-enable them once it finishes"
-    }
+    Assert-HaAndWlbOff -Pool $Pool
     $repo = New-UpdateRepository -Session $Session -RepoUrl $RepoUrl -SourceUrl $SourceUrl
     $previous = @((Get-XenPool -Ref $Pool).repositories)
     try {

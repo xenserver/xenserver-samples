@@ -369,17 +369,11 @@ func introduceUpdateRepository(session *xenapi.Session, repoURL, sourceURL strin
 	return repo
 }
 
-// attachUpdateRepository gets the pool ready to sync updates from repoURL: it checks that HA and
-// Workload Balancing are off, then introduces the update repository and makes it the pool's only one.
-// It returns the repository and the pool's previous repositories, for detachUpdateRepository to put
-// back.
-//
-// Host.ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-// Workload Balancing to be switched off before you start updating - so check both up front and stop
-// rather than disabling either for you; turn them back on again once the update is done.
-// Pool.SyncUpdates needs at least one repository with update=true enabled (NO_REPOSITORY_ENABLED
-// otherwise).
-func attachUpdateRepository(session *xenapi.Session, pool xenapi.PoolRef, repoURL, sourceURL string) (xenapi.RepositoryRef, []xenapi.RepositoryRef) {
+// checkHaAndWlbOff stops if High Availability or Workload Balancing is on. Host.ApplyUpdates refuses
+// with HA_IS_ENABLED while HA is on, and the documentation also asks for Workload Balancing to be
+// switched off before you start updating - so check both up front and stop rather than disabling
+// either for you; turn them back on again once the update is done.
+func checkHaAndWlbOff(session *xenapi.Session, pool xenapi.PoolRef) {
 	haEnabled, err := xenapi.Pool.GetHaEnabled(session, pool)
 	check(err)
 	wlbEnabled, err := xenapi.Pool.GetWlbEnabled(session, pool)
@@ -388,6 +382,15 @@ func attachUpdateRepository(session *xenapi.Session, pool xenapi.PoolRef, repoUR
 		panic("HA and Workload Balancing must both be off before updating the pool; disable them, " +
 			"run this again, then re-enable them once it finishes")
 	}
+}
+
+// attachUpdateRepository gets the pool ready to sync updates from repoURL: it checks that HA and
+// Workload Balancing are off (checkHaAndWlbOff), then introduces the update repository and makes it
+// the pool's only one. It returns the repository and the pool's previous repositories, for
+// detachUpdateRepository to put back. Pool.SyncUpdates needs at least one repository with
+// update=true enabled (NO_REPOSITORY_ENABLED otherwise).
+func attachUpdateRepository(session *xenapi.Session, pool xenapi.PoolRef, repoURL, sourceURL string) (xenapi.RepositoryRef, []xenapi.RepositoryRef) {
+	checkHaAndWlbOff(session, pool)
 	repo := introduceUpdateRepository(session, repoURL, sourceURL)
 	previous, err := xenapi.Pool.GetRepositories(session, pool)
 	check(err)

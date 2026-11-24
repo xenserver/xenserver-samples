@@ -111,7 +111,7 @@ from hosts_and_pools.configure_host_storage import configure_host_storage
 from hosts_and_pools.configure_syslog import configure_syslog
 from hosts_and_pools.manage_driver_variants import manage_driver_variants
 from updates.configure_updates import configure_updates
-from updates.configure_offline_updates import configure_offline_updates
+from updates.offline_pool_update import offline_pool_update
 from updates.apply_update import apply_update
 from updates.rolling_pool_update import rolling_pool_update
 from organization.tags_and_folders import tags_and_folders
@@ -160,7 +160,7 @@ WORKFLOWS = {
     "tags-and-folders": _wf(tags_and_folders, vm_name="web-01"),
     "configure-updates": _wf(configure_updates, repo_url="https://repo.ops.xenserver.com/xs9",
                              source_url="https://repo-src.ops.xenserver.com/xs9"),
-    "configure-offline-updates": _wf(configure_offline_updates),
+    "offline-pool-update": _wf(offline_pool_update, bundle_path="XS9-update.xsbundle"),
     "clone-vm": _wf(clone_vm, vm_name="db-01"),
     "delete-vm": _wf(delete_vm, template_name="Rocky Linux 8"),
     "storage-migrate": _wf(storage_migrate, source_vm="web-01"),

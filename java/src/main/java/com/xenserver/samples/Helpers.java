@@ -446,23 +446,30 @@ public final class Helpers {
     }
 
     /**
+     * Stop if High Availability or Workload Balancing is on. Host.applyUpdates refuses with HA_IS_ENABLED
+     * while HA is on, and the documentation also asks for Workload Balancing to be switched off before you
+     * start updating - so check both up front and stop rather than disabling either for you; turn them back
+     * on again once the update is done.
+     */
+    public static void checkHaAndWlbOff(Connection conn, Pool pool) throws Exception {
+        if (pool.getHaEnabled(conn) || pool.getWlbEnabled(conn)) {
+            throw new IllegalStateException("HA and Workload Balancing must both be off before updating the "
+                    + "pool; disable them, run this again, then re-enable them once it finishes");
+        }
+    }
+
+    /**
      * Get the pool ready to sync updates from {@code repoUrl}: check that HA and Workload Balancing are
-     * off, then introduce the update repository and make it the pool's only one.
+     * off (checkHaAndWlbOff), then introduce the update repository and make it the pool's only one.
      *
-     * <p>Host.applyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-     * Workload Balancing to be switched off before you start updating - so check both up front and stop
-     * rather than disabling either for you; turn them back on again once the update is done.
-     * pool.syncUpdates needs at least one repository with update=true enabled (NO_REPOSITORY_ENABLED
+     * <p>pool.syncUpdates needs at least one repository with update=true enabled (NO_REPOSITORY_ENABLED
      * otherwise).
      *
      * @return the repository and the pool's previous repositories, for detachUpdateRepository to put back.
      */
     public static AttachedRepository attachUpdateRepository(Connection conn, Pool pool, String repoUrl,
             String sourceUrl) throws Exception {
-        if (pool.getHaEnabled(conn) || pool.getWlbEnabled(conn)) {
-            throw new IllegalStateException("HA and Workload Balancing must both be off before updating the "
-                    + "pool; disable them, run this again, then re-enable them once it finishes");
-        }
+        checkHaAndWlbOff(conn, pool);
         Repository repo = introduceUpdateRepository(conn, repoUrl, sourceUrl);
         Set<Repository> previous = pool.getRepositories(conn);
         try {

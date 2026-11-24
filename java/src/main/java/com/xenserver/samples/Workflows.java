@@ -81,8 +81,8 @@ import com.xenserver.samples.storage.SetDefaultSr;
 import com.xenserver.samples.storage.SrUsage;
 import com.xenserver.samples.storage.VbdInventory;
 import com.xenserver.samples.updates.ApplyUpdate;
-import com.xenserver.samples.updates.ConfigureOfflineUpdates;
 import com.xenserver.samples.updates.ConfigureUpdates;
+import com.xenserver.samples.updates.OfflinePoolUpdate;
 import com.xenserver.samples.updates.RollingPoolUpdate;
 import com.xenserver.samples.virtualmachines.AttachUsbDevice;
 import com.xenserver.samples.virtualmachines.CheckpointVm;
@@ -193,7 +193,7 @@ public final class Workflows {
         d.put("manage-sr-lifecycle", mapOf("nfs_server", "192.0.2.10", "nfs_path", "/export/spare"));
         d.put("reconnect-sr-storage", mapOf("nfs_server", "192.0.2.10", "nfs_path", "/export/spare"));
         d.put("export-import-vdi", mapOf("sr_name", "Shared NFS"));
-        d.put("configure-offline-updates", mapOf());
+        d.put("offline-pool-update", mapOf("bundle_path", "XS9-update.xsbundle"));
         d.put("set-default-sr", mapOf("nfs_server", "192.0.2.10", "nfs_path", "/export/spare"));
         d.put("server-status-report", mapOf());
         d.put("configure-disaster-recovery", mapOf());
@@ -360,8 +360,8 @@ public final class Workflows {
                 ReconnectSrStorage.run(url, user, password, p.get("nfs_server"), p.get("nfs_path"),
                         p.get("new_nfs_server")); break;
             case "export-import-vdi": ExportImportVdi.run(url, user, password, p.get("sr_name")); break;
-            case "configure-offline-updates":
-                ConfigureOfflineUpdates.run(url, user, password, p.get("bundle_path")); break;
+            case "offline-pool-update":
+                OfflinePoolUpdate.run(url, user, password, p.get("bundle_path")); break;
             case "manage-sr-lifecycle":
                 ManageSrLifecycle.run(url, user, password, p.get("nfs_server"), p.get("nfs_path")); break;
             case "set-default-sr": SetDefaultSr.run(url, user, password, p.get("nfs_server"), p.get("nfs_path")); break;
