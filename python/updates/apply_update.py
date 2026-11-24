@@ -10,7 +10,8 @@ Run it::
 """
 
 from connection import connect
-from helpers import apply_updates_to_host, attach_update_repository, detach_update_repository
+from helpers import (apply_updates_to_host, attach_update_repository, check_no_pending_guidance,
+                     detach_update_repository, report_vm_guidance)
 
 
 def apply_update(url, username, password, repo_url, source_url, host_name=""):
@@ -19,10 +20,13 @@ def apply_update(url, username, password, repo_url, source_url, host_name=""):
 
     The documentation asks for the coordinator to be updated before any other host, so update it
     first, then run this again naming each of the others - or use rolling-pool-update to do the
-    whole pool in one go. helpers.attach_update_repository checks that HA and Workload Balancing are
-    off and attaches a throwaway update repository, which pool.sync_updates needs; it is forgotten
-    again afterwards. helpers.apply_updates_to_host does the rest: evacuating the host first if that
-    turns out to be needed, acting on its post-update guidance, and returning it to service."""
+    whole pool in one go. Before changing anything, helpers.check_no_pending_guidance stops if a host
+    or VM still has mandatory guidance pending from an earlier update. helpers.attach_update_repository
+    checks that HA and Workload Balancing are off and attaches a throwaway update repository, which
+    pool.sync_updates needs; it is forgotten again afterwards. helpers.apply_updates_to_host does the
+    rest: evacuating the host first if that turns out to be needed, acting on its post-update
+    guidance, and returning it to service. Finally report the guidance left for VMs, such as
+    restarting one to pick the update up - that is the VM owner's call."""
     session = connect(url, username, password)
     pool = session.xenapi.pool.get_all()[0]
     if host_name:
@@ -33,6 +37,7 @@ def apply_update(url, username, password, repo_url, source_url, host_name=""):
     else:
         host_ref = session.xenapi.pool.get_master(pool)
     name = session.xenapi.host.get_name_label(host_ref)
+    check_no_pending_guidance(session)
 
     repo, previous = attach_update_repository(session, pool, repo_url, source_url)
     try:
@@ -43,5 +48,6 @@ def apply_update(url, username, password, repo_url, source_url, host_name=""):
                                         label="%s: " % name)
     finally:
         detach_update_repository(session, pool, repo, previous)
+    report_vm_guidance(session)
     print("OK: apply-update")
     session.xenapi.session.logout()

@@ -35,6 +35,9 @@ function Invoke-ApplyUpdate {
     else {
         $xenHost = Get-XenHost -Ref $pool.master
     }
+    # Before changing anything, stop if a host or VM still has mandatory guidance pending from an earlier
+    # update.
+    Assert-NoPendingGuidance
 
     $attached = Connect-UpdateRepository -Session $session -Pool $pool -RepoUrl $RepoUrl -SourceUrl $SourceUrl
     try {
@@ -47,6 +50,8 @@ function Invoke-ApplyUpdate {
     finally {
         Disconnect-UpdateRepository -Pool $pool -Attached $attached
     }
+    # Restarting a VM to pick the update up is its owner's call: report what is left.
+    Write-VmGuidance
     Write-Host "OK: apply-update"
     $session | Disconnect-XenServer
 }

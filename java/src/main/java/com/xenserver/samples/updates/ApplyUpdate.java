@@ -10,7 +10,9 @@ import java.util.Set;
 
 import static com.xenserver.samples.Helpers.applyUpdatesToHost;
 import static com.xenserver.samples.Helpers.attachUpdateRepository;
+import static com.xenserver.samples.Helpers.checkNoPendingGuidance;
 import static com.xenserver.samples.Helpers.detachUpdateRepository;
+import static com.xenserver.samples.Helpers.reportVmGuidance;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ApplyUpdate {
@@ -25,10 +27,13 @@ public final class ApplyUpdate {
      *
      * <p>The documentation asks for the coordinator to be updated before any other host, so update it
      * first, then run this again naming each of the others - or use RollingPoolUpdate to do the whole pool
-     * in one go. Helpers.attachUpdateRepository checks that HA and Workload Balancing are off and attaches
-     * a throwaway update repository, which pool.syncUpdates needs; it is forgotten again afterwards.
-     * Helpers.applyUpdatesToHost does the rest: evacuating the host first if that turns out to be needed,
-     * acting on its post-update guidance, and returning it to service.
+     * in one go. Before changing anything, Helpers.checkNoPendingGuidance stops if a host or VM still has
+     * mandatory guidance pending from an earlier update. Helpers.attachUpdateRepository checks that HA and
+     * Workload Balancing are off and attaches a throwaway update repository, which pool.syncUpdates needs;
+     * it is forgotten again afterwards. Helpers.applyUpdatesToHost does the rest: evacuating the host first
+     * if that turns out to be needed, acting on its post-update guidance, and returning it to service.
+     * Finally report the guidance left for VMs, such as restarting one to pick the update up - that is the
+     * VM owner's call.
      *
      * <p>Run it:
      *
@@ -53,6 +58,7 @@ public final class ApplyUpdate {
             host = pool.getMaster(conn);
         }
         String name = host.getNameLabel(conn);
+        checkNoPendingGuidance(conn);
 
         AttachedRepository attached = attachUpdateRepository(conn, pool, repoUrl, sourceUrl);
         try {
@@ -63,6 +69,7 @@ public final class ApplyUpdate {
         } finally {
             detachUpdateRepository(conn, pool, attached);
         }
+        reportVmGuidance(conn);
         System.out.println("OK: apply-update");
         Session.logout(conn);
     }

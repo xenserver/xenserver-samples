@@ -11,44 +11,36 @@ Run it::
 """
 
 from connection import connect
-from helpers import apply_updates_to_host, attach_update_repository, detach_update_repository
+from helpers import (attach_update_repository, check_hosts_can_be_evacuated, check_no_pending_guidance,
+                     detach_update_repository, hosts_coordinator_first, report_vm_guidance, update_hosts)
 
 
 def rolling_pool_update(url, username, password, repo_url, source_url):
     """Update the whole pool host by host, coordinator first, moving each host's VMs off it before
     updating it, so the VMs keep running throughout.
 
-    Check first that every host can be emptied: host.get_vms_which_prevent_evacuation names the VMs
-    that could not move anywhere else (for example a VM with a disk on the host's local storage, or
-    a pool with nowhere else to put them) - stop before changing anything if there are any. Then,
-    for each host: disable it so nothing new starts there, evacuate it (live-migrating its VMs to
-    the other hosts), and let helpers.apply_updates_to_host apply the updates, restart the host or
-    its toolstack if the update asks for that, and enable it again. The VMs stay where evacuation
-    put them. helpers.attach_update_repository checks that HA and Workload Balancing are off and
+    Check first, before changing anything, that the update can go through: no host or VM may still
+    have mandatory guidance pending from an earlier update, and every host must be able to empty
+    (helpers.check_no_pending_guidance, helpers.check_hosts_can_be_evacuated). Then sync, and let
+    helpers.update_hosts update each host in turn: disable it, evacuate it, apply the updates,
+    restart it or its toolstack if the update asks for that, and enable it again. Finally report the
+    guidance left for VMs, such as restarting one to pick the update up - that is the VM owner's
+    call. helpers.attach_update_repository checks that HA and Workload Balancing are off and
     attaches a throwaway update repository, which pool.sync_updates needs; it is forgotten again
     afterwards."""
     session = connect(url, username, password)
     pool = session.xenapi.pool.get_all()[0]
-    master = session.xenapi.pool.get_master(pool)
-    hosts = [master] + [ref for ref in session.xenapi.host.get_all() if ref != master]
-    for host_ref in hosts:
-        blocking = session.xenapi.host.get_vms_which_prevent_evacuation(host_ref)
-        if blocking:
-            names = ", ".join(session.xenapi.VM.get_name_label(vm) for vm in blocking)
-            raise RuntimeError("%s cannot be evacuated: move or shut down %s first"
-                               % (session.xenapi.host.get_name_label(host_ref), names))
+    hosts = hosts_coordinator_first(session)
+    check_no_pending_guidance(session)
+    check_hosts_can_be_evacuated(session, hosts)
 
     repo, previous = attach_update_repository(session, pool, repo_url, source_url)
     try:
         hash_ = session.xenapi.pool.sync_updates(pool, False, "", "")
         print("Synced updates; hash length %d" % len(hash_))
-        for host_ref in hosts:
-            print("Updating %s: moving its VMs to the rest of the pool"
-                  % session.xenapi.host.get_name_label(host_ref))
-            session.xenapi.host.disable(host_ref)
-            session.xenapi.host.evacuate(host_ref)
-            session = apply_updates_to_host(session, url, username, password, host_ref, hash_)
+        session = update_hosts(session, url, username, password, hosts, hash_)
     finally:
         detach_update_repository(session, pool, repo, previous)
+    report_vm_guidance(session)
     print("OK: rolling-pool-update")
     session.xenapi.session.logout()

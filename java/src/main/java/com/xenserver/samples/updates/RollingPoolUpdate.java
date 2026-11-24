@@ -5,16 +5,16 @@ import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
-import com.xensource.xenapi.VM;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import static com.xenserver.samples.Helpers.applyUpdatesToHost;
 import static com.xenserver.samples.Helpers.attachUpdateRepository;
+import static com.xenserver.samples.Helpers.checkHostsCanBeEvacuated;
+import static com.xenserver.samples.Helpers.checkNoPendingGuidance;
 import static com.xenserver.samples.Helpers.detachUpdateRepository;
+import static com.xenserver.samples.Helpers.hostsCoordinatorFirst;
+import static com.xenserver.samples.Helpers.reportVmGuidance;
+import static com.xenserver.samples.Helpers.updateHosts;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class RollingPoolUpdate {
@@ -28,12 +28,12 @@ public final class RollingPoolUpdate {
      * coordinator first, move the host's VMs to the rest of the pool, apply the updates, restart it if the
      * update asks for that, and return it to service.
      *
-     * <p>Check first that every host can be emptied: host.getVmsWhichPreventEvacuation names the VMs that
-     * could not move anywhere else (for example a VM with a disk on the host's local storage, or a pool with
-     * nowhere else to put them) - stop before changing anything if there are any. Then, for each host:
-     * disable it so nothing new starts there, evacuate it (live-migrating its VMs to the other hosts), and
-     * let Helpers.applyUpdatesToHost apply the updates, restart the host or its toolstack if the update asks
-     * for that, and enable it again. The VMs stay where evacuation put them.
+     * <p>Check first, before changing anything, that the update can go through: no host or VM may still have
+     * mandatory guidance pending from an earlier update, and every host must be able to empty
+     * (Helpers.checkNoPendingGuidance, Helpers.checkHostsCanBeEvacuated). Then sync, and let
+     * Helpers.updateHosts update each host in turn: disable it, evacuate it, apply the updates, restart it or
+     * its toolstack if the update asks for that, and enable it again. Finally report the guidance left for
+     * VMs, such as restarting one to pick the update up - that is the VM owner's call.
      * Helpers.attachUpdateRepository checks that HA and Workload Balancing are off and attaches a throwaway
      * update repository, which pool.syncUpdates needs; it is forgotten again afterwards.
      *
@@ -48,35 +48,19 @@ public final class RollingPoolUpdate {
             String sourceUrl) throws Exception {
         Connection conn = connect(url, user, password);
         Pool pool = Pool.getAll(conn).iterator().next();
-        Host master = pool.getMaster(conn);
-        List<Host> hosts = new ArrayList<>();
-        hosts.add(master);
-        for (Host h : Host.getAll(conn)) {
-            if (!h.equals(master)) hosts.add(h);
-        }
-        for (Host host : hosts) {
-            Map<VM, Set<String>> blocking = host.getVmsWhichPreventEvacuation(conn);
-            if (!blocking.isEmpty()) {
-                List<String> names = new ArrayList<>();
-                for (VM vm : blocking.keySet()) names.add(vm.getNameLabel(conn));
-                throw new IllegalStateException(host.getNameLabel(conn) + " cannot be evacuated: move or shut down "
-                        + String.join(", ", names) + " first");
-            }
-        }
+        List<Host> hosts = hostsCoordinatorFirst(conn);
+        checkNoPendingGuidance(conn);
+        checkHostsCanBeEvacuated(conn, hosts);
 
         AttachedRepository attached = attachUpdateRepository(conn, pool, repoUrl, sourceUrl);
         try {
             String hash = pool.syncUpdates(conn, false, "", "");
             System.out.println("Synced updates; hash length " + hash.length());
-            for (Host host : hosts) {
-                System.out.println("Updating " + host.getNameLabel(conn) + ": moving its VMs to the rest of the pool");
-                host.disable(conn);
-                host.evacuate(conn);
-                conn = applyUpdatesToHost(conn, url, user, password, host, hash, "");
-            }
+            conn = updateHosts(conn, url, user, password, hosts, hash);
         } finally {
             detachUpdateRepository(conn, pool, attached);
         }
+        reportVmGuidance(conn);
         System.out.println("OK: rolling-pool-update");
         Session.logout(conn);
     }

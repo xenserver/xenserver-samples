@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -402,6 +403,122 @@ func attachUpdateRepository(session *xenapi.Session, pool xenapi.PoolRef, repoUR
 func detachUpdateRepository(session *xenapi.Session, pool xenapi.PoolRef, repo xenapi.RepositoryRef, previous []xenapi.RepositoryRef) {
 	check(xenapi.Pool.SetRepositories(session, pool, previous))
 	check(xenapi.Repository.Forget(session, repo))
+}
+
+// isRealVM reports whether a VM is a guest: not a template, a snapshot or a host's control domain.
+func isRealVM(vm xenapi.VMRecord) bool {
+	return !vm.IsATemplate && !vm.IsASnapshot && !vm.IsControlDomain
+}
+
+// guidanceEntry formats an object's pending guidance as "<name>: <guidance>, ...".
+func guidanceEntry(name string, guidance []xenapi.UpdateGuidances) string {
+	names := make([]string, len(guidance))
+	for i, g := range guidance {
+		names[i] = string(g)
+	}
+	return name + ": " + strings.Join(names, ", ")
+}
+
+// checkNoPendingGuidance stops before updating if a host or VM still has mandatory guidance pending
+// from an earlier update. Host.ApplyUpdates refuses a host that has some
+// (HOST_PENDING_MANDATORY_GUIDANCES_NOT_EMPTY), part-way through the update otherwise: act on it first -
+// restart the host, its toolstack or the VM - and run the update again.
+func checkNoPendingGuidance(session *xenapi.Session) {
+	var pending []string
+	hosts, err := xenapi.Host.GetAllRecords(session)
+	check(err)
+	for _, h := range hosts {
+		if len(h.PendingGuidances) > 0 {
+			pending = append(pending, guidanceEntry(h.NameLabel, h.PendingGuidances))
+		}
+	}
+	vms, err := xenapi.VM.GetAllRecords(session)
+	check(err)
+	for _, vm := range vms {
+		if isRealVM(vm) && len(vm.PendingGuidances) > 0 {
+			pending = append(pending, guidanceEntry(vm.NameLabel, vm.PendingGuidances))
+		}
+	}
+	if len(pending) > 0 {
+		sort.Strings(pending)
+		panic("an earlier update's guidance is still pending - act on it first: " + strings.Join(pending, "; "))
+	}
+}
+
+// checkHostsCanBeEvacuated stops before changing anything if a host's VMs could not all move to
+// another host: Host.GetVmsWhichPreventEvacuation names them (for example a VM with a disk on the
+// host's local storage, or a pool with nowhere else to put them).
+func checkHostsCanBeEvacuated(session *xenapi.Session, hosts []xenapi.HostRef) {
+	for _, hostRef := range hosts {
+		blocking, err := xenapi.Host.GetVmsWhichPreventEvacuation(session, hostRef)
+		check(err)
+		if len(blocking) > 0 {
+			var names []string
+			for vm := range blocking {
+				name, err := xenapi.VM.GetNameLabel(session, vm)
+				check(err)
+				names = append(names, name)
+			}
+			hostName, err := xenapi.Host.GetNameLabel(session, hostRef)
+			check(err)
+			panic(fmt.Sprintf("%s cannot be evacuated: move or shut down %s first", hostName,
+				strings.Join(names, ", ")))
+		}
+	}
+}
+
+// hostsCoordinatorFirst returns the pool's hosts, coordinator first: the update documentation asks
+// for the coordinator to be updated before any other host.
+func hostsCoordinatorFirst(session *xenapi.Session) []xenapi.HostRef {
+	pools, err := xenapi.Pool.GetAll(session)
+	check(err)
+	master, err := xenapi.Pool.GetMaster(session, pools[0])
+	check(err)
+	all, err := xenapi.Host.GetAll(session)
+	check(err)
+	hosts := []xenapi.HostRef{master}
+	for _, hostRef := range all {
+		if hostRef != master {
+			hosts = append(hosts, hostRef)
+		}
+	}
+	return hosts
+}
+
+// updateHosts applies the synced updates (hash) to each host in turn, keeping the VMs running:
+// disable the host so nothing new starts there, evacuate it (live-migrating its VMs to the other
+// hosts), and let applyUpdatesToHost apply the updates, restart the host or its toolstack if the
+// update asks for that, and enable it again. The VMs stay where evacuation put them. It returns the
+// session to keep using from here on - a restart of the coordinator replaces it.
+func updateHosts(session *xenapi.Session, url, user, password string, hosts []xenapi.HostRef, hash string) *xenapi.Session {
+	for _, hostRef := range hosts {
+		name, err := xenapi.Host.GetNameLabel(session, hostRef)
+		check(err)
+		fmt.Printf("Updating %s: moving its VMs to the rest of the pool\n", name)
+		check(xenapi.Host.Disable(session, hostRef, true))
+		check(xenapi.Host.Evacuate2(session, hostRef))
+		session = applyUpdatesToHost(session, url, user, password, hostRef, hash, "")
+	}
+	return session
+}
+
+// reportVMGuidance prints the guidance updating left pending for VMs - restart_vm or
+// restart_device_model, for a VM to start using what was updated. Acting on it restarts the VM,
+// which is its owner's call rather than the update's, so this only reports it.
+func reportVMGuidance(session *xenapi.Session) {
+	var pending []string
+	vms, err := xenapi.VM.GetAllRecords(session)
+	check(err)
+	for _, vm := range vms {
+		if isRealVM(vm) && len(vm.PendingGuidances) > 0 {
+			pending = append(pending, guidanceEntry(vm.NameLabel, vm.PendingGuidances))
+		}
+	}
+	sort.Strings(pending)
+	if len(pending) == 0 {
+		pending = []string{"none"}
+	}
+	fmt.Printf("VM guidance pending: %s\n", strings.Join(pending, "; "))
 }
 
 // diskVdis returns the VDIs backing a VM's disk VBDs (used to clean up a VM's owned disks).

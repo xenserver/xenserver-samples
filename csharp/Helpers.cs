@@ -404,6 +404,87 @@ internal static partial class Workflows
         Repository.forget(session, repo);
     }
 
+    /// <summary>Whether a VM is a guest: not a template, a snapshot or a host's control domain.</summary>
+    internal static bool IsRealVm(VM vm) => !vm.is_a_template && !vm.is_a_snapshot && !vm.is_control_domain;
+
+    /// <summary>
+    /// Stop before updating if a host or VM still has mandatory guidance pending from an earlier update.
+    /// Host.apply_updates refuses a host that has some (HOST_PENDING_MANDATORY_GUIDANCES_NOT_EMPTY), part-way
+    /// through the update otherwise: act on it first - restart the host, its toolstack or the VM - and run the
+    /// update again.
+    /// </summary>
+    internal static void CheckNoPendingGuidance(Session session)
+    {
+        var pending = Host.get_all_records(session).Values.Select(h => (h.name_label, h.pending_guidances))
+            .Concat(VM.get_all_records(session).Values.Where(IsRealVm).Select(v => (v.name_label, v.pending_guidances)))
+            .Where(p => p.pending_guidances.Count > 0)
+            .Select(p => $"{p.name_label}: {string.Join(", ", p.pending_guidances)}")
+            .OrderBy(s => s, StringComparer.Ordinal).ToList();
+        if (pending.Count > 0)
+            throw new InvalidOperationException(
+                $"an earlier update's guidance is still pending - act on it first: {string.Join("; ", pending)}");
+    }
+
+    /// <summary>
+    /// Stop before changing anything if a host's VMs could not all move to another host:
+    /// get_vms_which_prevent_evacuation names them (for example a VM with a disk on the host's local storage,
+    /// or a pool with nowhere else to put them).
+    /// </summary>
+    internal static void CheckHostsCanBeEvacuated(Session session, List<XenRef<Host>> hosts)
+    {
+        foreach (var hostRef in hosts)
+        {
+            var blocking = Host.get_vms_which_prevent_evacuation(session, hostRef);
+            if (blocking.Count > 0)
+                throw new InvalidOperationException(
+                    $"{Host.get_name_label(session, hostRef)} cannot be evacuated: move or shut down " +
+                    $"{string.Join(", ", blocking.Keys.Select(vm => VM.get_name_label(session, vm)))} first");
+        }
+    }
+
+    /// <summary>
+    /// The pool's hosts, coordinator first: the update documentation asks for the coordinator to be updated
+    /// before any other host.
+    /// </summary>
+    internal static List<XenRef<Host>> HostsCoordinatorFirst(Session session)
+    {
+        var master = Pool.get_master(session, Pool.get_all(session)[0]);
+        return new[] { master }.Concat(Host.get_all(session).Where(r => !r.Equals(master))).ToList();
+    }
+
+    /// <summary>
+    /// Apply the synced updates (hash) to each host in turn, keeping the VMs running: disable the host so
+    /// nothing new starts there, evacuate it (live-migrating its VMs to the other hosts), and let
+    /// ApplyUpdatesToHost apply the updates, restart the host or its toolstack if the update asks for that,
+    /// and enable it again. The VMs stay where evacuation put them. Returns the session to keep using from
+    /// here on - a restart of the coordinator replaces it.
+    /// </summary>
+    internal static Session UpdateHosts(Session session, string url, string user, string password,
+        List<XenRef<Host>> hosts, string hash)
+    {
+        foreach (var hostRef in hosts)
+        {
+            System.Console.WriteLine($"Updating {Host.get_name_label(session, hostRef)}: moving its VMs to the rest of the pool");
+            Host.disable(session, hostRef);
+            Host.evacuate(session, hostRef);
+            session = ApplyUpdatesToHost(session, url, user, password, hostRef, hash);
+        }
+        return session;
+    }
+
+    /// <summary>
+    /// Print the guidance updating left pending for VMs - restart_vm or restart_device_model, for a VM to
+    /// start using what was updated. Acting on it restarts the VM, which is its owner's call rather than the
+    /// update's, so this only reports it.
+    /// </summary>
+    internal static void ReportVmGuidance(Session session)
+    {
+        var pending = VM.get_all_records(session).Values.Where(v => IsRealVm(v) && v.pending_guidances.Count > 0)
+            .Select(v => $"{v.name_label}: {string.Join(", ", v.pending_guidances)}")
+            .OrderBy(s => s, StringComparer.Ordinal).ToList();
+        System.Console.WriteLine($"VM guidance pending: {(pending.Count > 0 ? string.Join("; ", pending) : "none")}");
+    }
+
     internal static bool HostLive(Session session, XenRef<Host> host) =>
         Host_metrics.get_live(session, Host.get_metrics(session, host));
 

@@ -344,5 +344,70 @@ def detach_update_repository(session, pool, repo, previous):
     session.xenapi.Repository.forget(repo)
 
 
+def is_real_vm(record):
+    """Whether a VM record is a guest: not a template, a snapshot or a host's control domain."""
+    return not (record["is_a_template"] or record["is_a_snapshot"] or record["is_control_domain"])
+
+
+def check_no_pending_guidance(session):
+    """Stop before updating if a host or VM still has mandatory guidance pending from an earlier
+    update. host.apply_updates refuses a host that has some (HOST_PENDING_MANDATORY_GUIDANCES_NOT_EMPTY),
+    part-way through the update otherwise: act on it first - restart the host, its toolstack or the
+    VM - and run the update again."""
+    x = session.xenapi
+    records = list(x.host.get_all_records().values())
+    records += [rec for rec in x.VM.get_all_records().values() if is_real_vm(rec)]
+    pending = ["%s: %s" % (rec["name_label"], ", ".join(rec["pending_guidances"]))
+               for rec in records if rec["pending_guidances"]]
+    if pending:
+        raise RuntimeError("an earlier update's guidance is still pending - act on it first: %s"
+                           % "; ".join(sorted(pending)))
+
+
+def check_hosts_can_be_evacuated(session, hosts):
+    """Stop before changing anything if a host's VMs could not all move to another host:
+    host.get_vms_which_prevent_evacuation names them (for example a VM with a disk on the host's
+    local storage, or a pool with nowhere else to put them)."""
+    for host_ref in hosts:
+        blocking = session.xenapi.host.get_vms_which_prevent_evacuation(host_ref)
+        if blocking:
+            names = ", ".join(session.xenapi.VM.get_name_label(vm) for vm in blocking)
+            raise RuntimeError("%s cannot be evacuated: move or shut down %s first"
+                               % (session.xenapi.host.get_name_label(host_ref), names))
+
+
+def hosts_coordinator_first(session):
+    """The pool's hosts, coordinator first: the update documentation asks for the coordinator to be
+    updated before any other host."""
+    master = session.xenapi.pool.get_master(session.xenapi.pool.get_all()[0])
+    return [master] + [ref for ref in session.xenapi.host.get_all() if ref != master]
+
+
+def update_hosts(session, url, username, password, hosts, hash_):
+    """Apply the synced updates (`hash_`) to each host in turn, keeping the VMs running: disable the
+    host so nothing new starts there, evacuate it (live-migrating its VMs to the other hosts), and let
+    apply_updates_to_host apply the updates, restart the host or its toolstack if the update asks for
+    that, and enable it again. The VMs stay where evacuation put them.
+
+    Returns the session to keep using from here on - a restart of the coordinator replaces it."""
+    for host_ref in hosts:
+        print("Updating %s: moving its VMs to the rest of the pool"
+              % session.xenapi.host.get_name_label(host_ref))
+        session.xenapi.host.disable(host_ref)
+        session.xenapi.host.evacuate(host_ref)
+        session = apply_updates_to_host(session, url, username, password, host_ref, hash_)
+    return session
+
+
+def report_vm_guidance(session):
+    """Print the guidance updating left pending for VMs - restart_vm or restart_device_model, for a VM
+    to start using what was updated. Acting on it restarts the VM, which is its owner's call rather
+    than the update's, so this only reports it."""
+    pending = ["%s: %s" % (rec["name_label"], ", ".join(rec["pending_guidances"]))
+               for rec in session.xenapi.VM.get_all_records().values()
+               if is_real_vm(rec) and rec["pending_guidances"]]
+    print("VM guidance pending: %s" % ("; ".join(sorted(pending)) if pending else "none"))
+
+
 def host_live(x, host):
     return x.host_metrics.get_live(x.host.get_metrics(host))

@@ -37,6 +37,9 @@ internal static partial class Workflows
             hostRef = Pool.get_master(session, pool);
         }
         var name = Host.get_name_label(session, hostRef);
+        // Before changing anything, stop if a host or VM still has mandatory guidance pending from an earlier
+        // update.
+        CheckNoPendingGuidance(session);
 
         // AttachUpdateRepository checks that HA and Workload Balancing are off and attaches a throwaway
         // update repository, which Pool.sync_updates needs; it is forgotten again afterwards.
@@ -54,6 +57,8 @@ internal static partial class Workflows
         {
             DetachUpdateRepository(session, pool, repo, previous);
         }
+        // Restarting a VM to pick the update up is its owner's call: report what is left.
+        ReportVmGuidance(session);
         Console.WriteLine("OK: apply-update");
         session.logout();
     }
