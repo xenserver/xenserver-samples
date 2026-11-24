@@ -53,7 +53,7 @@ full API reference and the SDK downloads.
 | [Storage](docs/workflows/README.md#storage) | NFS, SMB, iSCSI, Fibre Channel and ISO SRs; copying disk contents; changed block tracking |
 | [Networking](docs/workflows/README.md#networking) | Networks, NIC bonds, virtual network interfaces |
 | [Hosts & pools](docs/workflows/README.md#hosts--pools) | Maintenance mode, HA, certificates, SSH access, pool membership, performance metrics |
-| [Updates](docs/workflows/README.md#updates) | Configure update repositories (CDN or offline), apply updates, rolling pool update |
+| [Updates](docs/workflows/README.md#updates) | Configure the CDN update repository, apply updates, rolling pool update, update an air-gapped pool from a bundle |
 | [Organization & metadata](docs/workflows/README.md#organization--metadata) | Tags, folders, custom fields |
 | [Security & access](docs/workflows/README.md#security--access) | Active Directory users, roles, Secure Boot certificates |
 | [Disaster recovery](docs/workflows/README.md#disaster-recovery) | Replicate pool metadata, and fail over to a disaster recovery site from the storage array's replica |
