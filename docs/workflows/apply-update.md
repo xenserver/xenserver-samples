@@ -52,6 +52,9 @@ function Invoke-ApplyUpdate {
     else {
         $xenHost = Get-XenHost -Ref $pool.master
     }
+    # Before changing anything, stop if a host or VM still has mandatory guidance pending from an earlier
+    # update.
+    Assert-NoPendingGuidance
 
     $attached = Connect-UpdateRepository -Session $session -Pool $pool -RepoUrl $RepoUrl -SourceUrl $SourceUrl
     try {
@@ -64,6 +67,8 @@ function Invoke-ApplyUpdate {
     finally {
         Disconnect-UpdateRepository -Pool $pool -Attached $attached
     }
+    # Restarting a VM to pick the update up is its owner's call: report what is left.
+    Write-VmGuidance
     Write-Host "OK: apply-update"
     $session | Disconnect-XenServer
 }
@@ -74,6 +79,7 @@ function Invoke-ApplyUpdate {
 ```text
 Synced updates; hash length 64
   sdk-host1: applied; pending guidance = []
+VM guidance pending: none
 OK: apply-update
 ```
 
@@ -99,10 +105,12 @@ Source: [`cli/updates/apply-update.sh`](../../cli/updates/apply-update.sh)
 
 # The documentation asks for the coordinator to be updated before any other host, so update it first,
 # then run this again naming each of the others - or use rolling-pool-update to do the whole pool in one
-# go. helpers.sh's attach_update_repository checks that HA and Workload Balancing are off and attaches a
-# throwaway update repository, which pool-sync-updates needs; it is forgotten again afterwards.
-# apply_updates_to_host does the rest: evacuating the host first if that turns out to be needed, acting
-# on its post-update guidance, and returning it to service.
+# go. Before changing anything, check_no_pending_guidance stops if a host or VM still has mandatory
+# guidance pending from an earlier update. helpers.sh's attach_update_repository checks that HA and
+# Workload Balancing are off and attaches a throwaway update repository, which pool-sync-updates needs;
+# it is forgotten again afterwards. apply_updates_to_host does the rest: evacuating the host first if that
+# turns out to be needed, acting on its post-update guidance, and returning it to service. Finally report
+# the guidance left for VMs, such as restarting one to pick the update up - that is the VM owner's call.
 apply_update() {
     local host_name h hash
     host_name=$(param host_name "")
@@ -115,12 +123,14 @@ apply_update() {
     else
         h=$(remote_xe pool-param-get uuid="$(remote_xe pool-list --minimal)" param-name=master)
     fi
+    check_no_pending_guidance
     attach_update_repository "$(param repo_url "https://repo.ops.xenserver.com/xs9")" \
         "$(param source_url "https://repo-src.ops.xenserver.com/xs9")"
 
     hash=$(remote_xe pool-sync-updates)
     echo "Synced updates (hash length ${#hash})"
     apply_updates_to_host "$h" "$hash" "$(remote_xe host-param-get uuid=$h param-name=name-label): "
+    report_vm_guidance
     ok apply-update
 }
 ```
@@ -130,6 +140,7 @@ apply_update() {
 ```text
 Synced updates (hash length 64)
   sdk-host1: applied; pending guidance = []
+VM guidance pending: none
 OK: apply-update
 ```
 
@@ -152,7 +163,8 @@ Run it::
 """
 
 from connection import connect
-from helpers import apply_updates_to_host, attach_update_repository, detach_update_repository
+from helpers import (apply_updates_to_host, attach_update_repository, check_no_pending_guidance,
+                     detach_update_repository, report_vm_guidance)
 
 
 def apply_update(url, username, password, repo_url, source_url, host_name=""):
@@ -161,10 +173,13 @@ def apply_update(url, username, password, repo_url, source_url, host_name=""):
 
     The documentation asks for the coordinator to be updated before any other host, so update it
     first, then run this again naming each of the others - or use rolling-pool-update to do the
-    whole pool in one go. helpers.attach_update_repository checks that HA and Workload Balancing are
-    off and attaches a throwaway update repository, which pool.sync_updates needs; it is forgotten
-    again afterwards. helpers.apply_updates_to_host does the rest: evacuating the host first if that
-    turns out to be needed, acting on its post-update guidance, and returning it to service."""
+    whole pool in one go. Before changing anything, helpers.check_no_pending_guidance stops if a host
+    or VM still has mandatory guidance pending from an earlier update. helpers.attach_update_repository
+    checks that HA and Workload Balancing are off and attaches a throwaway update repository, which
+    pool.sync_updates needs; it is forgotten again afterwards. helpers.apply_updates_to_host does the
+    rest: evacuating the host first if that turns out to be needed, acting on its post-update
+    guidance, and returning it to service. Finally report the guidance left for VMs, such as
+    restarting one to pick the update up - that is the VM owner's call."""
     session = connect(url, username, password)
     pool = session.xenapi.pool.get_all()[0]
     if host_name:
@@ -175,6 +190,7 @@ def apply_update(url, username, password, repo_url, source_url, host_name=""):
     else:
         host_ref = session.xenapi.pool.get_master(pool)
     name = session.xenapi.host.get_name_label(host_ref)
+    check_no_pending_guidance(session)
 
     repo, previous = attach_update_repository(session, pool, repo_url, source_url)
     try:
@@ -185,6 +201,7 @@ def apply_update(url, username, password, repo_url, source_url, host_name=""):
                                         label="%s: " % name)
     finally:
         detach_update_repository(session, pool, repo, previous)
+    report_vm_guidance(session)
     print("OK: apply-update")
     session.xenapi.session.logout()
 ```
@@ -194,6 +211,7 @@ def apply_update(url, username, password, repo_url, source_url, host_name=""):
 ```text
 Synced updates; hash length 64
   sdk-host1: applied; pending guidance = []
+VM guidance pending: none
 OK: apply-update
 ```
 
@@ -235,6 +253,9 @@ public static void ApplyUpdate(string url, string user, string password, string 
         hostRef = Pool.get_master(session, pool);
     }
     var name = Host.get_name_label(session, hostRef);
+    // Before changing anything, stop if a host or VM still has mandatory guidance pending from an earlier
+    // update.
+    CheckNoPendingGuidance(session);
 
     // AttachUpdateRepository checks that HA and Workload Balancing are off and attaches a throwaway
     // update repository, which Pool.sync_updates needs; it is forgotten again afterwards.
@@ -252,6 +273,8 @@ public static void ApplyUpdate(string url, string user, string password, string 
     {
         DetachUpdateRepository(session, pool, repo, previous);
     }
+    // Restarting a VM to pick the update up is its owner's call: report what is left.
+    ReportVmGuidance(session);
     Console.WriteLine("OK: apply-update");
     session.logout();
 }
@@ -262,6 +285,7 @@ public static void ApplyUpdate(string url, string user, string password, string 
 ```text
 Synced updates; hash length 64
   sdk-host1: applied; pending guidance = []
+VM guidance pending: none
 OK: apply-update
 ```
 
@@ -287,10 +311,13 @@ import (
 //
 // The documentation asks for the coordinator to be updated before any other host, so update it first,
 // then run this again naming each of the others - or use rolling-pool-update to do the whole pool in
-// one go. attachUpdateRepository checks that HA and Workload Balancing are off and attaches a
-// throwaway update repository, which Pool.SyncUpdates needs; it is forgotten again afterwards.
-// applyUpdatesToHost does the rest: evacuating the host first if that turns out to be needed, acting
-// on its post-update guidance, and returning it to service.
+// one go. Before changing anything, checkNoPendingGuidance stops if a host or VM still has mandatory
+// guidance pending from an earlier update. attachUpdateRepository checks that HA and Workload
+// Balancing are off and attaches a throwaway update repository, which Pool.SyncUpdates needs; it is
+// forgotten again afterwards. applyUpdatesToHost does the rest: evacuating the host first if that
+// turns out to be needed, acting on its post-update guidance, and returning it to service. Finally
+// report the guidance left for VMs, such as restarting one to pick the update up - that is the VM
+// owner's call.
 func applyUpdate(url, user, password, repoURL, sourceURL, hostName string) {
 	session := connect(url, user, password)
 	// Deferred first, so it runs LAST: after the deferred repository restore below, which needs
@@ -313,6 +340,7 @@ func applyUpdate(url, user, password, repoURL, sourceURL, hostName string) {
 	}
 	name, err := xenapi.Host.GetNameLabel(session, hostRef)
 	check(err)
+	checkNoPendingGuidance(session)
 
 	repo, previous := attachUpdateRepository(session, pool, repoURL, sourceURL)
 	defer func() { detachUpdateRepository(session, pool, repo, previous) }()
@@ -321,6 +349,7 @@ func applyUpdate(url, user, password, repoURL, sourceURL, hostName string) {
 	check(err)
 	fmt.Printf("Synced updates; hash length %d\n", len(hash))
 	session = applyUpdatesToHost(session, url, user, password, hostRef, hash, name+": ")
+	reportVMGuidance(session)
 	fmt.Println("OK: apply-update")
 }
 ```
@@ -330,6 +359,7 @@ func applyUpdate(url, user, password, repoURL, sourceURL, hostName string) {
 ```text
 Synced updates; hash length 64
   sdk-host1: applied; pending guidance = []
+VM guidance pending: none
 OK: apply-update
 ```
 
@@ -352,7 +382,9 @@ import java.util.Set;
 
 import static com.xenserver.samples.Helpers.applyUpdatesToHost;
 import static com.xenserver.samples.Helpers.attachUpdateRepository;
+import static com.xenserver.samples.Helpers.checkNoPendingGuidance;
 import static com.xenserver.samples.Helpers.detachUpdateRepository;
+import static com.xenserver.samples.Helpers.reportVmGuidance;
 import static com.xenserver.samples.PoolConnection.connect;
 
 public final class ApplyUpdate {
@@ -367,10 +399,13 @@ public final class ApplyUpdate {
      *
      * <p>The documentation asks for the coordinator to be updated before any other host, so update it
      * first, then run this again naming each of the others - or use RollingPoolUpdate to do the whole pool
-     * in one go. Helpers.attachUpdateRepository checks that HA and Workload Balancing are off and attaches
-     * a throwaway update repository, which pool.syncUpdates needs; it is forgotten again afterwards.
-     * Helpers.applyUpdatesToHost does the rest: evacuating the host first if that turns out to be needed,
-     * acting on its post-update guidance, and returning it to service.
+     * in one go. Before changing anything, Helpers.checkNoPendingGuidance stops if a host or VM still has
+     * mandatory guidance pending from an earlier update. Helpers.attachUpdateRepository checks that HA and
+     * Workload Balancing are off and attaches a throwaway update repository, which pool.syncUpdates needs;
+     * it is forgotten again afterwards. Helpers.applyUpdatesToHost does the rest: evacuating the host first
+     * if that turns out to be needed, acting on its post-update guidance, and returning it to service.
+     * Finally report the guidance left for VMs, such as restarting one to pick the update up - that is the
+     * VM owner's call.
      *
      * <p>Run it:
      *
@@ -395,6 +430,7 @@ public final class ApplyUpdate {
             host = pool.getMaster(conn);
         }
         String name = host.getNameLabel(conn);
+        checkNoPendingGuidance(conn);
 
         AttachedRepository attached = attachUpdateRepository(conn, pool, repoUrl, sourceUrl);
         try {
@@ -405,6 +441,7 @@ public final class ApplyUpdate {
         } finally {
             detachUpdateRepository(conn, pool, attached);
         }
+        reportVmGuidance(conn);
         System.out.println("OK: apply-update");
         Session.logout(conn);
     }
@@ -416,6 +453,7 @@ public final class ApplyUpdate {
 ```text
 Synced updates; hash length 64
   sdk-host1: applied; pending guidance = []
+VM guidance pending: none
 OK: apply-update
 ```
 

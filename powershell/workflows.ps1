@@ -95,7 +95,7 @@ $WORKFLOWS = @{
     "copy-vm"                        = @{ Function = "Invoke-CopyVm";                       Defaults = @{ VmName = "db-01"; SrName = "Shared NFS" } }
     "create-vm-with-vgpu"            = @{ Function = "Invoke-CreateVmWithVgpu";             Defaults = @{ TemplateName = "Rocky Linux 8" } }
     "tags-and-folders"               = @{ Function = "Invoke-TagsAndFolders";               Defaults = @{ VmName = "web-01" } }
-    "configure-offline-updates"      = @{ Function = "Invoke-ConfigureOfflineUpdates";      Defaults = @{} }
+    "offline-pool-update"            = @{ Function = "Invoke-OfflinePoolUpdate";            Defaults = @{ BundlePath = "XS9-update.xsbundle" } }
     "configure-updates"              = @{ Function = "Invoke-ConfigureUpdates";             Defaults = @{ RepoUrl = "https://repo.ops.xenserver.com/xs9"; SourceUrl = "https://repo-src.ops.xenserver.com/xs9" } }
     "clone-vm"                       = @{ Function = "Invoke-CloneVm";                      Defaults = @{ VmName = "db-01" } }
     "delete-vm"                      = @{ Function = "Invoke-DeleteVm";                     Defaults = @{ TemplateName = "Rocky Linux 8" } }

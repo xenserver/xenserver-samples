@@ -124,7 +124,7 @@ Run any of them with `<program> <workflow> <url> <user> <password> [key=value ..
 | Workflow | What it does |
 |---|---|
 | [Configure updates (CDN)](configure-updates.md) | Point the pool at a CDN update repository and turn on automatic update sync: register a repository, set it as the pool's repository, enable update sync, read it back, then tidy up. |
-| [Configure updates for an air-gapped pool](configure-offline-updates.md) | Switch a pool with no internet access to offline updates: make an update bundle repository the pool's only repository, upload an update bundle (.xsbundle) to it if you have one, list the updates it makes available, then tidy up. |
+| [Update an air-gapped pool from a bundle](offline-pool-update.md) | Update a pool with no internet access from an update bundle (.xsbundle) downloaded elsewhere: make a bundle repository the pool's update repository, upload the bundle, list the updates it offers, then apply them host by host - coordinator first, moving each host's VMs to the rest of the pool - so the VMs keep running. |
 | [Apply updates from the CDN](apply-update.md) | Sync the pool's update metadata from the CDN and apply it to one host - the coordinator, unless you name another with host_name - then act on that host's post-update guidance. |
 | [Rolling pool update](rolling-pool-update.md) | Apply the CDN's updates to every host in the pool without stopping its VMs: one host at a time, coordinator first, move the host's VMs to the rest of the pool, apply the updates, restart it if the update requires, and return it to service. |
 

@@ -487,9 +487,11 @@
           "description": "Point the pool at a CDN update repository and turn on automatic update sync: register a repository, set it as the pool's repository, enable update sync, read it back, then tidy up."
         },
         {
-          "id": "configure-offline-updates",
-          "title": "Configure updates for an air-gapped pool",
-          "description": "Switch a pool with no internet access to offline updates: make an update bundle repository the pool's only repository, upload an update bundle (.xsbundle) to it if you have one, list the updates it makes available, then tidy up."
+          "id": "offline-pool-update",
+          "title": "Update an air-gapped pool from a bundle",
+          "description": "Update a pool with no internet access from an update bundle (.xsbundle) downloaded elsewhere: make a bundle repository the pool's update repository, upload the bundle, list the updates it offers, then apply them host by host - coordinator first, moving each host's VMs to the rest of the pool - so the VMs keep running.",
+          "requires": "an update bundle for the pool's XenServer release, High Availability and Workload Balancing turned off first (turn them back on afterwards), and every running VM able to move to another host",
+          "caution": "updates every host, one at a time, moving its VMs to the other hosts and restarting it if the update requires"
         },
         {
           "id": "apply-update",

@@ -394,18 +394,31 @@ function New-UpdateRepository {
         -BinaryUrl "$RepoUrl/normal" -SourceUrl "$SourceUrl/normal" -Update $true -GpgkeyPath '' -PassThru
 }
 
+function Assert-HaAndWlbOff {
+    <#
+    .SYNOPSIS
+        Stop if High Availability or Workload Balancing is on.
+    .DESCRIPTION
+        ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
+        Workload Balancing to be switched off before you start updating - so check both up front and
+        stop rather than disabling either for you; turn them back on again once the update is done.
+    #>
+    param([Parameter(Mandatory = $true)]$Pool)
+    if ($Pool.ha_enabled -or $Pool.wlb_enabled) {
+        throw "HA and Workload Balancing must both be off before updating the pool; disable them, " +
+            "run this again, then re-enable them once it finishes"
+    }
+}
+
 function Connect-UpdateRepository {
     <#
     .SYNOPSIS
         Get the pool ready to sync updates from -RepoUrl.
     .DESCRIPTION
-        Check that HA and Workload Balancing are off, then introduce the update repository and make it
-        the pool's only one. Returns the repository and the pool's previous repositories, for
-        Disconnect-UpdateRepository to put back.
+        Check that HA and Workload Balancing are off (Assert-HaAndWlbOff), then introduce the update
+        repository and make it the pool's only one. Returns the repository and the pool's previous
+        repositories, for Disconnect-UpdateRepository to put back.
 
-        ApplyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-        Workload Balancing to be switched off before you start updating - so check both up front and
-        stop rather than disabling either for you; turn them back on again once the update is done.
         pool.sync_updates needs at least one repository with Update enabled (NO_REPOSITORY_ENABLED
         otherwise).
     #>
@@ -415,10 +428,7 @@ function Connect-UpdateRepository {
         [Parameter(Mandatory = $true)][string]$RepoUrl,
         [Parameter(Mandatory = $true)][string]$SourceUrl
     )
-    if ($Pool.ha_enabled -or $Pool.wlb_enabled) {
-        throw "HA and Workload Balancing must both be off before updating the pool; disable them, " +
-            "run this again, then re-enable them once it finishes"
-    }
+    Assert-HaAndWlbOff -Pool $Pool
     $repo = New-UpdateRepository -Session $Session -RepoUrl $RepoUrl -SourceUrl $SourceUrl
     $previous = @((Get-XenPool -Ref $Pool).repositories)
     try {
@@ -440,6 +450,103 @@ function Disconnect-UpdateRepository {
     param([Parameter(Mandatory = $true)]$Pool, [Parameter(Mandatory = $true)]$Attached)
     $Pool | Set-XenPool -Repositories $Attached.Previous
     $Attached.Repository | Invoke-XenRepository -XenAction Forget
+}
+
+function Test-RealVM {
+    <#
+    .SYNOPSIS
+        Whether a VM is a guest: not a template, a snapshot or a host's control domain.
+    #>
+    param([Parameter(Mandatory = $true)]$VM)
+    -not ($VM.is_a_template -or $VM.is_a_snapshot -or $VM.is_control_domain)
+}
+
+function Assert-NoPendingGuidance {
+    <#
+    .SYNOPSIS
+        Stop before updating if a host or VM still has mandatory guidance pending from an earlier update.
+    .DESCRIPTION
+        ApplyUpdates refuses a host that has some (HOST_PENDING_MANDATORY_GUIDANCES_NOT_EMPTY), part-way
+        through the update otherwise: act on it first - restart the host, its toolstack or the VM - and run
+        the update again.
+    #>
+    $objects = @(Get-XenHost) + @(Get-XenVM | Where-Object { Test-RealVM -VM $_ })
+    $pending = @($objects | Where-Object { $_.pending_guidances.Count -gt 0 } |
+        ForEach-Object { "$($_.name_label): $($_.pending_guidances -join ', ')" } | Sort-Object)
+    if ($pending.Count -gt 0) {
+        throw "an earlier update's guidance is still pending - act on it first: $($pending -join '; ')"
+    }
+}
+
+function Assert-HostsCanBeEvacuated {
+    <#
+    .SYNOPSIS
+        Stop before changing anything if a host's VMs could not all move to another host.
+    .DESCRIPTION
+        VmsWhichPreventEvacuation names them (for example a VM with a disk on the host's local storage, or
+        a pool with nowhere else to put them).
+    #>
+    param([Parameter(Mandatory = $true)]$Hosts)
+    foreach ($xenHost in $Hosts) {
+        $blocking = Get-XenHostProperty -XenHost $xenHost -XenProperty VmsWhichPreventEvacuation
+        if ($blocking.Count -gt 0) {
+            $names = ($blocking.Keys | ForEach-Object { (Get-XenVM -Ref $_).name_label }) -join ', '
+            throw "$($xenHost.name_label) cannot be evacuated: move or shut down $names first"
+        }
+    }
+}
+
+function Get-HostsCoordinatorFirst {
+    <#
+    .SYNOPSIS
+        The pool's hosts, coordinator first: the update documentation asks for the coordinator to be
+        updated before any other host.
+    #>
+    $pool = Get-XenPool | Select-Object -First 1
+    @(Get-XenHost -Ref $pool.master) + @(Get-XenHost | Where-Object { $pool.master -ne $_ })
+}
+
+function Update-Hosts {
+    <#
+    .SYNOPSIS
+        Apply the synced updates (-Hash) to each host in turn, keeping the VMs running.
+    .DESCRIPTION
+        Disable the host so nothing new starts there, evacuate it (live-migrating its VMs to the other
+        hosts), and let Invoke-HostUpdate apply the updates, restart the host or its toolstack if the
+        update asks for that, and enable it again. The VMs stay where evacuation put them. Returns the
+        session to keep using from here on - a restart of the coordinator replaces it.
+    #>
+    param(
+        [Parameter(Mandatory = $true)]$Session,
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$UserName,
+        [Parameter(Mandatory = $true)][string]$Password,
+        [Parameter(Mandatory = $true)]$Hosts,
+        [Parameter(Mandatory = $true)][string]$Hash
+    )
+    foreach ($xenHost in $Hosts) {
+        Write-Host "Updating $($xenHost.name_label): moving its VMs to the rest of the pool"
+        $xenHost | Invoke-XenHost -XenAction Disable
+        Invoke-Evacuate -XenHost $xenHost
+        $Session = Invoke-HostUpdate -Session $Session -Url $Url -UserName $UserName -Password $Password `
+            -XenHost $xenHost -Hash $Hash
+    }
+    return $Session
+}
+
+function Write-VmGuidance {
+    <#
+    .SYNOPSIS
+        Print the guidance updating left pending for VMs - restart_vm or restart_device_model, for a VM to
+        start using what was updated.
+    .DESCRIPTION
+        Acting on it restarts the VM, which is its owner's call rather than the update's, so this only
+        reports it.
+    #>
+    $pending = @(Get-XenVM | Where-Object { (Test-RealVM -VM $_) -and $_.pending_guidances.Count -gt 0 } |
+        ForEach-Object { "$($_.name_label): $($_.pending_guidances -join ', ')" } | Sort-Object)
+    $text = if ($pending.Count -gt 0) { $pending -join '; ' } else { 'none' }
+    Write-Host "VM guidance pending: $text"
 }
 
 function Get-HostLive {

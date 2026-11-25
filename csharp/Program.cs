@@ -262,8 +262,11 @@ internal static class Program
             var d = Merge(new() { ["sr_name"] = "Shared NFS" }, ov);
             ExportImportVdi(u, n, p, d["sr_name"]);
         },
-        ["configure-offline-updates"] = (u, n, p, ov) =>
-            ConfigureOfflineUpdates(u, n, p, ov.GetValueOrDefault("bundle_path")),
+        ["offline-pool-update"] = (u, n, p, ov) =>
+        {
+            var d = Merge(new() { ["bundle_path"] = "XS9-update.xsbundle" }, ov);
+            OfflinePoolUpdate(u, n, p, d["bundle_path"]);
+        },
         ["set-default-sr"] = (u, n, p, ov) =>
         {
             var d = Merge(new() { ["nfs_server"] = "192.0.2.10", ["nfs_path"] = "/export/spare" }, ov);

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -445,23 +446,30 @@ public final class Helpers {
     }
 
     /**
+     * Stop if High Availability or Workload Balancing is on. Host.applyUpdates refuses with HA_IS_ENABLED
+     * while HA is on, and the documentation also asks for Workload Balancing to be switched off before you
+     * start updating - so check both up front and stop rather than disabling either for you; turn them back
+     * on again once the update is done.
+     */
+    public static void checkHaAndWlbOff(Connection conn, Pool pool) throws Exception {
+        if (pool.getHaEnabled(conn) || pool.getWlbEnabled(conn)) {
+            throw new IllegalStateException("HA and Workload Balancing must both be off before updating the "
+                    + "pool; disable them, run this again, then re-enable them once it finishes");
+        }
+    }
+
+    /**
      * Get the pool ready to sync updates from {@code repoUrl}: check that HA and Workload Balancing are
-     * off, then introduce the update repository and make it the pool's only one.
+     * off (checkHaAndWlbOff), then introduce the update repository and make it the pool's only one.
      *
-     * <p>Host.applyUpdates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-     * Workload Balancing to be switched off before you start updating - so check both up front and stop
-     * rather than disabling either for you; turn them back on again once the update is done.
-     * pool.syncUpdates needs at least one repository with update=true enabled (NO_REPOSITORY_ENABLED
+     * <p>pool.syncUpdates needs at least one repository with update=true enabled (NO_REPOSITORY_ENABLED
      * otherwise).
      *
      * @return the repository and the pool's previous repositories, for detachUpdateRepository to put back.
      */
     public static AttachedRepository attachUpdateRepository(Connection conn, Pool pool, String repoUrl,
             String sourceUrl) throws Exception {
-        if (pool.getHaEnabled(conn) || pool.getWlbEnabled(conn)) {
-            throw new IllegalStateException("HA and Workload Balancing must both be off before updating the "
-                    + "pool; disable them, run this again, then re-enable them once it finishes");
-        }
+        checkHaAndWlbOff(conn, pool);
         Repository repo = introduceUpdateRepository(conn, repoUrl, sourceUrl);
         Set<Repository> previous = pool.getRepositories(conn);
         try {
@@ -481,5 +489,104 @@ public final class Helpers {
             throws Exception {
         pool.setRepositories(conn, attached.previous());
         attached.repo().forget(conn);
+    }
+
+    /**
+     * Whether a VM is a guest: not a template, a snapshot or a host's control domain.
+     */
+    public static boolean isRealVm(VM.Record vm) {
+        return !vm.isATemplate && !vm.isASnapshot && !vm.isControlDomain;
+    }
+
+    /**
+     * Stop before updating if a host or VM still has mandatory guidance pending from an earlier update.
+     * host.applyUpdates refuses a host that has some (HOST_PENDING_MANDATORY_GUIDANCES_NOT_EMPTY), part-way
+     * through the update otherwise: act on it first - restart the host, its toolstack or the VM - and run the
+     * update again.
+     */
+    public static void checkNoPendingGuidance(Connection conn) throws Exception {
+        List<String> pending = new ArrayList<>();
+        for (Host.Record h : Host.getAllRecords(conn).values()) {
+            if (!h.pendingGuidances.isEmpty()) pending.add(h.nameLabel + ": " + guidanceList(h.pendingGuidances));
+        }
+        for (VM.Record vm : VM.getAllRecords(conn).values()) {
+            if (isRealVm(vm) && !vm.pendingGuidances.isEmpty())
+                pending.add(vm.nameLabel + ": " + guidanceList(vm.pendingGuidances));
+        }
+        if (!pending.isEmpty()) {
+            Collections.sort(pending);
+            throw new IllegalStateException("an earlier update's guidance is still pending - act on it first: "
+                    + String.join("; ", pending));
+        }
+    }
+
+    /**
+     * Stop before changing anything if a host's VMs could not all move to another host:
+     * getVmsWhichPreventEvacuation names them (for example a VM with a disk on the host's local storage, or
+     * a pool with nowhere else to put them).
+     */
+    public static void checkHostsCanBeEvacuated(Connection conn, List<Host> hosts) throws Exception {
+        for (Host host : hosts) {
+            Map<VM, Set<String>> blocking = host.getVmsWhichPreventEvacuation(conn);
+            if (!blocking.isEmpty()) {
+                List<String> names = new ArrayList<>();
+                for (VM vm : blocking.keySet()) names.add(vm.getNameLabel(conn));
+                throw new IllegalStateException(host.getNameLabel(conn) + " cannot be evacuated: move or shut down "
+                        + String.join(", ", names) + " first");
+            }
+        }
+    }
+
+    /**
+     * The pool's hosts, coordinator first: the update documentation asks for the coordinator to be updated
+     * before any other host.
+     */
+    public static List<Host> hostsCoordinatorFirst(Connection conn) throws Exception {
+        Host master = Pool.getAll(conn).iterator().next().getMaster(conn);
+        List<Host> hosts = new ArrayList<>();
+        hosts.add(master);
+        for (Host h : Host.getAll(conn)) {
+            if (!h.equals(master)) hosts.add(h);
+        }
+        return hosts;
+    }
+
+    /**
+     * Apply the synced updates (hash) to each host in turn, keeping the VMs running: disable the host so
+     * nothing new starts there, evacuate it (live-migrating its VMs to the other hosts), and let
+     * applyUpdatesToHost apply the updates, restart the host or its toolstack if the update asks for that,
+     * and enable it again. The VMs stay where evacuation put them. Returns the connection to keep using from
+     * here on - a restart of the coordinator replaces it.
+     */
+    public static Connection updateHosts(Connection conn, String url, String user, String password,
+            List<Host> hosts, String hash) throws Exception {
+        for (Host host : hosts) {
+            System.out.println("Updating " + host.getNameLabel(conn) + ": moving its VMs to the rest of the pool");
+            host.disable(conn);
+            host.evacuate(conn);
+            conn = applyUpdatesToHost(conn, url, user, password, host, hash, "");
+        }
+        return conn;
+    }
+
+    /**
+     * Print the guidance updating left pending for VMs - restart_vm or restart_device_model, for a VM to start
+     * using what was updated. Acting on it restarts the VM, which is its owner's call rather than the
+     * update's, so this only reports it.
+     */
+    public static void reportVmGuidance(Connection conn) throws Exception {
+        List<String> pending = new ArrayList<>();
+        for (VM.Record vm : VM.getAllRecords(conn).values()) {
+            if (isRealVm(vm) && !vm.pendingGuidances.isEmpty())
+                pending.add(vm.nameLabel + ": " + guidanceList(vm.pendingGuidances));
+        }
+        Collections.sort(pending);
+        System.out.println("VM guidance pending: " + (pending.isEmpty() ? "none" : String.join("; ", pending)));
+    }
+
+    private static String guidanceList(Set<Types.UpdateGuidances> guidance) {
+        List<String> names = new ArrayList<>();
+        for (Types.UpdateGuidances g : guidance) names.add(g.toString());
+        return String.join(", ", names);
     }
 }

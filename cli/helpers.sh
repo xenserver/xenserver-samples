@@ -273,13 +273,24 @@ introduce_update_repository() {
         update=true
 }
 
-# Get the pool ready to sync updates from $1 (repo_url): check that HA and Workload Balancing are off,
-# then introduce the update repository and make it the pool's only one, putting the pool's own
-# repositories back and forgetting the new one when the script exits, however the rest goes.
+# Stop if High Availability or Workload Balancing is on in the pool ($pool). host-apply-updates refuses
+# with HA_IS_ENABLED while HA is on, and the documentation also asks for Workload Balancing to be switched
+# off before you start updating - so check both up front and stop rather than disabling either for you;
+# turn them back on again once the update is done.
+check_ha_and_wlb_off() {
+    if [ "$(remote_xe pool-param-get uuid=$pool param-name=ha-enabled)" = "true" ] ||
+       [ "$(remote_xe pool-param-get uuid=$pool param-name=wlb-enabled)" = "true" ]; then
+        echo "HA and Workload Balancing must both be off before updating the pool; disable them," \
+             "run this again, then re-enable them once it finishes" >&2
+        exit 1
+    fi
+}
+
+# Get the pool ready to sync updates from $1 (repo_url): check that HA and Workload Balancing are off
+# (check_ha_and_wlb_off), then introduce the update repository and make it the pool's only one, putting
+# the pool's own repositories back and forgetting the new one when the script exits, however the rest
+# goes.
 #
-# host-apply-updates refuses with HA_IS_ENABLED while HA is on, and the documentation also asks for
-# Workload Balancing to be switched off before you start updating - so check both up front and stop
-# rather than disabling either for you; turn them back on again once the update is done.
 # pool-sync-updates syncs the pool's ENABLED repositories, and repository-introduce doesn't enable
 # anything (NO_REPOSITORY_ENABLED otherwise). The "repositories" field is DynamicRO at the API level,
 # but xe's generic pool-param-set still writes it - a set reads back "a; b" and is set as "a,b".
@@ -287,16 +298,95 @@ introduce_update_repository() {
 attach_update_repository() {
     local repo_url=$1 source_url=$2
     pool=$(remote_xe pool-list --minimal)
-    if [ "$(remote_xe pool-param-get uuid=$pool param-name=ha-enabled)" = "true" ] ||
-       [ "$(remote_xe pool-param-get uuid=$pool param-name=wlb-enabled)" = "true" ]; then
-        echo "HA and Workload Balancing must both be off before updating the pool; disable them," \
-             "run this again, then re-enable them once it finishes" >&2
-        exit 1
-    fi
+    check_ha_and_wlb_off
     repo=$(introduce_update_repository "$repo_url" "$source_url")
     before=$(remote_xe pool-param-get uuid=$pool param-name=repositories)
     trap 'remote_xe_try pool-param-set uuid=$pool repositories="${before//; /,}"; remote_xe_try repository-forget uuid=$repo' EXIT
     remote_xe pool-param-set uuid=$pool repositories=$repo
+}
+
+# The pending guidance an earlier update left, one "<name>: guidance, ..." line per host (host_guidance_lines)
+# or per guest VM - not a template, snapshot or control domain (vm_guidance_lines).
+host_guidance_lines() {
+    local h g
+    for h in $(each_csv "$(remote_xe host-list --minimal)"); do
+        g=$(remote_xe host-param-get uuid=$h param-name=pending-guidances)
+        [ -z "$g" ] || echo "$(remote_xe host-param-get uuid=$h param-name=name-label): ${g//; /, }"
+    done
+}
+vm_guidance_lines() {
+    local vm g
+    for vm in $(each_csv "$(remote_xe vm-list is-control-domain=false is-a-template=false is-a-snapshot=false --minimal)"); do
+        g=$(remote_xe vm-param-get uuid=$vm param-name=pending-guidances)
+        [ -z "$g" ] || echo "$(remote_xe vm-param-get uuid=$vm param-name=name-label): ${g//; /, }"
+    done
+}
+
+# Stop before updating if a host or VM still has mandatory guidance pending from an earlier update.
+# host-apply-updates refuses a host that has some (HOST_PENDING_MANDATORY_GUIDANCES_NOT_EMPTY), part-way
+# through the update otherwise: act on it first - restart the host, its toolstack or the VM - and run the
+# update again.
+check_no_pending_guidance() {
+    local pending
+    pending=$({ host_guidance_lines; vm_guidance_lines; } | sort | paste -sd';' - | sed 's/;/; /g')
+    if [ -n "$pending" ]; then
+        echo "an earlier update's guidance is still pending - act on it first: $pending" >&2
+        exit 1
+    fi
+}
+
+# Stop before changing anything if a host's VMs could not all move to another host:
+# host-get-vms-which-prevent-evacuation names them (for example a VM with a disk on the host's local
+# storage, or a pool with nowhere else to put them). $@: the hosts' uuids.
+check_hosts_can_be_evacuated() {
+    local h blocking vm names
+    for h in "$@"; do
+        blocking=$(remote_xe host-get-vms-which-prevent-evacuation uuid=$h --minimal)
+        if [ -n "$blocking" ]; then
+            names=""
+            for vm in $(each_csv "$blocking"); do
+                names="${names:+$names, }$(remote_xe vm-param-get uuid=$vm param-name=name-label)"
+            done
+            echo "$(remote_xe host-param-get uuid=$h param-name=name-label) cannot be evacuated:" \
+                 "move or shut down $names first" >&2
+            exit 1
+        fi
+    done
+}
+
+# The pool's hosts' uuids, coordinator first: the update documentation asks for the coordinator to be
+# updated before any other host.
+hosts_coordinator_first() {
+    local master h
+    master=$(remote_xe pool-param-get uuid="$(remote_xe pool-list --minimal)" param-name=master)
+    echo "$master"
+    for h in $(each_csv "$(remote_xe host-list --minimal)"); do
+        [ "$h" = "$master" ] || echo "$h"
+    done
+}
+
+# Apply the synced updates ($1, the hash) to each host in turn ($2...), keeping the VMs running: disable
+# the host so nothing new starts there, evacuate it (live-migrating its VMs to the other hosts), and let
+# apply_updates_to_host apply the updates, reboot the host if the update asks for that, and enable it
+# again. The VMs stay where evacuation put them.
+update_hosts() {
+    local hash=$1 h
+    shift
+    for h in "$@"; do
+        echo "Updating $(remote_xe host-param-get uuid=$h param-name=name-label): moving its VMs to the rest of the pool"
+        remote_xe host-disable uuid=$h
+        remote_xe host-evacuate uuid=$h
+        apply_updates_to_host "$h" "$hash"
+    done
+}
+
+# Print the guidance updating left pending for VMs - restart_vm or restart_device_model, for a VM to start
+# using what was updated. Acting on it restarts the VM, which is its owner's call rather than the
+# update's, so this only reports it.
+report_vm_guidance() {
+    local pending
+    pending=$(vm_guidance_lines | sort | paste -sd';' - | sed 's/;/; /g')
+    echo "VM guidance pending: ${pending:-none}"
 }
 
 # The VDI behind a VM's first real disk. CD drives are VBDs too, hence the type filter.

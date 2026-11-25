@@ -19,17 +19,11 @@ function Invoke-RollingPoolUpdate {
     )
     $session = Connect-Example -Url $Url -UserName $UserName -Password $Password
     $pool = Get-XenPool | Select-Object -First 1
-    $hosts = @(Get-XenHost -Ref $pool.master) + @(Get-XenHost | Where-Object { $pool.master -ne $_ })
-    # Check first that every host can be emptied: VmsWhichPreventEvacuation names the VMs that could not
-    # move anywhere else (for example a VM with a disk on the host's local storage, or a pool with
-    # nowhere else to put them) - stop before changing anything if there are any.
-    foreach ($xenHost in $hosts) {
-        $blocking = Get-XenHostProperty -XenHost $xenHost -XenProperty VmsWhichPreventEvacuation
-        if ($blocking.Count -gt 0) {
-            $names = ($blocking.Keys | ForEach-Object { (Get-XenVM -Ref $_).name_label }) -join ', '
-            throw "$($xenHost.name_label) cannot be evacuated: move or shut down $names first"
-        }
-    }
+    $hosts = Get-HostsCoordinatorFirst
+    # Check first, before changing anything, that the update can go through: no host or VM may still have
+    # mandatory guidance pending from an earlier update, and every host must be able to empty.
+    Assert-NoPendingGuidance
+    Assert-HostsCanBeEvacuated -Hosts $hosts
 
     # Connect-UpdateRepository checks that HA and Workload Balancing are off and attaches a throwaway
     # update repository, which pool.sync_updates needs; it is forgotten again afterwards.
@@ -37,21 +31,16 @@ function Invoke-RollingPoolUpdate {
     try {
         $hash = $pool | Invoke-XenPool -XenAction SyncUpdates -PassThru
         Write-Host "Synced updates; hash length $($hash.Length)"
-        # For each host: disable it so nothing new starts there, evacuate it (live-migrating its VMs to
-        # the other hosts), and let Invoke-HostUpdate apply the updates, restart the host or its
-        # toolstack if the update asks for that, and enable it again. The VMs stay where evacuation put
-        # them.
-        foreach ($xenHost in $hosts) {
-            Write-Host "Updating $($xenHost.name_label): moving its VMs to the rest of the pool"
-            $xenHost | Invoke-XenHost -XenAction Disable
-            Invoke-Evacuate -XenHost $xenHost
-            $session = Invoke-HostUpdate -Session $session -Url $Url -UserName $UserName -Password $Password `
-                -XenHost $xenHost -Hash $hash
-        }
+        # Update-Hosts updates each host in turn: disable it, evacuate it, apply the updates, restart it or
+        # its toolstack if the update asks for that, and enable it again.
+        $session = Update-Hosts -Session $session -Url $Url -UserName $UserName -Password $Password `
+            -Hosts $hosts -Hash $hash
     }
     finally {
         Disconnect-UpdateRepository -Pool $pool -Attached $attached
     }
+    # Restarting a VM to pick the update up is its owner's call: report what is left.
+    Write-VmGuidance
     Write-Host "OK: rolling-pool-update"
     $session | Disconnect-XenServer
 }

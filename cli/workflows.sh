@@ -91,7 +91,7 @@ case "$workflow" in
     create-vm-with-vgpu)  create_vm_with_vgpu ;;
     tags-and-folders)     tags_and_folders ;;
     configure-updates)    configure_updates ;;
-    configure-offline-updates) configure_offline_updates ;;
+    offline-pool-update)  offline_pool_update ;;
     clone-vm)             clone_vm ;;
     delete-vm)            delete_vm ;;
     storage-migrate)      storage_migrate ;;
